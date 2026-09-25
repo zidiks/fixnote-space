@@ -5,6 +5,28 @@ voice input, chat over your notes, MCP. Desktop (Tauri, Windows first) and web f
 
 - Product and architecture concept: [docs/CONCEPT.md](docs/CONCEPT.md)
 
+## What works today (M1)
+
+Fully offline, no account needed, on web and desktop:
+
+- Notes in Markdown with a Bear-like editor: headings, lists, checklists, quotes, code, links.
+- Inbox by default; folders with subfolders; `#tags` and nested `#area/project` tags from the text.
+- Home with filters (Inbox, folder, type, period) and infinite scroll; lists per folder and tag.
+- Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en, commands.
+- Daily note, soft delete with undo, blank notes discarded automatically.
+
+| Shortcut (Ctrl on Windows, ⌘ on macOS) | Action |
+|---|---|
+| Ctrl+K | Spotlight |
+| Ctrl+D | Today's note |
+| Ctrl+N | New note (desktop only; browsers reserve it) |
+| Ctrl+[ / Ctrl+] | Back / forward |
+| Ctrl+J | Assistant panel |
+| Ctrl+\\ | Sidebar |
+
+Local data lives in `%APPDATA%\space.fixnote.app\fixnote.db` on Windows and in the browser's
+origin-private file system on the web.
+
 ## Repository layout
 
 ```
@@ -14,7 +36,7 @@ apps/
 packages/
   core/            domain logic and platform interfaces (no React)
   platform-web/    browser adapters (sqlite-wasm, WebCrypto, transformers.js)
-  platform-tauri/  desktop adapters (plugin-sql, keychain, fastembed, whisper.cpp)
+  platform-tauri/  desktop adapters (rusqlite commands, keychain, fastembed, whisper.cpp)
   ui/              design tokens and shadcn-style components (Tailwind 4)
   i18n/            en / es / ru dictionaries
 supabase/          CLI config, auth email templates, migrations, edge functions

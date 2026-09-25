@@ -1,5 +1,6 @@
 import { NotImplementedError, type Platform } from '@fixnote/core'
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { openTauriSqlDriver } from './sql'
 
 export { isTauri }
 
@@ -16,10 +17,11 @@ export function appInfo(): Promise<AppInfo> {
 
 /**
  * Desktop adapters backed by the Rust side of apps/desktop.
- * M1: tauri-plugin-sql. M2: OS keychain, app-data blobs.
+ * M1: rusqlite (done). M2: OS keychain, app-data blobs.
  * M3: fastembed embedder. M4: whisper.cpp transcriber.
  */
 export function createTauriPlatform(): Platform {
+  const sql = openTauriSqlDriver()
   return {
     kind: 'desktop',
     capabilities: {
@@ -28,7 +30,7 @@ export function createTauriPlatform(): Platform {
       localMcp: true,
       globalShortcut: true,
     },
-    sql: () => Promise.reject(new NotImplementedError('SqlDriver (tauri-plugin-sql)', 'M1')),
+    sql: () => Promise.resolve(sql),
     embedder: () => Promise.reject(new NotImplementedError('Embedder (fastembed)', 'M3')),
     transcriber: () => Promise.reject(new NotImplementedError('Transcriber (whisper.cpp)', 'M4')),
     keyStore: {

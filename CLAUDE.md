@@ -16,6 +16,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - UI components: shadcn style in `packages/ui`, Tailwind 4 tokens in `packages/ui/src/styles.css`.
   Use semantic color tokens (`bg-card`, `text-muted-foreground`), not raw palette colors.
 - Hotkeys: Mod = Ctrl on Windows/Linux, ⌘ on macOS. Windows is the primary desktop target.
+- Local DB: schema and all SQL live in `packages/core` (`db/schema.ts`, `notes/repo.ts`). Append
+  migrations, never edit a shipped one. Inside `db.transaction(fn)` use only the `tx` argument;
+  calling the driver itself there deadlocks.
+- TanStack Query: per-call `mutate(…, { onSuccess })` callbacks do not run if the component has
+  unmounted; anything that must happen later (undo in a toast) goes through the repo directly.
 - AI never changes a note without an explicit accept; changes are shown as diffs.
 
 ## Verify before pushing

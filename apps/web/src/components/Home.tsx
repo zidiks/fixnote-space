@@ -1,23 +1,98 @@
+import type { NoteFilter, NoteType } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button, cn } from '@fixnote/ui'
-import { ChevronDown, FileText, Search, SlidersHorizontal } from 'lucide-react'
-import { useState } from 'react'
+import {
+  Button,
+  cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@fixnote/ui'
+import { Check, ChevronDown, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { useUi } from '../app/store'
+import { useCounts, useFolders } from '../lib/queries'
+import { startOfDay } from '../lib/time'
 import { AssistantOrb } from './AssistantOrb'
+import { EmptyState, NoteGrid } from './NoteGrid'
 
-type Filter = 'all' | 'inbox'
+type Period = 'any' | 'today' | 'week' | 'month'
+
+const DAY = 24 * 3600 * 1000
+
+function periodStart(p: Period): number | undefined {
+  if (p === 'today') return startOfDay()
+  if (p === 'week') return startOfDay() - 6 * DAY
+  if (p === 'month') return startOfDay() - 29 * DAY
+  return undefined
+}
+
+function FilterMenu<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (v: T) => void
+}) {
+  const active = options[0]?.value !== value
+  const current = options.find((o) => o.value === value)
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'flex h-8 items-center gap-1 rounded-full border px-3 text-[13px] transition-colors',
+            active
+              ? 'border-foreground/15 bg-card font-medium shadow-xs'
+              : 'border-transparent text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {active ? current?.label : label}
+          <ChevronDown className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
+        {options.map((o) => (
+          <DropdownMenuItem key={o.value} onSelect={() => onChange(o.value)}>
+            <Check className={cn('size-4', o.value !== value && 'invisible')} />
+            {o.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export function Home() {
-  const { t, i18n } = useTranslation()
-  const drafts = useUi((s) => s.drafts)
-  const [filter, setFilter] = useState<Filter>('all')
-  const time = new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
+  const { t } = useTranslation()
+  const setSpotlightOpen = useUi((s) => s.setSpotlightOpen)
+  const folders = useFolders().data ?? []
+  const counts = useCounts().data
+  const [scope, setScope] = useState<'all' | 'inbox'>('all')
+  const [folderId, setFolderId] = useState('')
+  const [type, setType] = useState<'' | NoteType>('')
+  const [period, setPeriod] = useState<Period>('any')
+  const [since, setSince] = useState<number | undefined>(undefined)
+
+  const filter = useMemo<NoteFilter>(
+    () => ({
+      scope: folderId ? 'all' : scope,
+      ...(folderId ? { folderId } : {}),
+      ...(type ? { type } : {}),
+      ...(since !== undefined ? { updatedSince: since } : {}),
+    }),
+    [scope, folderId, type, since],
+  )
+  const filtered = scope !== 'all' || folderId || type || period !== 'any'
+  const noNotes = counts?.all === 0
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 pt-16 pb-40">
+    <div className="mx-auto w-full max-w-4xl px-6 pt-12 pb-40">
       <div className="flex flex-col items-center gap-7 text-center">
         <AssistantOrb size={72} />
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
@@ -25,80 +100,79 @@ export function Home() {
         </h1>
       </div>
 
-      <div className="mt-12 flex flex-wrap items-center gap-2">
-        {(['all', 'inbox'] as const).map((f) => (
+      <div className="mt-12 flex flex-wrap items-center gap-1.5">
+        {(['all', 'inbox'] as const).map((s) => (
           <button
-            key={f}
+            key={s}
             type="button"
-            onClick={() => setFilter(f)}
+            onClick={() => {
+              setScope(s)
+              setFolderId('')
+            }}
             className={cn(
               'h-8 rounded-full border px-3.5 text-[13px] font-medium transition-colors',
-              filter === f
+              scope === s && !folderId
                 ? 'border-foreground/15 bg-card shadow-xs'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
-            {t(`home.filters.${f}`)}
+            {t(`home.filters.${s}`)}
           </button>
         ))}
-        {(['folder', 'type', 'period'] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            disabled
-            className="flex h-8 items-center gap-1 rounded-full border border-transparent px-3 text-[13px] text-muted-foreground disabled:opacity-60"
-          >
-            {t(`home.filters.${f}`)}
-            <ChevronDown className="size-3.5" />
-          </button>
-        ))}
-        <div className="ml-auto flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="rounded-full"
-            aria-label={t('home.filters.type')}
-            disabled
-          >
-            <SlidersHorizontal />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="rounded-full"
-            aria-label={t('sidebar.search')}
-            disabled
-          >
-            <Search />
-          </Button>
-        </div>
+        <FilterMenu
+          label={t('home.filters.folder')}
+          value={folderId}
+          onChange={setFolderId}
+          options={[
+            { value: '', label: t('home.filters.allFolders') },
+            ...folders.map((f) => ({ value: f.id, label: f.name })),
+          ]}
+        />
+        <FilterMenu
+          label={t('home.filters.type')}
+          value={type}
+          onChange={setType}
+          options={[
+            { value: '', label: t('home.filters.allTypes') },
+            { value: 'text', label: t('home.filters.notes') },
+            { value: 'daily', label: t('home.filters.daily') },
+          ]}
+        />
+        <FilterMenu
+          label={t('home.filters.period')}
+          value={period}
+          onChange={(p) => {
+            setPeriod(p)
+            setSince(periodStart(p))
+          }}
+          options={[
+            { value: 'any', label: t('home.filters.anyTime') },
+            { value: 'today', label: t('home.filters.today') },
+            { value: 'week', label: t('home.filters.week') },
+            { value: 'month', label: t('home.filters.month') },
+          ]}
+        />
+        <Button
+          variant="outline"
+          size="icon-sm"
+          className="ml-auto rounded-full"
+          aria-label={t('sidebar.search')}
+          onClick={() => setSpotlightOpen(true)}
+        >
+          <Search />
+        </Button>
       </div>
 
-      {drafts.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed px-6 py-16 text-center">
-          <p className="font-medium">{t('home.empty.title')}</p>
-          <p className="mx-auto mt-1.5 max-w-md text-sm text-muted-foreground">
-            {t('home.empty.body')}
-          </p>
-        </div>
-      ) : (
-        <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {drafts.map((d) => (
-            <li
-              key={d.id}
-              className="flex h-52 flex-col overflow-hidden rounded-xl border bg-card p-4 shadow-xs transition-shadow hover:shadow-float"
-            >
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <FileText className="size-3.5" />
-                {time.format(d.createdAt)}
-              </div>
-              <p className="mt-2 line-clamp-6 text-sm leading-relaxed whitespace-pre-wrap text-card-foreground/85">
-                {d.text}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      <NoteGrid
+        filter={filter}
+        empty={
+          noNotes || !filtered ? (
+            <EmptyState title={t('home.empty.title')} body={t('home.empty.body')} />
+          ) : (
+            <EmptyState body={t('home.emptyFiltered')} />
+          )
+        }
+      />
     </div>
   )
 }

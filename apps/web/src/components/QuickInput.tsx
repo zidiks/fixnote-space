@@ -2,7 +2,9 @@ import { useTranslation } from '@fixnote/i18n'
 import { Button, isApple, modKeyLabel, Tooltip, TooltipContent, TooltipTrigger } from '@fixnote/ui'
 import { ArrowUp, Mic, Paperclip } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { useUi } from '../app/store'
+import { useCreateNote } from '../lib/queries'
 
 /**
  * Bottom capture bar. Enter saves to Inbox, Mod+Enter asks the assistant.
@@ -10,7 +12,7 @@ import { useUi } from '../app/store'
  */
 export function QuickInput() {
   const { t } = useTranslation()
-  const addDraft = useUi((s) => s.addDraft)
+  const createNote = useCreateNote()
   const setChatOpen = useUi((s) => s.setChatOpen)
   const setChatDraft = useUi((s) => s.setChatDraft)
   const [text, setText] = useState('')
@@ -30,7 +32,7 @@ export function QuickInput() {
       setChatDraft(value)
       setChatOpen(true)
     } else {
-      addDraft(value)
+      createNote.mutate({ content: value }, { onSuccess: () => toast(t('quickInput.saved')) })
     }
     setText('')
     requestAnimationFrame(resize)

@@ -1,2 +1,119 @@
 @import "tailwindcss";
 @import "@fixnote/ui/styles.css";
+
+/* Note editor: Bear-like reading rhythm, driven by design tokens. */
+.fixnote-editor {
+  outline: none;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--color-foreground);
+  caret-color: var(--color-brand);
+}
+.fixnote-editor > * + * {
+  margin-top: 0.6em;
+}
+.fixnote-editor h1 {
+  font-size: 1.9em;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-top: 0.2em;
+}
+.fixnote-editor h2 {
+  font-size: 1.35em;
+  line-height: 1.3;
+  font-weight: 650;
+  margin-top: 1.4em;
+}
+.fixnote-editor h3 {
+  font-size: 1.12em;
+  font-weight: 650;
+  margin-top: 1.2em;
+}
+.fixnote-editor ul,
+.fixnote-editor ol {
+  padding-left: 1.4em;
+}
+.fixnote-editor ul {
+  list-style: disc;
+}
+.fixnote-editor ol {
+  list-style: decimal;
+}
+.fixnote-editor li::marker {
+  color: var(--color-muted-foreground);
+}
+.fixnote-editor li > p {
+  margin: 0;
+}
+.fixnote-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.1em;
+}
+.fixnote-editor ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55em;
+}
+.fixnote-editor ul[data-type="taskList"] li > label {
+  flex: none;
+  margin-top: 0.32em;
+  user-select: none;
+}
+.fixnote-editor ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+.fixnote-editor ul[data-type="taskList"] input[type="checkbox"] {
+  width: 1.05em;
+  height: 1.05em;
+  accent-color: var(--color-brand);
+  cursor: pointer;
+}
+.fixnote-editor ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--color-muted-foreground);
+  text-decoration: line-through;
+}
+.fixnote-editor blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 1em;
+  color: var(--color-muted-foreground);
+}
+.fixnote-editor a {
+  color: var(--color-brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fixnote-editor code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+}
+.fixnote-editor pre {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  line-height: 1.6;
+  background: var(--color-muted);
+  border-radius: 10px;
+  padding: 0.9em 1.1em;
+  overflow-x: auto;
+}
+.fixnote-editor pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.fixnote-editor hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 1.6em 0;
+}
+.fixnote-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-muted-foreground);
+}

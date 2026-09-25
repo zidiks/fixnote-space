@@ -1,11 +1,13 @@
-import { NotImplementedError, type Platform } from '@fixnote/core'
+import { NotImplementedError, type Platform, type SqlDriver } from '@fixnote/core'
+import { openWebSqlDriver } from './sqlite/client'
 
 /**
  * Browser / PWA adapters.
- * M1: sqlite-wasm over OPFS. M2: WebCrypto key store, OPFS blobs.
+ * M1: sqlite-wasm over OPFS (done). M2: WebCrypto key store, OPFS blobs.
  * M3: transformers.js embedder. M4: edge-function transcriber.
  */
 export function createWebPlatform(): Platform {
+  let sql: Promise<SqlDriver> | null = null
   return {
     kind: 'web',
     capabilities: {
@@ -14,7 +16,10 @@ export function createWebPlatform(): Platform {
       localMcp: false,
       globalShortcut: false,
     },
-    sql: () => Promise.reject(new NotImplementedError('SqlDriver (sqlite-wasm)', 'M1')),
+    sql: () => {
+      sql ??= openWebSqlDriver()
+      return sql
+    },
     embedder: () => Promise.reject(new NotImplementedError('Embedder (transformers.js)', 'M3')),
     transcriber: () => Promise.reject(new NotImplementedError('Transcriber (edge)', 'M4')),
     keyStore: {

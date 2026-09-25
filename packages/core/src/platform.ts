@@ -14,10 +14,12 @@ export type SqlValue = string | number | bigint | Uint8Array | null
 export type SqlRow = Record<string, SqlValue>
 
 /**
- * Minimal SQLite driver. Desktop: tauri-plugin-sql. Web: @sqlite.org/sqlite-wasm over OPFS.
+ * Minimal SQLite driver. Desktop: rusqlite via Tauri commands. Web: @sqlite.org/sqlite-wasm over OPFS.
  * The schema and every query are shared, so drivers must expose plain SQLite semantics with FTS5.
  */
 export interface SqlDriver {
+  /** Where data lives. `persistent: false` means changes are lost on reload. */
+  readonly storage?: { persistent: boolean; detail?: string }
   execute(sql: string, params?: readonly SqlValue[]): Promise<{ rowsAffected: number }>
   query<T extends SqlRow = SqlRow>(sql: string, params?: readonly SqlValue[]): Promise<T[]>
   transaction<T>(fn: (tx: Pick<SqlDriver, 'execute' | 'query'>) => Promise<T>): Promise<T>

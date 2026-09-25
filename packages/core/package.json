@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@sqlite.org/sqlite-wasm": "3.53.4-build1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.1"
   }

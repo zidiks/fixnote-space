@@ -16,6 +16,9 @@ export default defineConfig({
     strictPort: true,
   },
   envPrefix: ['VITE_', 'TAURI_ENV_'],
+  // sqlite-wasm locates its .wasm via import.meta.url; pre-bundling would break that.
+  optimizeDeps: { exclude: ['@sqlite.org/sqlite-wasm'] },
+  worker: { format: 'es' },
   build: {
     // WebView2 (Windows) and WKWebView (macOS) are evergreen enough for es2022.
     target: tauriPlatform === 'windows' ? 'chrome110' : 'es2022',

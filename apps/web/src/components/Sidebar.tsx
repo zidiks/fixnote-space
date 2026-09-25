@@ -24,10 +24,11 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import {
   CalendarDays,
-  Clock,
   Cloud,
   CloudOff,
+  Hash,
   Inbox,
+  Layers,
   Monitor,
   PanelLeftClose,
   Search,
@@ -35,24 +36,30 @@ import {
   SquarePen,
 } from 'lucide-react'
 import { useState } from 'react'
-import { type Theme, useUi } from '../app/store'
+import { type Route, sameRoute, type Theme, useUi } from '../app/store'
 import { isSupabaseConfigured } from '../lib/env'
 import { usePlatform } from '../lib/platform'
+import { useCounts, useCreateNote, useOpenDaily, useTags } from '../lib/queries'
+import { SidebarFolders } from './SidebarFolders'
 
 function NavItem({
   icon: Icon,
   label,
   active,
   count,
+  onClick,
 }: {
   icon: typeof Inbox
   label: string
   active?: boolean
   count?: number
+  onClick: () => void
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
       className={cn(
         'flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13.5px] text-sidebar-foreground transition-colors hover:bg-sidebar-accent',
         active && 'bg-sidebar-accent font-medium text-foreground',
@@ -65,13 +72,32 @@ function NavItem({
   )
 }
 
-function Section({ title, empty }: { title: string; empty: string }) {
+function SidebarTags() {
+  const { t } = useTranslation()
+  const tags = useTags().data ?? []
+  const route = useUi((s) => s.route)
+  const navigate = useUi((s) => s.navigate)
   return (
     <div className="mt-5">
       <div className="px-2.5 pb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-        {title}
+        {t('sidebar.tags')}
       </div>
-      <p className="px-2.5 text-xs leading-relaxed text-muted-foreground/80">{empty}</p>
+      {tags.length ? (
+        tags.map((tag) => (
+          <NavItem
+            key={tag.name}
+            icon={Hash}
+            label={tag.name}
+            count={tag.count}
+            active={route.kind === 'tag' && route.name.toLowerCase() === tag.name.toLowerCase()}
+            onClick={() => navigate({ kind: 'tag', name: tag.name })}
+          />
+        ))
+      ) : (
+        <p className="px-2.5 text-xs leading-relaxed text-muted-foreground/80">
+          {t('sidebar.noTags')}
+        </p>
+      )}
     </div>
   )
 }
@@ -79,8 +105,19 @@ function Section({ title, empty }: { title: string; empty: string }) {
 export function Sidebar() {
   const { t } = useTranslation()
   const toggleSidebar = useUi((s) => s.toggleSidebar)
-  const drafts = useUi((s) => s.drafts.length)
+  const setSpotlightOpen = useUi((s) => s.setSpotlightOpen)
+  const route = useUi((s) => s.route)
+  const navigate = useUi((s) => s.navigate)
+  const counts = useCounts().data
+  const createNote = useCreateNote()
+  const openDaily = useOpenDaily()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const is = (r: Route) => sameRoute(route, r)
+  const newNote = () =>
+    createNote.mutate(
+      { content: '', folderId: route.kind === 'folder' ? route.id : null },
+      { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) },
+    )
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
@@ -89,7 +126,12 @@ export function Sidebar() {
         <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-xs" aria-label={t('sidebar.newNote')}>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={newNote}
+                aria-label={t('sidebar.newNote')}
+              >
                 <SquarePen />
               </Button>
             </TooltipTrigger>
@@ -119,6 +161,7 @@ export function Sidebar() {
       <div className="px-2">
         <button
           type="button"
+          onClick={() => setSpotlightOpen(true)}
           className="flex h-8 w-full items-center gap-2 rounded-md border border-sidebar-border bg-background/60 px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-background"
         >
           <Search className="size-3.5" />
@@ -128,11 +171,29 @@ export function Sidebar() {
       </div>
 
       <nav className="mt-3 flex-1 overflow-y-auto px-2">
-        <NavItem icon={Inbox} label={t('sidebar.inbox')} active count={drafts} />
-        <NavItem icon={CalendarDays} label={t('sidebar.daily')} />
-        <NavItem icon={Clock} label={t('sidebar.recents')} />
-        <Section title={t('sidebar.folders')} empty={t('sidebar.noFolders')} />
-        <Section title={t('sidebar.tags')} empty={t('sidebar.noTags')} />
+        <NavItem
+          icon={Inbox}
+          label={t('sidebar.inbox')}
+          count={counts?.inbox}
+          active={is({ kind: 'inbox' })}
+          onClick={() => navigate({ kind: 'inbox' })}
+        />
+        <NavItem
+          icon={CalendarDays}
+          label={t('sidebar.daily')}
+          onClick={() =>
+            openDaily.mutate(undefined, { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) })
+          }
+        />
+        <NavItem
+          icon={Layers}
+          label={t('sidebar.recents')}
+          count={counts?.all}
+          active={is({ kind: 'all' })}
+          onClick={() => navigate({ kind: 'all' })}
+        />
+        <SidebarFolders />
+        <SidebarTags />
       </nav>
 
       {settingsOpen ? <SettingsPanel /> : null}

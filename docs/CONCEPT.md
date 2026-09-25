@@ -1,6 +1,6 @@
 # FixNote — концепт продукта и архитектуры
 
-> Статус: v0.5 — решения ревью 1–4 внесены (см. раздел 10). Web — полноценная платформа с M0. Desktop — Windows first. После согласования разбиваем на ADR (docs/adr/) и спеки фич (docs/specs/).
+> Статус: v0.6 — решения ревью 1–4 внесены (см. раздел 10). M0 и M1 готовы. Web — полноценная платформа. Desktop — Windows first. После согласования разбиваем на ADR (docs/adr/) и спеки фич (docs/specs/).
 
 ---
 
@@ -200,7 +200,7 @@ UI: список карточек с Approve / Reject / Approve all, кажда�
 ┌───────────── Client: один React-код ───────────────┐
 │ UI ── core (domain, sync, crypto, retrieval, tidy) │
 │         │ Platform interface (sql/embed/stt/keys)  │
-│   Tauri: SQLite via plugin-sql, fastembed (Rust),  │
+│   Tauri: SQLite via rusqlite, fastembed (Rust),    │
 │          whisper.cpp (Rust), OS keychain           │
 │   Web:   SQLite WASM (OPFS), transformers.js       │
 │          (WebGPU/WASM), transcribe edge, IndexedDB │
@@ -222,8 +222,8 @@ UI: список карточек с Approve / Reject / Approve all, кажда�
 - **Конфликт**: клиент делает трёхсторонний merge текста (`diff3` / `diff-match-patch`: база → моя → чужая). Если merge чистый — отправляет результат. Если нет — сохраняет свою версию как отдельную заметку «Конфликтная копия (устройство, дата)» рядом с оригиналом. Ничего не теряется, пользователь разбирается сам.
 - Удаление — soft delete (`deleted_at`), корзина 30 дней.
 - Realtime-подписка на `notes` по `user_id` для мгновенного появления правок с другого устройства; при старте и по таймеру — pull по `updated_at > last_sync`.
-- **Локально — SQLite на обеих платформах, одна схема, один SQL.** `packages/core` содержит всю логику (схема, миграции, запросы, синк, ранжирование) на TypeScript и работает через узкий интерфейс `SqlDriver { execute, query }`. Адаптеры тонкие: Tauri → `tauri-plugin-sql` (sqlx, bundled SQLite с FTS5), Web → `@sqlite.org/sqlite-wasm` в Worker поверх OPFS. Ни одна доменная строка не дублируется в Rust.
-- FTS5 для полнотекста, вектора как BLOB, brute-force cosine в TS (typed arrays): для личной базы (десятки тысяч чанков) это единицы миллисекунд, расширений не нужно.
+- **Локально — SQLite на обеих платформах, одна схема, один SQL.** `packages/core` содержит всю логику (схема, миграции, запросы, синк, ранжирование) на TypeScript и работает через узкий интерфейс `SqlDriver { execute, query }`. Адаптеры тонкие: Tauri → две свои команды `db_execute` / `db_query` на `rusqlite` (bundled SQLite с FTS5) с **одним соединением** под мьютексом, Web → `@sqlite.org/sqlite-wasm` в Worker поверх OPFS (VFS `opfs-sahpool`, не требует COOP/COEP). Общая обёртка `createSqlDriver` в core выстраивает все вызовы в очередь, поэтому транзакция держит соединение до COMMIT. `tauri-plugin-sql` отклонён: у него пул соединений, и BEGIN/COMMIT могут уйти в разные соединения. Ни одна доменная строка не дублируется в Rust.
+- FTS5 для полнотекста по колонке `search_text` (Markdown, очищенный до текста: сниппеты без разметки, блоки кода остаются в индексе), токенайзер `unicode61 remove_diacritics 2` (регистр и диакритика ru/es/en). Вектора как BLOB, brute-force cosine в TS (typed arrays): для личной базы (десятки тысяч чанков) это единицы миллисекунд, расширений не нужно.
 - **Локальная БД хранится в открытом виде** (FTS-индекс иначе невозможен), защищена ОС: FileVault/BitLocker на десктопе, per-origin OPFS в браузере. Шифруется всё, что покидает устройство.
 - **Вектора синхронизируются как зашифрованные блобы** (`note_vectors`: note_id, model, sealed blob). Эмбеддинг считается один раз на том устройстве, которое первым увидело правку, остальные качают. Новое устройство не пересчитывает базу с нуля.
 - Вложения (изображения, аудио) — Supabase Storage, зашифрованы на клиенте, локальный кеш в app-data.
@@ -304,7 +304,7 @@ RLS: `user_id = auth.uid()` на всех таблицах. Никаких се�
 
 | Возможность | Интерфейс в `core` | Tauri (desktop) | Web (PWA) |
 |---|---|---|---|
-| Локальная БД | `SqlDriver` | `tauri-plugin-sql` (SQLite, FTS5) | `sqlite-wasm` + OPFS в Worker |
+| Локальная БД | `SqlDriver` | `rusqlite`, одно соединение, WAL | `sqlite-wasm` + OPFS (`opfs-sahpool`) в Worker; вторая вкладка → баннер «изменения не сохранятся» |
 | Эмбеддинги | `Embedder` | fastembed (`ort`) в Rust | transformers.js, WebGPU/WASM в Worker |
 | Голос → текст | `Transcriber` | whisper.cpp в Rust, локально | edge `transcribe` (Whisper API); честно помечено «аудио уходит на сервер»; локальный whisper через WebGPU — позже |
 | Хранение MK | `KeyStore` | OS keychain | WebCrypto non-extractable wrap + IndexedDB |
@@ -330,7 +330,7 @@ Web-версия — статика (Cloudflare Pages / Vercel), PWA с уста
 | Иконки | Lucide | |
 | Редактор | Tiptap 2 (StarterKit + markdown) | минимальное форматирование, кастомные ноды для карточек и highlight |
 | Data / API | **TanStack Query** для серверных данных и AI-вызовов; Zustand для UI-стейта | |
-| Локальная БД | SQLite + FTS5 через `SqlDriver`: `tauri-plugin-sql` / `@sqlite.org/sqlite-wasm` | одна схема и SQL на обеих платформах |
+| Локальная БД | SQLite + FTS5 через `SqlDriver`: `rusqlite` / `@sqlite.org/sqlite-wasm` | одна схема и SQL на обеих платформах |
 | Бэкенд | Supabase: Auth, Postgres + RLS, Realtime, Storage, Edge Functions (Deno) | |
 | LLM | свой тонкий OpenAI-compatible клиент (`fetch` + SSE) | DeepSeek / OpenRouter / Ollama — один протокол |
 | Embeddings | один ONNX `multilingual-e5-small` int8 (~120 MB, с нашего CDN): desktop `fastembed`/`ort`, web `transformers.js` | ru/es/en, вектора совместимы между платформами |
@@ -345,12 +345,12 @@ Web-версия — статика (Cloudflare Pages / Vercel), PWA с уста
 ```
 apps/
   web/            React + Vite: само приложение, собирается как PWA; выбирает платформенные адаптеры в рантайме
-  desktop/        Tauri 2, frontendDist → apps/web/dist; src-tauri/ — Rust (plugin-sql, whisper, embed, keychain)
+  desktop/        Tauri 2, frontendDist → apps/web/dist; src-tauri/ — Rust (rusqlite, whisper, embed, keychain)
   mcp/            fixnote-mcp: stdio MCP-сервер над локальной SQLite (desktop)
 packages/
   core/           домен, схема и миграции SQL, SqlDriver/Embedder/Transcriber/KeyStore интерфейсы, синк, crypto, retrieval, tidy — без React
   platform-web/   адаптеры: sqlite-wasm, transformers.js, WebCrypto keystore, OPFS
-  platform-tauri/ адаптеры: plugin-sql, invoke(embed/transcribe/keychain)
+  platform-tauri/ адаптеры: invoke(db, embed, transcribe, keychain)
   ai/             OpenAI-compatible клиент, промпты
   ui/             shadcn-компоненты, тема, bloub-react
   i18n/           словари en/es/ru
@@ -365,9 +365,9 @@ docs/
 
 ## 8. Дорожная карта
 
-**M0 — Каркас (1 нед.)**: монорепо, `apps/web` (Vite + React, PWA-манифест) + `apps/desktop` (Tauri 2), Tailwind + shadcn, i18n, интерфейсы платформы, Supabase проект + env, CI: сборка Windows-установщиков (NSIS + MSI, en/es/ru) и web-статики. Пустое приложение с тремя колонками запускается в браузере и как десктоп-приложение.
+**M0 — Каркас (1 нед.)** ✅: монорепо, `apps/web` (Vite + React, PWA-манифест) + `apps/desktop` (Tauri 2), Tailwind + shadcn, i18n, интерфейсы платформы, Supabase проект + env, CI: сборка Windows-установщиков (NSIS + MSI, en/es/ru) и web-статики. Пустое приложение с тремя колонками запускается в браузере и как десктоп-приложение.
 
-**M1 — Заметки локально (2 нед.)**: схема SQLite в core, оба `SqlDriver` (plugin-sql, sqlite-wasm), Tiptap + Markdown, Inbox/папки/теги, Home с infinite scroll, Spotlight, FTS-поиск, daily note. Полностью оффлайн, без аккаунта, на обеих платформах.
+**M1 — Заметки локально (2 нед.)** ✅: схема SQLite в core, оба `SqlDriver` (rusqlite, sqlite-wasm), Tiptap + Markdown, Inbox/папки/теги, Home с infinite scroll, Spotlight, FTS-поиск, daily note. Полностью оффлайн, без аккаунта, на обеих платформах.
 
 **M2 — Аккаунт, шифрование, синк (2 нед.)**: email-OTP, MK в keychain + recovery-фраза + QR-пейринг, синк по версии + diff3, Realtime, вложения, экспорт Markdown/JSON.
 
@@ -401,5 +401,7 @@ docs/
 | Вход | Email + 6-значный код (Supabase OTP), как в lumi-tasks-app. Google/Apple позже. |
 | Ключ шифрования | Случайный MK на устройстве, keychain, recovery-фраза 12 слов, QR-пейринг второго устройства. Паролей нет. Opt-in escrow ключа у нас, выключен по умолчанию. |
 | Мобилка | Не планируем, решаем по спросу на десктоп. |
+| Локальная БД desktop | Свои команды на `rusqlite` с одним соединением вместо `tauri-plugin-sql` (пул соединений ломает транзакции). |
+| Удаление | Заметки удаляются мягко, с «Отменить». Пустая новая заметка выбрасывается при уходе. Удаление папки переносит её заметки во Входящие. |
 | Desktop-ОС | Windows first: CI собирает NSIS + MSI. macOS добавляется строкой в матрицу CI. Хоткеи Ctrl на Windows, ⌘ на macOS. |
 | Telegram | Делаем в M4 как первый канал захвата; входящие запечатываются публичным ключом пользователя. |
