@@ -11,6 +11,7 @@ import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
 import { SettingsDialog } from '../components/settings/SettingsDialog'
+import { TidyView } from '../components/TidyView'
 import { TitleBar } from '../components/TitleBar'
 import { VoiceBar } from '../components/VoiceBar'
 import { AccountProvider } from '../lib/account/provider'
@@ -51,6 +52,8 @@ function Content() {
   switch (route.kind) {
     case 'home':
       return <Home />
+    case 'tidy':
+      return <TidyView />
     case 'note':
       return (
         <Suspense fallback={null}>

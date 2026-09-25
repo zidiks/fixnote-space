@@ -1,9 +1,11 @@
 import {
   Attachments,
+  AuditLog,
   LinkPreviews,
   NotesRepo,
   prepareDatabase,
   type SqlDriver,
+  Tidy,
 } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button } from '@fixnote/ui'
@@ -16,6 +18,8 @@ interface DbContextValue {
   driver: SqlDriver
   links: LinkPreviews
   attachments: Attachments
+  audit: AuditLog
+  tidy: Tidy
   storage: SqlDriver['storage']
 }
 
@@ -27,11 +31,15 @@ function openDb(): Promise<DbContextValue> {
   opening ??= (async () => {
     const driver = await platform.sql()
     await prepareDatabase(driver)
+    const repo = new NotesRepo(driver, { conflictHeading })
+    const audit = new AuditLog(driver, repo)
     return {
-      repo: new NotesRepo(driver, { conflictHeading }),
+      repo,
       driver,
       links: new LinkPreviews(driver),
       attachments: new Attachments(driver, platform.blobs),
+      audit,
+      tidy: new Tidy(driver, repo, audit),
       storage: driver.storage,
     }
   })()

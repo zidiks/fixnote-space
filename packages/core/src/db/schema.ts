@@ -128,6 +128,30 @@ export const MIGRATIONS: readonly string[] = [
     uploaded    INTEGER NOT NULL DEFAULT 0
   ) WITHOUT ROWID;
   `,
+  /* 6: control over AI. ai_actions = what the AI (or an MCP client) changed, with the note states
+     before and after, so it can be undone; tidy_suggestions = proposals waiting for a decision.
+     Both are local to the device. */ `
+  CREATE TABLE ai_actions (
+    id          TEXT PRIMARY KEY,
+    kind        TEXT NOT NULL,
+    summary     TEXT NOT NULL,
+    provider    TEXT NOT NULL,
+    changes     TEXT NOT NULL,
+    created_at  INTEGER NOT NULL,
+    undone_at   INTEGER
+  ) WITHOUT ROWID;
+  CREATE INDEX ai_actions_recent ON ai_actions(created_at DESC);
+
+  CREATE TABLE tidy_suggestions (
+    id          TEXT PRIMARY KEY,
+    kind        TEXT NOT NULL CHECK (kind IN ('move', 'tag', 'title', 'merge')),
+    note_id     TEXT NOT NULL,
+    payload     TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+    created_at  INTEGER NOT NULL
+  );
+  CREATE INDEX tidy_pending ON tidy_suggestions(status, created_at);
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

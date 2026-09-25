@@ -30,9 +30,10 @@ import {
   Strikethrough,
   TextSelect,
 } from 'lucide-react'
-import { type Ref, useEffect, useImperativeHandle, useRef } from 'react'
+import { type Ref, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { toast } from 'sonner'
 import { useAccount } from '../../lib/account/account'
+import { providerLabel } from '../../lib/assistant/assistant'
 import { attachmentObjectUrl, ImageTooLargeError, storeImage } from '../../lib/attachments'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
@@ -267,10 +268,12 @@ export function NoteEditor({
   /** The stored text the current edit started from. */
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
+  const noteRef = useRef(note)
+  noteRef.current = note
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
   const platform = usePlatform()
   const loadPreview = useLoadPreview()
-  const { attachments } = useDb()
+  const { attachments, audit } = useDb()
   const images = useRef(attachments)
   images.current = attachments
   const links = useRef({
@@ -415,7 +418,30 @@ export function NoteEditor({
       }
     }
   }
-  const ai = useAiEdit(editor, note.title)
+  const ai = useAiEdit(
+    editor,
+    note.title,
+    useCallback(
+      (before: string, after: string) => {
+        const folderId = noteRef.current.folderId
+        void audit.record(
+          {
+            kind: 'edit',
+            summary: t('tidy.logEdit', { note: noteRef.current.title || t('common.untitled') }),
+            provider: providerLabel(),
+          },
+          [
+            {
+              noteId: noteRef.current.id,
+              before: { content: before, folderId },
+              after: { content: after, folderId },
+            },
+          ],
+        )
+      },
+      [audit, t],
+    ),
+  )
   openAi.current = ai.open
   useImperativeHandle(
     ref,

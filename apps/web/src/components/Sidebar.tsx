@@ -20,9 +20,11 @@ import {
   RefreshCw,
   Search,
   Settings,
+  WandSparkles,
 } from 'lucide-react'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
+import { useTidy } from '../lib/assistant/tidy'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useOpenDaily, useTags } from '../lib/queries'
 import { SidebarFolders } from './SidebarFolders'
@@ -94,6 +96,7 @@ export function Sidebar() {
   const navigate = useUi((s) => s.navigate)
   const counts = useCounts().data
   const openDaily = useOpenDaily()
+  const tidyPending = useTidy((s) => s.pending)
   return (
     <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
       <div className="px-2">
@@ -122,6 +125,13 @@ export function Sidebar() {
           onClick={() =>
             openDaily.mutate(undefined, { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) })
           }
+        />
+        <NavItem
+          icon={WandSparkles}
+          label={t('tidy.nav')}
+          count={tidyPending || undefined}
+          active={route.kind === 'tidy'}
+          onClick={() => navigate({ kind: 'tidy' })}
         />
         <SidebarFolders />
         <SidebarTags />

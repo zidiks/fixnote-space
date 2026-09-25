@@ -46,6 +46,11 @@ export const useAssistant = create<AssistantState>()(() => ({
 
 const set = useAssistant.setState
 export const MODEL = 'deepseek-chat'
+
+/** Who answers, for the AI activity log. */
+export function providerLabel(): string {
+  return 'DeepSeek · FixNote'
+}
 const SEMANTIC_KEY = 'assistant.semantic'
 
 interface Deps {

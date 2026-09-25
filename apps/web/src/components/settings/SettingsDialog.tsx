@@ -1,14 +1,16 @@
 import { useTranslation } from '@fixnote/i18n'
 import { Button, cn, Dialog, DialogContent, DialogTitle } from '@fixnote/ui'
-import { Database, Settings2, UserRound, X } from 'lucide-react'
+import { Database, Settings2, Sparkles, UserRound, X } from 'lucide-react'
 import { type SettingsSection, useUi } from '../../app/store'
 import { AccountSection } from './AccountSection'
+import { AiSection } from './AiSection'
 import { DataSection } from './DataSection'
 import { GeneralSection } from './GeneralSection'
 
 const SECTIONS: { id: SettingsSection; icon: typeof Settings2 }[] = [
   { id: 'general', icon: Settings2 },
   { id: 'account', icon: UserRound },
+  { id: 'ai', icon: Sparkles },
   { id: 'data', icon: Database },
 ]
 
@@ -56,6 +58,7 @@ export function SettingsDialog() {
           <h2 className="mb-5 text-lg font-semibold">{section ? t(`settings.${section}`) : ''}</h2>
           {section === 'general' ? <GeneralSection /> : null}
           {section === 'account' ? <AccountSection /> : null}
+          {section === 'ai' ? <AiSection /> : null}
           {section === 'data' ? <DataSection /> : null}
         </div>
       </DialogContent>

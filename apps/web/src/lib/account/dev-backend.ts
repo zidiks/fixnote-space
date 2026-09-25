@@ -1,4 +1,4 @@
-import { EDIT_MARKER, EXPANSION_MARKER } from '@fixnote/ai'
+import { EDIT_MARKER, EXPANSION_MARKER, TIDY_MARKER } from '@fixnote/ai'
 import {
   type InboxItem,
   type PushResult,
@@ -178,20 +178,63 @@ function devEdit(prompt: string): string {
   return text.replace(/(^|\s)очень\s+/giu, '$1').replace(/^./, (c) => c.toUpperCase())
 }
 
+/** Plausible tidy proposals from the prompt's note list: tags from keywords, a folder, titles. */
+function devTidy(prompt: string): string {
+  const folders = [...(prompt.split('\n\nExisting tags')[0] ?? '').matchAll(/^\[(\d+)\] (.+)$/gm)]
+  const notes = (prompt.split('Notes:\n\n')[1] ?? '').split('\n\n').map((block) => {
+    const [head = '', ...rest] = block.split('\n')
+    const m = head.match(/^\[(\d+)\] (.*)$/)
+    return {
+      ref: Number(m?.[1]),
+      title: m?.[2] ?? '',
+      noFolder: rest.some((l) => l.trim() === 'no folder'),
+      needsTitle: rest.some((l) => l.trim() === 'needs title'),
+      untagged: rest.some((l) => l.trim() === 'tags: none'),
+    }
+  })
+  const words: [RegExp, string][] = [
+    [/бот|telegram/i, 'бот'],
+    [/покуп|молок|хлеб/i, 'покупки'],
+    [/партн|детейлинг/i, 'партнёры'],
+    [/идея|идеи/i, 'идеи'],
+  ]
+  const tags = notes
+    .filter((n) => n.untagged)
+    .map((n) => ({ note: n.ref, tags: words.filter(([re]) => re.test(n.title)).map(([, t]) => t) }))
+    .filter((t) => t.tags.length)
+  const moves = notes
+    .filter((n) => n.noFolder)
+    .map((n) =>
+      folders[0]
+        ? { note: n.ref, folder: Number(folders[0][1]) }
+        : { note: n.ref, newFolder: 'Разное' },
+    )
+  const titles = notes
+    .filter((n) => n.needsTitle)
+    .map((n) => ({
+      note: n.ref,
+      title: n.title.split(/\s+/).slice(0, 3).join(' ').replace(/[,.]$/, ''),
+    }))
+  return JSON.stringify({ moves, tags, titles })
+}
+
 const devLlm: typeof fetch = async (_url, init) => {
   const body = JSON.parse(String(init?.body)) as { messages: { role: string; content: string }[] }
   const prompt = body.messages.at(-1)?.content ?? ''
   const expansion = body.messages[0]?.content.includes(EXPANSION_MARKER)
   const edit = body.messages[0]?.content.includes(EDIT_MARKER)
+  const tidy = body.messages[0]?.content.includes(TIDY_MARKER)
   const first = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
-  const answer = expansion
-    ? devKeywords(prompt)
-    : edit
-      ? devEdit(prompt)
-      : first
-        ? `From your note "${first[1]}": ${first[2]} [1]`
-        : "I couldn't find this in your notes. Try other words."
-  const words = expansion ? [answer] : answer.split(/(?<= )/)
+  const answer = tidy
+    ? devTidy(prompt)
+    : expansion
+      ? devKeywords(prompt)
+      : edit
+        ? devEdit(prompt)
+        : first
+          ? `From your note "${first[1]}": ${first[2]} [1]`
+          : "I couldn't find this in your notes. Try other words."
+  const words = expansion || tidy ? [answer] : answer.split(/(?<= )/)
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       for (const w of words) {

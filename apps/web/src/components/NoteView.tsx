@@ -24,7 +24,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useUi } from '../app/store'
-import { useRepo } from '../lib/db'
+import { suggestForNewNote } from '../lib/assistant/tidy'
+import { useDb, useRepo } from '../lib/db'
 import {
   keys,
   useDeleteWithUndo,
@@ -41,6 +42,7 @@ import { VOICE_KEYS } from './VoiceBar'
 export function NoteView({ id }: { id: string }) {
   const { t, i18n } = useTranslation()
   const repo = useRepo()
+  const { tidy, audit } = useDb()
   const qc = useQueryClient()
   const invalidate = useInvalidateNotes()
   const navigate = useUi((s) => s.navigate)
@@ -202,6 +204,19 @@ export function NoteView({ id }: { id: string }) {
             // A note left blank is not worth keeping: nothing to remember, nothing to tidy later.
             if (n.type === 'text' && !markdown.trim()) {
               void repo.deleteNote(n.id).then(invalidate)
+              return
+            }
+            // A fresh note without a folder: offer a folder, tags and a title for it.
+            const fresh = Date.now() - n.createdAt < 2 * 3600_000
+            if (n.type === 'text' && fresh && n.folderId === null && markdown.trim().length >= 80) {
+              void suggestForNewNote(n, {
+                tidy,
+                audit,
+                refresh: async () => {
+                  await Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['tidy'] })])
+                },
+                review: () => useUi.getState().navigate({ kind: 'tidy' }),
+              })
             }
           }}
         />

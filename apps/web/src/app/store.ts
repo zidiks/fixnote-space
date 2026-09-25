@@ -10,8 +10,10 @@ export type Route =
   | { kind: 'folder'; id: string }
   | { kind: 'tag'; name: string }
   | { kind: 'note'; id: string }
+  /** Tidy suggestions to review. */
+  | { kind: 'tidy' }
 
-export type SettingsSection = 'general' | 'account' | 'data'
+export type SettingsSection = 'general' | 'account' | 'ai' | 'data'
 
 /** An AI edit a note should open as soon as it is on screen (e.g. "tidy up" after dictation). */
 export interface AiRequest {

@@ -66,7 +66,12 @@ const CONTEXT_CHARS = 600
  * review the suggestion as a word diff, accept or reject. Nothing touches the note before Accept,
  * and an accepted edit is one undo step.
  */
-export function useAiEdit(editor: Editor | null, noteTitle: string) {
+export function useAiEdit(
+  editor: Editor | null,
+  noteTitle: string,
+  /** An accepted edit, as whole-note Markdown before and after (for the AI activity log). */
+  onApplied?: (before: string, after: string) => void,
+) {
   const { t } = useTranslation()
   const [session, setSession] = useState<Session | null>(null)
   const controller = useRef<AbortController | null>(null)
@@ -171,10 +176,12 @@ export function useAiEdit(editor: Editor | null, noteTitle: string) {
       update({ phase: { kind: 'error', message: t('ai.changed') } })
       return
     }
+    const before = editor.getMarkdown()
     replaceWithMarkdown(editor, range, s.phase.proposal)
+    onApplied?.(before, editor.getMarkdown())
     setSession(null)
     editor.commands.focus()
-  }, [editor, t, update])
+  }, [editor, t, update, onApplied])
 
   const stop = useCallback(() => {
     controller.current?.abort()
