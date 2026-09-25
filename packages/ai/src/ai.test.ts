@@ -168,3 +168,27 @@ describe('query expansion', async () => {
     expect(await expandQuery({ url: 'x', model: 'm', fetch: hanging }, 'q', 50)).toEqual([])
   })
 })
+
+describe('edit prompts', () => {
+  it('puts the task, context and fragment in one user message', async () => {
+    const { buildEditMessages, EDIT_MARKER } = await import('./edit')
+    const [system, user] = buildEditMessages({
+      action: 'custom',
+      instruction: 'сделай список',
+      text: 'молоко, хлеб',
+      noteTitle: 'Покупки',
+      before: 'Список на субботу',
+    })
+    expect(system?.content).toContain(EDIT_MARKER)
+    expect(user?.content).toContain('сделай список')
+    expect(user?.content).toContain('Note title: Покупки')
+    expect(user?.content).toContain('<<<\nмолоко, хлеб\n>>>')
+  })
+
+  it('strips a wrapping code fence and markers from the reply', async () => {
+    const { cleanEditOutput } = await import('./edit')
+    expect(cleanEditOutput('```markdown\n- a\n- b\n```')).toBe('- a\n- b')
+    expect(cleanEditOutput('<<<\nText\n>>>')).toBe('Text')
+    expect(cleanEditOutput('```js\ncode\n```')).toBe('```js\ncode\n```')
+  })
+})

@@ -145,3 +145,8 @@
   pointer-events: none;
   color: var(--color-muted-foreground);
 }
+/* The text an AI edit works on, kept visible while focus is in the popover. */
+.fixnote-ai-range {
+  background: color-mix(in oklch, var(--color-brand) 18%, transparent);
+  border-radius: 2px;
+}

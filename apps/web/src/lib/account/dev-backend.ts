@@ -1,4 +1,4 @@
-import { EXPANSION_MARKER } from '@fixnote/ai'
+import { EDIT_MARKER, EXPANSION_MARKER } from '@fixnote/ai'
 import type {
   PushResult,
   RemoteFolder,
@@ -86,16 +86,40 @@ function devKeywords(question: string): string {
   return JSON.stringify({ keywords: [...new Set(keywords)] })
 }
 
+/** Predictable stand-ins for AI edits, enough to see the diff and accept flow. */
+function devEdit(prompt: string): string {
+  const task = prompt.match(/^Task: (.*)$/m)?.[1] ?? ''
+  const text = prompt.match(/<<<\n([\s\S]*)\n>>>/)?.[1] ?? ''
+  const items = text
+    .split(/[,;.\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  if (task.startsWith('Make the fragment shorter')) return items[0] ?? text
+  if (task.startsWith('Fix spelling'))
+    return text.replace(/\s+/g, ' ').replace(/^./, (c) => c.toUpperCase())
+  if (task.startsWith('This is a raw dump'))
+    return `# ${items[0] ?? 'Note'}\n\n${items
+      .slice(1)
+      .map((s) => `- ${s}`)
+      .join('\n')}`
+  if (task.startsWith('Reformat') || task.startsWith('Do what the user asks'))
+    return items.map((s) => `- ${s}`).join('\n')
+  return text.replace(/(^|\s)очень\s+/giu, '$1').replace(/^./, (c) => c.toUpperCase())
+}
+
 const devLlm: typeof fetch = async (_url, init) => {
   const body = JSON.parse(String(init?.body)) as { messages: { role: string; content: string }[] }
   const prompt = body.messages.at(-1)?.content ?? ''
   const expansion = body.messages[0]?.content.includes(EXPANSION_MARKER)
+  const edit = body.messages[0]?.content.includes(EDIT_MARKER)
   const first = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
   const answer = expansion
     ? devKeywords(prompt)
-    : first
-      ? `From your note "${first[1]}": ${first[2]} [1]`
-      : "I couldn't find this in your notes. Try other words."
+    : edit
+      ? devEdit(prompt)
+      : first
+        ? `From your note "${first[1]}": ${first[2]} [1]`
+        : "I couldn't find this in your notes. Try other words."
   const words = expansion ? [answer] : answer.split(/(?<= )/)
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {

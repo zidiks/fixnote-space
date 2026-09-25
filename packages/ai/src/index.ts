@@ -1,4 +1,5 @@
 export * from './citations'
 export * from './client'
+export * from './edit'
 export * from './expand'
 export * from './prompt'

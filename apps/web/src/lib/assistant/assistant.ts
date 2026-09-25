@@ -45,7 +45,7 @@ export const useAssistant = create<AssistantState>()(() => ({
 }))
 
 const set = useAssistant.setState
-const MODEL = 'deepseek-chat'
+export const MODEL = 'deepseek-chat'
 const SEMANTIC_KEY = 'assistant.semantic'
 
 interface Deps {

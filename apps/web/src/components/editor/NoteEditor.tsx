@@ -9,6 +9,7 @@ import {
   isApple,
   MenuShortcut,
 } from '@fixnote/ui'
+import { Extension } from '@tiptap/core'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
@@ -25,13 +26,22 @@ import {
   List,
   ListChecks,
   Scissors,
+  Sparkles,
   Strikethrough,
   TextSelect,
 } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { type Ref, useEffect, useImperativeHandle, useRef } from 'react'
 import { toast } from 'sonner'
+import { type AiEditHandle, AiEditLayer, useAiEdit } from './AiEdit'
+import { AiRangeExtension } from './ai-range'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
+
+/** Long text with no Markdown structure: paragraphs of prose, no headings or lists. */
+function looksLikeDump(text: string) {
+  if (text.length < 500) return false
+  return !/^\s*(#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s|```)/m.test(text)
+}
 
 const SAVE_DELAY = 400
 
@@ -47,7 +57,7 @@ function selectedText(editor: Editor) {
 }
 
 /** Editor right-click menu: clipboard, formatting and blocks, like a native text view. */
-function EditorMenu({ editor }: { editor: Editor }) {
+function EditorMenu({ editor, onAskAi }: { editor: Editor; onAskAi: () => void }) {
   const { t } = useTranslation()
   // Subscribed, so the menu reflects the selection and marks at the moment it opens.
   const state = useEditorState({
@@ -93,6 +103,13 @@ function EditorMenu({ editor }: { editor: Editor }) {
       }
     | 'sep'
   )[] = [
+    {
+      icon: Sparkles,
+      label: t('menu.askAi'),
+      hint: combo('E', { shift: true }),
+      run: onAskAi,
+    },
+    'sep',
     {
       icon: Scissors,
       label: t('menu.cut'),
@@ -213,8 +230,11 @@ export function NoteEditor({
   onSave,
   onStateChange,
   onLeave,
+  ref,
 }: {
   note: Note
+  /** Lets the note header open the AI popover for the whole note. */
+  ref?: Ref<AiEditHandle>
   /** Persists `markdown`, an edit that started from `base`; resolves with what was stored. */
   onSave: (markdown: string, base: string) => Promise<Note>
   onStateChange?: (state: SaveState) => void
@@ -228,6 +248,7 @@ export function NoteEditor({
   /** The stored text the current edit started from. */
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
+  const openAi = useRef<AiEditHandle['open']>(() => undefined)
   const callbacks = useRef({ onSave, onStateChange, onLeave })
   callbacks.current = { onSave, onStateChange, onLeave }
 
@@ -264,6 +285,16 @@ export function NoteEditor({
       TaskItem.configure({ nested: true }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       Markdown,
+      AiRangeExtension,
+      Extension.create({
+        name: 'aiShortcut',
+        addKeyboardShortcuts: () => ({
+          'Mod-Shift-e': () => {
+            openAi.current('selection')
+            return true
+          },
+        }),
+      }),
     ],
     content: note.content,
     contentType: 'markdown',
@@ -273,6 +304,21 @@ export function NoteEditor({
         class: 'fixnote-editor',
         spellcheck: 'true',
         'aria-label': note.title || t('common.untitled'),
+      },
+      // A long unformatted paste (a dump from a chat or a dictation): offer to tidy it up.
+      handlePaste: (_view, event) => {
+        const text = event.clipboardData?.getData('text/plain') ?? ''
+        if (looksLikeDump(text)) {
+          setTimeout(() => {
+            toast(t('ai.structureOffer'), {
+              action: {
+                label: t('ai.structureAction'),
+                onClick: () => openAi.current('note', 'structure'),
+              },
+            })
+          }, 0)
+        }
+        return false
       },
     },
     onUpdate: ({ editor: e }) => {
@@ -285,6 +331,9 @@ export function NoteEditor({
     onBlur: () => void flush(),
   })
   editorRef.current = editor
+  const ai = useAiEdit(editor, note.title)
+  openAi.current = ai.open
+  useImperativeHandle(ref, () => ({ open: (target, action) => openAi.current(target, action) }), [])
 
   // Sync brought a newer version of this note: show it if there is no unsaved typing.
   useEffect(() => {
@@ -333,8 +382,9 @@ export function NoteEditor({
         <ContextMenuTrigger asChild>
           <EditorContent editor={editor} />
         </ContextMenuTrigger>
-        {editor ? <EditorMenu editor={editor} /> : null}
+        {editor ? <EditorMenu editor={editor} onAskAi={() => ai.open('selection')} /> : null}
       </ContextMenu>
+      {editor ? <AiEditLayer editor={editor} ai={ai} /> : null}
     </div>
   )
 }

@@ -12,8 +12,8 @@ import {
   TooltipTrigger,
 } from '@fixnote/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronRight, Folder, FolderInput, Inbox, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { Check, ChevronRight, Folder, FolderInput, Inbox, Sparkles, Trash2 } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useUi } from '../app/store'
 import { useRepo } from '../lib/db'
 import {
@@ -25,6 +25,7 @@ import {
   useNote,
 } from '../lib/queries'
 import { formatRelative } from '../lib/time'
+import type { AiEditHandle } from './editor/AiEdit'
 import { NoteEditor, type SaveState } from './editor/NoteEditor'
 
 export function NoteView({ id }: { id: string }) {
@@ -38,6 +39,7 @@ export function NoteView({ id }: { id: string }) {
   const move = useMoveNote()
   const deleteWithUndo = useDeleteWithUndo()
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const ai = useRef<AiEditHandle>(null)
 
   if (!note.isFetchedAfterMount) return null
   if (!note.data) {
@@ -67,6 +69,20 @@ export function NoteView({ id }: { id: string }) {
             ? t('note.saving')
             : t('note.edited', { time: formatRelative(n.updatedAt, i18n.resolvedLanguage) })}
         </span>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => ai.current?.open('note')}
+              aria-label={t('ai.title')}
+            >
+              <Sparkles />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('ai.title')}</TooltipContent>
+        </Tooltip>
 
         <DropdownMenu>
           <Tooltip>
@@ -127,6 +143,7 @@ export function NoteView({ id }: { id: string }) {
       <div className="mt-6">
         <NoteEditor
           key={n.id}
+          ref={ai}
           note={n}
           onStateChange={setSaveState}
           onSave={async (markdown, base) => {
