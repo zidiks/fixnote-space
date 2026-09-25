@@ -118,7 +118,20 @@ The app also runs without `.env`; cloud features stay off until it is set.
 `apps/desktop/src-tauri/target/release/bundle/`. Builds are unsigned for now, so SmartScreen warns
 on first launch.
 
-### macOS / Linux
+### macOS
+
+CI builds a `.dmg` for Apple Silicon (see [CI](#ci)). It is ad-hoc signed but not notarized, so
+after dragging FixNote to Applications, clear the download flag once, or macOS reports the app
+as damaged:
+
+```bash
+xattr -cr /Applications/FixNote.app
+```
+
+To build on a Mac yourself: Xcode Command Line Tools (`xcode-select --install`), Rust, then
+`pnpm --filter @fixnote/mcp build:sea && pnpm build:desktop`.
+
+### Linux
 
 Follow the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/). On Debian/Ubuntu:
 
@@ -234,5 +247,6 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
 ## CI
 
 - `CI` runs lint, typecheck, tests, the web build, and Rust clippy on every push and PR.
-- `Desktop build` builds Windows installers on `main`, on `v*` tags, and on demand, and uploads
-  them as workflow artifacts.
+- `Desktop build` builds Windows installers and a macOS `.dmg` (Apple Silicon) on `main`, on `v*`
+  tags, on demand, and on any branch when the pushed commit message contains `[build desktop]`,
+  and uploads them as workflow artifacts.
