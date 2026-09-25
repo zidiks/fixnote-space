@@ -39,6 +39,12 @@ const ru: LocaleResource = {
     deleteFolderBody: 'Заметки из неё останутся, просто без папки. Ни одна заметка не удалится.',
   },
   home: {
+    groups: {
+      today: 'Сегодня',
+      yesterday: 'Вчера',
+      week: 'Последние 7 дней',
+      month: 'Последние 30 дней',
+    },
     greeting: 'О чём думаете?',
     ask: 'Спросить ассистента',
     filters: {

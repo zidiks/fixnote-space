@@ -37,6 +37,12 @@ const en = {
     deleteFolderBody: 'Notes inside stay, just without a folder. No note is deleted.',
   },
   home: {
+    groups: {
+      today: 'Today',
+      yesterday: 'Yesterday',
+      week: 'Previous 7 days',
+      month: 'Previous 30 days',
+    },
     greeting: "What's on your mind?",
     ask: 'Ask the assistant',
     filters: {

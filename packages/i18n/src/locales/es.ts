@@ -41,6 +41,12 @@ const es: LocaleResource = {
       'Las notas de dentro se quedan, solo que sin carpeta. No se elimina ninguna nota.',
   },
   home: {
+    groups: {
+      today: 'Hoy',
+      yesterday: 'Ayer',
+      week: 'Últimos 7 días',
+      month: 'Últimos 30 días',
+    },
     greeting: '¿Qué tienes en mente?',
     ask: 'Preguntar al asistente',
     filters: {

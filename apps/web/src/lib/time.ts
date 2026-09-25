@@ -32,3 +32,29 @@ export function formatCardDate(ts: number, lang: string | undefined, now = new D
 export function startOfDay(d = new Date()): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
+
+/** Where a note falls in the list, by when it last changed (as in Apple Notes). */
+export type DateGroup =
+  | { kind: 'today' | 'yesterday' | 'week' | 'month' }
+  | { kind: 'monthOf'; year: number; month: number }
+  | { kind: 'year'; year: number }
+
+/**
+ * Today, yesterday, the previous 7 days, the previous 30 days, then each earlier month of this
+ * year, then each earlier year. Calendar days in local time.
+ */
+export function dateGroup(ts: number, now = new Date()): DateGroup {
+  const d = new Date(ts)
+  const days = Math.round((startOfDay(now) - startOfDay(d)) / 86_400_000)
+  if (days <= 0) return { kind: 'today' }
+  if (days === 1) return { kind: 'yesterday' }
+  if (days <= 7) return { kind: 'week' }
+  if (days <= 30) return { kind: 'month' }
+  if (d.getFullYear() === now.getFullYear()) {
+    return { kind: 'monthOf', year: d.getFullYear(), month: d.getMonth() }
+  }
+  return { kind: 'year', year: d.getFullYear() }
+}
+
+export const dateGroupKey = (g: DateGroup): string =>
+  g.kind === 'monthOf' ? `${g.year}-${g.month}` : g.kind === 'year' ? String(g.year) : g.kind
