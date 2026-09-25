@@ -1,0 +1,100 @@
+/**
+ * Platform boundary.
+ *
+ * All domain logic (schema, sync, crypto, retrieval, tidy) lives in @fixnote/core and talks to the
+ * host only through these interfaces. Desktop (Tauri) and web (browser/PWA) ship their own
+ * adapters; see docs/CONCEPT.md section 6.6.
+ */
+
+export type PlatformKind = 'desktop' | 'web'
+
+/** A single SQL value as SQLite understands it. */
+export type SqlValue = string | number | bigint | Uint8Array | null
+
+export type SqlRow = Record<string, SqlValue>
+
+/**
+ * Minimal SQLite driver. Desktop: tauri-plugin-sql. Web: @sqlite.org/sqlite-wasm over OPFS.
+ * The schema and every query are shared, so drivers must expose plain SQLite semantics with FTS5.
+ */
+export interface SqlDriver {
+  execute(sql: string, params?: readonly SqlValue[]): Promise<{ rowsAffected: number }>
+  query<T extends SqlRow = SqlRow>(sql: string, params?: readonly SqlValue[]): Promise<T[]>
+  transaction<T>(fn: (tx: Pick<SqlDriver, 'execute' | 'query'>) => Promise<T>): Promise<T>
+  close(): Promise<void>
+}
+
+/** Model download / warm-up progress, 0..1. */
+export type ProgressListener = (progress: number) => void
+
+/**
+ * On-device text embeddings. Both platforms load the same ONNX artifact so vectors are
+ * interchangeable across devices; `modelId` is stored next to every vector.
+ */
+export interface Embedder {
+  readonly modelId: string
+  readonly dimensions: number
+  ready(onProgress?: ProgressListener): Promise<void>
+  embed(texts: readonly string[], kind: 'passage' | 'query'): Promise<Float32Array[]>
+}
+
+export interface TranscriptionResult {
+  text: string
+  language: string
+  durationMs: number
+}
+
+/**
+ * Speech to text. Desktop: whisper.cpp on device. Web: edge function (audio leaves the device;
+ * `local` tells the UI which disclosure to show).
+ */
+export interface Transcriber {
+  readonly local: boolean
+  transcribe(audio: Blob, opts?: { language?: string }): Promise<TranscriptionResult>
+}
+
+/**
+ * Holds the Master Key. Desktop: OS keychain. Web: WebCrypto non-extractable wrapping key plus
+ * IndexedDB. Raw key bytes never touch persistent storage in plain form on the web.
+ */
+export interface KeyStore {
+  load(): Promise<Uint8Array | null>
+  save(masterKey: Uint8Array): Promise<void>
+  clear(): Promise<void>
+}
+
+/** Local attachment cache. Desktop: app-data dir. Web: OPFS. */
+export interface BlobStore {
+  put(key: string, data: Blob): Promise<void>
+  get(key: string): Promise<Blob | null>
+  delete(key: string): Promise<void>
+}
+
+export interface PlatformCapabilities {
+  /** Speech-to-text runs on the device. */
+  localTranscription: boolean
+  /** Notes never leave the device; sync and LLM proxy are off, LLM runs via Ollama. */
+  localOnlyMode: boolean
+  /** Local stdio MCP server over the same database. */
+  localMcp: boolean
+  /** System-wide hotkey and tray icon. */
+  globalShortcut: boolean
+}
+
+export interface Platform {
+  readonly kind: PlatformKind
+  readonly capabilities: PlatformCapabilities
+  readonly sql: () => Promise<SqlDriver>
+  readonly embedder: () => Promise<Embedder>
+  readonly transcriber: () => Promise<Transcriber>
+  readonly keyStore: KeyStore
+  readonly blobs: BlobStore
+}
+
+/** Thrown by adapters for features scheduled in a later milestone. */
+export class NotImplementedError extends Error {
+  constructor(feature: string, milestone: string) {
+    super(`${feature} is not implemented yet (planned for ${milestone})`)
+    this.name = 'NotImplementedError'
+  }
+}

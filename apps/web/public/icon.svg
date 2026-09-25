@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>FixNote</title>
+  <rect width="512" height="512" rx="112" fill="#f2682a"/>
+  <path d="M168 136h176a24 24 0 0 1 24 24v192a24 24 0 0 1-24 24H168a24 24 0 0 1-24-24V160a24 24 0 0 1 24-24z" fill="#fff"/>
+  <path d="M188 196h136M188 248h136M188 300h84" stroke="#f2682a" stroke-width="22" stroke-linecap="round"/>
+</svg>

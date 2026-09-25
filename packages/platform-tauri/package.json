@@ -1,0 +1,19 @@
+{
+  "name": "@fixnote/platform-tauri",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fixnote/core": "workspace:*",
+    "@tauri-apps/api": "^2.11.1"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

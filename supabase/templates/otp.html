@@ -1,0 +1,13 @@
+{{ if eq .Data.lang "ru" }}
+<h2>Ваш код для входа в FixNote</h2>
+<p style="font-size:32px;letter-spacing:6px;font-weight:600">{{ .Token }}</p>
+<p>Код действует 10 минут. Если вы не запрашивали вход, просто проигнорируйте это письмо.</p>
+{{ else if eq .Data.lang "es" }}
+<h2>Tu código para entrar en FixNote</h2>
+<p style="font-size:32px;letter-spacing:6px;font-weight:600">{{ .Token }}</p>
+<p>El código es válido durante 10 minutos. Si no lo pediste, ignora este correo.</p>
+{{ else }}
+<h2>Your FixNote sign-in code</h2>
+<p style="font-size:32px;letter-spacing:6px;font-weight:600">{{ .Token }}</p>
+<p>The code is valid for 10 minutes. If you didn't ask to sign in, you can ignore this email.</p>
+{{ end }}
