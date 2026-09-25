@@ -43,10 +43,11 @@ describe('recovery phrase', () => {
     const words = secretToPhrase(newRecoverySecret()).split(' ')
     expect(phraseToSecret(words.slice(0, 11).join(' '))).toBeNull()
     expect(phraseToSecret([...words.slice(0, 11), 'notaword'].join(' '))).toBeNull()
-    const swapped = [...words]
-    ;[swapped[0], swapped[1]] = [swapped[1] as string, swapped[0] as string]
-    // A swap almost always breaks the checksum; equal neighbours would make it a no-op.
-    if (swapped[0] !== swapped[1]) expect(phraseToSecret(swapped.join(' '))).toBeNull()
+    // The 4-bit checksum lets 1 in 16 random edits through, so check a fixed phrase whose swap
+    // is known to break it.
+    const fixed = secretToPhrase(Uint8Array.from({ length: 16 }, (_, i) => i * 17)).split(' ')
+    expect(fixed.slice(0, 2)).toEqual(['abandon', 'math'])
+    expect(phraseToSecret(['math', 'abandon', ...fixed.slice(2)].join(' '))).toBeNull()
   })
 })
 
