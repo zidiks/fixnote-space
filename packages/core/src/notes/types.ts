@@ -11,6 +11,8 @@ export interface NoteSummary {
   excerpt: string
   tags: string[]
   tasks: { done: number; total: number } | null
+  /** First image of the note (attachment:<id> or a web URL), shown on its card. */
+  cover: string | null
   createdAt: number
   updatedAt: number
 }

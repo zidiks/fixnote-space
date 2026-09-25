@@ -70,6 +70,8 @@ const es: LocaleResource = {
     emptyTag: 'No hay notas con esta etiqueta.',
   },
   note: {
+    imageTooLarge: 'La imagen es demasiado grande (más de 20 MB).',
+    imageFailed: 'No se pudo añadir la imagen: {{message}}',
     placeholder: 'Empieza a escribir… # para títulos, - [ ] para tareas, #etiqueta para etiquetas.',
     moveTo: 'Mover a',
     delete: 'Eliminar nota',

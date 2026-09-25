@@ -71,6 +71,7 @@ function toSummary(row: NoteRow): NoteSummary {
     excerpt: deriveExcerpt(body),
     tags: row.tags ? row.tags.split(TAG_SEP) : [],
     tasks: taskProgress(body),
+    cover: body.match(/!\[[^\]]*\]\(((?:attachment:|https?:\/\/)[^)\s]+)/)?.[1] ?? null,
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
   }

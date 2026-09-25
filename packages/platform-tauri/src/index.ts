@@ -1,9 +1,9 @@
-import type { FetchedPage } from '@fixnote/core'
-import { NotImplementedError, type Platform, type WindowChrome } from '@fixnote/core'
+import type { FetchedPage, Platform, WindowChrome } from '@fixnote/core'
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
 import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
+import { appDataBlobStore } from './blobs'
 import { osKeyStore } from './keys'
 import { openTauriSqlDriver } from './sql'
 import { windowControls } from './window'
@@ -23,7 +23,7 @@ export function appInfo(): Promise<AppInfo> {
 
 /**
  * Desktop adapters backed by the Rust side of apps/desktop.
- * M1: rusqlite (done). M2: OS keychain (done), app-data blobs.
+ * M1: rusqlite (done). M2: OS keychain (done). M4: app-data blobs (done).
  * M3: embedder shared with the web app (done). M4: Whisper shared with the web app (done).
  */
 /** Matches tauri.windows.conf.json (frameless) and tauri.macos.conf.json (overlay title bar). */
@@ -70,10 +70,6 @@ export function createTauriPlatform(): Platform {
       }))
         ? 'saved'
         : 'cancelled',
-    blobs: {
-      put: () => Promise.reject(new NotImplementedError('BlobStore (app data)', 'M2')),
-      get: () => Promise.reject(new NotImplementedError('BlobStore (app data)', 'M2')),
-      delete: () => Promise.reject(new NotImplementedError('BlobStore (app data)', 'M2')),
-    },
+    blobs: appDataBlobStore,
   }
 }

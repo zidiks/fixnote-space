@@ -117,6 +117,17 @@ export const MIGRATIONS: readonly string[] = [
     fetched_at  INTEGER NOT NULL
   ) WITHOUT ROWID;
   `,
+  /* 5: attachments (images in notes). Bytes live in the platform BlobStore under "att/<id>";
+     Markdown refers to them as attachment:<id>. uploaded = 1 once the encrypted copy is on the
+     server. */ `
+  CREATE TABLE attachments (
+    id          TEXT PRIMARY KEY,
+    mime        TEXT NOT NULL,
+    size        INTEGER NOT NULL,
+    created_at  INTEGER NOT NULL,
+    uploaded    INTEGER NOT NULL DEFAULT 0
+  ) WITHOUT ROWID;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

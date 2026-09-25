@@ -1,4 +1,4 @@
-import type { FetchedPage, SyncRemote } from '@fixnote/core'
+import type { AttachmentRemote, FetchedPage, SyncRemote } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabaseRemote } from '../sync/supabase-remote'
 
@@ -28,6 +28,8 @@ export interface AccountBackend {
   getUserKeys(): Promise<UserKeysRow | null>
   createUserKeys(row: UserKeysRow): Promise<void>
   remote: SyncRemote
+  /** Encrypted attachment files of this user. */
+  attachments(userId: string): AttachmentRemote
   /** The default LLM route for the signed-in user, or null when signed out. */
   chatTransport(): Promise<ChatTransport | null>
   /** Reads a public page's <head> through the `unfurl` function; null when signed out. */
@@ -78,6 +80,31 @@ export function supabaseBackend(
       if (error) throw error
     },
     remote: supabaseRemote(client),
+    attachments(userId) {
+      const bucket = () => client.storage.from('attachments')
+      return {
+        async upload(id, blob) {
+          const { error } = await bucket().upload(`${userId}/${id}`, blob, {
+            contentType: 'application/octet-stream',
+            upsert: true,
+          })
+          if (error) throw error
+        },
+        async download(id) {
+          const { data, error } = await bucket().download(`${userId}/${id}`)
+          if (error) {
+            if (
+              /not found|404|400/i.test(
+                `${error.message} ${(error as { status?: number }).status ?? ''}`,
+              )
+            )
+              return null
+            throw error
+          }
+          return new Uint8Array(await data.arrayBuffer())
+        },
+      }
+    },
     async chatTransport() {
       const { data } = await client.auth.getSession()
       if (!data.session) return null

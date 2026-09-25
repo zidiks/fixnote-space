@@ -162,6 +162,21 @@ export const devBackend: AccountBackend = {
     save(s)
   },
   remote,
+  // Encrypted files in localStorage (base64), shared by tabs like the rest of the fake server.
+  attachments: (userId) => {
+    const key = (id: string) => `fixnote.dev-attachment.${userId}.${id}`
+    return {
+      upload: async (id, blob) => {
+        let bin = ''
+        for (const b of blob) bin += String.fromCharCode(b)
+        localStorage.setItem(key(id), btoa(bin))
+      },
+      download: async (id) => {
+        const b64 = localStorage.getItem(key(id))
+        return b64 ? Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) : null
+      },
+    }
+  },
   chatTransport: async () =>
     load().session ? { url: 'dev://llm', headers: {}, fetch: devLlm } : null,
   // Any URL "resolves" to a small page, so link cards can be tried without a network.

@@ -1,5 +1,7 @@
 import {
   type AccountKeys,
+  type AttachmentRemote,
+  type Attachments,
   cryptoReady,
   deriveKeys,
   type KeyStore,
@@ -54,6 +56,7 @@ interface Deps {
   backend: AccountBackend | null
   db: SqlDriver
   keyStore: KeyStore
+  attachments: Attachments
   /** Refresh UI queries after remote changes arrived. */
   onRemoteChange: () => void
 }
@@ -263,11 +266,14 @@ export async function runSync() {
   setSync({ status: 'syncing' })
   try {
     const report = await e.sync()
+    // Images go after the notes that use them; another device fetches them when shown.
+    const sync = attachmentSync()
+    if (sync) await need().attachments.uploadPending(sync.keys, sync.remote)
     setSync({
       status: 'idle',
       lastSyncedAt: Date.now(),
       error: null,
-      pending: await e.pendingCount(),
+      pending: (await e.pendingCount()) + (await need().attachments.pendingCount()),
     })
     if (report.pulled || report.merged || report.conflictCopies) need().onRemoteChange()
   } catch (err) {
@@ -277,6 +283,13 @@ export async function runSync() {
       pending: await e.pendingCount().catch(() => 0),
     })
   }
+}
+
+/** Keys and storage for attachments, when signed in and unlocked. */
+export function attachmentSync(): { keys: AccountKeys; remote: AttachmentRemote } | undefined {
+  const b = deps?.backend
+  if (!b || !keys || !session || !engine) return undefined
+  return { keys, remote: b.attachments(session.userId) }
 }
 
 /** Reads a page for a link card through the server, or null when signed out. */

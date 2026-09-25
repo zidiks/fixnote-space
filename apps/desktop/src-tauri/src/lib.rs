@@ -4,6 +4,7 @@
 //! cannot do well: the local SQLite database, the OS keychain, native file dialogs and fetching
 //! pages for link cards (no CORS). Embeddings and speech run in the webview (transformers.js).
 
+mod blobs;
 mod db;
 mod files;
 mod keys;
@@ -73,7 +74,10 @@ pub fn run() {
             keys::key_save,
             keys::key_clear,
             files::save_file,
-            links::fetch_page
+            links::fetch_page,
+            blobs::blob_put,
+            blobs::blob_get,
+            blobs::blob_delete
         ])
         .run(tauri::generate_context!())
         .expect("error while running FixNote");

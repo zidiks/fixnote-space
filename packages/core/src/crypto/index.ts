@@ -143,6 +143,79 @@ export function decryptFolderName(keys: AccountKeys, folderId: string, sealed: s
   return sodium.to_string(open(keys.folderKey, sealed, `folder:${folderId}`, `folder ${folderId}`))
 }
 
+// ── Attachments ──────────────────────────────────────────────────────────────
+
+const ATTACHMENT_VERSION = 1
+
+/**
+ * An attachment as stored on the server: one opaque blob. A fresh data key per file, wrapped with
+ * the account key; the type travels inside the ciphertext. Layout:
+ * [version][2-byte wrapped-key length][wrapped key][nonce][ciphertext of (4-byte header length,
+ * JSON header, bytes)], both parts bound to the attachment id.
+ */
+export function encryptAttachment(
+  keys: AccountKeys,
+  id: string,
+  mime: string,
+  bytes: Uint8Array,
+): Uint8Array {
+  const dataKey = sodium.randombytes_buf(32)
+  const wrapped = sodium.from_string(seal(keys.wrapKey, dataKey, `ak:${id}`))
+  const header = sodium.from_string(JSON.stringify({ mime }))
+  const plain = new Uint8Array(4 + header.length + bytes.length)
+  new DataView(plain.buffer).setUint32(0, header.length)
+  plain.set(header, 4)
+  plain.set(bytes, 4 + header.length)
+  const nonce = sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES)
+  const ct = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
+    plain,
+    `att:${id}`,
+    null,
+    nonce,
+    dataKey,
+  )
+  const out = new Uint8Array(3 + wrapped.length + nonce.length + ct.length)
+  out[0] = ATTACHMENT_VERSION
+  new DataView(out.buffer).setUint16(1, wrapped.length)
+  out.set(wrapped, 3)
+  out.set(nonce, 3 + wrapped.length)
+  out.set(ct, 3 + wrapped.length + nonce.length)
+  return out
+}
+
+export function decryptAttachment(
+  keys: AccountKeys,
+  id: string,
+  blob: Uint8Array,
+): { mime: string; bytes: Uint8Array } {
+  const what = `attachment ${id}`
+  if (blob.length < 3 || blob[0] !== ATTACHMENT_VERSION) throw new DecryptionError(what)
+  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
+  const wrappedLength = view.getUint16(1)
+  const nonceLength = sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+  if (blob.length < 3 + wrappedLength + nonceLength) throw new DecryptionError(what)
+  const wrapped = sodium.to_string(blob.subarray(3, 3 + wrappedLength))
+  const dataKey = open(keys.wrapKey, wrapped, `ak:${id}`, what)
+  const nonce = blob.subarray(3 + wrappedLength, 3 + wrappedLength + nonceLength)
+  let plain: Uint8Array
+  try {
+    plain = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+      null,
+      blob.subarray(3 + wrappedLength + nonceLength),
+      `att:${id}`,
+      nonce,
+      dataKey,
+    )
+  } catch {
+    throw new DecryptionError(what)
+  }
+  const headerLength = new DataView(plain.buffer, plain.byteOffset, plain.byteLength).getUint32(0)
+  const header = JSON.parse(sodium.to_string(plain.subarray(4, 4 + headerLength))) as {
+    mime?: string
+  }
+  return { mime: header.mime ?? 'application/octet-stream', bytes: plain.slice(4 + headerLength) }
+}
+
 /**
  * Opens a message sealed to this account's public key (crypto_box_seal), e.g. by the Telegram bot.
  */

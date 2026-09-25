@@ -23,7 +23,7 @@ async function pickBackend(): Promise<AccountBackend | null> {
 
 /** Starts the account (session, keys, sync) once the local database is open. */
 export function AccountProvider({ children }: { children: ReactNode }) {
-  const { driver } = useDb()
+  const { driver, attachments } = useDb()
   const qc = useQueryClient()
 
   useEffect(() => {
@@ -34,6 +34,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         backend,
         db: driver,
         keyStore: platform.keyStore,
+        attachments,
         onRemoteChange: () => {
           void qc.invalidateQueries()
           notifyNotesChanged()
@@ -43,7 +44,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [driver, qc])
+  }, [driver, attachments, qc])
 
   return <>{children}</>
 }

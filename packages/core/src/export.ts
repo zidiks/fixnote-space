@@ -1,9 +1,21 @@
+import { attachmentIds } from './attachments'
 import { extractTags } from './notes/markdown'
 import type { SqlDriver, SqlRow } from './platform'
 
 export interface ExportFile {
   path: string
+  /** Text files; binary files (attachments) use `data`. */
   content: string
+  data?: Uint8Array
+}
+
+const EXTENSIONS: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/svg+xml': 'svg',
+  'image/avif': 'avif',
 }
 
 interface Row extends SqlRow {
@@ -34,13 +46,15 @@ export function safeName(input: string, fallback: string): string {
 }
 
 /**
- * Every live note as a Markdown file in its folder path (Inbox and Daily at the top level), plus a
- * JSON file with the full data. Names are made unique within each folder.
+ * Every live note as a Markdown file in its folder path (no-folder notes and Daily at the top
+ * level), plus a JSON file with the full data. Names are made unique within each folder. Images
+ * go to attachments/ and the Markdown links point there, so the folder opens in any editor.
  */
 export async function buildExport(
   db: SqlDriver,
   labels: { inbox: string; daily: string; untitled: string },
   exportedAt = Date.now(),
+  attachments?: { load(id: string): Promise<Blob | null> },
 ): Promise<ExportFile[]> {
   const folders = await db.query<{ id: string; parent_id: string | null; name: string }>(
     'SELECT id, parent_id, name FROM folders WHERE deleted_at IS NULL',
@@ -63,8 +77,21 @@ export async function buildExport(
     return path
   }
 
-  const used = new Set<string>()
   const files: ExportFile[] = []
+  // Attachments first, so notes can link to the files that exist.
+  const attachmentPaths = new Map<string, string>()
+  if (attachments) {
+    const ids = new Set(notes.flatMap((n) => attachmentIds(n.content)))
+    for (const id of ids) {
+      const blob = await attachments.load(id).catch(() => null)
+      if (!blob) continue
+      const file = `attachments/${id}.${EXTENSIONS[blob.type] ?? 'bin'}`
+      attachmentPaths.set(id, file)
+      files.push({ path: file, content: '', data: new Uint8Array(await blob.arrayBuffer()) })
+    }
+  }
+
+  const used = new Set<string>()
   for (const n of notes) {
     const dir = n.folder_id
       ? folderPath(n.folder_id)
@@ -78,7 +105,14 @@ export async function buildExport(
     let path = `${dir}/${base}.md`
     for (let i = 2; used.has(path.toLowerCase()); i++) path = `${dir}/${base} (${i}).md`
     used.add(path.toLowerCase())
-    files.push({ path, content: n.content })
+    const up = '../'.repeat(path.split('/').length - 1)
+    files.push({
+      path,
+      content: n.content.replace(/\]\(attachment:([\w-]{1,64})\)/g, (m, id: string) => {
+        const file = attachmentPaths.get(id)
+        return file ? `](${up}${file})` : m
+      }),
+    })
   }
 
   const json = {
@@ -97,6 +131,7 @@ export async function buildExport(
       createdAt: new Date(Number(n.created_at)).toISOString(),
       updatedAt: new Date(Number(n.updated_at)).toISOString(),
     })),
+    attachments: Object.fromEntries(attachmentPaths),
   }
   files.push({ path: 'fixnote.json', content: `${JSON.stringify(json, null, 2)}\n` })
   return files

@@ -66,6 +66,8 @@ const en = {
     emptyTag: 'No notes with this tag.',
   },
   note: {
+    imageTooLarge: 'Image is too large (over 20 MB).',
+    imageFailed: "Couldn't add the image: {{message}}",
     placeholder: 'Start writing… Use # for headings, - [ ] for tasks, #tag for tags.',
     moveTo: 'Move to',
     delete: 'Delete note',

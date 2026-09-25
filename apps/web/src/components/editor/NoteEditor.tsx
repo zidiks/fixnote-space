@@ -33,6 +33,8 @@ import {
 import { type Ref, useEffect, useImperativeHandle, useRef } from 'react'
 import { toast } from 'sonner'
 import { useAccount } from '../../lib/account/account'
+import { attachmentObjectUrl, ImageTooLargeError, storeImage } from '../../lib/attachments'
+import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
 import { type AiEditHandle, AiEditLayer, useAiEdit } from './AiEdit'
@@ -44,9 +46,15 @@ export interface NoteEditorHandle {
 }
 
 import { AiRangeExtension } from './ai-range'
+import { AttachmentImage } from './attachment-image'
 import { LinkCards, retryLinkCards } from './link-cards'
+import { ImageAwareParagraph } from './paragraph'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
+
+function imageFiles(data: DataTransfer | null): File[] {
+  return [...(data?.files ?? [])].filter((f) => f.type.startsWith('image/'))
+}
 
 /** Long text with no Markdown structure: paragraphs of prose, no headings or lists. */
 function looksLikeDump(text: string) {
@@ -262,6 +270,9 @@ export function NoteEditor({
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
   const platform = usePlatform()
   const loadPreview = useLoadPreview()
+  const { attachments } = useDb()
+  const images = useRef(attachments)
+  images.current = attachments
   const links = useRef({
     load: loadPreview,
     open: (url: string) => void platform.openExternal(url),
@@ -296,14 +307,19 @@ export function NoteEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        paragraph: false,
         heading: { levels: [1, 2, 3] },
         link: { openOnClick: false, autolink: true, linkOnPaste: true },
       }),
+      ImageAwareParagraph,
       TaskList,
       TaskItem.configure({ nested: true }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       Markdown,
       AiRangeExtension,
+      AttachmentImage.configure({
+        resolve: (id) => attachmentObjectUrl(images.current, id),
+      }),
       LinkCards.configure({
         load: (url) => links.current.load(url),
         open: (url) => links.current.open(url),
@@ -339,8 +355,22 @@ export function NoteEditor({
         links.current.open(href)
         return true
       },
+      // Images pasted or dropped become attachments: stored here, synced encrypted.
+      handleDrop: (view, event) => {
+        const files = imageFiles(event.dataTransfer)
+        if (!files.length) return false
+        event.preventDefault()
+        const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
+        void insertImages(files, at)
+        return true
+      },
       // A long unformatted paste (a dump from a chat or a dictation): offer to tidy it up.
       handlePaste: (_view, event) => {
+        const files = imageFiles(event.clipboardData)
+        if (files.length) {
+          void insertImages(files)
+          return true
+        }
         const text = event.clipboardData?.getData('text/plain') ?? ''
         if (looksLikeDump(text)) {
           setTimeout(() => {
@@ -365,6 +395,26 @@ export function NoteEditor({
     onBlur: () => void flush(),
   })
   editorRef.current = editor
+
+  const insertImages = async (files: File[], at?: number) => {
+    for (const file of files) {
+      try {
+        const src = await storeImage(images.current, file)
+        const e = editorRef.current
+        if (!e || e.isDestroyed) return
+        // An empty paragraph after it, so text typed next goes below the image.
+        const node = [{ type: 'image', attrs: { src, alt: '' } }, { type: 'paragraph' }]
+        if (at === undefined) e.chain().focus().insertContent(node).run()
+        else e.chain().focus().insertContentAt(at, node).run()
+      } catch (err) {
+        toast.error(
+          err instanceof ImageTooLargeError
+            ? t('note.imageTooLarge')
+            : t('note.imageFailed', { message: err instanceof Error ? err.message : String(err) }),
+        )
+      }
+    }
+  }
   const ai = useAiEdit(editor, note.title)
   openAi.current = ai.open
   useImperativeHandle(

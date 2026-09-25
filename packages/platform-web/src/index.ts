@@ -1,4 +1,5 @@
-import { NotImplementedError, type Platform, type SqlDriver } from '@fixnote/core'
+import type { Platform, SqlDriver } from '@fixnote/core'
+import { opfsBlobStore } from './blobs'
 import { createTransformersEmbedder } from './embed/client'
 import { webKeyStore } from './keys'
 import { openWebSqlDriver } from './sqlite/client'
@@ -6,7 +7,7 @@ import { createWhisperTranscriber } from './whisper/client'
 
 /**
  * Browser / PWA adapters.
- * M1: sqlite-wasm over OPFS (done). M2: WebCrypto key store (done), OPFS blobs.
+ * M1: sqlite-wasm over OPFS (done). M2: WebCrypto key store (done). M4: OPFS blobs (done).
  * M3: transformers.js embedder (done). M4: on-device Whisper (done).
  */
 export function createWebPlatform(): Platform {
@@ -45,10 +46,6 @@ export function createWebPlatform(): Platform {
       setTimeout(() => URL.revokeObjectURL(url), 30_000)
       return 'saved'
     },
-    blobs: {
-      put: () => Promise.reject(new NotImplementedError('BlobStore (OPFS)', 'M2')),
-      get: () => Promise.reject(new NotImplementedError('BlobStore (OPFS)', 'M2')),
-      delete: () => Promise.reject(new NotImplementedError('BlobStore (OPFS)', 'M2')),
-    },
+    blobs: opfsBlobStore,
   }
 }

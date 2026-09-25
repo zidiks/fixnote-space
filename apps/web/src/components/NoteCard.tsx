@@ -1,4 +1,5 @@
 import type { NoteSummary } from '@fixnote/core'
+import { attachmentIdFromUrl } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -11,6 +12,7 @@ import {
   ContextMenuTrigger,
   cn,
 } from '@fixnote/ui'
+import { useQuery } from '@tanstack/react-query'
 import {
   CalendarDays,
   Check,
@@ -23,8 +25,37 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useUi } from '../app/store'
+import { attachmentObjectUrl } from '../lib/attachments'
+import { useDb } from '../lib/db'
 import { useDeleteWithUndo, useFolders, useMoveNote } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
+
+/** The note's first image: attachments resolve to a local object URL, web images load as is. */
+function Cover({ src }: { src: string }) {
+  const { attachments } = useDb()
+  const id = attachmentIdFromUrl(src)
+  const url = useQuery({
+    queryKey: ['attachment-url', id],
+    queryFn: () => (id ? attachmentObjectUrl(attachments, id) : null),
+    enabled: id !== null,
+    staleTime: Number.POSITIVE_INFINITY,
+  }).data
+  const resolved = id ? url : src
+  if (!resolved) return null
+  return (
+    <img
+      src={resolved}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      draggable={false}
+      className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] max-w-none object-cover"
+      onError={(e) => {
+        e.currentTarget.style.display = 'none'
+      }}
+    />
+  )
+}
 
 export function NoteCard({ note }: { note: NoteSummary }) {
   const { t, i18n } = useTranslation()
@@ -43,6 +74,7 @@ export function NoteCard({ note }: { note: NoteSummary }) {
           onClick={open}
           className="group flex h-full max-h-60 min-h-32 w-full flex-col overflow-hidden rounded-xl border bg-card p-4 text-left shadow-xs transition-shadow outline-none hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
         >
+          {note.cover ? <Cover src={note.cover} /> : null}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Icon className="size-3.5" />
             <span>{formatCardDate(note.updatedAt, i18n.resolvedLanguage)}</span>

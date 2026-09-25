@@ -3,9 +3,11 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import {
   cryptoReady,
   DecryptionError,
+  decryptAttachment,
   decryptFolderName,
   decryptNote,
   deriveKeys,
+  encryptAttachment,
   encryptFolderName,
   encryptNote,
   makeKeyCheck,
@@ -96,5 +98,23 @@ describe('notes and folders', () => {
     const b64 = sodium.to_base64(sealed, sodium.base64_variants.URLSAFE_NO_PADDING)
     expect(openSealedBox(k, b64)).toBe('from telegram')
     expect(() => openSealedBox(keys(), b64)).toThrow(DecryptionError)
+  })
+})
+
+describe('attachments', () => {
+  it('round-trips bytes and type, bound to the id and the account', () => {
+    const keys = deriveKeys(newRecoverySecret())
+    const bytes = new Uint8Array(5000).map((_, i) => i % 251)
+    const blob = encryptAttachment(keys, 'a1', 'image/webp', bytes)
+    expect(blob.length).toBeGreaterThan(bytes.length)
+    expect(decryptAttachment(keys, 'a1', blob)).toEqual({ mime: 'image/webp', bytes })
+    expect(() => decryptAttachment(keys, 'a2', blob)).toThrow(DecryptionError)
+    expect(() => decryptAttachment(deriveKeys(newRecoverySecret()), 'a1', blob)).toThrow(
+      DecryptionError,
+    )
+    const tampered = blob.slice()
+    tampered[tampered.length - 1] = (tampered.at(-1) ?? 0) ^ 1
+    expect(() => decryptAttachment(keys, 'a1', tampered)).toThrow(DecryptionError)
+    expect(() => decryptAttachment(keys, 'a1', new Uint8Array([9, 0]))).toThrow(DecryptionError)
   })
 })

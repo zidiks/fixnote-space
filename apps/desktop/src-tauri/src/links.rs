@@ -30,7 +30,10 @@ pub async fn fetch_page(url: String) -> Result<FetchedPage, String> {
         .map_err(|e| e.to_string())?;
     let mut res = client
         .get(parsed)
-        .header("Accept", "text/html,application/xhtml+xml,image/*;q=0.8,*/*;q=0.5")
+        .header(
+            "Accept",
+            "text/html,application/xhtml+xml,image/*;q=0.8,*/*;q=0.5",
+        )
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -45,7 +48,11 @@ pub async fn fetch_page(url: String) -> Result<FetchedPage, String> {
         .unwrap_or("")
         .to_string();
     if !content_type.to_ascii_lowercase().contains("html") {
-        return Ok(FetchedPage { url: final_url, content_type, html: None });
+        return Ok(FetchedPage {
+            url: final_url,
+            content_type,
+            html: None,
+        });
     }
     let mut body = Vec::new();
     while let Some(chunk) = res.chunk().await.map_err(|e| e.to_string())? {
@@ -72,7 +79,9 @@ mod tests {
 
     #[test]
     fn finds_the_end_of_head_in_any_case() {
-        assert!(contains_head_end(b"<html><HEAD><title>x</title></Head><body>"));
+        assert!(contains_head_end(
+            b"<html><HEAD><title>x</title></Head><body>"
+        ));
         assert!(!contains_head_end(b"<html><head><title>x</title>"));
     }
 }

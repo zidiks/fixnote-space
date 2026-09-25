@@ -59,4 +59,27 @@ describe('buildExport', () => {
     expect(json.notes[0].tags).toEqual(['x'])
     expect(json.folders).toHaveLength(2)
   })
+
+  it('puts images in attachments/ and links notes to them', async () => {
+    const f = await repo.createFolder('Trips')
+    await repo.createNote({
+      content: 'Map ![](attachment:a1) and ![](attachment:gone)',
+      folderId: f.id,
+    })
+    await repo.createNote({ content: '![x](attachment:a1)' })
+    const blobs: Record<string, Blob> = {
+      a1: new Blob([new Uint8Array([1, 2])], { type: 'image/webp' }),
+    }
+    const files = await buildExport(db, labels, 0, { load: async (id) => blobs[id] ?? null })
+    expect(files.map((x) => x.path)).toEqual([
+      'attachments/a1.webp',
+      'Trips/Map and.md',
+      'Входящие/x.md',
+      'fixnote.json',
+    ])
+    expect(files[0]?.data).toEqual(new Uint8Array([1, 2]))
+    expect(files[1]?.content).toBe('Map ![](../attachments/a1.webp) and ![](attachment:gone)')
+    expect(files[2]?.content).toBe('![x](../attachments/a1.webp)')
+    expect(JSON.parse(files[3]?.content ?? '{}').attachments).toEqual({ a1: 'attachments/a1.webp' })
+  })
 })

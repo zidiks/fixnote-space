@@ -1,4 +1,10 @@
-import { LinkPreviews, NotesRepo, prepareDatabase, type SqlDriver } from '@fixnote/core'
+import {
+  Attachments,
+  LinkPreviews,
+  NotesRepo,
+  prepareDatabase,
+  type SqlDriver,
+} from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button } from '@fixnote/ui'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
@@ -9,6 +15,7 @@ interface DbContextValue {
   repo: NotesRepo
   driver: SqlDriver
   links: LinkPreviews
+  attachments: Attachments
   storage: SqlDriver['storage']
 }
 
@@ -24,6 +31,7 @@ function openDb(): Promise<DbContextValue> {
       repo: new NotesRepo(driver, { conflictHeading }),
       driver,
       links: new LinkPreviews(driver),
+      attachments: new Attachments(driver, platform.blobs),
       storage: driver.storage,
     }
   })()
