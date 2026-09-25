@@ -21,9 +21,17 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Public Supabase config
+      - name: Supabase config (repo variables, else .env.example)
         shell: bash
-        run: cp .env.example .env
+        env:
+          URL: ${{ vars.VITE_SUPABASE_URL }}
+          KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$URL" "$KEY" > .env
+          else
+            cp .env.example .env
+          fi
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

@@ -33,9 +33,17 @@ jobs:
         with:
           workspaces: apps/desktop/src-tauri
       - run: pnpm install --frozen-lockfile
-      - name: Public Supabase config
+      - name: Supabase config (repo variables, else .env.example)
         shell: bash
-        run: cp .env.example .env
+        env:
+          URL: ${{ vars.VITE_SUPABASE_URL }}
+          KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$URL" "$KEY" > .env
+          else
+            cp .env.example .env
+          fi
       - name: Build installers
         run: pnpm --filter @fixnote/desktop tauri build --bundles ${{ matrix.bundles }}
       - uses: actions/upload-artifact@v4

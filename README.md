@@ -85,7 +85,8 @@ Any other CLI command runs as `pnpm sb <command>`, e.g. `pnpm sb migration new i
 
 `.mcp.json` registers the Supabase MCP server for Claude Code; authenticate once with `claude /mcp`.
 
-CI copies `.env.example` to `.env`, so no repository secrets are needed for the build.
+CI builds with the repository variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+(Settings → Secrets and variables → Actions → Variables) and falls back to `.env.example`.
 
 ## CI
 
