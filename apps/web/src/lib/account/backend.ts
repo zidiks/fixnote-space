@@ -30,6 +30,22 @@ export interface PairingRequest {
   createdAt: string
 }
 
+/** A shared link of the signed-in user, as the server lists it. */
+export interface ShareRow {
+  id: string
+  noteId: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Server storage of sealed shared copies. */
+export interface ShareRemote {
+  list(): Promise<ShareRow[]>
+  create(row: { id: string; noteId: string; payload: string }): Promise<void>
+  update(id: string, payload: string): Promise<void>
+  remove(id: string): Promise<void>
+}
+
 export interface UserKeysRow {
   publicKey: string
   keyCheck: string
@@ -64,6 +80,10 @@ export interface AccountBackend {
   chatTransport(): Promise<ChatTransport | null>
   /** Reads a public page's <head> through the `unfurl` function; null when signed out. */
   fetchPage(url: string): Promise<FetchedPage | null>
+  /** The signed-in user's shared links. */
+  shares: ShareRemote
+  /** Anyone: a shared note's sealed copy by link id; null when the link was revoked. */
+  getShare(id: string): Promise<{ payload: string; updatedAt: string } | null>
   /** Calls back when another device changed something. Returns an unsubscribe. */
   subscribe(userId: string, onChange: () => void): () => void
 }
@@ -243,6 +263,41 @@ export function supabaseBackend(
       })
       if (!res.ok) throw new Error(`unfurl: HTTP ${res.status}`)
       return (await res.json()) as FetchedPage
+    },
+    shares: {
+      async list() {
+        const { data, error } = await client
+          .from('shares')
+          .select('id, note_id, created_at, updated_at')
+          .order('created_at')
+        if (error) throw error
+        return (data ?? []).map((r) => ({
+          id: r.id,
+          noteId: r.note_id,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        }))
+      },
+      async create(row) {
+        const { error } = await client
+          .from('shares')
+          .insert({ id: row.id, note_id: row.noteId, payload: row.payload })
+        if (error) throw error
+      },
+      async update(id, payload) {
+        const { error } = await client.from('shares').update({ payload }).eq('id', id)
+        if (error) throw error
+      },
+      async remove(id) {
+        const { error } = await client.from('shares').delete().eq('id', id)
+        if (error) throw error
+      },
+    },
+    async getShare(id) {
+      const { data, error } = await client.rpc('get_share', { p_id: id })
+      if (error) throw error
+      const row = (data as { payload: string; updated_at: string }[] | null)?.[0]
+      return row ? { payload: row.payload, updatedAt: row.updated_at } : null
     },
     subscribe(userId, onChange) {
       const channel = client

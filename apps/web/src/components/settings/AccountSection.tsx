@@ -19,6 +19,7 @@ import {
   verifyCode,
 } from '../../lib/account/account'
 import { formatRelative } from '../../lib/time'
+import { SharedLinksSection } from './SharedLinksSection'
 import { TelegramSection } from './TelegramSection'
 
 function Heading({ title, body }: { title: string; body?: string }) {
@@ -414,6 +415,7 @@ function Ready() {
         {showPhrase && secret ? <PhraseGrid phrase={secretToPhrase(secret)} /> : null}
       </div>
       <TelegramSection />
+      <SharedLinksSection />
       <Button variant="outline" onClick={() => setConfirmOut(true)}>
         <LogOut />
         {t('account.signOut')}

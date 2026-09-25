@@ -20,6 +20,8 @@ export interface AccountKeys {
   readonly wrapKey: Uint8Array
   readonly folderKey: Uint8Array
   readonly checkKey: Uint8Array
+  /** Derives each shared link's key, so any device of the account can show or update the link. */
+  readonly shareKey: Uint8Array
   readonly box: { publicKey: Uint8Array; privateKey: Uint8Array }
 }
 
@@ -92,6 +94,7 @@ export function deriveKeys(secret: Uint8Array): AccountKeys {
     wrapKey: sub(1, 'fn_wrap_'),
     folderKey: sub(2, 'fn_fold_'),
     checkKey: sub(3, 'fn_check'),
+    shareKey: sub(5, 'fn_share'),
     box: { publicKey: box.publicKey, privateKey: box.privateKey },
   }
 }
@@ -270,4 +273,33 @@ export function openSealedBox(keys: AccountKeys, sealedB64: string): string {
   } catch {
     throw new DecryptionError('sealed message')
   }
+}
+
+// ── Shared links ─────────────────────────────────────────────────────────────
+// A shared note is a copy sealed with a key that lives only in the link's #fragment, which the
+// browser never sends to a server. The server stores the ciphertext under a random id.
+
+/** 16 random bytes: the id a link is stored under. */
+export function newShareId(): string {
+  return b64(sodium.randombytes_buf(16))
+}
+
+/** The link's key for a share id, in link form (base64url). */
+export function shareLinkKey(keys: AccountKeys, shareId: string): string {
+  return b64(sodium.crypto_generichash(32, sodium.from_string(`share:${shareId}`), keys.shareKey))
+}
+
+export function sealShare(linkKey: string, shareId: string, plaintext: string): string {
+  return seal(unb64(linkKey), sodium.from_string(plaintext), `share:${shareId}`)
+}
+
+export function openShare(linkKey: string, shareId: string, sealed: string): string {
+  let key: Uint8Array
+  try {
+    key = unb64(linkKey)
+  } catch {
+    throw new DecryptionError('shared note')
+  }
+  if (key.length !== 32) throw new DecryptionError('shared note')
+  return sodium.to_string(open(key, sealed, `share:${shareId}`, 'shared note'))
 }

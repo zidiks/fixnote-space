@@ -9,7 +9,14 @@ import {
   type SyncRemote,
   sealToPublicKey,
 } from '@fixnote/core'
-import type { AccountBackend, CaptureLink, PairingRequest, Session, UserKeysRow } from './backend'
+import type {
+  AccountBackend,
+  CaptureLink,
+  PairingRequest,
+  Session,
+  ShareRow,
+  UserKeysRow,
+} from './backend'
 
 /**
  * Development-only stand-in for Supabase, enabled with `?dev-backend` in `pnpm dev`. The "server"
@@ -66,6 +73,17 @@ const loadPairings = (): DevPairing[] => JSON.parse(localStorage.getItem(PAIRING
 const savePairings = (p: DevPairing[]) => {
   localStorage.setItem(PAIRINGS, JSON.stringify(p))
   channel.postMessage('changed')
+}
+
+// ── Shared links (readable by any tab, like a public link) ──
+const SHARES = 'fixnote.dev-shares'
+type DevShare = ShareRow & { userId: string; payload: string }
+const loadShares = (): DevShare[] => JSON.parse(localStorage.getItem(SHARES) ?? '[]')
+const saveShares = (all: DevShare[]) => localStorage.setItem(SHARES, JSON.stringify(all))
+const signedIn = () => {
+  const userId = load().session?.userId
+  if (!userId) throw new Error('not authenticated')
+  return userId
 }
 
 /** BroadcastChannel skips the tab that posts, so the fake bot also wakes this tab directly. */
@@ -379,6 +397,37 @@ export const devBackend: AccountBackend = {
       contentType: 'text/html',
       html: `<head><title>${host}</title><meta property="og:title" content="A page on ${host}"><meta property="og:description" content="What ${host} says about itself, in one or two sentences."><meta property="og:site_name" content="${host}"></head>`,
     }
+  },
+  shares: {
+    list: async () => {
+      const userId = signedIn()
+      return loadShares()
+        .filter((r) => r.userId === userId)
+        .map(({ id, noteId, createdAt, updatedAt }) => ({ id, noteId, createdAt, updatedAt }))
+    },
+    create: async (row) => {
+      const userId = signedIn()
+      const now = new Date().toISOString()
+      saveShares([...loadShares(), { ...row, userId, createdAt: now, updatedAt: now }])
+    },
+    update: async (id, payload) => {
+      const userId = signedIn()
+      saveShares(
+        loadShares().map((r) =>
+          r.id === id && r.userId === userId
+            ? { ...r, payload, updatedAt: new Date().toISOString() }
+            : r,
+        ),
+      )
+    },
+    remove: async (id) => {
+      const userId = signedIn()
+      saveShares(loadShares().filter((r) => !(r.id === id && r.userId === userId)))
+    },
+  },
+  getShare: async (id) => {
+    const row = loadShares().find((r) => r.id === id)
+    return row ? { payload: row.payload, updatedAt: row.updatedAt } : null
   },
   subscribe: (_userId, onChange) => {
     const listener = () => onChange()

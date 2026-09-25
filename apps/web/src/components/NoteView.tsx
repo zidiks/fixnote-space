@@ -18,12 +18,15 @@ import {
   Folder,
   FolderInput,
   Inbox,
+  Link2,
   Mic,
   Sparkles,
   Trash2,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useUi } from '../app/store'
+import { useAccount } from '../lib/account/account'
+import { useLlm } from '../lib/assistant/llm'
 import { suggestForNewNote } from '../lib/assistant/tidy'
 import { useDb, useRepo } from '../lib/db'
 import {
@@ -37,6 +40,7 @@ import {
 import { formatRelative } from '../lib/time'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
+import { ShareDialog } from './ShareDialog'
 import { VOICE_KEYS } from './VoiceBar'
 
 export function NoteView({ id }: { id: string }) {
@@ -54,6 +58,11 @@ export function NoteView({ id }: { id: string }) {
   const editor = useRef<NoteEditorHandle>(null)
   const voice = useVoice((s) => s.status)
   const aiRequest = useUi((s) => s.aiRequest)
+  const [sharing, setSharing] = useState(false)
+  // Links live on the server: not in a build without one, and never in local-only mode.
+  const hasServer = useAccount((s) => s.phase !== 'disabled')
+  const localOnly = useLlm((s) => s.localOnly)
+  const canShare = hasServer && !localOnly
 
   // While this note is open, dictation goes into it.
   useEffect(() => registerVoiceSink('note', (text) => editor.current?.insertText(text)), [])
@@ -163,6 +172,22 @@ export function NoteView({ id }: { id: string }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {canShare ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setSharing(true)}
+                aria-label={t('share.button')}
+              >
+                <Link2 />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('share.button')}</TooltipContent>
+          </Tooltip>
+        ) : null}
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon-xs" onClick={onDelete} aria-label={t('note.delete')}>
@@ -172,6 +197,7 @@ export function NoteView({ id }: { id: string }) {
           <TooltipContent>{t('note.delete')}</TooltipContent>
         </Tooltip>
       </header>
+      {canShare ? <ShareDialog note={n} open={sharing} onOpenChange={setSharing} /> : null}
 
       {n.tags.length ? (
         <div className="mt-3 flex flex-wrap gap-1.5">

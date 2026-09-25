@@ -448,6 +448,13 @@ export function attachmentSync(): { keys: AccountKeys; remote: AttachmentRemote 
   return { keys, remote: b.attachments(session.userId) }
 }
 
+/** Backend, keys and local files for shared links, when signed in and unlocked. */
+export function shareContext() {
+  const b = deps?.backend
+  if (!b || !keys || !session || !engine) return null
+  return { backend: b, keys, attachments: deps?.attachments as Attachments }
+}
+
 /** Reads a page for a link card through the server, or null when signed out. */
 export async function fetchPageViaServer(url: string) {
   const b = deps?.backend

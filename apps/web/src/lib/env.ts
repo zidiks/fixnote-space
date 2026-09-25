@@ -4,6 +4,8 @@ export const env = {
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined,
   /** Telegram capture bot username, without @. */
   telegramBot: (import.meta.env.VITE_TELEGRAM_BOT as string | undefined) || undefined,
+  /** Where the web app is hosted; shared links open there. The desktop app needs it. */
+  webUrl: (import.meta.env.VITE_WEB_URL as string | undefined) || undefined,
 }
 
 export const isSupabaseConfigured = Boolean(env.supabaseUrl && env.supabaseAnonKey)
