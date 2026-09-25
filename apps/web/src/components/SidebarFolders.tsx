@@ -23,7 +23,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useUi } from '../app/store'
 import { useFolderMutations, useFolders } from '../lib/queries'
 
@@ -45,7 +45,7 @@ function NameInput({
     onDone(name?.trim() ? name.trim() : null)
   }
   return (
-    <div className="flex h-8 items-center gap-2 pr-2" style={{ paddingLeft: 10 + depth * 14 }}>
+    <div className="flex h-8 items-center gap-2.5 pr-2" style={{ paddingLeft: 10 + depth * 14 }}>
       <FolderIcon className="size-4 shrink-0 opacity-70" />
       <input
         // biome-ignore lint/a11y/noAutofocus: the input appears in response to an explicit action
@@ -73,6 +73,19 @@ export function SidebarFolders() {
   const navigate = useUi((s) => s.navigate)
   const [creatingIn, setCreatingIn] = useState<string | null | undefined>(undefined)
   const [renaming, setRenaming] = useState<string | null>(null)
+  // A menu item that opens a name field: the field appears only once the menu has closed and
+  // let go of focus, or the menu pulls focus back to its trigger and the field closes at once.
+  const pendingEdit = useRef<(() => void) | null>(null)
+  const startEdit = (fn: () => void) => () => {
+    pendingEdit.current = fn
+  }
+  const keepFocus = (e: Event) => {
+    const edit = pendingEdit.current
+    if (!edit) return
+    pendingEdit.current = null
+    e.preventDefault()
+    edit()
+  }
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [confirm, setConfirm] = useState<Folder | null>(null)
 
@@ -119,34 +132,32 @@ export function SidebarFolders() {
                       'group mb-0.5 flex h-8 items-center rounded-md pr-1 text-[13.5px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
                       active && 'bg-sidebar-accent font-medium text-foreground',
                     )}
-                    style={{ paddingLeft: depth * 14 }}
+                    // Same left edge as Inbox and tags; subfolders step in. The expand arrow
+                    // sits on the right, so a folder without subfolders has no gap before it.
+                    style={{ paddingLeft: 10 + depth * 14 }}
                   >
-                    <button
-                      type="button"
-                      aria-label={f.name}
-                      aria-expanded={kids ? open : undefined}
-                      onClick={() => kids && toggle(f.id)}
-                      className={cn(
-                        'flex size-5 items-center justify-center',
-                        !kids && 'invisible',
-                      )}
-                    >
-                      <ChevronRight
-                        className={cn(
-                          'size-3.5 opacity-60 transition-transform',
-                          open && 'rotate-90',
-                        )}
-                      />
-                    </button>
                     <button
                       type="button"
                       onClick={() => navigate({ kind: 'folder', id: f.id })}
                       onDoubleClick={() => setRenaming(f.id)}
-                      className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left"
                     >
                       <FolderIcon className="size-4 shrink-0 opacity-70" />
                       <span className="truncate">{f.name}</span>
                     </button>
+                    {kids ? (
+                      <button
+                        type="button"
+                        aria-label={f.name}
+                        aria-expanded={open}
+                        onClick={() => toggle(f.id)}
+                        className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                      >
+                        <ChevronRight
+                          className={cn('size-3.5 transition-transform', open && 'rotate-90')}
+                        />
+                      </button>
+                    ) : null}
                     <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden">
                       {f.noteCount || ''}
                     </span>
@@ -161,12 +172,12 @@ export function SidebarFolders() {
                           <MoreHorizontal />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        <DropdownMenuItem onSelect={() => setCreatingIn(f.id)}>
+                      <DropdownMenuContent align="start" onCloseAutoFocus={keepFocus}>
+                        <DropdownMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
                           <FolderPlus />
                           {t('sidebar.newSubfolder')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setRenaming(f.id)}>
+                        <DropdownMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
                           <Pencil />
                           {t('common.rename')}
                         </DropdownMenuItem>
@@ -179,12 +190,12 @@ export function SidebarFolders() {
                     </DropdownMenu>
                   </div>
                 </ContextMenuTrigger>
-                <ContextMenuContent>
-                  <ContextMenuItem onSelect={() => setCreatingIn(f.id)}>
+                <ContextMenuContent onCloseAutoFocus={keepFocus}>
+                  <ContextMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
                     <FolderPlus />
                     {t('sidebar.newSubfolder')}
                   </ContextMenuItem>
-                  <ContextMenuItem onSelect={() => setRenaming(f.id)}>
+                  <ContextMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
                     <Pencil />
                     {t('common.rename')}
                   </ContextMenuItem>

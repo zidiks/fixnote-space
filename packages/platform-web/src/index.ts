@@ -2,20 +2,22 @@ import { NotImplementedError, type Platform, type SqlDriver } from '@fixnote/cor
 import { createTransformersEmbedder } from './embed/client'
 import { webKeyStore } from './keys'
 import { openWebSqlDriver } from './sqlite/client'
+import { createWhisperTranscriber } from './whisper/client'
 
 /**
  * Browser / PWA adapters.
  * M1: sqlite-wasm over OPFS (done). M2: WebCrypto key store (done), OPFS blobs.
- * M3: transformers.js embedder (done). M4: edge-function transcriber.
+ * M3: transformers.js embedder (done). M4: on-device Whisper (done).
  */
 export function createWebPlatform(): Platform {
   let sql: Promise<SqlDriver> | null = null
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
+  let transcriber: ReturnType<typeof createWhisperTranscriber> | null = null
   return {
     kind: 'web',
     chrome: 'browser',
     capabilities: {
-      localTranscription: false,
+      localTranscription: true,
       localOnlyMode: false,
       localMcp: false,
       globalShortcut: false,
@@ -28,7 +30,10 @@ export function createWebPlatform(): Platform {
       embedder ??= createTransformersEmbedder()
       return Promise.resolve(embedder)
     },
-    transcriber: () => Promise.reject(new NotImplementedError('Transcriber (edge)', 'M4')),
+    transcriber: () => {
+      transcriber ??= createWhisperTranscriber()
+      return Promise.resolve(transcriber)
+    },
     keyStore: webKeyStore,
     saveFile: async (name, data, mime) => {
       const url = URL.createObjectURL(new Blob([data as BlobPart], { type: mime }))

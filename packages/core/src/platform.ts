@@ -47,11 +47,14 @@ export interface TranscriptionResult {
 }
 
 /**
- * Speech to text. Desktop: whisper.cpp on device. Web: edge function (audio leaves the device;
- * `local` tells the UI which disclosure to show).
+ * Speech to text on the device (Whisper through transformers.js on both platforms): audio never
+ * leaves the machine. The model downloads once, on first use.
  */
 export interface Transcriber {
+  readonly modelId: string
+  /** Always true today; false would mean audio is sent to a server and the UI must say so. */
   readonly local: boolean
+  ready(onProgress?: ProgressListener): Promise<void>
   transcribe(audio: Blob, opts?: { language?: string }): Promise<TranscriptionResult>
 }
 

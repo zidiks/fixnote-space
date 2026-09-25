@@ -14,6 +14,12 @@ export type Route =
 
 export type SettingsSection = 'general' | 'account' | 'data'
 
+/** An AI edit a note should open as soon as it is on screen (e.g. "tidy up" after dictation). */
+export interface AiRequest {
+  noteId: string
+  action: 'structure'
+}
+
 export const sameRoute = (a: Route, b: Route) => JSON.stringify(a) === JSON.stringify(b)
 
 interface UiState {
@@ -23,6 +29,7 @@ interface UiState {
   settings: SettingsSection | null
   theme: Theme
   chatDraft: string
+  aiRequest: AiRequest | null
   route: Route
   back: Route[]
   forward: Route[]
@@ -33,6 +40,7 @@ interface UiState {
   openSettings: (section: SettingsSection | null) => void
   setTheme: (theme: Theme) => void
   setChatDraft: (text: string) => void
+  requestAi: (request: AiRequest | null) => void
   navigate: (route: Route, opts?: { replace?: boolean }) => void
   goBack: () => void
   goForward: () => void
@@ -49,6 +57,7 @@ export const useUi = create<UiState>()(
       settings: null,
       theme: 'system',
       chatDraft: '',
+      aiRequest: null,
       route: { kind: 'home' },
       back: [],
       forward: [],
@@ -59,6 +68,7 @@ export const useUi = create<UiState>()(
       openSettings: (settings) => set({ settings }),
       setTheme: (theme) => set({ theme }),
       setChatDraft: (chatDraft) => set({ chatDraft }),
+      requestAi: (aiRequest) => set({ aiRequest }),
       navigate: (route, opts) =>
         set((s) => {
           if (sameRoute(route, s.route)) return {}

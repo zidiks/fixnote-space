@@ -59,6 +59,7 @@ pub fn run() {
             app.manage(db::Db(Mutex::new(conn)));
             if let Some(window) = app.get_webview_window("main") {
                 webview::disable_browser_shortcuts(&window);
+                webview::grant_microphone(&window);
             }
             Ok(())
         })

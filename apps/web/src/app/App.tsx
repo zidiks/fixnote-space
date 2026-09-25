@@ -11,6 +11,7 @@ import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
 import { SettingsDialog } from '../components/settings/SettingsDialog'
 import { TitleBar } from '../components/TitleBar'
+import { VoiceBar } from '../components/VoiceBar'
 import { AccountProvider } from '../lib/account/provider'
 import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider } from '../lib/db'
@@ -18,6 +19,7 @@ import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
+import { toggleVoice } from '../lib/voice/voice'
 import { applyTheme, useUi } from './store'
 
 // The editor (Tiptap/ProseMirror) is the heaviest part of the bundle; load it on first open.
@@ -38,6 +40,7 @@ const HK = {
   forward: { key: ']', mod: true },
   daily: { key: 'd', mod: true },
   newNote: { key: 'n', mod: true },
+  voice: { key: ' ', mod: true, shift: true },
 } as const
 
 const NONE = { key: '\u0000' } as const
@@ -94,6 +97,15 @@ function AppShell() {
       openDaily.mutate(undefined, { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) }),
     isApple,
   )
+  // Dictation: into the chat input when it has focus, else into the open note or a new one.
+  useHotkey(
+    HK.voice,
+    () =>
+      void toggleVoice(
+        document.activeElement?.closest('[data-voice-target="chat"]') ? 'chat' : 'auto',
+      ),
+    isApple,
+  )
   // Browsers reserve Ctrl/⌘+N for a new window; only the desktop app can take it.
   useHotkey(platform.kind === 'desktop' ? HK.newNote : NONE, newNote, isApple)
 
@@ -125,6 +137,7 @@ function AppShell() {
       </div>
       <Spotlight />
       <SettingsDialog />
+      <VoiceBar />
       <Toaster
         theme={theme}
         position="bottom-right"

@@ -21,6 +21,7 @@ import {
   FileText,
   Folder,
   Layers,
+  Mic,
   RotateCcw,
   Square,
   Trash2,
@@ -38,8 +39,10 @@ import {
   useAssistant,
 } from '../lib/assistant/assistant'
 import { useFolders, useNote } from '../lib/queries'
+import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { AnswerText } from './chat/AnswerText'
+import { VOICE_KEYS } from './VoiceBar'
 
 /** Scope that follows what is open: the note, the folder, or everything. */
 function useRouteScope(): ChatScope {
@@ -212,6 +215,18 @@ export function ChatPanel() {
   const input = useRef<HTMLTextAreaElement>(null)
   const busy = status === 'thinking' || status === 'answering'
   const last = messages.at(-1)
+  const voice = useVoice((s) => s.status)
+
+  // Dictated questions land in the input, to check and send.
+  useEffect(
+    () =>
+      registerVoiceSink('chat', (text) => {
+        const current = useUi.getState().chatDraft
+        setDraft(current.trim() ? `${current.trimEnd()} ${text}` : text)
+        input.current?.focus()
+      }),
+    [setDraft],
+  )
 
   // Opening the assistant is the moment to prepare search by meaning (first time: model download).
   useEffect(() => {
@@ -349,7 +364,10 @@ export function ChatPanel() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="flex items-end gap-1.5 rounded-xl border bg-card p-1.5 focus-within:ring-2 focus-within:ring-ring/30">
+            <div
+              data-voice-target="chat"
+              className="flex items-end gap-1.5 rounded-xl border bg-card p-1.5 focus-within:ring-2 focus-within:ring-ring/30"
+            >
               <textarea
                 ref={input}
                 rows={2}
@@ -360,6 +378,17 @@ export function ChatPanel() {
                 aria-label={t('chat.placeholder')}
                 className="max-h-40 flex-1 resize-none bg-transparent px-1.5 py-1 text-sm outline-none placeholder:text-muted-foreground"
               />
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                className={cn('rounded-lg', voice === 'recording' && 'text-destructive')}
+                onClick={() => void toggleVoice('chat')}
+                aria-label={t('voice.dictate')}
+                aria-pressed={voice === 'recording'}
+                title={t('voice.dictateHint', { keys: VOICE_KEYS })}
+              >
+                <Mic />
+              </Button>
               {busy ? (
                 <Button
                   size="icon-xs"

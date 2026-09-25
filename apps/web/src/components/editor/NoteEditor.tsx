@@ -33,6 +33,13 @@ import {
 import { type Ref, useEffect, useImperativeHandle, useRef } from 'react'
 import { toast } from 'sonner'
 import { type AiEditHandle, AiEditLayer, useAiEdit } from './AiEdit'
+
+export interface NoteEditorHandle {
+  openAi: AiEditHandle['open']
+  /** Dictated text: at the cursor while typing, otherwise as a new paragraph at the end. */
+  insertText(text: string): void
+}
+
 import { AiRangeExtension } from './ai-range'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
@@ -234,7 +241,7 @@ export function NoteEditor({
 }: {
   note: Note
   /** Lets the note header open the AI popover for the whole note. */
-  ref?: Ref<AiEditHandle>
+  ref?: Ref<NoteEditorHandle>
   /** Persists `markdown`, an edit that started from `base`; resolves with what was stored. */
   onSave: (markdown: string, base: string) => Promise<Note>
   onStateChange?: (state: SaveState) => void
@@ -333,7 +340,39 @@ export function NoteEditor({
   editorRef.current = editor
   const ai = useAiEdit(editor, note.title)
   openAi.current = ai.open
-  useImperativeHandle(ref, () => ({ open: (target, action) => openAi.current(target, action) }), [])
+  useImperativeHandle(
+    ref,
+    () => ({
+      openAi: (target, action) => openAi.current(target, action),
+      insertText: (text) => {
+        const e = editorRef.current
+        if (!e || e.isDestroyed) return
+        const { doc, selection } = e.state
+        if (e.isFocused) {
+          const before = selection.$from.parent.textBetween(0, selection.$from.parentOffset)
+          const spaced = before && !/\s$/.test(before) ? ` ${text}` : text
+          e.chain().focus().insertContent(spaced).run()
+          return
+        }
+        const last = doc.lastChild
+        if (last?.isTextblock && last.content.size === 0) {
+          e.chain()
+            .insertContentAt(doc.content.size - 1, text)
+            .focus('end')
+            .run()
+        } else {
+          e.chain()
+            .insertContentAt(doc.content.size, {
+              type: 'paragraph',
+              content: [{ type: 'text', text }],
+            })
+            .focus('end')
+            .run()
+        }
+      },
+    }),
+    [],
+  )
 
   // Sync brought a newer version of this note: show it if there is no unsaved typing.
   useEffect(() => {

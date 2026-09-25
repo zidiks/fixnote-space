@@ -1,5 +1,6 @@
 import { NotImplementedError, type Platform, type WindowChrome } from '@fixnote/core'
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
+import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { osKeyStore } from './keys'
 import { openTauriSqlDriver } from './sql'
@@ -21,7 +22,7 @@ export function appInfo(): Promise<AppInfo> {
 /**
  * Desktop adapters backed by the Rust side of apps/desktop.
  * M1: rusqlite (done). M2: OS keychain (done), app-data blobs.
- * M3: embedder shared with the web app (done). M4: whisper.cpp transcriber.
+ * M3: embedder shared with the web app (done). M4: Whisper shared with the web app (done).
  */
 /** Matches tauri.windows.conf.json (frameless) and tauri.macos.conf.json (overlay title bar). */
 function detectChrome(): WindowChrome {
@@ -35,6 +36,7 @@ export function createTauriPlatform(): Platform {
   const sql = openTauriSqlDriver()
   const chrome = detectChrome()
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
+  let transcriber: ReturnType<typeof createWhisperTranscriber> | null = null
   return {
     kind: 'desktop',
     chrome,
@@ -51,7 +53,11 @@ export function createTauriPlatform(): Platform {
       embedder ??= createTransformersEmbedder()
       return Promise.resolve(embedder)
     },
-    transcriber: () => Promise.reject(new NotImplementedError('Transcriber (whisper.cpp)', 'M4')),
+    // Same engine as the web app; WebView2 has WebGPU, so dictation runs on the GPU when it can.
+    transcriber: () => {
+      transcriber ??= createWhisperTranscriber()
+      return Promise.resolve(transcriber)
+    },
     keyStore: osKeyStore,
     saveFile: async (name, data) =>
       (await invoke<boolean>('save_file', data, {

@@ -12,8 +12,17 @@ import {
   TooltipTrigger,
 } from '@fixnote/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronRight, Folder, FolderInput, Inbox, Sparkles, Trash2 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import {
+  Check,
+  ChevronRight,
+  Folder,
+  FolderInput,
+  Inbox,
+  Mic,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useUi } from '../app/store'
 import { useRepo } from '../lib/db'
 import {
@@ -25,8 +34,9 @@ import {
   useNote,
 } from '../lib/queries'
 import { formatRelative } from '../lib/time'
-import type { AiEditHandle } from './editor/AiEdit'
-import { NoteEditor, type SaveState } from './editor/NoteEditor'
+import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
+import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
+import { VOICE_KEYS } from './VoiceBar'
 
 export function NoteView({ id }: { id: string }) {
   const { t, i18n } = useTranslation()
@@ -39,7 +49,21 @@ export function NoteView({ id }: { id: string }) {
   const move = useMoveNote()
   const deleteWithUndo = useDeleteWithUndo()
   const [saveState, setSaveState] = useState<SaveState>('idle')
-  const ai = useRef<AiEditHandle>(null)
+  const editor = useRef<NoteEditorHandle>(null)
+  const voice = useVoice((s) => s.status)
+  const aiRequest = useUi((s) => s.aiRequest)
+
+  // While this note is open, dictation goes into it.
+  useEffect(() => registerVoiceSink('note', (text) => editor.current?.insertText(text)), [])
+
+  // "Tidy up" asked for from elsewhere (a toast after dictation).
+  useEffect(() => {
+    if (aiRequest?.noteId !== id || !note.isFetchedAfterMount) return
+    useUi.getState().requestAi(null)
+    // Let the editor mount first when the note has just been opened.
+    const timer = setTimeout(() => editor.current?.openAi('note', aiRequest.action), 50)
+    return () => clearTimeout(timer)
+  }, [aiRequest, id, note.isFetchedAfterMount])
 
   if (!note.isFetchedAfterMount) return null
   if (!note.data) {
@@ -75,7 +99,23 @@ export function NoteView({ id }: { id: string }) {
             <Button
               variant="ghost"
               size="icon-xs"
-              onClick={() => ai.current?.open('note')}
+              onClick={() => void toggleVoice('note')}
+              aria-label={t('voice.dictate')}
+              aria-pressed={voice === 'recording'}
+              className={cn(voice === 'recording' && 'text-destructive')}
+            >
+              <Mic />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => editor.current?.openAi('note')}
               aria-label={t('ai.title')}
             >
               <Sparkles />
@@ -143,7 +183,7 @@ export function NoteView({ id }: { id: string }) {
       <div className="mt-6">
         <NoteEditor
           key={n.id}
-          ref={ai}
+          ref={editor}
           note={n}
           onStateChange={setSaveState}
           onSave={async (markdown, base) => {

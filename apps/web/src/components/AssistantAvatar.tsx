@@ -1,6 +1,7 @@
 import { Bloub, type BloubState } from '@fixnote/ui'
 import { useAssistant } from '../lib/assistant/assistant'
 import { useIsDark } from '../lib/useIsDark'
+import { useVoice } from '../lib/voice/voice'
 
 /** Hex twins of --foreground / --background, which the avatar needs for its color math. */
 const COLORS = {
@@ -14,9 +15,11 @@ export function AssistantAvatar({ size, follow = false }: { size: number; follow
   const status = useAssistant((s) => s.status)
   const semantic = useAssistant((s) => s.semantic)
   const pending = useAssistant((s) => s.pending)
+  const listening = useVoice((s) => s.status === 'recording')
 
-  const state: BloubState =
-    status === 'thinking'
+  const state: BloubState = listening
+    ? 'notify'
+    : status === 'thinking'
       ? 'thinking'
       : status === 'answering'
         ? 'wide'

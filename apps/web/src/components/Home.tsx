@@ -8,11 +8,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@fixnote/ui'
-import { Check, ChevronDown, MessageCircle, Search, SquarePen } from 'lucide-react'
+import { Check, ChevronDown, MessageCircle, Mic, Search, SquarePen } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useUi } from '../app/store'
 import { useCounts, useCreateNote, useFolders } from '../lib/queries'
 import { startOfDay } from '../lib/time'
+import { toggleVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { EmptyState, NoteGrid } from './NoteGrid'
 
@@ -114,6 +115,14 @@ export function Home() {
           >
             <SquarePen />
             {t('sidebar.newNote')}
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => void toggleVoice('new-note')}
+          >
+            <Mic />
+            {t('voice.note')}
           </Button>
           <Button variant="outline" className="rounded-full" onClick={() => setChatOpen(true)}>
             <MessageCircle />
