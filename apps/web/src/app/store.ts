@@ -5,9 +5,8 @@ export type Theme = 'system' | 'light' | 'dark'
 
 /** What the content column shows. Kept in memory; the desktop app has no URL bar. */
 export type Route =
-  | { kind: 'home' }
-  | { kind: 'all' }
-  | { kind: 'inbox' }
+  /** Home: the greeting and every note; `filter: 'inbox'` shows notes without a folder. */
+  | { kind: 'home'; filter?: 'inbox' }
   | { kind: 'folder'; id: string }
   | { kind: 'tag'; name: string }
   | { kind: 'note'; id: string }

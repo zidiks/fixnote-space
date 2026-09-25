@@ -93,7 +93,7 @@ export function NoteCard({ note }: { note: NoteSummary }) {
           <ContextMenuSubContent>
             <ContextMenuItem onSelect={() => move.mutate({ id: note.id, folderId: null })}>
               <Inbox />
-              <span className="flex-1">{t('sidebar.inbox')}</span>
+              <span className="flex-1">{t('common.noFolder')}</span>
               <Check className={cn(note.folderId !== null && 'invisible')} />
             </ContextMenuItem>
             {folders.map((f) => (

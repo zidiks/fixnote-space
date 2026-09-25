@@ -271,7 +271,8 @@ export function SidebarFolders() {
         destructive
         onConfirm={() => {
           if (!confirm) return
-          if (route.kind === 'folder') navigate({ kind: 'inbox' }, { replace: true })
+          if (route.kind === 'folder')
+            navigate({ kind: 'home', filter: 'inbox' }, { replace: true })
           remove.mutate(confirm.id)
           setConfirm(null)
         }}

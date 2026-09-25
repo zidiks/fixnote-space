@@ -1,22 +1,19 @@
 import type { NoteFilter } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Folder, Hash, Inbox, Layers } from 'lucide-react'
+import { Folder, Hash } from 'lucide-react'
 import { useMemo } from 'react'
 import type { Route } from '../app/store'
-import { useCounts, useFolders } from '../lib/queries'
+import { useFolders } from '../lib/queries'
 import { EmptyState, NoteGrid } from './NoteGrid'
 
-type ListRoute = Extract<Route, { kind: 'all' | 'inbox' | 'folder' | 'tag' }>
+type ListRoute = Extract<Route, { kind: 'folder' | 'tag' }>
 
 export function ListView({ route }: { route: ListRoute }) {
   const { t } = useTranslation()
   const folders = useFolders().data
-  const counts = useCounts().data
 
   const filter = useMemo<NoteFilter>(() => {
     switch (route.kind) {
-      case 'inbox':
-        return { scope: 'inbox' }
       case 'folder':
         return { folderId: route.id }
       case 'tag':
@@ -33,18 +30,6 @@ export function ListView({ route }: { route: ListRoute }) {
     count,
     empty,
   } = {
-    all: {
-      icon: Layers,
-      title: t('sidebar.recents'),
-      count: counts?.all,
-      empty: t('home.empty.body'),
-    },
-    inbox: {
-      icon: Inbox,
-      title: t('sidebar.inbox'),
-      count: counts?.inbox,
-      empty: t('home.empty.body'),
-    },
     folder: {
       icon: Folder,
       title: folder?.name ?? '',

@@ -5,6 +5,7 @@ const es: LocaleResource = {
     name: 'FixNote',
   },
   common: {
+    noFolder: 'Sin carpeta',
     cancel: 'Cancelar',
     delete: 'Eliminar',
     rename: 'Renombrar',
@@ -22,12 +23,11 @@ const es: LocaleResource = {
   sidebar: {
     search: 'Buscar',
     newNote: 'Nueva nota',
-    inbox: 'Bandeja',
     daily: 'Hoy',
-    recents: 'Todas las notas',
     folders: 'Carpetas',
     tags: 'Etiquetas',
-    noFolders: 'Aún no hay carpetas. Las notas llegan a la Bandeja y la estructura viene después.',
+    noFolders:
+      'Aún no hay carpetas. Las notas viven en Inicio sin carpeta; la estructura puede venir después.',
     noTags: 'Escribe #etiqueta en una nota para crear una.',
     settings: 'Ajustes',
     collapse: 'Ocultar barra lateral',
@@ -37,14 +37,15 @@ const es: LocaleResource = {
     folderName: 'Nombre de la carpeta',
     folderActions: 'Acciones de carpeta',
     deleteFolderTitle: '¿Eliminar «{{name}}»?',
-    deleteFolderBody: 'Las notas de dentro pasan a la Bandeja. No se elimina ninguna nota.',
+    deleteFolderBody:
+      'Las notas de dentro se quedan, solo que sin carpeta. No se elimina ninguna nota.',
   },
   home: {
     greeting: '¿Qué tienes en mente?',
     ask: 'Preguntar al asistente',
     filters: {
       all: 'Todas',
-      inbox: 'Bandeja',
+      inbox: 'Sin carpeta',
       folder: 'Carpeta',
       allFolders: 'Todas las carpetas',
       type: 'Tipo',
@@ -59,7 +60,7 @@ const es: LocaleResource = {
     },
     empty: {
       title: 'Aún no hay notas',
-      body: 'Crea una nota con el botón de arriba; va a la Bandeja. Ordénala después, o nunca.',
+      body: 'Crea una nota con el botón de arriba. Ordénala en carpetas después, o nunca.',
     },
     emptyFiltered: 'Nada coincide con estos filtros.',
   },

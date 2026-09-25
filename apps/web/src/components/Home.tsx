@@ -77,7 +77,13 @@ export function Home() {
   const createNote = useCreateNote()
   const folders = useFolders().data ?? []
   const counts = useCounts().data
-  const [scope, setScope] = useState<'all' | 'inbox'>('all')
+  const route = useUi((s) => s.route)
+  // Kept in the route, so Back returns to the same view.
+  const scope = route.kind === 'home' && route.filter === 'inbox' ? 'inbox' : 'all'
+  const setScope = (s: 'all' | 'inbox') =>
+    navigate(s === 'inbox' ? { kind: 'home', filter: 'inbox' } : { kind: 'home' }, {
+      replace: true,
+    })
   const [folderId, setFolderId] = useState('')
   const [type, setType] = useState<'' | NoteType>('')
   const [period, setPeriod] = useState<Period>('any')
@@ -148,6 +154,11 @@ export function Home() {
             )}
           >
             {t(`home.filters.${s}`)}
+            {s === 'inbox' && counts?.inbox ? (
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground tabular-nums">
+                {counts.inbox}
+              </span>
+            ) : null}
           </button>
         ))}
         <FilterMenu

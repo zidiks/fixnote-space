@@ -80,10 +80,12 @@ export function NoteView({ id }: { id: string }) {
         <button
           type="button"
           className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-accent hover:text-foreground"
-          onClick={() => navigate(folder ? { kind: 'folder', id: folder.id } : { kind: 'inbox' })}
+          onClick={() =>
+            navigate(folder ? { kind: 'folder', id: folder.id } : { kind: 'home', filter: 'inbox' })
+          }
         >
           {folder ? <Folder className="size-3.5" /> : <Inbox className="size-3.5" />}
-          {folder?.name ?? t('sidebar.inbox')}
+          {folder?.name ?? t('common.noFolder')}
         </button>
         <ChevronRight className="size-3.5 opacity-50" />
         <span className="truncate text-foreground">{n.title || t('common.untitled')}</span>
@@ -139,7 +141,7 @@ export function NoteView({ id }: { id: string }) {
             <DropdownMenuLabel>{t('note.moveTo')}</DropdownMenuLabel>
             <DropdownMenuItem onSelect={() => move.mutate({ id: n.id, folderId: null })}>
               <Inbox />
-              <span className="flex-1">{t('sidebar.inbox')}</span>
+              <span className="flex-1">{t('common.noFolder')}</span>
               <Check className={cn(n.folderId !== null && 'invisible')} />
             </DropdownMenuItem>
             {folders.map((f) => (

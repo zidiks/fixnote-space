@@ -19,7 +19,7 @@ export function DataSection() {
     setBusy(true)
     try {
       const files = await buildExport(driver, {
-        inbox: t('sidebar.inbox'),
+        inbox: t('common.noFolder'),
         daily: t('home.filters.daily'),
         untitled: t('common.untitled'),
       })

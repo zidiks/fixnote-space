@@ -16,13 +16,12 @@ import {
   CloudCheck,
   CloudOff,
   Hash,
-  Inbox,
-  Layers,
+  House,
   RefreshCw,
   Search,
   Settings,
 } from 'lucide-react'
-import { type Route, sameRoute, useUi } from '../app/store'
+import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useOpenDaily, useTags } from '../lib/queries'
@@ -35,7 +34,7 @@ function NavItem({
   count,
   onClick,
 }: {
-  icon: typeof Inbox
+  icon: typeof House
   label: string
   active?: boolean
   count?: number
@@ -95,7 +94,6 @@ export function Sidebar() {
   const navigate = useUi((s) => s.navigate)
   const counts = useCounts().data
   const openDaily = useOpenDaily()
-  const is = (r: Route) => sameRoute(route, r)
   return (
     <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
       <div className="px-2">
@@ -112,11 +110,11 @@ export function Sidebar() {
 
       <nav className="mt-3 flex-1 overflow-y-auto px-2">
         <NavItem
-          icon={Inbox}
-          label={t('sidebar.inbox')}
-          count={counts?.inbox}
-          active={is({ kind: 'inbox' })}
-          onClick={() => navigate({ kind: 'inbox' })}
+          icon={House}
+          label={t('nav.home')}
+          count={counts?.all}
+          active={route.kind === 'home'}
+          onClick={() => navigate({ kind: 'home' })}
         />
         <NavItem
           icon={CalendarDays}
@@ -124,13 +122,6 @@ export function Sidebar() {
           onClick={() =>
             openDaily.mutate(undefined, { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) })
           }
-        />
-        <NavItem
-          icon={Layers}
-          label={t('sidebar.recents')}
-          count={counts?.all}
-          active={is({ kind: 'all' })}
-          onClick={() => navigate({ kind: 'all' })}
         />
         <SidebarFolders />
         <SidebarTags />

@@ -20,7 +20,7 @@ import {
   CalendarDays,
   ChevronDown,
   FileText,
-  Layers,
+  House,
   MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
@@ -57,10 +57,6 @@ function useRouteLabel(route: Route): string {
   switch (route.kind) {
     case 'home':
       return t('nav.home')
-    case 'all':
-      return t('sidebar.recents')
-    case 'inbox':
-      return t('sidebar.inbox')
     case 'folder':
       return folders?.find((f) => f.id === route.id)?.name ?? ''
     case 'tag':
@@ -101,9 +97,9 @@ function PlaceMenu() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => navigate({ kind: 'all' })}>
-          <Layers />
-          {t('sidebar.recents')}
+        <DropdownMenuItem onSelect={() => navigate({ kind: 'home' })}>
+          <House />
+          {t('nav.home')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

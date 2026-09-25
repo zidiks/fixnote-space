@@ -3,6 +3,7 @@ const en = {
     name: 'FixNote',
   },
   common: {
+    noFolder: 'No folder',
     cancel: 'Cancel',
     delete: 'Delete',
     rename: 'Rename',
@@ -20,12 +21,10 @@ const en = {
   sidebar: {
     search: 'Search',
     newNote: 'New note',
-    inbox: 'Inbox',
     daily: 'Today',
-    recents: 'All notes',
     folders: 'Folders',
     tags: 'Tags',
-    noFolders: 'No folders yet. Notes land in Inbox and structure comes later.',
+    noFolders: 'No folders yet. Notes live on Home without a folder; structure can come later.',
     noTags: 'Type #tag in a note to create one.',
     settings: 'Settings',
     collapse: 'Hide sidebar',
@@ -35,14 +34,14 @@ const en = {
     folderName: 'Folder name',
     folderActions: 'Folder actions',
     deleteFolderTitle: 'Delete “{{name}}”?',
-    deleteFolderBody: 'Notes inside move to Inbox. No note is deleted.',
+    deleteFolderBody: 'Notes inside stay, just without a folder. No note is deleted.',
   },
   home: {
     greeting: "What's on your mind?",
     ask: 'Ask the assistant',
     filters: {
       all: 'All',
-      inbox: 'Inbox',
+      inbox: 'No folder',
       folder: 'Folder',
       allFolders: 'All folders',
       type: 'Type',
@@ -57,7 +56,7 @@ const en = {
     },
     empty: {
       title: 'No notes yet',
-      body: 'Create a note with the button above; it goes to Inbox. Sort it out later, or never.',
+      body: 'Create a note with the button above. Sort it into folders later, or never.',
     },
     emptyFiltered: 'Nothing matches these filters.',
   },

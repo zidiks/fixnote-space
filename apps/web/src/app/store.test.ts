@@ -6,20 +6,20 @@ beforeEach(() => useUi.setState({ route: { kind: 'home' }, back: [], forward: []
 describe('navigation history', () => {
   it('goes back and forward like a browser', () => {
     const { navigate } = useUi.getState()
-    navigate({ kind: 'inbox' })
+    navigate({ kind: 'tag', name: 'x' })
     navigate({ kind: 'note', id: 'a' })
     useUi.getState().goBack()
-    expect(useUi.getState().route).toEqual({ kind: 'inbox' })
+    expect(useUi.getState().route).toEqual({ kind: 'tag', name: 'x' })
     useUi.getState().goForward()
     expect(useUi.getState().route).toEqual({ kind: 'note', id: 'a' })
   })
 
   it('drops forward history on a new navigation and ignores repeats', () => {
     const s = useUi.getState()
-    s.navigate({ kind: 'inbox' })
-    s.navigate({ kind: 'inbox' })
+    s.navigate({ kind: 'tag', name: 'x' })
+    s.navigate({ kind: 'tag', name: 'x' })
     useUi.getState().goBack()
-    useUi.getState().navigate({ kind: 'all' })
+    useUi.getState().navigate({ kind: 'home', filter: 'inbox' })
     expect(useUi.getState().forward).toEqual([])
     expect(useUi.getState().back).toEqual([{ kind: 'home' }])
   })
