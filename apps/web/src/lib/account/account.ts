@@ -8,17 +8,22 @@ import {
   type KeyStore,
   makeKeyCheck,
   type NotesRepo,
+  newPairingKeys,
   newRecoverySecret,
+  openSecretFromDevice,
+  type PairingKeys,
+  pairingCode,
   phraseToSecret,
   publicKeyB64,
   type SqlDriver,
   SyncEngine,
+  sealSecretForDevice,
   verifyKeyCheck,
 } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
 import { conflictHeading } from '../conflict'
-import type { AccountBackend, Session } from './backend'
+import type { AccountBackend, PairingRequest, Session } from './backend'
 
 export type Phase =
   | 'disabled' // no backend configured in this build
@@ -40,6 +45,10 @@ interface AccountState {
   /** Only while creating an account: the secret behind the phrase on screen. */
   pendingSecret: Uint8Array | null
   sync: { status: SyncStatus; lastSyncedAt: number | null; error: string | null; pending: number }
+  /** This device waits for another one to let it in; `code` must match on both screens. */
+  pairing: { code: string; status: 'waiting' | 'expired' } | null
+  /** Other devices asking this one to let them in. */
+  pairingRequests: (PairingRequest & { code: string })[]
 }
 
 export const useAccount = create<AccountState>()(() => ({
@@ -48,6 +57,8 @@ export const useAccount = create<AccountState>()(() => ({
   ownerEmail: '',
   pendingSecret: null,
   sync: { status: 'idle', lastSyncedAt: null, error: null, pending: 0 },
+  pairing: null,
+  pairingRequests: [],
 }))
 
 const set = useAccount.setState
@@ -234,7 +245,110 @@ export async function unlockWithPhrase(phrase: string): Promise<'ok' | 'invalid'
   return 'ok'
 }
 
+// ── Adding a device without the phrase ───────────────────────────────────────
+
+const PAIRING_POLL = 2000
+const PAIRING_TTL = 10 * 60_000
+let pairingRun = 0
+
+/** A short name for this device in the other device's prompt. */
+function deviceLabel(): string {
+  const ua = navigator.userAgent
+  const os = /Windows/.test(ua)
+    ? 'Windows'
+    : /Android/.test(ua)
+      ? 'Android'
+      : /iPhone|iPad/.test(ua)
+        ? 'iOS'
+        : /Mac OS X/.test(ua)
+          ? 'macOS'
+          : /Linux/.test(ua)
+            ? 'Linux'
+            : ''
+  const app =
+    '__TAURI_INTERNALS__' in window
+      ? 'FixNote'
+      : /Edg\//.test(ua)
+        ? 'Edge'
+        : /Firefox\//.test(ua)
+          ? 'Firefox'
+          : /Chrome\//.test(ua)
+            ? 'Chrome'
+            : /Safari\//.test(ua)
+              ? 'Safari'
+              : ''
+  return [app, os].filter(Boolean).join(' · ')
+}
+
+/**
+ * New device, signed in but without the key: ask a device that is set up to let it in. Resolves
+ * when this device is unlocked, or when the request expired or was declined.
+ */
+export async function startPairing(): Promise<'ok' | 'expired' | 'cancelled'> {
+  const run = ++pairingRun
+  const k: PairingKeys = newPairingKeys()
+  const id = await backend().createPairing(k.publicKey, deviceLabel())
+  set({ pairing: { code: pairingCode(k.publicKey), status: 'waiting' } })
+  const started = Date.now()
+  try {
+    while (run === pairingRun && Date.now() - started < PAIRING_TTL) {
+      await new Promise((r) => setTimeout(r, PAIRING_POLL))
+      if (run !== pairingRun) break
+      const row = await backend().getPairing(id)
+      if (!row) {
+        // Declined on the other device (or expired and cleaned up).
+        set({ pairing: { code: '', status: 'expired' } })
+        return 'expired'
+      }
+      if (!row.sealedSecret) continue
+      const secret = openSecretFromDevice(row.sealedSecret, k)
+      const derived = deriveKeys(secret)
+      const keysRow = await backend().getUserKeys()
+      if (!keysRow || !verifyKeyCheck(derived, keysRow.keyCheck)) throw new Error('wrong key')
+      await backend()
+        .deletePairing(id)
+        .catch(() => undefined)
+      await need().keyStore.save(secret)
+      set({ pairing: null })
+      await becomeReady(derived)
+      return 'ok'
+    }
+  } catch (err) {
+    set({ pairing: null })
+    throw err
+  }
+  await backend()
+    .deletePairing(id)
+    .catch(() => undefined)
+  if (run !== pairingRun) return 'cancelled'
+  set({ pairing: { code: '', status: 'expired' } })
+  return 'expired'
+}
+
+export function cancelPairing() {
+  pairingRun++
+  set({ pairing: null })
+}
+
+/** Set-up device: lets the asking device in by sealing the account secret to its one-time key. */
+export async function approvePairing(request: PairingRequest) {
+  if (!keys) throw new Error('Account is locked')
+  await backend().approvePairing(request.id, sealSecretForDevice(keys.secret, request.ephemeralKey))
+  set((s) => ({ pairingRequests: s.pairingRequests.filter((r) => r.id !== request.id) }))
+}
+
+export async function declinePairing(request: PairingRequest) {
+  await backend().deletePairing(request.id)
+  set((s) => ({ pairingRequests: s.pairingRequests.filter((r) => r.id !== request.id) }))
+}
+
+async function refreshPairingRequests() {
+  const requests = await backend().pendingPairings()
+  set({ pairingRequests: requests.map((r) => ({ ...r, code: pairingCode(r.ephemeralKey) })) })
+}
+
 export async function signOut() {
+  cancelPairing()
   stopWatching?.()
   stopWatching = null
   clearTimeout(debounce)
@@ -273,6 +387,7 @@ export async function runSync() {
   setSync({ status: 'syncing' })
   try {
     const report = await e.sync()
+    await refreshPairingRequests().catch(() => undefined)
     // Images go after the notes that use them; another device fetches them when shown.
     const sync = attachmentSync()
     if (sync) {

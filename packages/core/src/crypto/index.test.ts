@@ -11,10 +11,14 @@ import {
   encryptFolderName,
   encryptNote,
   makeKeyCheck,
+  newPairingKeys,
   newRecoverySecret,
   openSealedBox,
+  openSecretFromDevice,
+  pairingCode,
   phraseToSecret,
   publicKeyB64,
+  sealSecretForDevice,
   secretToPhrase,
   verifyKeyCheck,
 } from './index'
@@ -116,5 +120,20 @@ describe('attachments', () => {
     tampered[tampered.length - 1] = (tampered.at(-1) ?? 0) ^ 1
     expect(() => decryptAttachment(keys, 'a1', tampered)).toThrow(DecryptionError)
     expect(() => decryptAttachment(keys, 'a1', new Uint8Array([9, 0]))).toThrow(DecryptionError)
+  })
+})
+
+describe('adding a device', () => {
+  it('moves the secret only to the device that asked, with matching codes', () => {
+    const secret = newRecoverySecret()
+    const device = newPairingKeys()
+    const code = pairingCode(device.publicKey)
+    expect(code).toMatch(/^\d{3} \d{3}$/)
+    expect(pairingCode(device.publicKey)).toBe(code)
+    const other = newPairingKeys()
+    expect(pairingCode(other.publicKey)).not.toBe(code)
+    const sealed = sealSecretForDevice(secret, device.publicKey)
+    expect(openSecretFromDevice(sealed, device)).toEqual(secret)
+    expect(() => openSecretFromDevice(sealed, other)).toThrow(DecryptionError)
   })
 })

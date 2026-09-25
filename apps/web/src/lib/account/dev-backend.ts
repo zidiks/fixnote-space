@@ -9,7 +9,7 @@ import {
   type SyncRemote,
   sealToPublicKey,
 } from '@fixnote/core'
-import type { AccountBackend, CaptureLink, Session, UserKeysRow } from './backend'
+import type { AccountBackend, CaptureLink, PairingRequest, Session, UserKeysRow } from './backend'
 
 /**
  * Development-only stand-in for Supabase, enabled with `?dev-backend` in `pnpm dev`. The "server"
@@ -52,6 +52,19 @@ const loadCapture = (): CaptureState =>
   JSON.parse(localStorage.getItem(CAPTURE) ?? '{"codes":{},"links":[],"inbox":[]}')
 const saveCapture = (c: CaptureState) => {
   localStorage.setItem(CAPTURE, JSON.stringify(c))
+  channel.postMessage('changed')
+}
+
+// ── Device pairing requests (shared by tabs, like the rest of the fake server) ──
+const PAIRINGS = 'fixnote.dev-pairings'
+type DevPairing = PairingRequest & {
+  userId: string
+  sealedSecret: string | null
+  expiresAt: number
+}
+const loadPairings = (): DevPairing[] => JSON.parse(localStorage.getItem(PAIRINGS) ?? '[]')
+const savePairings = (p: DevPairing[]) => {
+  localStorage.setItem(PAIRINGS, JSON.stringify(p))
   channel.postMessage('changed')
 }
 
@@ -270,6 +283,48 @@ export const devBackend: AccountBackend = {
     c.links = c.links.filter((l) => l.externalId !== link.externalId)
     saveCapture(c)
   },
+  createPairing: async (ephemeralKey, deviceLabel) => {
+    const userId = load().session?.userId
+    if (!userId) throw new Error('not authenticated')
+    const id = crypto.randomUUID()
+    savePairings([
+      ...loadPairings(),
+      {
+        id,
+        userId,
+        ephemeralKey,
+        deviceLabel,
+        createdAt: new Date().toISOString(),
+        sealedSecret: null,
+        expiresAt: Date.now() + 10 * 60_000,
+      },
+    ])
+    return id
+  },
+  getPairing: async (id) => {
+    const p = loadPairings().find((x) => x.id === id)
+    return p ? { sealedSecret: p.sealedSecret } : null
+  },
+  pendingPairings: async () => {
+    const userId = load().session?.userId
+    return loadPairings()
+      .filter((p) => p.userId === userId && !p.sealedSecret && p.expiresAt > Date.now())
+      .map(({ id, ephemeralKey, deviceLabel, createdAt }) => ({
+        id,
+        ephemeralKey,
+        deviceLabel,
+        createdAt,
+      }))
+  },
+  approvePairing: async (id, sealedSecret) => {
+    const all = loadPairings()
+    const p = all.find((x) => x.id === id && !x.sealedSecret)
+    if (!p) return false
+    p.sealedSecret = sealedSecret
+    savePairings(all)
+    return true
+  },
+  deletePairing: async (id) => savePairings(loadPairings().filter((p) => p.id !== id)),
   // Any URL "resolves" to a small page, so link cards can be tried without a network.
   fetchPage: async (url) => {
     if (!load().session) return null

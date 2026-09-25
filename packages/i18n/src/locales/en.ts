@@ -204,6 +204,25 @@ const en = {
     linked: 'Connected: {{label}}',
     unlink: 'Disconnect',
   },
+  pairing: {
+    useDevice: 'Confirm on another device',
+    useDeviceBody: 'No phrase at hand? Confirm on a device where FixNote is already set up.',
+    waitingTitle: 'Confirm on your other device',
+    waitingBody:
+      'Open FixNote where you are already signed in: it will ask whether to let this device in. Check that it shows the same code:',
+    expired: 'The request expired or was declined. Try again.',
+    retry: 'Ask again',
+    back: 'Enter the phrase instead',
+    requestTitle: 'A new device wants access to your notes',
+    requestBody:
+      '{{device}} asks to join your account. Allow it only if it is your device and it shows the same code:',
+    requestWarning: 'Allowing gives that device your key: it will be able to read all your notes.',
+    allow: 'Allow',
+    decline: 'Decline',
+    later: 'Later',
+    allowed: 'Device added',
+    unknownDevice: 'A device',
+  },
   window: {
     minimize: 'Minimize',
     maximize: 'Maximize',

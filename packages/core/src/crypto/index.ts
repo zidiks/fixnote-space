@@ -216,6 +216,44 @@ export function decryptAttachment(
   return { mime: header.mime ?? 'application/octet-stream', bytes: plain.slice(4 + headerLength) }
 }
 
+// ── Adding a device ──────────────────────────────────────────────────────────
+
+export interface PairingKeys {
+  publicKey: string
+  privateKey: Uint8Array
+  raw: Uint8Array
+}
+
+/** One-time X25519 keys of a device waiting to be let in. */
+export function newPairingKeys(): PairingKeys {
+  const kp = sodium.crypto_box_keypair()
+  return { publicKey: b64(kp.publicKey), privateKey: kp.privateKey, raw: kp.publicKey }
+}
+
+/**
+ * Six digits both devices show for the same one-time key. If they differ, someone replaced the
+ * key on the way; the user must not approve.
+ */
+export function pairingCode(publicKey: string): string {
+  const hash = sodium.crypto_generichash(8, unb64(publicKey), sodium.from_string('fixnote-pairing'))
+  const n = new DataView(hash.buffer, hash.byteOffset, hash.byteLength).getUint32(0) % 1_000_000
+  const digits = String(n).padStart(6, '0')
+  return `${digits.slice(0, 3)} ${digits.slice(3)}`
+}
+
+/** The approving device seals the account secret to the new device's one-time key. */
+export function sealSecretForDevice(secret: Uint8Array, publicKey: string): string {
+  return b64(sodium.crypto_box_seal(secret, unb64(publicKey)))
+}
+
+export function openSecretFromDevice(sealed: string, keys: PairingKeys): Uint8Array {
+  try {
+    return sodium.crypto_box_seal_open(unb64(sealed), keys.raw, keys.privateKey)
+  } catch {
+    throw new DecryptionError('pairing secret')
+  }
+}
+
 /** Seals a message to an account's public key, as capture channels do (for tests and dev tools). */
 export function sealToPublicKey(publicKey: string, message: string): string {
   return b64(sodium.crypto_box_seal(sodium.from_string(message), unb64(publicKey)))

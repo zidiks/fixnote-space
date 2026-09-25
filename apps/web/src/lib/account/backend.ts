@@ -22,6 +22,14 @@ export interface CaptureLink {
   createdAt: string
 }
 
+/** A new device asking to be let in (see supabase/migrations/*_device_pairing.sql). */
+export interface PairingRequest {
+  id: string
+  ephemeralKey: string
+  deviceLabel: string
+  createdAt: string
+}
+
 export interface UserKeysRow {
   publicKey: string
   keyCheck: string
@@ -44,6 +52,14 @@ export interface AccountBackend {
   createCaptureCode(): Promise<string>
   captureLinks(): Promise<CaptureLink[]>
   unlinkCapture(link: CaptureLink): Promise<void>
+  /** New device: ask to be let in. */
+  createPairing(ephemeralKey: string, deviceLabel: string): Promise<string>
+  /** New device: the request, with the sealed secret once approved; null when gone. */
+  getPairing(id: string): Promise<{ sealedSecret: string | null } | null>
+  /** Set-up device: requests waiting for approval. */
+  pendingPairings(): Promise<PairingRequest[]>
+  approvePairing(id: string, sealedSecret: string): Promise<boolean>
+  deletePairing(id: string): Promise<void>
   /** The default LLM route for the signed-in user, or null when signed out. */
   chatTransport(): Promise<ChatTransport | null>
   /** Reads a public page's <head> through the `unfurl` function; null when signed out. */
@@ -168,6 +184,51 @@ export function supabaseBackend(
         .eq('external_id', link.externalId)
       if (error) throw error
     },
+    async createPairing(ephemeralKey, deviceLabel) {
+      const { data, error } = await client
+        .from('device_pairings')
+        .insert({ ephemeral_key: ephemeralKey, device_label: deviceLabel })
+        .select('id')
+        .single()
+      if (error) throw error
+      return data.id as string
+    },
+    async getPairing(id) {
+      const { data, error } = await client
+        .from('device_pairings')
+        .select('sealed_secret')
+        .eq('id', id)
+        .maybeSingle()
+      if (error) throw error
+      return data ? { sealedSecret: data.sealed_secret } : null
+    },
+    async pendingPairings() {
+      const { data, error } = await client
+        .from('device_pairings')
+        .select('id, ephemeral_key, device_label, created_at')
+        .is('sealed_secret', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at')
+      if (error) throw error
+      return (data ?? []).map((r) => ({
+        id: r.id,
+        ephemeralKey: r.ephemeral_key,
+        deviceLabel: r.device_label,
+        createdAt: r.created_at,
+      }))
+    },
+    async approvePairing(id, sealedSecret) {
+      const { data, error } = await client.rpc('approve_device_pairing', {
+        p_id: id,
+        p_sealed: sealedSecret,
+      })
+      if (error) throw error
+      return Boolean(data)
+    },
+    async deletePairing(id) {
+      const { error } = await client.from('device_pairings').delete().eq('id', id)
+      if (error) throw error
+    },
     async fetchPage(url) {
       const { data } = await client.auth.getSession()
       if (!data.session) return null
@@ -191,6 +252,11 @@ export function supabaseBackend(
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'inbox_items' },
+          onChange,
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'device_pairings' },
           onChange,
         )
         .subscribe()

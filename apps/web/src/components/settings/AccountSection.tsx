@@ -1,17 +1,19 @@
 import { secretToPhrase } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button, ConfirmDialog, cn, Input } from '@fixnote/ui'
-import { Copy, Eye, EyeOff, LogOut, RefreshCw } from 'lucide-react'
+import { Copy, Eye, EyeOff, LogOut, MonitorSmartphone, RefreshCw } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import {
   backToEmail,
   backToPhrase,
+  cancelPairing,
   currentSecret,
   finishNewAccount,
   phraseSaved,
   runSync,
   sendCode,
   signOut,
+  startPairing,
   unlockWithPhrase,
   useAccount,
   verifyCode,
@@ -255,8 +257,63 @@ function ConfirmPhrase() {
   )
 }
 
+/** New device: wait for a device that is set up to let this one in. */
+function PairWithDevice() {
+  const { t } = useTranslation()
+  const pairing = useAccount((s) => s.pairing)
+  const [error, setError] = useState<string | null>(null)
+  const ask = () => {
+    setError(null)
+    startPairing().catch((err: unknown) =>
+      setError(err instanceof Error ? err.message : String(err)),
+    )
+  }
+  if (!pairing) {
+    return (
+      <div className="space-y-2 border-t pt-4">
+        <p className="max-w-md text-sm text-muted-foreground">{t('pairing.useDeviceBody')}</p>
+        <Button type="button" variant="outline" onClick={ask}>
+          <MonitorSmartphone />
+          {t('pairing.useDevice')}
+        </Button>
+        <ErrorText>{error}</ErrorText>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-3 border-t pt-4">
+      {pairing.status === 'waiting' ? (
+        <>
+          <Heading title={t('pairing.waitingTitle')} body={t('pairing.waitingBody')} />
+          <p
+            data-testid="pairing-code"
+            className="font-mono text-3xl font-semibold tracking-widest tabular-nums"
+          >
+            {pairing.code}
+          </p>
+        </>
+      ) : (
+        <p role="alert" className="text-sm text-muted-foreground">
+          {t('pairing.expired')}
+        </p>
+      )}
+      <div className="flex gap-2">
+        {pairing.status === 'expired' ? (
+          <Button type="button" variant="outline" onClick={ask}>
+            {t('pairing.retry')}
+          </Button>
+        ) : null}
+        <Button type="button" variant="ghost" onClick={cancelPairing}>
+          {t('pairing.back')}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function Unlock() {
   const { t } = useTranslation()
+  const pairing = useAccount((s) => s.pairing)
   const [phrase, setPhrase] = useState('')
   const { busy, error, setError, run } = useBusy()
   const submit = (e: FormEvent) => {
@@ -270,6 +327,7 @@ function Unlock() {
       (err) => (err instanceof Error ? err.message : String(err)),
     )
   }
+  if (pairing) return <PairWithDevice />
   return (
     <form onSubmit={submit} className="space-y-4">
       <Heading title={t('account.unlockTitle')} body={t('account.unlockBody')} />
@@ -293,6 +351,7 @@ function Unlock() {
           {t('account.signOut')}
         </Button>
       </div>
+      <PairWithDevice />
     </form>
   )
 }

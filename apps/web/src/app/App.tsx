@@ -6,6 +6,7 @@ import { Toaster } from 'sonner'
 import { ChatPanel } from '../components/ChatPanel'
 import { Home } from '../components/Home'
 import { ListView } from '../components/ListView'
+import { PairingRequestDialog } from '../components/PairingRequestDialog'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
@@ -138,6 +139,7 @@ function AppShell() {
       <Spotlight />
       <SettingsDialog />
       <VoiceBar />
+      <PairingRequestDialog />
       <Toaster
         theme={theme}
         position="bottom-right"

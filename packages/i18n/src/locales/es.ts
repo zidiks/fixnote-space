@@ -208,6 +208,26 @@ const es: LocaleResource = {
     linked: 'Conectado: {{label}}',
     unlink: 'Desconectar',
   },
+  pairing: {
+    useDevice: 'Confirmar en otro dispositivo',
+    useDeviceBody:
+      '¿No tienes la frase a mano? Confirma en un dispositivo donde FixNote ya está configurado.',
+    waitingTitle: 'Confirma en tu otro dispositivo',
+    waitingBody:
+      'Abre FixNote donde ya iniciaste sesión: te preguntará si dejar entrar a este dispositivo. Comprueba que muestra el mismo código:',
+    expired: 'La solicitud caducó o fue rechazada. Inténtalo de nuevo.',
+    retry: 'Pedir de nuevo',
+    back: 'Introducir la frase',
+    requestTitle: 'Un dispositivo nuevo quiere acceder a tus notas',
+    requestBody:
+      '{{device}} quiere entrar en tu cuenta. Permítelo solo si es tu dispositivo y muestra el mismo código:',
+    requestWarning: 'Al permitirlo, ese dispositivo recibe tu clave: podrá leer todas tus notas.',
+    allow: 'Permitir',
+    decline: 'Rechazar',
+    later: 'Más tarde',
+    allowed: 'Dispositivo añadido',
+    unknownDevice: 'Un dispositivo',
+  },
   window: {
     minimize: 'Minimizar',
     maximize: 'Maximizar',
