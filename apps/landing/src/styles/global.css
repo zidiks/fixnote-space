@@ -1,0 +1,331 @@
+/* The landing's only stylesheet (inlined into every page by Astro). */
+@import "tailwindcss";
+@import "@fontsource-variable/inter/wght.css";
+
+@theme {
+  --color-canvas: #f5f3ef;
+  --color-ink: #1b1a18;
+  --color-muted: #6e6b64;
+  --color-line: #e6e2da;
+  --color-brand: #f26a2a;
+  --color-brand-deep: #d9531a;
+  --color-night: #1f1c19;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  ::selection {
+    background: #fde2d3;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+@layer components {
+  .headline {
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+    text-wrap: balance;
+  }
+  .lead {
+    line-height: 1.55;
+    color: var(--color-muted);
+    text-wrap: pretty;
+  }
+}
+
+/* A highlighted word inside a headline: a soft tinted chip. */
+.mark {
+  display: inline-block;
+  font-size: 0.9em;
+  line-height: 1.12;
+  padding: 0.04em 0.2em 0.1em;
+  border-radius: 0.24em;
+}
+.mark-brand {
+  color: #e2561c;
+  background: #fde2d3;
+}
+.mark-blue {
+  color: #2d64b3;
+  background: #dde8f7;
+}
+.mark-green {
+  color: #23883f;
+  background: #d9efdf;
+}
+
+/*
+ * Motion. Content is visible without JavaScript; a tiny script adds `.js` to <html> first, and only
+ * then do below-the-fold blocks start hidden until they scroll into view. The first screen animates
+ * with CSS alone, from the first frame, so it never waits for a script (good for LCP).
+ */
+.hero-in {
+  animation: hero-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes hero-in {
+  from {
+    opacity: 0.01;
+    filter: blur(8px);
+    transform: translateY(18px);
+  }
+}
+
+.reveal,
+.reveal .word {
+  transition:
+    opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal {
+  transition-delay: var(--delay, 0ms);
+}
+.reveal .word {
+  display: inline-block;
+  transition-delay: calc(var(--i, 0) * 50ms);
+}
+.js .reveal:not(.in):not(.words) {
+  opacity: 0.01;
+  filter: blur(8px);
+  transform: translateY(24px);
+}
+.js .reveal.words:not(.in) .word {
+  opacity: 0.01;
+  filter: blur(10px);
+  transform: translateY(0.45em);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-in {
+    animation: none;
+  }
+  .js .reveal:not(.in):not(.words),
+  .js .reveal.words:not(.in) .word {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+/* The problem story: a faint grid, lines that light up as they reach the upper half of the screen. */
+.story-grid {
+  background-image:
+    linear-gradient(to right, rgba(27, 26, 24, 0.028) 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(27, 26, 24, 0.028) 2px, transparent 2px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 min(360px, 25%),
+    #000 calc(100% - min(360px, 25%)),
+    transparent
+  );
+}
+.js .story-line {
+  opacity: 0.32;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.js .story-line.in {
+  opacity: 1;
+}
+.story-pop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(var(--pop-to, 0deg));
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s;
+}
+.js .story-line:not(.in) .story-pop {
+  transform: scale(var(--pop-scale, 0.5)) rotate(var(--pop-from, 40deg));
+}
+.story-emoji {
+  font-size: 0.94em;
+  line-height: 1;
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.12));
+}
+/* A glossy app tile (Telegram blue): top sheen, bright rim, shaded bottom and a cast shadow. */
+.story-app {
+  width: 0.94em;
+  height: 0.94em;
+  vertical-align: 0.1em;
+  border-radius: 0.25em;
+  background:
+    radial-gradient(120% 90% at 28% 12%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 46%),
+    linear-gradient(160deg, #7dd3ff 0%, #2aa3ef 50%, #1a7fc9 100%);
+  box-shadow:
+    inset 0 0.03em 0 rgba(255, 255, 255, 0.7),
+    inset 0 -0.07em 0.1em rgba(10, 70, 150, 0.4),
+    0 0.02em 0.03em rgba(10, 40, 110, 0.22),
+    0 0.14em 0.26em -0.04em rgba(22, 110, 190, 0.4);
+}
+.story-app svg {
+  width: 0.56em;
+  height: 0.56em;
+  color: #fff;
+}
+.story-chip {
+  display: inline-block;
+  padding: 0.14em 0.3em 0.2em;
+  border-radius: 0.4em;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.story-chip-brand {
+  color: #e2561c;
+  background: #fde2d3;
+}
+.story-chip-blue {
+  color: #2d64b3;
+  background: #dde8f7;
+}
+.story-chip-green {
+  color: #23883f;
+  background: #d9efdf;
+}
+
+/* Endless question rows: four copies on one track, shifted by exactly one copy, so no seam. */
+.marquee-track {
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee {
+  animation: marquee 80s linear infinite;
+}
+.marquee[data-reverse] {
+  animation-direction: reverse;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-25%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+}
+
+/* Small looping details in the step visuals. */
+.fx-pulse {
+  animation: fx-pulse 1.6s ease-in-out infinite;
+}
+@keyframes fx-pulse {
+  50% {
+    transform: scaleY(0.35);
+  }
+}
+.fx-blink {
+  animation: fx-blink 1.2s steps(2, jump-none) infinite;
+}
+@keyframes fx-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* FAQ: native <details>, the plus turns into a cross when open. */
+.faq-item summary {
+  list-style: none;
+  cursor: pointer;
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item[open] .faq-icon {
+  transform: rotate(45deg);
+  background: var(--color-ink);
+  color: #fff;
+}
+
+/* Blog article typography. */
+.prose-note {
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: #34322e;
+}
+.prose-note > * + * {
+  margin-top: 1.15em;
+}
+.prose-note h2 {
+  margin-top: 2em;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+}
+.prose-note h3 {
+  margin-top: 1.6em;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+.prose-note a {
+  color: var(--color-brand-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-note ul,
+.prose-note ol {
+  padding-left: 1.3em;
+}
+.prose-note ul {
+  list-style: disc;
+}
+.prose-note ol {
+  list-style: decimal;
+}
+.prose-note li + li {
+  margin-top: 0.4em;
+}
+.prose-note blockquote {
+  border-left: 3px solid var(--color-brand);
+  padding-left: 1em;
+  color: var(--color-muted);
+}
+.prose-note code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: #ece8e0;
+  padding: 0.1em 0.35em;
+  border-radius: 0.35em;
+}
+.prose-note pre {
+  overflow-x: auto;
+  background: var(--color-night);
+  color: #f2efe9;
+  padding: 1em 1.2em;
+  border-radius: 14px;
+  font-size: 0.9rem;
+}
+.prose-note pre code {
+  background: none;
+  padding: 0;
+}

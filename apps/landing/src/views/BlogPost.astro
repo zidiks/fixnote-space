@@ -1,0 +1,104 @@
+---
+import { render } from 'astro:content'
+import ArrowLeft from '@lucide/astro/icons/arrow-left'
+import { LANG_NAMES, LANGS, localePath, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import { formatDate, type Post, postInfo, readingMinutes, translations } from '../lib/blog'
+import FinalCta from './home/FinalCta.astro'
+
+interface Props {
+  post: Post
+}
+const { post } = Astro.props
+const { lang, slug } = postInfo(post)
+const d = t(lang)
+const p = d.blogPage
+const { Content } = await render(post)
+const alternates = await translations(post)
+const others = LANGS.filter((l) => l !== lang && alternates[l])
+const site = Astro.site ?? new URL('https://fixnote.space')
+const url = new URL(localePath(lang, `/blog/${slug}/`), site).href
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.date.toISOString(),
+    dateModified: (post.data.updated ?? post.data.date).toISOString(),
+    inLanguage: lang,
+    mainEntityOfPage: url,
+    image: new URL(`/og/${lang}.png`, site).href,
+    author: { '@type': 'Organization', name: 'FixNote', url: site.href },
+    publisher: {
+      '@type': 'Organization',
+      name: 'FixNote',
+      logo: new URL('/favicon.svg', site).href,
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'FixNote',
+        item: new URL(localePath(lang, '/'), site).href,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: d.nav.blog,
+        item: new URL(localePath(lang, '/blog/'), site).href,
+      },
+      { '@type': 'ListItem', position: 3, name: post.data.title, item: url },
+    ],
+  },
+]
+---
+
+<Base
+  lang={lang}
+  title={`${post.data.title} · FixNote`}
+  description={post.data.description}
+  path={`/blog/${slug}/`}
+  alternates={alternates}
+  type="article"
+  jsonLd={jsonLd}
+>
+  <article class="px-4 pb-16 pt-36 sm:px-6 sm:pt-44">
+    <div class="mx-auto max-w-[720px]">
+      <a href={localePath(lang, '/blog/')} class="inline-flex items-center gap-1.5 text-[15px] font-medium text-muted hover:text-ink">
+        <ArrowLeft size={16} /> {p.back}
+      </a>
+      <h1 class="headline hero-in mt-8 text-[36px] sm:text-[48px]">{post.data.title}</h1>
+      <p class="hero-in lead mt-5 text-lg sm:text-xl" style="--delay:80ms">{post.data.description}</p>
+      <div class="hero-in mt-6 flex flex-wrap items-center gap-2 text-sm text-muted" style="--delay:120ms">
+        <span>{p.published}</span>
+        <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time>
+        <span aria-hidden="true">·</span>
+        <span>{readingMinutes(post)} {p.minutes}</span>
+      </div>
+      <div class="prose-note mt-12 border-t border-line pt-10">
+        <Content />
+      </div>
+      {
+        others.length > 0 && (
+          <p class="mt-14 text-[15px] text-muted">
+            {p.otherLanguages}:{' '}
+            {others.map((l, i) => (
+              <>
+                {i > 0 && ' · '}
+                <a href={alternates[l]} hreflang={l} lang={l} class="font-medium text-brand-deep hover:underline">
+                  {LANG_NAMES[l]}
+                </a>
+              </>
+            ))}
+          </p>
+        )
+      }
+    </div>
+  </article>
+  <FinalCta lang={lang} />
+</Base>

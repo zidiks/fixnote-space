@@ -1,0 +1,46 @@
+---
+import ChevronDown from '@lucide/astro/icons/chevron-down'
+import Globe from '@lucide/astro/icons/globe'
+import { LANG_NAMES, LANGS, type Lang, localePath, t } from '../i18n'
+
+/** Links to this page in the other languages (the home page where a translation is missing). */
+interface Props {
+  lang: Lang
+  alternates: Partial<Record<Lang, string>>
+  up?: boolean
+}
+const { lang, alternates, up = false } = Astro.props
+---
+
+<details class="group relative">
+  <summary
+    class="flex h-10 cursor-pointer list-none items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink/70 transition hover:text-ink [&::-webkit-details-marker]:hidden"
+    aria-label={t(lang).nav.language}
+  >
+    <Globe size={16} />
+    <span class="uppercase">{lang}</span>
+    <ChevronDown size={14} class="transition group-open:rotate-180" />
+  </summary>
+  <ul
+    class:list={[
+      'absolute right-0 z-50 w-40 rounded-2xl bg-white p-1.5 shadow-[0_12px_32px_rgba(27,26,24,0.14)] ring-1 ring-black/5',
+      up ? 'bottom-12' : 'top-12',
+    ]}
+  >
+    {
+      LANGS.map((l) => (
+        <li>
+          <a
+            href={alternates[l] ?? localePath(l, '/')}
+            hreflang={l}
+            lang={l}
+            aria-current={l === lang ? 'true' : undefined}
+            class:list={['block rounded-xl px-3 py-2 text-sm transition hover:bg-canvas', l === lang && 'font-semibold']}
+          >
+            {LANG_NAMES[l]}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</details>

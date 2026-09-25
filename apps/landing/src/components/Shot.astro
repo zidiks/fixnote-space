@@ -1,0 +1,34 @@
+---
+import { Picture } from 'astro:assets'
+import en from '../assets/shots/home-en.png'
+import es from '../assets/shots/home-es.png'
+import ru from '../assets/shots/home-ru.png'
+import type { Lang } from '../i18n'
+
+/**
+ * The app screenshot in a window frame. It is the largest thing on the first screen, so it loads
+ * eagerly with high priority, in AVIF/WebP, at the width the layout needs.
+ */
+interface Props {
+  lang: Lang
+  alt: string
+}
+const { lang, alt } = Astro.props
+const shots = { ru, en, es }
+---
+
+<div
+  class="overflow-hidden rounded-[18px] bg-white p-1.5 shadow-[0_40px_100px_-20px_rgba(27,26,24,0.28),0_0_0_1px_rgba(27,26,24,0.06)] sm:rounded-[26px] sm:p-2"
+>
+  <Picture
+    src={shots[lang]}
+    alt={alt}
+    formats={['avif', 'webp']}
+    widths={[640, 960, 1280, 1600, 2200]}
+    sizes="(min-width: 1180px) 1100px, 94vw"
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+    class="block h-auto w-full rounded-[13px] sm:rounded-[19px]"
+  />
+</div>

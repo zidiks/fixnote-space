@@ -1,0 +1,4 @@
+# Download links on the site stay on fixnote.space; the files are published with each release.
+/download/windows   https://github.com/zidiks/fixnote-space/releases/latest/download/FixNote-Windows-x64-setup.exe   302
+/download/mac-arm   https://github.com/zidiks/fixnote-space/releases/latest/download/FixNote-macOS-arm64.dmg   302
+/download/mac-intel https://github.com/zidiks/fixnote-space/releases/latest/download/FixNote-macOS-x64.dmg   302

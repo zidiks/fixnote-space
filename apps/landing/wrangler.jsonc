@@ -1,0 +1,12 @@
+// The marketing site for fixnote.space (apps/landing): static files from `astro build`.
+// The app itself is a separate Worker (repository root wrangler.jsonc) on app.fixnote.space.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "fixnote-landing",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  }
+}

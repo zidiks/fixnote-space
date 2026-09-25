@@ -1,0 +1,62 @@
+---
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right'
+import Download from '@lucide/astro/icons/download'
+import Eyebrow from '../../components/Eyebrow.astro'
+import Headline from '../../components/Headline.astro'
+import Pill from '../../components/Pill.astro'
+import Shot from '../../components/Shot.astro'
+import { APP_URL, DOWNLOADS, type Lang, localePath, t } from '../../i18n'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang).hero
+const downloadPage = localePath(lang, '/download/')
+---
+
+<section class="px-4 pt-32 sm:px-6 sm:pt-40">
+  <div class="mx-auto max-w-[900px] text-center">
+    <div class="hero-in flex justify-center"><Eyebrow>{d.eyebrow}</Eyebrow></div>
+    <Headline
+      as="h1"
+      parts={d.headline}
+      reveal={false}
+      class="hero-in mt-6 text-[42px] sm:text-[64px] lg:text-[80px]"
+    />
+    <p class="hero-in lead mx-auto mt-7 max-w-[640px] text-[17px] sm:text-xl" style="--delay:120ms">
+      {d.lead}
+    </p>
+    <div class="hero-in mt-9 flex flex-wrap items-center justify-center gap-3" style="--delay:200ms">
+      <Pill
+        href={downloadPage}
+        variant="brand"
+        id="hero-download"
+        data-windows={d.downloadFor.windows}
+        data-mac={d.downloadFor.mac}
+        data-windows-href={DOWNLOADS.windows}
+        data-mac-href={`${downloadPage}#mac`}
+      >
+        <Download size={18} /> <span>{d.download}</span>
+      </Pill>
+      <Pill href={APP_URL} variant="light">{d.openWeb} <ArrowUpRight size={17} /></Pill>
+    </div>
+    <p class="hero-in mt-5 text-sm text-muted" style="--delay:260ms">{d.platforms}</p>
+  </div>
+  <div class="hero-in mx-auto mt-16 max-w-[1100px] sm:mt-20" style="--delay:320ms">
+    <Shot lang={lang} alt={d.shotAlt} />
+  </div>
+</section>
+
+<script is:inline>
+  // Point the main button at the visitor's system. Windows gets the installer; on a Mac the
+  // download page asks which chip (the browser can't tell Apple Silicon from Intel reliably).
+  ;(() => {
+    const b = document.getElementById('hero-download')
+    const ua = navigator.userAgent
+    const os = /Windows/.test(ua) ? 'windows' : /Macintosh/.test(ua) && !('ontouchend' in document) ? 'mac' : ''
+    if (!b || !os) return
+    b.href = b.dataset[`${os}Href`]
+    b.querySelector('span').textContent = b.dataset[os]
+  })()
+</script>

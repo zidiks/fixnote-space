@@ -1,0 +1,52 @@
+---
+import Send from '@lucide/astro/icons/send'
+import Headline from '../../components/Headline.astro'
+import { type Lang, t } from '../../i18n'
+
+/** The problem, told line by line: each line lights up as it reaches the upper half of the screen. */
+interface Props {
+  lang: Lang
+}
+const d = t(Astro.props.lang).story
+type Line = (typeof d.lines)[number] & {
+  app?: string
+  emoji?: string
+  chip?: { text: string; tone: string; tilt: string }
+}
+const lines = d.lines as Line[]
+---
+
+<section class="relative px-4 py-28 sm:px-6 sm:py-40" aria-label={d.label}>
+  <div class="story-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+  <div class="relative mx-auto max-w-[900px]">
+    <p class="reveal text-center text-sm font-medium uppercase tracking-[0.14em] text-muted">{d.label}</p>
+    <div class="mt-12 space-y-5 text-[30px] font-semibold leading-[1.18] tracking-[-0.04em] sm:mt-16 sm:space-y-7 sm:text-[46px] lg:text-[54px]">
+      {
+        lines.map((line) => (
+          <p class="story-line">
+            {line.text}{' '}
+            {line.app === 'telegram' && (
+              <span class="story-pop story-app" style="--pop-from:-30deg" aria-hidden="true">
+                <Send />
+              </span>
+            )}
+            {line.emoji && (
+              <span class="story-pop story-emoji" aria-hidden="true">
+                {line.emoji}
+              </span>
+            )}
+            {line.chip && (
+              <span
+                class="story-pop"
+                style={`--pop-to:${line.chip.tilt};--pop-from:${line.chip.tilt.startsWith('-') ? '12deg' : '-12deg'};--pop-scale:0.7`}
+              >
+                <span class={`story-chip story-chip-${line.chip.tone} text-[0.62em]`}>{line.chip.text}</span>
+              </span>
+            )}
+          </p>
+        ))
+      }
+    </div>
+    <Headline parts={d.final} class="mt-20 text-center text-[38px] sm:mt-28 sm:text-[60px] lg:text-[72px]" />
+  </div>
+</section>

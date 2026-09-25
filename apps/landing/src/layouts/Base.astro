@@ -1,0 +1,121 @@
+---
+import interCyrillic from '@fontsource-variable/inter/files/inter-cyrillic-wght-normal.woff2?url'
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
+import Footer from '../components/Footer.astro'
+import Header from '../components/Header.astro'
+import { HTML_LANG, LANGS, type Lang, localePath, OG_LOCALE, t } from '../i18n'
+import '../styles/global.css'
+
+interface Props {
+  lang: Lang
+  title: string
+  description: string
+  /** The page path without its language prefix, e.g. "/features/". */
+  path: string
+  /** Paths of this page in other languages; by default every language has the same page. */
+  alternates?: Partial<Record<Lang, string>>
+  image?: string
+  type?: 'website' | 'article'
+  jsonLd?: Record<string, unknown>[]
+  /** Keep the page out of search results (the 404 page). */
+  noindex?: boolean
+}
+const {
+  lang,
+  title,
+  description,
+  path,
+  type = 'website',
+  jsonLd = [],
+  noindex = false,
+} = Astro.props
+const site = Astro.site ?? new URL('https://fixnote.space')
+const alternates: Partial<Record<Lang, string>> =
+  Astro.props.alternates ?? Object.fromEntries(LANGS.map((l) => [l, localePath(l, path)]))
+const canonical = new URL(alternates[lang] ?? localePath(lang, path), site).href
+const image = new URL(Astro.props.image ?? `/og/${lang}.png`, site).href
+const d = t(lang)
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'FixNote',
+  url: site.href,
+  logo: new URL('/favicon.svg', site).href,
+}
+---
+
+<!doctype html>
+<html lang={HTML_LANG[lang]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>document.documentElement.classList.add('js')</script>
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    {
+      Object.entries(alternates).map(([l, href]) => (
+        <link rel="alternate" hreflang={HTML_LANG[l as Lang]} href={new URL(href, site).href} />
+      ))
+    }
+    {alternates.ru && <link rel="alternate" hreflang="x-default" href={new URL(alternates.ru, site).href} />}
+    <link rel="preload" href={lang === 'ru' ? interCyrillic : interLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#f5f3ef" />
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content="FixNote" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:locale" content={OG_LOCALE[lang]} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="alternate" type="application/rss+xml" title={d.meta.blog.title} href={localePath(lang, '/rss.xml')} />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify([organization, ...jsonLd])} />
+  </head>
+  <body class="min-h-screen overflow-x-clip bg-canvas text-ink">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-white focus:px-4 focus:py-2"
+      >{d.nav.skip}</a
+    >
+    <Header lang={lang} path={path} alternates={alternates} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} alternates={alternates} />
+    <script is:inline>
+      // Blocks below the first screen fade in as they arrive; story lines light up in the upper half.
+      ;(() => {
+        const show = (el) => el.classList.add('in')
+        if (!('IntersectionObserver' in window)) {
+          document.querySelectorAll('.reveal,.story-line').forEach(show)
+          return
+        }
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (!e.isIntersecting && e.boundingClientRect.top > 0) continue
+              show(e.target)
+              io.unobserve(e.target)
+            }
+          },
+          { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
+        )
+        const story = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (!e.isIntersecting && e.boundingClientRect.top > 0) continue
+              show(e.target)
+              story.unobserve(e.target)
+            }
+          },
+          { rootMargin: '0px 0px -45% 0px' },
+        )
+        document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+        document.querySelectorAll('.story-line').forEach((el) => story.observe(el))
+      })()
+    </script>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+---
+import Eye from '@lucide/astro/icons/eye'
+import KeyRound from '@lucide/astro/icons/key-round'
+import Link from '@lucide/astro/icons/link'
+import Lock from '@lucide/astro/icons/lock'
+import MicOff from '@lucide/astro/icons/mic-off'
+import Server from '@lucide/astro/icons/server'
+import Smartphone from '@lucide/astro/icons/smartphone'
+import WifiOff from '@lucide/astro/icons/wifi-off'
+import SectionHeader from '../components/SectionHeader.astro'
+import { type Lang, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import FinalCta from './home/FinalCta.astro'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.securityPage
+const icons = [Lock, Server, Eye, MicOff, Smartphone, Link, WifiOff]
+/** An illustrative row as the server keeps it: only ciphertext and sync bookkeeping. */
+const row = `{
+  "id": "5f0c1e9a-7b2d-4c61-9d3e-2a8f41c7b0d5",
+  "folder_id": "c2a7d0b4-1e93-4f58-8b6d-03f9e1a45c27",
+  "type": "text",
+  "daily_date": null,
+  "wrapped_key": "Hn4pQ0sVt8LwYc2Ea9Rk1Uf5Jm7Zb3Xg6Do+iNlKe…",
+  "ciphertext": "AQx9Fq2VbK0mRr7Zt+aLwE3uJc8yHnD5sPoQ1iGv4TkXe6MzNb/UhCj0WfYlSg2Ad7Rp9KqBnVt3LxEo5Iu8Hc…",
+  "created_at": 1790343727000,
+  "updated_at": 1790354527000,
+  "deleted_at": null,
+  "version": 14
+}`
+---
+
+<Base lang={lang} title={d.meta.security.title} description={d.meta.security.description} path="/security/">
+  <section class="px-4 pb-10 pt-36 sm:px-6 sm:pt-44">
+    <SectionHeader as="h1" eyebrow={p.eyebrow} parts={p.headline} lead={p.lead} />
+  </section>
+  <section class="px-4 py-12 sm:px-6">
+    <div class="mx-auto grid max-w-[1100px] gap-4 md:grid-cols-2">
+      {
+        p.sections.map((s, i) => {
+          const Icon = icons[i] ?? KeyRound
+          return (
+            <article
+              class:list={[
+                'reveal rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] sm:p-8',
+                i === 0 && 'md:col-span-2',
+              ]}
+            >
+              <span class="flex size-11 items-center justify-center rounded-2xl bg-[#d9efdf] text-[#23883f]">
+                <Icon size={21} />
+              </span>
+              <h2 class="mt-6 text-[22px] font-semibold leading-tight tracking-[-0.03em]">{s.title}</h2>
+              <p class="mt-3 text-[16px] leading-[1.65] text-muted">{s.text}</p>
+            </article>
+          )
+        })
+      }
+    </div>
+  </section>
+  <section class="px-3 py-12 sm:px-6">
+    <div class="reveal mx-auto max-w-[1100px] rounded-[28px] bg-night p-6 text-white sm:p-10">
+      <h2 class="text-[22px] font-semibold tracking-[-0.03em] sm:text-[26px]">{p.stored}</h2>
+      <pre class="mt-6 overflow-x-auto whitespace-pre-wrap break-all font-mono text-[13px] leading-[1.7] text-[#8fd6a3] sm:text-[14px]">{row}</pre>
+    </div>
+  </section>
+  <FinalCta lang={lang} />
+</Base>

@@ -1,0 +1,19 @@
+---
+import type { Part } from '../i18n'
+import Eyebrow from './Eyebrow.astro'
+import Headline from './Headline.astro'
+
+interface Props {
+  eyebrow: string
+  parts: Part[]
+  lead?: string
+  as?: 'h1' | 'h2'
+}
+const { eyebrow, parts, lead, as = 'h2' } = Astro.props
+---
+
+<div class="mx-auto max-w-[820px] text-center">
+  <div class="reveal flex justify-center"><Eyebrow>{eyebrow}</Eyebrow></div>
+  <Headline as={as} parts={parts} class="mt-6 text-[36px] sm:text-[52px] lg:text-[64px]" />
+  {lead && <p class="reveal lead mx-auto mt-7 max-w-[600px] text-[17px] sm:text-lg" style="--delay:200ms">{lead}</p>}
+</div>

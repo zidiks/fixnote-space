@@ -1,0 +1,20 @@
+---
+import Pill from '../components/Pill.astro'
+import { type Lang, localePath, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+---
+
+<Base lang={lang} title={d.meta.notFound.title} description={d.meta.notFound.description} path="/404/" alternates={{}} noindex>
+  <section class="flex min-h-[70vh] flex-col items-center justify-center px-4 pt-32 text-center">
+    <p class="text-[88px] font-semibold leading-none tracking-[-0.06em] text-brand sm:text-[120px]">404</p>
+    <h1 class="headline mt-6 text-[32px] sm:text-[44px]">{d.notFound.title}</h1>
+    <p class="lead mt-4 text-lg">{d.notFound.text}</p>
+    <div class="mt-8"><Pill href={localePath(lang, '/')}>{d.notFound.home}</Pill></div>
+  </section>
+</Base>

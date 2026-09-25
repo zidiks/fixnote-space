@@ -1,0 +1,54 @@
+---
+import Info from '@lucide/astro/icons/info'
+import DownloadCards from '../components/DownloadCards.astro'
+import SectionHeader from '../components/SectionHeader.astro'
+import { type Lang, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.downloadPage
+const notes = [
+  {
+    title: d.download.macNoteTitle,
+    text: d.download.macNote,
+    code: 'xattr -cr /Applications/FixNote.app',
+  },
+  { title: d.download.windowsNoteTitle, text: d.download.windowsNote, code: undefined },
+]
+---
+
+<Base lang={lang} title={d.meta.download.title} description={d.meta.download.description} path="/download/">
+  <section class="px-4 pb-6 pt-36 sm:px-6 sm:pt-44">
+    <SectionHeader as="h1" eyebrow={p.eyebrow} parts={p.headline} lead={p.lead} />
+  </section>
+  <section class="px-4 py-12 sm:px-6">
+    <DownloadCards lang={lang} />
+  </section>
+  <section class="px-4 pb-16 sm:px-6">
+    <div class="mx-auto grid max-w-[1100px] gap-4 md:grid-cols-2">
+      {
+        notes.map((note) => (
+          <div class="reveal rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04]">
+            <h2 class="flex items-center gap-2 text-[18px] font-semibold tracking-[-0.02em]">
+              <Info size={18} class="text-brand" /> {note.title}
+            </h2>
+            <p class="mt-3 text-[15px] leading-[1.6] text-muted">{note.text}</p>
+            {note.code && (
+              <pre class="mt-4 overflow-x-auto rounded-2xl bg-night px-4 py-3 font-mono text-[14px] text-[#f2efe9]"><code>{note.code}</code></pre>
+            )}
+          </div>
+        ))
+      }
+    </div>
+    <div class="reveal mx-auto mt-4 max-w-[1100px] rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04]">
+      <h2 class="text-[18px] font-semibold tracking-[-0.02em]">{p.requirementsTitle}</h2>
+      <ul class="mt-4 grid gap-x-8 gap-y-2.5 text-[15px] text-muted sm:grid-cols-2">
+        {p.requirements.map((r) => <li class="flex gap-2.5"><span class="mt-[9px] size-1.5 shrink-0 rounded-full bg-brand" />{r}</li>)}
+      </ul>
+    </div>
+  </section>
+</Base>

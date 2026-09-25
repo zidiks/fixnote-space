@@ -1,0 +1,59 @@
+---
+import { APP_URL, type Lang, localePath, t } from '../i18n'
+import Brand from './Brand.astro'
+import LangMenu from './LangMenu.astro'
+
+interface Props {
+  lang: Lang
+  alternates: Partial<Record<Lang, string>>
+}
+const { lang, alternates } = Astro.props
+const d = t(lang)
+const columns = [
+  {
+    title: d.footer.product,
+    links: [
+      { label: d.nav.features, href: localePath(lang, '/features/') },
+      { label: d.nav.security, href: localePath(lang, '/security/') },
+      { label: d.nav.download, href: localePath(lang, '/download/') },
+      { label: d.footer.webApp, href: APP_URL },
+    ],
+  },
+  {
+    title: d.footer.resources,
+    links: [
+      { label: d.nav.blog, href: localePath(lang, '/blog/') },
+      { label: d.footer.rss, href: localePath(lang, '/rss.xml') },
+    ],
+  },
+]
+---
+
+<footer class="px-4 pb-10 pt-16 sm:px-6">
+  <div class="mx-auto grid max-w-[1100px] gap-10 md:grid-cols-[1.6fr_1fr_1fr]">
+    <div>
+      <Brand />
+      <p class="mt-5 max-w-[300px] text-[15px] leading-[1.55] text-muted">{d.footer.tagline}</p>
+    </div>
+    {
+      columns.map((column) => (
+        <div>
+          <div class="text-sm font-medium text-muted">{column.title}</div>
+          <ul class="mt-5 space-y-3.5">
+            {column.links.map((link) => (
+              <li>
+                <a href={link.href} class="text-[15px] transition hover:text-brand">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+  <div class="mx-auto mt-14 flex max-w-[1100px] items-center justify-between gap-4 border-t border-black/[0.06] pt-5 text-sm text-muted">
+    <span>© {new Date().getFullYear()} {d.footer.rights}</span>
+    <LangMenu lang={lang} alternates={alternates} up />
+  </div>
+</footer>

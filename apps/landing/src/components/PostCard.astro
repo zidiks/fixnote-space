@@ -1,0 +1,28 @@
+---
+import { type Lang, t } from '../i18n'
+import { formatDate, type Post, postPath, readingMinutes } from '../lib/blog'
+
+interface Props {
+  post: Post
+  lang: Lang
+  delay?: number
+}
+const { post, lang, delay = 0 } = Astro.props
+const d = t(lang).blogPage
+---
+
+<article
+  class="reveal group relative flex flex-col rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(27,26,24,0.08)]"
+  style={`--delay:${delay}ms`}
+>
+  <div class="flex items-center gap-2 text-[13px] text-muted">
+    <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time>
+    <span aria-hidden="true">·</span>
+    <span>{readingMinutes(post)} {d.minutes}</span>
+  </div>
+  <h3 class="mt-4 text-[21px] font-semibold leading-[1.25] tracking-[-0.03em]">
+    <a href={postPath(post)} class="after:absolute after:inset-0 after:rounded-[24px]">{post.data.title}</a>
+  </h3>
+  <p class="mt-3 flex-1 text-[15px] leading-[1.6] text-muted">{post.data.description}</p>
+  <span class="mt-6 text-[15px] font-medium text-brand-deep group-hover:underline">{d.read} →</span>
+</article>

@@ -9,6 +9,7 @@
     "includes": [
       "**",
       "!**/dist",
+      "!**/.astro",
       "!**/src-tauri/target",
       "!**/src-tauri/gen",
       "!**/*.gen.ts",
@@ -48,6 +49,17 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    },
     {
       "includes": ["supabase/functions/**"],
       "linter": {

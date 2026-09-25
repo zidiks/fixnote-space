@@ -1,0 +1,20 @@
+---
+interface Props {
+  /** `dark` for dark sections. */
+  tone?: 'light' | 'dark'
+  class?: string
+}
+const { tone = 'light', class: className } = Astro.props
+---
+
+<span
+  class:list={[
+    'inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13px] font-medium',
+    tone === 'light'
+      ? 'bg-white/70 text-ink shadow-[inset_0_0.5px_1px_0.5px_rgba(255,255,255,0.5),0_2px_4px_0.5px_rgba(0,0,0,0.07)]'
+      : 'bg-white/10 text-white ring-1 ring-white/15',
+    className,
+  ]}
+>
+  <slot />
+</span>

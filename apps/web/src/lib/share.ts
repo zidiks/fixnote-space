@@ -17,7 +17,7 @@ export class NotSignedInError extends Error {}
 /** The web app's address: this page on the web, the configured site in the desktop app. */
 function shareBase(): string {
   if (env.webUrl) return env.webUrl
-  return platform.kind === 'web' ? location.origin : 'https://fixnote.space'
+  return platform.kind === 'web' ? location.origin : 'https://app.fixnote.space'
 }
 
 function need() {

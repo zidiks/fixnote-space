@@ -1,0 +1,38 @@
+---
+/** A rounded link button, like the reference's pills. */
+interface Props {
+  href: string
+  variant?: 'dark' | 'light' | 'brand' | 'ghost'
+  size?: 'md' | 'nav'
+  class?: string
+  id?: string
+  [key: `data-${string}`]: string | undefined
+}
+const { href, variant = 'dark', size = 'md', class: className, id, ...data } = Astro.props
+const variants = {
+  dark: 'bg-ink text-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.22),0_6px_16px_rgba(27,26,24,0.16)] hover:bg-[#2e2c29]',
+  light:
+    'bg-white text-ink shadow-[0_1px_2px_rgba(27,26,24,0.06)] ring-1 ring-black/[0.06] hover:bg-white/70',
+  brand:
+    'bg-brand text-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.28),0_8px_24px_rgba(242,106,42,0.35)] hover:bg-brand-deep',
+  ghost: 'bg-white/10 text-white ring-1 ring-white/15 hover:bg-white/15',
+}
+const sizes = {
+  md: 'h-12 px-6 text-base',
+  nav: 'h-10 px-4 text-sm md:h-11 md:text-[15px]',
+}
+---
+
+<a
+  href={href}
+  id={id}
+  {...data}
+  class:list={[
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition active:scale-[0.98]',
+    sizes[size],
+    variants[variant],
+    className,
+  ]}
+>
+  <slot />
+</a>

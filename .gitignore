@@ -14,3 +14,6 @@ supabase/.branches/
 supabase/.env
 /deno.lock
 apps/desktop/src-tauri/binaries/
+
+# Astro generated types
+.astro/

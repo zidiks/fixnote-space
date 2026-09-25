@@ -24,7 +24,7 @@ port = 54324
 
 [auth]
 enabled = true
-site_url = "https://fixnote.space"
+site_url = "https://app.fixnote.space"
 additional_redirect_urls = ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true

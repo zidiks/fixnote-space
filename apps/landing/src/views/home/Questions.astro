@@ -1,0 +1,38 @@
+---
+import SectionHeader from '../../components/SectionHeader.astro'
+import { type Lang, t } from '../../i18n'
+
+/** Two endless rows of example questions moving in opposite directions (CSS only). */
+interface Props {
+  lang: Lang
+}
+const d = t(Astro.props.lang).questions
+const rows = [
+  { items: d.top, reverse: false },
+  { items: d.bottom, reverse: true },
+]
+---
+
+<section class="overflow-hidden py-20 sm:py-28">
+  <div class="px-4 sm:px-6"><SectionHeader eyebrow={d.eyebrow} parts={d.headline} lead={d.lead} /></div>
+  <div class="reveal mt-14 space-y-4 sm:mt-16">
+    {
+      rows.map((row) => (
+        <div class="marquee-track overflow-hidden">
+          <ul class="marquee flex w-max" data-reverse={row.reverse ? '' : undefined}>
+            {[0, 1, 2, 3].flatMap((copy) =>
+              row.items.map((q) => (
+                <li
+                  aria-hidden={copy > 0 ? 'true' : undefined}
+                  class="mr-4 whitespace-nowrap rounded-full bg-white px-5 py-3 text-[15px] font-medium tracking-[-0.01em] shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] sm:text-[17px]"
+                >
+                  {q}
+                </li>
+              )),
+            )}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</section>

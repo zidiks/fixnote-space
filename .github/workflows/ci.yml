@@ -38,6 +38,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @fixnote/web build
+      - run: pnpm --filter @fixnote/landing build
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist
