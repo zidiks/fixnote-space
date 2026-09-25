@@ -17,7 +17,8 @@
   "bundle": {
     "macOS": {
       "signingIdentity": "-",
-      "minimumSystemVersion": "11.0"
+      "minimumSystemVersion": "11.0",
+      "hardenedRuntime": false
     }
   }
 }

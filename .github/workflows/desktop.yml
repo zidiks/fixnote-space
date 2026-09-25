@@ -77,6 +77,15 @@ jobs:
             BIN=apps/desktop/src-tauri/target/release/bundle/macos/FixNote.app/Contents/MacOS/fixnote-mcp
             codesign -dv --entitlements - "$BIN" 2>&1 || true
             node apps/mcp/scripts/smoke.mjs "$BIN"
+            # The check itself must catch the failure it guards against: the same binary signed
+            # with hardened runtime and no JIT entitlement has to fail it.
+            cp "$BIN" "$RUNNER_TEMP/fixnote-mcp-hardened"
+            codesign --force --sign - --options runtime "$RUNNER_TEMP/fixnote-mcp-hardened"
+            if node apps/mcp/scripts/smoke.mjs "$RUNNER_TEMP/fixnote-mcp-hardened"; then
+              echo "::warning::the hardened-runtime copy did not crash; the JIT check proves nothing here"
+            else
+              echo "hardened-runtime copy fails as expected"
+            fi
           fi
       - uses: actions/upload-artifact@v4
         with:

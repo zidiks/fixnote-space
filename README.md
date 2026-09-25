@@ -129,6 +129,10 @@ as damaged:
 xattr -cr /Applications/FixNote.app
 ```
 
+Hardened runtime is off (`tauri.macos.conf.json`): the bundled MCP server runs V8, which crashes
+under hardened runtime without the JIT entitlement. Notarizing later needs hardened runtime back on
+plus `com.apple.security.cs.allow-jit` for `fixnote-mcp`.
+
 To build on a Mac yourself: Xcode Command Line Tools (`xcode-select --install`), Rust, then
 `pnpm --filter @fixnote/mcp build:sea && pnpm build:desktop`.
 

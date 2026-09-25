@@ -1,6 +1,7 @@
 // Checks a built fixnote-mcp binary the way an MCP client uses it:
 // 1. against a missing database it starts and prints its own error (the OS runs it at all);
 // 2. against a fresh notes database it answers initialize, tools/list and a search over stdio.
+// 3. after hundreds of calls (when V8 starts compiling to machine code) it still answers.
 // Usage: node scripts/smoke.mjs <path-to-binary>
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
@@ -102,6 +103,13 @@ try {
   const text = JSON.stringify(found.result ?? found.error)
   if (!text.includes('Smoke test')) throw new Error(`search did not find the note: ${text}`)
   console.log('search: finds the note')
+  // Keep it busy until V8 compiles hot functions to machine code (Sparkplug, then TurboFan): that
+  // needs executable memory, which macOS hardened runtime without the JIT entitlement refuses.
+  for (let i = 0; i < 600; i++) {
+    await request('tools/call', { name: search, arguments: { query: `banana ${i % 7}` } })
+    await request('tools/list', {})
+  }
+  console.log('600 more calls: still running')
 } finally {
   server.kill()
 }
