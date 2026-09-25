@@ -217,7 +217,8 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         </div>
       </div>
 
-      {platform.window ? <WindowControls controls={platform.window} /> : null}
+      {/* With the assistant open, the caption buttons move to the top of its panel (window corner). */}
+      {platform.window && !ui.chatOpen ? <WindowControls controls={platform.window} /> : null}
     </header>
   )
 }

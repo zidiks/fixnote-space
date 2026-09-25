@@ -39,11 +39,13 @@ import {
   useAssistant,
 } from '../lib/assistant/assistant'
 import { useLlm } from '../lib/assistant/llm'
+import { usePlatform } from '../lib/platform'
 import { useFolders, useNote } from '../lib/queries'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { AnswerText } from './chat/AnswerText'
 import { VOICE_KEYS } from './VoiceBar'
+import { WindowControls } from './WindowControls'
 
 /** Scope that follows what is open: the note, the folder, or everything. */
 function useRouteScope(): ChatScope {
@@ -200,6 +202,8 @@ function IndexStatus() {
  */
 export function ChatPanel() {
   const { t } = useTranslation()
+  const platform = usePlatform()
+  const drag = platform.kind === 'desktop' ? { 'data-tauri-drag-region': true } : {}
   const setChatOpen = useUi((s) => s.setChatOpen)
   const openSettings = useUi((s) => s.openSettings)
   const draft = useUi((s) => s.chatDraft)
@@ -267,12 +271,15 @@ export function ChatPanel() {
     }
   }
 
-  return (
+  const card = (
     <aside
-      className="my-2 mr-2 flex w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm"
+      className={cn(
+        'mr-2 mb-2 ml-1.5 flex min-h-0 w-[380px] flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm',
+        !platform.window && 'mt-2',
+      )}
       aria-label={t('chat.title')}
     >
-      <header className="flex h-12 items-center gap-2.5 border-b px-4">
+      <header {...drag} className="flex h-12 items-center gap-2.5 border-b px-4">
         <AssistantAvatar size={24} />
         <span className="flex-1 text-sm font-medium">{t('chat.title')}</span>
         {messages.length ? (
@@ -434,5 +441,17 @@ export function ChatPanel() {
         onConfirm={() => void clearChat()}
       />
     </aside>
+  )
+
+  // The panel runs the full height of the window, so on Windows it carries the caption buttons.
+  return (
+    <div {...drag} className="flex h-full shrink-0 flex-col">
+      {platform.window ? (
+        <div {...drag} className="flex h-11 shrink-0 justify-end">
+          <WindowControls controls={platform.window} />
+        </div>
+      ) : null}
+      {card}
+    </div>
   )
 }

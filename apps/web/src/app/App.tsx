@@ -131,18 +131,21 @@ function AppShell() {
   }, [i18n.resolvedLanguage])
 
   return (
-    <div className="flex h-full flex-col">
-      <TitleBar onNewNote={newNote} />
-      <StorageBanner />
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        {sidebarOpen ? <Sidebar /> : null}
-        <main className="relative flex min-w-0 flex-1 flex-col">
-          <div className="flex-1 overflow-y-auto">
-            <Content />
-          </div>
-        </main>
-        {chatOpen ? <ChatPanel /> : null}
+    <div className="flex h-full">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TitleBar onNewNote={newNote} />
+        <StorageBanner />
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {sidebarOpen ? <Sidebar /> : null}
+          <main className="relative flex min-w-0 flex-1 flex-col">
+            <div className="flex-1 overflow-y-auto">
+              <Content />
+            </div>
+          </main>
+        </div>
       </div>
+      {/* Full window height, beside the title bar: its buttons end next to the panel. */}
+      {chatOpen ? <ChatPanel /> : null}
       <Spotlight />
       <SettingsDialog />
       <VoiceBar />
