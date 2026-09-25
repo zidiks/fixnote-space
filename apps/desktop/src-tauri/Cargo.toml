@@ -19,6 +19,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Bundled SQLite (with FTS5) so every OS runs the same engine as the web build.
 rusqlite = { version = "0.40", features = ["bundled"] }
+tauri-plugin-dialog = "2"
+percent-encoding = "2"
 
 [profile.release]
 codegen-units = 1
@@ -26,3 +28,13 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+# OS credential store for the recovery secret: Credential Manager, Keychain, kernel keyring.
+[target.'cfg(windows)'.dependencies]
+keyring = { version = "3.6", features = ["windows-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6", features = ["linux-native"] }

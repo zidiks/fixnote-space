@@ -62,6 +62,31 @@ describe('notes', () => {
     expect(await repo.listTags()).toEqual([{ name: 'b', count: 1 }])
   })
 
+  it('merges an edit with a change that arrived since the edit started', async () => {
+    const note = await repo.createNote({ content: 'Title\n\nfirst\n\nsecond' })
+    // sync wrote a change from another device while the editor still showed the old text
+    await db.execute('UPDATE notes SET content = ? WHERE id = ?', [
+      'Title\n\nfirst\n\nsecond (remote)',
+      note.id,
+    ])
+    const saved = await repo.updateContent(note.id, 'Title\n\nfirst (typed)\n\nsecond', {
+      base: 'Title\n\nfirst\n\nsecond',
+    })
+    expect(saved.content).toBe('Title\n\nfirst (typed)\n\nsecond (remote)')
+    expect((await repo.listNotes()).items).toHaveLength(1)
+  })
+
+  it('keeps the other version as a conflict copy when both changed the same line', async () => {
+    const note = await repo.createNote({ content: 'meet on Monday' })
+    await db.execute('UPDATE notes SET content = ? WHERE id = ?', ['meet on Friday', note.id])
+    const saved = await repo.updateContent(note.id, 'meet on Tuesday', { base: 'meet on Monday' })
+    expect(saved.content).toBe('meet on Tuesday')
+    const copy = (await repo.listNotes()).items.find((n) => n.id !== note.id)
+    expect((await repo.getNote(copy?.id ?? ''))?.content).toMatch(
+      /^Conflict copy .*\n\nmeet on Friday$/,
+    )
+  })
+
   it('soft-deletes and restores', async () => {
     const note = await repo.createNote({ content: 'gone #x' })
     await repo.deleteNote(note.id)
@@ -177,6 +202,45 @@ describe('folders', () => {
     const note = await repo.createNote({ content: 'x' })
     await repo.moveNote(note.id, f.id)
     expect((await repo.getNote(note.id))?.folderId).toBe(f.id)
+  })
+})
+
+describe('sync bookkeeping', () => {
+  const state = async (table: 'notes' | 'folders', id: string) =>
+    (
+      await db.query<{ dirty: number; local_rev: number }>(
+        `SELECT dirty, local_rev FROM ${table} WHERE id = ?`,
+        [id],
+      )
+    )[0]
+
+  it('marks every local change dirty and counts revisions', async () => {
+    const note = await repo.createNote({ content: 'a' })
+    expect(await state('notes', note.id)).toEqual({ dirty: 1, local_rev: 1 })
+    await db.execute('UPDATE notes SET dirty = 0 WHERE id = ?', [note.id])
+
+    await repo.updateContent(note.id, 'b')
+    expect(await state('notes', note.id)).toEqual({ dirty: 1, local_rev: 2 })
+    await repo.updateContent(note.id, 'b') // no-op
+    const f = await repo.createFolder('F')
+    await repo.moveNote(note.id, f.id)
+    await repo.moveNote(note.id, f.id) // no-op
+    await repo.deleteNote(note.id)
+    await repo.restoreNote(note.id)
+    expect(await state('notes', note.id)).toEqual({ dirty: 1, local_rev: 5 })
+  })
+
+  it('tracks folder renames and deletes, including moved notes', async () => {
+    const f = await repo.createFolder('F')
+    const n = await repo.createNote({ content: 'x', folderId: f.id })
+    await db.execute('UPDATE folders SET dirty = 0')
+    await db.execute('UPDATE notes SET dirty = 0')
+    await repo.renameFolder(f.id, 'F') // no-op
+    expect((await state('folders', f.id))?.dirty).toBe(0)
+    await repo.renameFolder(f.id, 'G')
+    await repo.deleteFolder(f.id)
+    expect(await state('folders', f.id)).toEqual({ dirty: 1, local_rev: 3 })
+    expect((await state('notes', n.id))?.dirty).toBe(1)
   })
 })
 

@@ -21,6 +21,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   calling the driver itself there deadlocks.
 - TanStack Query: per-call `mutate(…, { onSuccess })` callbacks do not run if the component has
   unmounted; anything that must happen later (undo in a toast) goes through the repo directly.
+- Sync: every local write must go through `NotesRepo` so rows get `dirty = 1, local_rev + 1`.
+  Editor saves pass the text the edit started from (`updateContent(id, text, { base })`) so a change
+  that sync applied meanwhile is merged, not overwritten. Server schema changes = new file in
+  `supabase/migrations/`; test RLS and RPCs on a local Postgres before pushing.
+- Try sync UI without Supabase: `pnpm dev` + `?dev-backend` (code 123456).
 - AI never changes a note without an explicit accept; changes are shown as diffs.
 
 ## Verify before pushing

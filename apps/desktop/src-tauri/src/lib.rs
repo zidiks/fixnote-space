@@ -5,6 +5,8 @@
 //! whisper.cpp (M4).
 
 mod db;
+mod files;
+mod keys;
 
 use std::sync::Mutex;
 
@@ -48,6 +50,7 @@ fn db_query(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
@@ -55,7 +58,15 @@ pub fn run() {
             app.manage(db::Db(Mutex::new(conn)));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![app_info, db_execute, db_query])
+        .invoke_handler(tauri::generate_handler![
+            app_info,
+            db_execute,
+            db_query,
+            keys::key_load,
+            keys::key_save,
+            keys::key_clear,
+            files::save_file
+        ])
         .run(tauri::generate_context!())
         .expect("error while running FixNote");
 }

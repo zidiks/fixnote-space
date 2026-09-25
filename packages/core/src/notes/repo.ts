@@ -1,4 +1,5 @@
 import type { SqlDriver, SqlRow, SqlValue } from '../platform'
+import { merge3 } from '../sync/merge'
 import { deriveExcerpt, deriveTitle, extractTags, taskProgress, toPlainText } from './markdown'
 import { buildFtsQuery } from './search'
 import {
@@ -18,9 +19,24 @@ import {
 
 type Tx = Pick<SqlDriver, 'execute' | 'query'>
 
+/** Rebuilds a note's tag links from its content. Shared with sync, which writes notes directly. */
+export async function syncNoteTags(tx: Tx, noteId: string, content: string) {
+  const names = extractTags(content)
+  await tx.execute('DELETE FROM note_tags WHERE note_id = ?', [noteId])
+  for (const name of names) {
+    await tx.execute('INSERT INTO tags (name) VALUES (?) ON CONFLICT (name) DO NOTHING', [name])
+    await tx.execute(
+      'INSERT OR IGNORE INTO note_tags (note_id, tag_id) SELECT ?, id FROM tags WHERE name = ?',
+      [noteId, name],
+    )
+  }
+}
+
 export interface RepoOptions {
   now?: () => number
   newId?: () => string
+  /** First line of a conflict copy (see updateContent). */
+  conflictHeading?: (at: number) => string
 }
 
 interface NoteRow extends SqlRow {
@@ -88,6 +104,7 @@ function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } 
 export class NotesRepo {
   private readonly now: () => number
   private readonly newId: () => string
+  private readonly conflictHeading: (at: number) => string
 
   constructor(
     private readonly db: SqlDriver,
@@ -95,6 +112,8 @@ export class NotesRepo {
   ) {
     this.now = opts.now ?? Date.now
     this.newId = opts.newId ?? (() => crypto.randomUUID())
+    this.conflictHeading =
+      opts.conflictHeading ?? ((at) => `Conflict copy · ${new Date(at).toISOString().slice(0, 16)}`)
   }
 
   // ── Notes ──────────────────────────────────────────────────────────────────
@@ -124,7 +143,7 @@ export class NotesRepo {
           ts,
         ],
       )
-      await this.syncTags(tx, id, input.content)
+      await syncNoteTags(tx, id, input.content)
     })
     return this.getNoteOrThrow(id)
   }
@@ -144,39 +163,73 @@ export class NotesRepo {
     return note
   }
 
-  /** Saves new content. No-op (and no timestamp bump) when the content is unchanged. */
-  async updateContent(id: string, content: string): Promise<Note> {
+  /**
+   * Saves new content. No-op (and no timestamp bump) when the content is unchanged.
+   *
+   * `base` is the text the edit started from. If the stored text changed since (sync applied a
+   * change from another device while the user was typing), the two edits are merged three-way. If
+   * they touch the same lines, the edit being typed wins and the other version is kept as a
+   * separate conflict copy, so nothing is lost.
+   */
+  async updateContent(id: string, content: string, opts: { base?: string } = {}): Promise<Note> {
     await this.db.transaction(async (tx) => {
-      const { rowsAffected } = await tx.execute(
-        `UPDATE notes SET content = ?, title = ?, search_text = ?, updated_at = ?
-          WHERE id = ? AND deleted_at IS NULL AND content IS NOT ?`,
-        [content, deriveTitle(content), toPlainText(content), this.now(), id, content],
+      const [row] = await tx.query<{ content: string; folder_id: string | null }>(
+        'SELECT content, folder_id FROM notes WHERE id = ? AND deleted_at IS NULL',
+        [id],
       )
-      if (rowsAffected) await this.syncTags(tx, id, content)
+      if (!row) return
+      let next = content
+      if (opts.base !== undefined && row.content !== opts.base && row.content !== content) {
+        const merged = merge3(content, opts.base, row.content)
+        if (merged !== null) next = merged
+        else await this.insertConflictCopy(tx, row.content, row.folder_id)
+      }
+      if (next === row.content) return
+      await tx.execute(
+        `UPDATE notes SET content = ?, title = ?, search_text = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1
+          WHERE id = ?`,
+        [next, deriveTitle(next), toPlainText(next), this.now(), id],
+      )
+      await syncNoteTags(tx, id, next)
     })
     return this.getNoteOrThrow(id)
   }
 
+  private async insertConflictCopy(tx: Tx, content: string, folderId: string | null) {
+    const id = this.newId()
+    const ts = this.now()
+    const text = `${this.conflictHeading(ts)}\n\n${content}`
+    await tx.execute(
+      `INSERT INTO notes (id, folder_id, type, title, content, search_text, created_at, updated_at)
+       VALUES (?, ?, 'text', ?, ?, ?, ?, ?)`,
+      [id, folderId, deriveTitle(text), text, toPlainText(text), ts, ts],
+    )
+    await syncNoteTags(tx, id, text)
+  }
+
   async moveNote(id: string, folderId: string | null): Promise<void> {
     await this.db.execute(
-      'UPDATE notes SET folder_id = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL',
-      [folderId, this.now(), id],
+      `UPDATE notes SET folder_id = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1
+        WHERE id = ? AND deleted_at IS NULL AND folder_id IS NOT ?`,
+      [folderId, this.now(), id, folderId],
     )
   }
 
   /** Soft delete: the row stays for sync and undo. */
   async deleteNote(id: string): Promise<void> {
-    await this.db.execute('UPDATE notes SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL', [
-      this.now(),
-      id,
-    ])
+    const ts = this.now()
+    await this.db.execute(
+      `UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1 WHERE id = ? AND deleted_at IS NULL`,
+      [ts, ts, id],
+    )
   }
 
   async restoreNote(id: string): Promise<void> {
-    await this.db.execute('UPDATE notes SET deleted_at = NULL, updated_at = ? WHERE id = ?', [
-      this.now(),
-      id,
-    ])
+    await this.db.execute(
+      `UPDATE notes SET deleted_at = NULL, updated_at = ?, dirty = 1, local_rev = local_rev + 1
+        WHERE id = ? AND deleted_at IS NOT NULL`,
+      [this.now(), id],
+    )
   }
 
   /** Newest first, keyset-paginated so infinite scroll stays stable while notes change. */
@@ -262,18 +315,6 @@ export class NotesRepo {
 
   // ── Tags ───────────────────────────────────────────────────────────────────
 
-  private async syncTags(tx: Tx, noteId: string, content: string) {
-    const names = extractTags(content)
-    await tx.execute('DELETE FROM note_tags WHERE note_id = ?', [noteId])
-    for (const name of names) {
-      await tx.execute('INSERT INTO tags (name) VALUES (?) ON CONFLICT (name) DO NOTHING', [name])
-      await tx.execute(
-        'INSERT OR IGNORE INTO note_tags (note_id, tag_id) SELECT ?, id FROM tags WHERE name = ?',
-        [noteId, name],
-      )
-    }
-  }
-
   /** Tags on live notes, most used first. */
   async listTags(): Promise<TagCount[]> {
     const rows = await this.db.query<{ name: string; count: number }>(
@@ -329,11 +370,10 @@ export class NotesRepo {
   async renameFolder(id: string, name: string): Promise<void> {
     const clean = name.trim()
     if (!clean) throw new Error('Folder name is empty')
-    await this.db.execute('UPDATE folders SET name = ?, updated_at = ? WHERE id = ?', [
-      clean,
-      this.now(),
-      id,
-    ])
+    await this.db.execute(
+      `UPDATE folders SET name = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1 WHERE id = ? AND name IS NOT ?`,
+      [clean, this.now(), id, clean],
+    )
   }
 
   /**
@@ -347,11 +387,13 @@ export class NotesRepo {
           SELECT ? UNION ALL SELECT f.id FROM folders f JOIN sub ON f.parent_id = sub.id)
         SELECT id FROM sub`
       await tx.execute(
-        `UPDATE notes SET folder_id = NULL, updated_at = ? WHERE folder_id IN (${subtree})`,
+        `UPDATE notes SET folder_id = NULL, updated_at = ?, dirty = 1, local_rev = local_rev + 1
+          WHERE folder_id IN (${subtree})`,
         [ts, id],
       )
       await tx.execute(
-        `UPDATE folders SET deleted_at = ?, updated_at = ? WHERE id IN (${subtree})`,
+        `UPDATE folders SET deleted_at = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1
+          WHERE id IN (${subtree}) AND deleted_at IS NULL`,
         [ts, ts, id],
       )
     })

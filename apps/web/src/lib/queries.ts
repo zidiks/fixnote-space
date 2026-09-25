@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
+import { requestSync } from './account/account'
 import { useRepo } from './db'
 
 export const keys = {
@@ -34,12 +35,14 @@ export function useNotesInfinite(filter: NoteFilter) {
   })
 }
 
-export function useNote(id: string, opts: { enabled?: boolean } = {}) {
+export function useNote(id: string, opts: { enabled?: boolean; fresh?: boolean } = {}) {
   const repo = useRepo()
   return useQuery({
     queryKey: keys.note(id),
     queryFn: () => repo.getNote(id),
     enabled: opts.enabled ?? true,
+    // The editor must start from what is stored now, never from a cached copy.
+    ...(opts.fresh ? { refetchOnMount: 'always' as const } : {}),
   })
 }
 
@@ -77,16 +80,18 @@ export function useRecents(limit = 8) {
   })
 }
 
-/** Everything derived from notes: lists, counts, tags, folder counts. */
+/** After a local change: refresh everything derived from notes and schedule a sync. */
 export function useInvalidateNotes() {
   const qc = useQueryClient()
-  return () =>
-    Promise.all([
+  return () => {
+    requestSync()
+    return Promise.all([
       qc.invalidateQueries({ queryKey: keys.notes }),
       qc.invalidateQueries({ queryKey: keys.counts }),
       qc.invalidateQueries({ queryKey: keys.tags }),
       qc.invalidateQueries({ queryKey: keys.folders }),
     ])
+  }
 }
 
 export function useCreateNote() {

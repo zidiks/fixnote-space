@@ -5,15 +5,19 @@ voice input, chat over your notes, MCP. Desktop (Tauri, Windows first) and web f
 
 - Product and architecture concept: [docs/CONCEPT.md](docs/CONCEPT.md)
 
-## What works today (M1)
+## What works today (M2)
 
-Fully offline, no account needed, on web and desktop:
+Offline first, on web and desktop; an account is optional and only adds sync:
 
 - Notes in Markdown with a Bear-like editor: headings, lists, checklists, quotes, code, links.
 - Inbox by default; folders with subfolders; `#tags` and nested `#area/project` tags from the text.
 - Home with filters (Inbox, folder, type, period) and infinite scroll; lists per folder and tag.
 - Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en, commands.
 - Daily note, soft delete with undo, blank notes discarded automatically.
+- Sync across devices with end-to-end encryption: sign in with an email code, keep a 12-word
+  recovery phrase; the server stores only ciphertext. Concurrent edits merge line by line; if two
+  devices changed the same line, both versions are kept.
+- Export of all notes as a Markdown zip (Settings → Data).
 - Feels native: custom title bar with Windows caption buttons, right-click menus for notes,
   folders and the editor, no browser menus or shortcuts on desktop.
 
@@ -76,6 +80,11 @@ Follow the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/). On 
 sudo apt-get install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
+### Trying sync without Supabase
+
+`pnpm dev`, then open http://localhost:5173/?dev-backend. A development-only fake server lives in
+the browser's localStorage; the sign-in code is `123456`. It is never part of production builds.
+
 ## Scripts
 
 | Command | What it does |
@@ -111,6 +120,13 @@ verified in Resend). Set the Resend API key in the shell before pushing; it is n
 ```powershell
 $env:SUPABASE_AUTH_SMTP_PASS = "re_..."
 pnpm sb:push
+```
+
+Apply the database schema (tables, row-level security, sync functions) once, and after every new
+file in `supabase/migrations/`. The CLI asks for the database password from the Supabase dashboard:
+
+```powershell
+pnpm sb:migrate
 ```
 
 Any other CLI command runs as `pnpm sb <command>`, e.g. `pnpm sb migration new init`.

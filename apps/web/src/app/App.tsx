@@ -9,7 +9,9 @@ import { ListView } from '../components/ListView'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
+import { SettingsDialog } from '../components/settings/SettingsDialog'
 import { TitleBar } from '../components/TitleBar'
+import { AccountProvider } from '../lib/account/provider'
 import { DbProvider } from '../lib/db'
 import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
@@ -121,6 +123,7 @@ function AppShell() {
         {chatOpen ? <ChatPanel /> : null}
       </div>
       <Spotlight />
+      <SettingsDialog />
       <Toaster
         theme={theme}
         position="bottom-right"
@@ -138,7 +141,9 @@ export function App() {
       <PlatformProvider>
         <TooltipProvider>
           <DbProvider>
-            <AppShell />
+            <AccountProvider>
+              <AppShell />
+            </AccountProvider>
           </DbProvider>
         </TooltipProvider>
       </PlatformProvider>

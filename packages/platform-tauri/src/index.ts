@@ -1,5 +1,6 @@
 import { NotImplementedError, type Platform, type WindowChrome } from '@fixnote/core'
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { osKeyStore } from './keys'
 import { openTauriSqlDriver } from './sql'
 import { windowControls } from './window'
 
@@ -18,7 +19,7 @@ export function appInfo(): Promise<AppInfo> {
 
 /**
  * Desktop adapters backed by the Rust side of apps/desktop.
- * M1: rusqlite (done). M2: OS keychain, app-data blobs.
+ * M1: rusqlite (done). M2: OS keychain (done), app-data blobs.
  * M3: fastembed embedder. M4: whisper.cpp transcriber.
  */
 /** Matches tauri.windows.conf.json (frameless) and tauri.macos.conf.json (overlay title bar). */
@@ -45,11 +46,13 @@ export function createTauriPlatform(): Platform {
     sql: () => Promise.resolve(sql),
     embedder: () => Promise.reject(new NotImplementedError('Embedder (fastembed)', 'M3')),
     transcriber: () => Promise.reject(new NotImplementedError('Transcriber (whisper.cpp)', 'M4')),
-    keyStore: {
-      load: () => Promise.reject(new NotImplementedError('KeyStore (OS keychain)', 'M2')),
-      save: () => Promise.reject(new NotImplementedError('KeyStore (OS keychain)', 'M2')),
-      clear: () => Promise.reject(new NotImplementedError('KeyStore (OS keychain)', 'M2')),
-    },
+    keyStore: osKeyStore,
+    saveFile: async (name, data) =>
+      (await invoke<boolean>('save_file', data, {
+        headers: { 'x-file-name': encodeURIComponent(name) },
+      }))
+        ? 'saved'
+        : 'cancelled',
     blobs: {
       put: () => Promise.reject(new NotImplementedError('BlobStore (app data)', 'M2')),
       get: () => Promise.reject(new NotImplementedError('BlobStore (app data)', 'M2')),

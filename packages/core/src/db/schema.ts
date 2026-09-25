@@ -61,6 +61,25 @@ export const MIGRATIONS: readonly string[] = [
     INSERT INTO notes_fts(rowid, title, search_text) VALUES (new.rowid, new.title, new.search_text);
   END;
   `,
+  /* 2: sync bookkeeping. dirty = has local changes not yet pushed; local_rev counts local edits so a
+     push only clears dirty if nothing changed meanwhile; base_content = content at last sync, the
+     common ancestor for three-way merges. */ `
+  ALTER TABLE notes ADD COLUMN sync_version INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE notes ADD COLUMN dirty INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE notes ADD COLUMN local_rev INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE notes ADD COLUMN base_content TEXT;
+  CREATE INDEX notes_dirty ON notes(dirty) WHERE dirty = 1;
+
+  ALTER TABLE folders ADD COLUMN sync_version INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE folders ADD COLUMN dirty INTEGER NOT NULL DEFAULT 1;
+  ALTER TABLE folders ADD COLUMN local_rev INTEGER NOT NULL DEFAULT 1;
+  CREATE INDEX folders_dirty ON folders(dirty) WHERE dirty = 1;
+
+  CREATE TABLE kv (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

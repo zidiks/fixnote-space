@@ -215,7 +215,8 @@ export function NoteEditor({
   onLeave,
 }: {
   note: Note
-  onSave: (markdown: string) => Promise<void>
+  /** Persists `markdown`, an edit that started from `base`; resolves with what was stored. */
+  onSave: (markdown: string, base: string) => Promise<Note>
   onStateChange?: (state: SaveState) => void
   /** Called on unmount with the final Markdown. */
   onLeave?: (markdown: string) => void
@@ -224,8 +225,21 @@ export function NoteEditor({
   const pending = useRef<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const latest = useRef(note.content)
+  /** The stored text the current edit started from. */
+  const base = useRef(note.content)
+  const editorRef = useRef<Editor | null>(null)
   const callbacks = useRef({ onSave, onStateChange, onLeave })
   callbacks.current = { onSave, onStateChange, onLeave }
+
+  /** Swaps the document without firing a save, keeping the caret roughly where it was. */
+  const replaceContent = useRef((markdown: string) => {
+    const e = editorRef.current
+    if (!e || e.isDestroyed) return
+    const { from } = e.state.selection
+    e.commands.setContent(markdown, { contentType: 'markdown', emitUpdate: false })
+    e.commands.setTextSelection(Math.min(from, e.state.doc.content.size))
+    latest.current = markdown
+  }).current
 
   const flush = useRef(async () => {
     clearTimeout(timer.current)
@@ -233,7 +247,10 @@ export function NoteEditor({
     if (markdown === null) return
     pending.current = null
     callbacks.current.onStateChange?.('saving')
-    await callbacks.current.onSave(markdown)
+    const saved = await callbacks.current.onSave(markdown, base.current)
+    base.current = saved.content
+    // The save merged in a change from another device: show it, unless the user kept typing.
+    if (pending.current === null && saved.content !== markdown) replaceContent(saved.content)
     if (pending.current === null) callbacks.current.onStateChange?.('saved')
   }).current
 
@@ -267,6 +284,14 @@ export function NoteEditor({
     },
     onBlur: () => void flush(),
   })
+  editorRef.current = editor
+
+  // Sync brought a newer version of this note: show it if there is no unsaved typing.
+  useEffect(() => {
+    if (pending.current !== null || note.content === base.current) return
+    base.current = note.content
+    replaceContent(note.content)
+  }, [note.content, replaceContent])
 
   useEffect(() => {
     mounted.set(note.id, (mounted.get(note.id) ?? 0) + 1)

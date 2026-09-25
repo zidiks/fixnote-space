@@ -20,7 +20,8 @@
     "sb:login": "supabase login",
     "sb:link": "supabase link --project-ref nsteehqbmljuczxgkvae",
     "sb:diff": "supabase config diff",
-    "sb:push": "supabase config push"
+    "sb:push": "supabase config push",
+    "sb:migrate": "supabase db push"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

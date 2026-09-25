@@ -1,21 +1,9 @@
-import {
-  currentLanguage,
-  i18n,
-  LANGUAGE_NAMES,
-  type Language,
-  SUPPORTED_LANGUAGES,
-  useTranslation,
-} from '@fixnote/i18n'
+import { useTranslation } from '@fixnote/i18n'
 import { appInfo } from '@fixnote/platform-tauri'
 import {
   Button,
   cn,
   Kbd,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   shortcutLabel,
   Tooltip,
   TooltipContent,
@@ -24,18 +12,18 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import {
   CalendarDays,
-  Cloud,
+  CloudAlert,
+  CloudCheck,
   CloudOff,
   Hash,
   Inbox,
   Layers,
-  Monitor,
+  RefreshCw,
   Search,
   Settings,
 } from 'lucide-react'
-import { useState } from 'react'
-import { type Route, sameRoute, type Theme, useUi } from '../app/store'
-import { isSupabaseConfigured } from '../lib/env'
+import { type Route, sameRoute, useUi } from '../app/store'
+import { useAccount } from '../lib/account/account'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useOpenDaily, useTags } from '../lib/queries'
 import { SidebarFolders } from './SidebarFolders'
@@ -107,7 +95,6 @@ export function Sidebar() {
   const navigate = useUi((s) => s.navigate)
   const counts = useCounts().data
   const openDaily = useOpenDaily()
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const is = (r: Route) => sameRoute(route, r)
   return (
     <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
@@ -149,73 +136,69 @@ export function Sidebar() {
         <SidebarTags />
       </nav>
 
-      {settingsOpen ? <SettingsPanel /> : null}
-      <SidebarFooter onSettings={() => setSettingsOpen((v) => !v)} settingsOpen={settingsOpen} />
+      <SidebarFooter />
     </aside>
   )
 }
 
-function SettingsPanel() {
+function SyncIndicator() {
   const { t } = useTranslation()
-  const theme = useUi((s) => s.theme)
-  const setTheme = useUi((s) => s.setTheme)
-  const [lang, setLang] = useState<Language>(currentLanguage())
-
+  const phase = useAccount((s) => s.phase)
+  const status = useAccount((s) => s.sync.status)
+  const openSettings = useUi((s) => s.openSettings)
+  if (phase === 'disabled') return null
+  if (phase !== 'ready') {
+    return (
+      <button
+        type="button"
+        onClick={() => openSettings('account')}
+        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground"
+      >
+        <CloudOff className="size-3.5" />
+        {t('account.signInToSync')}
+      </button>
+    )
+  }
+  const Icon =
+    status === 'syncing'
+      ? RefreshCw
+      : status === 'offline'
+        ? CloudOff
+        : status === 'error'
+          ? CloudAlert
+          : CloudCheck
+  const label =
+    status === 'syncing'
+      ? t('account.status.syncing')
+      : status === 'offline'
+        ? t('status.offline')
+        : status === 'error'
+          ? t('account.status.error', { message: '' }).replace(/[:：]\s*$/, '')
+          : t('settings.account')
   return (
-    <div className="mx-2 mb-2 space-y-3 rounded-lg border border-sidebar-border bg-background p-3">
-      <div className="space-y-1.5">
-        <label htmlFor="settings-language" className="text-xs text-muted-foreground">
-          {t('settings.language')}
-        </label>
-        <Select
-          value={lang}
-          onValueChange={(v) => {
-            setLang(v as Language)
-            void i18n.changeLanguage(v)
-          }}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={() => openSettings('account')}
+          aria-label={label}
+          className={cn(
+            'flex size-7 items-center justify-center rounded-md hover:bg-sidebar-accent hover:text-foreground',
+            status === 'error' && 'text-destructive',
+          )}
         >
-          <SelectTrigger id="settings-language">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {SUPPORTED_LANGUAGES.map((l) => (
-              <SelectItem key={l} value={l}>
-                {LANGUAGE_NAMES[l]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <label htmlFor="settings-theme" className="text-xs text-muted-foreground">
-          {t('settings.theme')}
-        </label>
-        <Select value={theme} onValueChange={(v) => setTheme(v as Theme)}>
-          <SelectTrigger id="settings-theme">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(['system', 'light', 'dark'] as const).map((th) => (
-              <SelectItem key={th} value={th}>
-                {t(`settings.themes.${th}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
+          <Icon className={cn('size-3.5', status === 'syncing' && 'animate-spin')} />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   )
 }
 
-function SidebarFooter({
-  onSettings,
-  settingsOpen,
-}: {
-  onSettings: () => void
-  settingsOpen: boolean
-}) {
+function SidebarFooter() {
   const { t } = useTranslation()
   const platform = usePlatform()
+  const openSettings = useUi((s) => s.openSettings)
   const info = useQuery({
     queryKey: ['app-info'],
     queryFn: appInfo,
@@ -224,42 +207,16 @@ function SidebarFooter({
   })
 
   return (
-    <div className="flex h-11 items-center justify-between border-t border-sidebar-border px-3 text-xs text-muted-foreground">
-      <div className="flex items-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="flex items-center gap-1">
-              <Monitor className="size-3.5" />
-              {platform.kind === 'desktop' ? 'Desktop' : 'Web'}
-              {info.data ? <span className="tabular-nums">v{info.data.version}</span> : null}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {info.data ? `${info.data.os} · ${info.data.arch}` : platform.kind}
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="flex items-center">
-              {isSupabaseConfigured ? (
-                <Cloud className="size-3.5" />
-              ) : (
-                <CloudOff className="size-3.5" />
-              )}
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isSupabaseConfigured ? 'Supabase' : t('status.notConfigured')}
-          </TooltipContent>
-        </Tooltip>
+    <div className="flex h-11 items-center justify-between gap-2 border-t border-sidebar-border px-2 text-xs text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-1">
+        <SyncIndicator />
+        {info.data ? <span className="px-1 tabular-nums">v{info.data.version}</span> : null}
       </div>
       <Button
         variant="ghost"
         size="icon-xs"
-        onClick={onSettings}
+        onClick={() => openSettings('general')}
         aria-label={t('sidebar.settings')}
-        aria-expanded={settingsOpen}
-        className={cn(settingsOpen && 'bg-sidebar-accent')}
       >
         <Settings />
       </Button>

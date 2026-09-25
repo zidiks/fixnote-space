@@ -33,13 +33,13 @@ export function NoteView({ id }: { id: string }) {
   const qc = useQueryClient()
   const invalidate = useInvalidateNotes()
   const navigate = useUi((s) => s.navigate)
-  const note = useNote(id)
+  const note = useNote(id, { fresh: true })
   const folders = useFolders().data ?? []
   const move = useMoveNote()
   const deleteWithUndo = useDeleteWithUndo()
   const [saveState, setSaveState] = useState<SaveState>('idle')
 
-  if (note.isPending) return null
+  if (!note.isFetchedAfterMount) return null
   if (!note.data) {
     return <p className="p-10 text-center text-sm text-muted-foreground">{t('note.notFound')}</p>
   }
@@ -129,10 +129,11 @@ export function NoteView({ id }: { id: string }) {
           key={n.id}
           note={n}
           onStateChange={setSaveState}
-          onSave={async (markdown) => {
-            const saved = await repo.updateContent(n.id, markdown)
+          onSave={async (markdown, base) => {
+            const saved = await repo.updateContent(n.id, markdown, { base })
             qc.setQueryData(keys.note(n.id), saved)
-            await invalidate()
+            void invalidate()
+            return saved
           }}
           onLeave={(markdown) => {
             // A note left blank is not worth keeping: nothing to remember, nothing to tidy later.

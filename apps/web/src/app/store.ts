@@ -12,12 +12,15 @@ export type Route =
   | { kind: 'tag'; name: string }
   | { kind: 'note'; id: string }
 
+export type SettingsSection = 'general' | 'account' | 'data'
+
 export const sameRoute = (a: Route, b: Route) => JSON.stringify(a) === JSON.stringify(b)
 
 interface UiState {
   sidebarOpen: boolean
   chatOpen: boolean
   spotlightOpen: boolean
+  settings: SettingsSection | null
   theme: Theme
   chatDraft: string
   route: Route
@@ -27,6 +30,7 @@ interface UiState {
   setChatOpen: (open: boolean) => void
   toggleChat: () => void
   setSpotlightOpen: (open: boolean) => void
+  openSettings: (section: SettingsSection | null) => void
   setTheme: (theme: Theme) => void
   setChatDraft: (text: string) => void
   navigate: (route: Route, opts?: { replace?: boolean }) => void
@@ -42,6 +46,7 @@ export const useUi = create<UiState>()(
       sidebarOpen: true,
       chatOpen: false,
       spotlightOpen: false,
+      settings: null,
       theme: 'system',
       chatDraft: '',
       route: { kind: 'home' },
@@ -51,6 +56,7 @@ export const useUi = create<UiState>()(
       setChatOpen: (chatOpen) => set({ chatOpen }),
       toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
       setSpotlightOpen: (spotlightOpen) => set({ spotlightOpen }),
+      openSettings: (settings) => set({ settings }),
       setTheme: (theme) => set({ theme }),
       setChatDraft: (chatDraft) => set({ chatDraft }),
       navigate: (route, opts) =>

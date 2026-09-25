@@ -2,10 +2,12 @@ import { NotesRepo, prepareDatabase, type SqlDriver } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button } from '@fixnote/ui'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+import { conflictHeading } from './conflict'
 import { platform } from './platform'
 
 interface DbContextValue {
   repo: NotesRepo
+  driver: SqlDriver
   storage: SqlDriver['storage']
 }
 
@@ -17,7 +19,7 @@ function openDb(): Promise<DbContextValue> {
   opening ??= (async () => {
     const driver = await platform.sql()
     await prepareDatabase(driver)
-    return { repo: new NotesRepo(driver), storage: driver.storage }
+    return { repo: new NotesRepo(driver, { conflictHeading }), driver, storage: driver.storage }
   })()
   opening.catch(() => {
     opening = null

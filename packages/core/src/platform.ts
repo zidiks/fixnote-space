@@ -110,6 +110,8 @@ export interface Platform {
   readonly transcriber: () => Promise<Transcriber>
   readonly keyStore: KeyStore
   readonly blobs: BlobStore
+  /** Lets the user save a file. Desktop: native "Save as" dialog. Web: a download. */
+  saveFile(name: string, data: Uint8Array, mime: string): Promise<'saved' | 'cancelled'>
 }
 
 /** Thrown by adapters for features scheduled in a later milestone. */
