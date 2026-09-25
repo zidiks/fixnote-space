@@ -181,11 +181,25 @@ pnpm --filter @fixnote/mcp build:sea   # apps/desktop/src-tauri/binaries/fixnote
 
 Without it the desktop app still builds (a placeholder is used) and MCP shows as unavailable.
 
+### Web app hosting (Cloudflare)
+
+The web app is static files (`apps/web/dist`). `wrangler.jsonc` deploys them as a Cloudflare
+Worker with static assets: connect the repository in Cloudflare (Workers & Pages → Create →
+import from Git) with
+
+- build command `pnpm install --frozen-lockfile && pnpm --filter @fixnote/web build`
+- deploy command `npx wrangler deploy`
+
+Without a `.env`, the build takes the public values of `.env.example`; build variables set in
+Cloudflare (e.g. `VITE_TELEGRAM_BOT`) win. Cloudflare serves files up to 25 MiB, so the hosted app
+loads the ONNX runtime (26 MB) from jsDelivr; the desktop app and `pnpm dev` bundle it. Add the
+domain under the Worker's Settings → Domains & Routes.
+
 ### Shared links
 
-Links open the web app: `VITE_WEB_URL` (default `https://fixnote.space`) must serve the built web
-app (`apps/web/dist`, any static host). On the web the app uses its own address. The server keeps
-only the sealed copy (`shares` table); apply the migration with `pnpm sb:migrate`.
+Links open the web app: `VITE_WEB_URL` (default `https://fixnote.space`) must serve it (see above).
+On the web the app uses its own address. The server keeps only the sealed copy (`shares` table);
+apply the migration with `pnpm sb:migrate`.
 
 ### Trying sync without Supabase
 

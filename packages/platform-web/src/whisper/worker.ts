@@ -1,7 +1,6 @@
 /// <reference lib="webworker" />
 import { type AutomaticSpeechRecognitionPipeline, env, pipeline } from '@huggingface/transformers'
-import ortMjs from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.mjs?url'
-import ortWasm from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url'
+import { ortPaths } from '../ort'
 import type { WhisperRequest, WhisperResponse } from './protocol'
 
 declare const self: DedicatedWorkerGlobalScope
@@ -11,7 +10,7 @@ export const MODEL = 'onnx-community/whisper-base'
 
 env.allowLocalModels = false
 env.useBrowserCache = true
-if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = { mjs: ortMjs, wasm: ortWasm }
+if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = await ortPaths()
 
 type Device = 'webgpu' | 'wasm'
 

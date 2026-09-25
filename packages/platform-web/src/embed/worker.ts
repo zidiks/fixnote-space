@@ -1,18 +1,16 @@
 /// <reference lib="webworker" />
 import { env, type FeatureExtractionPipeline, pipeline } from '@huggingface/transformers'
-import ortMjs from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.mjs?url'
-import ortWasm from 'onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm?url'
+import { ortPaths } from '../ort'
 import type { EmbedRequest, EmbedResponse } from './protocol'
 
 declare const self: DedicatedWorkerGlobalScope
 
 export const MODEL = 'Xenova/multilingual-e5-small'
 
-// The ONNX runtime ships with the app (works offline, no CDN); only the model is downloaded, once,
-// then served from the browser cache.
+// Only the model is downloaded, once, then served from the browser cache (runtime: see ../ort).
 env.allowLocalModels = false
 env.useBrowserCache = true
-if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = { mjs: ortMjs, wasm: ortWasm }
+if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = await ortPaths()
 
 let extractor: Promise<FeatureExtractionPipeline> | null = null
 

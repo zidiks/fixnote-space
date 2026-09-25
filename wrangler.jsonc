@@ -1,0 +1,11 @@
+// The web app on Cloudflare (Workers with static assets): `npx wrangler deploy` after the build.
+// Nothing runs on the server; it serves apps/web/dist. Shared links (/?s=…#key) open index.html.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fixnote-space",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./apps/web/dist",
+    "not_found_handling": "single-page-application"
+  }
+}
