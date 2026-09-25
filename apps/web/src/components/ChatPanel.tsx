@@ -269,7 +269,7 @@ export function ChatPanel() {
 
   return (
     <aside
-      className="flex h-full w-[380px] shrink-0 flex-col border-l bg-background"
+      className="my-2 mr-2 flex w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm"
       aria-label={t('chat.title')}
     >
       <header className="flex h-12 items-center gap-2.5 border-b px-4">

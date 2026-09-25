@@ -58,7 +58,9 @@ function Content() {
     case 'note':
       return (
         <Suspense fallback={null}>
-          <NoteView id={route.id} />
+          {/* One instance per note: its query must refetch on mount, and the editor must start
+              from the stored text, also when switching straight from note to note. */}
+          <NoteView key={route.id} id={route.id} />
         </Suspense>
       )
     default:

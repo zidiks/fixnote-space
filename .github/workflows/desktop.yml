@@ -68,12 +68,14 @@ jobs:
         run: pnpm --filter @fixnote/mcp build:sea
       - name: Build installers
         run: pnpm --filter @fixnote/desktop tauri build --bundles ${{ matrix.bundles }}
-      - name: MCP server starts (as built and as bundled in the app)
+      - name: App checks (MCP server runs as bundled, microphone prompt)
         shell: bash
         run: |
           set -e
           node apps/mcp/scripts/smoke.mjs apps/desktop/src-tauri/binaries/fixnote-mcp-*
           if [ "$RUNNER_OS" = macOS ]; then
+            # Without this key macOS never asks for the microphone and dictation gets "not allowed".
+            plutil -p apps/desktop/src-tauri/target/release/bundle/macos/FixNote.app/Contents/Info.plist | grep NSMicrophoneUsageDescription
             BIN=apps/desktop/src-tauri/target/release/bundle/macos/FixNote.app/Contents/MacOS/fixnote-mcp
             codesign -dv --entitlements - "$BIN" 2>&1 || true
             node apps/mcp/scripts/smoke.mjs "$BIN"
