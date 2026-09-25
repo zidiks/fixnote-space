@@ -5,7 +5,7 @@ voice input, chat over your notes, MCP. Desktop (Tauri, Windows first) and web f
 
 - Product and architecture concept: [docs/CONCEPT.md](docs/CONCEPT.md)
 
-## What works today (M4)
+## What works today (M5)
 
 Offline first, on web and desktop; an account is optional and only adds sync:
 
@@ -40,6 +40,24 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   the LLM for translations and synonyms of the question, so "розыгрыши" finds a note about a
   "giveaway". The avatar is
   [Bloub](https://github.com/jeremy-prt/bloub) (MIT).
+- Tidy up: the assistant suggests titles, folders, tags and merging duplicates, a batch every few
+  days and one note right after you write it. Nothing changes until you accept a suggestion, and
+  every accepted change can be undone.
+- AI history (Settings → AI): every change the assistant made to a note, with before and after,
+  and undo as long as the note has not changed since.
+- Choice of model (Settings → AI): FixNote AI (DeepSeek through our proxy, needs an account), your
+  own key for OpenAI, OpenRouter, Groq, DeepSeek or any OpenAI-compatible API, or Ollama on this
+  computer. The key stays in the OS keychain (desktop) or encrypted in the browser. Local-only
+  mode turns off sync, Telegram and sharing and allows only Ollama.
+- MCP (desktop): Claude Desktop, Cursor and other MCP clients can search and read your notes, and
+  with permission create notes or append to them (Settings → AI → MCP; off / read / read and
+  write). The server `fixnote-mcp` ships with the app and works on the local database.
+- Import (Settings → Data): a folder of Markdown files (Obsidian too), a Bear backup
+  (`.bear2bk`), a Notion export (`.zip`) or a FixNote export, with folders, tags, dates and images.
+  Notes that are already there are skipped; Undo removes the whole import.
+- Share a note by link (signed in): the copy is sealed with a key that exists only in the link, so
+  the server cannot read it. Update the link after edits or turn it off, from the note or from
+  Settings → Account. The link opens a read-only page that needs no account.
 - Feels native: custom title bar with Windows caption buttons, right-click menus for notes,
   folders and the editor, no browser menus or shortcuts on desktop.
 
@@ -65,6 +83,7 @@ origin-private file system on the web.
 apps/
   web/             React + Vite app; runs in the browser and inside the desktop shell
   desktop/         Tauri 2 shell; src-tauri/ holds the Rust side
+  mcp/             fixnote-mcp: stdio MCP server over the local database (Node single executable)
 packages/
   core/            domain logic and platform interfaces (no React)
   platform-web/    browser adapters (sqlite-wasm, WebCrypto, OPFS files, transformers.js
@@ -133,13 +152,31 @@ pnpm tg:webhook          # points the bot at the function, prints its username
 3. Put `VITE_TELEGRAM_BOT=<username>` into `.env` (and the CI variables). Settings → Account →
    Telegram then shows "Connect Telegram".
 
+### MCP server
+
+The desktop installer includes `fixnote-mcp`; Settings → AI → MCP adds it to Claude Desktop or
+Cursor with one click. For a local desktop build, create it first (CI does this for installers):
+
+```bash
+pnpm --filter @fixnote/mcp build:sea   # apps/desktop/src-tauri/binaries/fixnote-mcp-<target>
+```
+
+Without it the desktop app still builds (a placeholder is used) and MCP shows as unavailable.
+
+### Shared links
+
+Links open the web app: `VITE_WEB_URL` (default `https://fixnote.space`) must serve the built web
+app (`apps/web/dist`, any static host). On the web the app uses its own address. The server keeps
+only the sealed copy (`shares` table); apply the migration with `pnpm sb:migrate`.
+
 ### Trying sync without Supabase
 
 `pnpm dev`, then open http://localhost:5173/?dev-backend. A development-only fake server lives in
 the browser's localStorage; the sign-in code is `123456`, and a fake LLM answers from the first found
 passage (and makes simple AI edits). Speech recognition and link cards are faked too, and
 `__devTelegram.start()` / `__devTelegram.send({ kind: 'text', text: '…' })` in the console play
-the Telegram bot. It is never part of production builds.
+the Telegram bot. Shared links work there too, in the same browser. It is never part of production
+builds.
 
 ## Scripts
 
@@ -190,8 +227,8 @@ Any other CLI command runs as `pnpm sb <command>`, e.g. `pnpm sb migration new i
 
 `.mcp.json` registers the Supabase MCP server for Claude Code; authenticate once with `claude /mcp`.
 
-CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and
-`VITE_TELEGRAM_BOT`
+CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
+`VITE_TELEGRAM_BOT` and `VITE_WEB_URL`
 (Settings → Secrets and variables → Actions → Variables) and falls back to `.env.example`.
 
 ## CI
