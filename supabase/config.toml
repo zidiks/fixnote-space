@@ -1,0 +1,107 @@
+# Supabase CLI config. Local stack: `supabase start`.
+# Push auth settings and templates to the hosted project: `supabase config push`.
+project_id = "nsteehqbmljuczxgkvae"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[local_smtp]
+# Local email catcher for `supabase start`: http://localhost:54324
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "https://fixnote.space"
+additional_redirect_urls = ["http://localhost:5173", "http://tauri.localhost", "tauri://localhost"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.rate_limit]
+email_sent = 30
+token_verifications = 30
+
+# Passwordless: email + 6-digit code. See docs/CONCEPT.md section 6.3.
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+double_confirm_changes = true
+secure_password_change = false
+max_frequency = "30s"
+otp_length = 6
+otp_expiry = 600
+
+# Code emails go through Resend (custom SMTP). Required: the built-in mailer only reaches team
+# members, and on the free tier it refuses template changes. The sender domain fixnote.space must
+# be verified in Resend. The API key is never committed; set it before `pnpm sb:push`:
+#   PowerShell: $env:SUPABASE_AUTH_SMTP_PASS = "re_..."
+#   bash:       export SUPABASE_AUTH_SMTP_PASS=re_...
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(SUPABASE_AUTH_SMTP_PASS)"
+admin_email = "no-reply@fixnote.space"
+sender_name = "FixNote"
+
+# New users get the "confirmation" email, returning users the "magic_link" one.
+# Both carry the same code; language comes from user metadata `lang` (en | es | ru).
+[auth.email.template.confirmation]
+subject = "FixNote: code / código / код"
+content_path = "./supabase/templates/otp.html"
+
+[auth.email.template.magic_link]
+subject = "FixNote: code / código / код"
+content_path = "./supabase/templates/otp.html"
+
+[auth.external.apple]
+enabled = false
+
+[auth.external.google]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+deno_version = 2
+
+[analytics]
+enabled = false
+
+# The assistant's default LLM route (see supabase/functions/llm-proxy). Needs the secret
+# DEEPSEEK_API_KEY: `pnpm sb secrets set DEEPSEEK_API_KEY=sk-...`, then `pnpm sb:functions`.
+[functions.llm-proxy]
+enabled = true
+verify_jwt = true
+
+# Link cards on the web (see supabase/functions/unfurl): reads a public page's <head>. No secrets.
+[functions.unfurl]
+enabled = true
+verify_jwt = true
+
+# Telegram capture bot (see supabase/functions/telegram-bot). Telegram calls it without a user
+# JWT; requests are authenticated by the webhook secret instead. Secrets:
+# `pnpm sb secrets set TELEGRAM_BOT_TOKEN=... TELEGRAM_WEBHOOK_SECRET=...`, then `pnpm tg:webhook`.
+[functions.telegram-bot]
+enabled = true
+verify_jwt = false

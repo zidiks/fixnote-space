@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+.DS_Store
+coverage/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+/deno.lock
+apps/desktop/src-tauri/binaries/

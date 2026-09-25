@@ -1,0 +1,25 @@
+{
+  "name": "@fixnote/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@sqlite.org/sqlite-wasm": "3.53.4-build1",
+    "@types/libsodium-wrappers": "^0.8.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  },
+  "dependencies": {
+    "@scure/bip39": "^2.4.0",
+    "fflate": "^0.8.3",
+    "libsodium-wrappers": "^0.8.4",
+    "node-diff3": "^3.2.1"
+  }
+}

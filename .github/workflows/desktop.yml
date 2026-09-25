@@ -1,0 +1,97 @@
+name: Desktop build
+
+# Windows installers (NSIS, MSI) and macOS disk images (Apple Silicon and Intel). Runs on main, on `v*`
+# tags, on demand, and on any branch whose pushed commit message contains "[build desktop]".
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            bundles: nsis,msi
+            artifacts: |
+              apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+              apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          # macOS: Apple Silicon (arm64) and Intel (x86_64), each built natively, so the MCP
+          # sidecar matches the app. Ad-hoc signed, not notarized: see README.
+          - os: macos-latest
+            bundles: app,dmg
+            artifacts: |
+              apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+          - os: macos-15-intel
+            bundles: app,dmg
+            artifacts: |
+              apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+    name: Build (${{ matrix.os }})
+    if: >-
+      github.event_name != 'push' || github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      contains(github.event.head_commit.message, '[build desktop]')
+    runs-on: ${{ matrix.os }}
+    # Per job, so a push that builds nothing does not cancel a running build.
+    concurrency:
+      group: desktop-${{ github.ref }}-${{ matrix.os }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - run: pnpm install --frozen-lockfile
+      - name: Supabase config (repo variables, else .env.example)
+        shell: bash
+        env:
+          URL: ${{ vars.VITE_SUPABASE_URL }}
+          KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          BOT: ${{ vars.VITE_TELEGRAM_BOT }}
+          WEB: ${{ vars.VITE_WEB_URL }}
+        run: |
+          if [ -n "$URL" ] && [ -n "$KEY" ]; then
+            printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nVITE_TELEGRAM_BOT=%s\nVITE_WEB_URL=%s\n' "$URL" "$KEY" "$BOT" "$WEB" > .env
+          else
+            cp .env.example .env
+          fi
+      - name: MCP server (single executable, bundled with the app)
+        run: pnpm --filter @fixnote/mcp build:sea
+      - name: Build installers
+        run: pnpm --filter @fixnote/desktop tauri build --bundles ${{ matrix.bundles }}
+      - name: App checks (MCP server runs as bundled, microphone prompt)
+        shell: bash
+        run: |
+          set -e
+          node apps/mcp/scripts/smoke.mjs apps/desktop/src-tauri/binaries/fixnote-mcp-*
+          if [ "$RUNNER_OS" = macOS ]; then
+            # Without this key macOS never asks for the microphone and dictation gets "not allowed".
+            plutil -p apps/desktop/src-tauri/target/release/bundle/macos/FixNote.app/Contents/Info.plist | grep NSMicrophoneUsageDescription
+            BIN=apps/desktop/src-tauri/target/release/bundle/macos/FixNote.app/Contents/MacOS/fixnote-mcp
+            codesign -dv --entitlements - "$BIN" 2>&1 || true
+            node apps/mcp/scripts/smoke.mjs "$BIN"
+            # The check itself must catch the failure it guards against: the same binary signed
+            # with hardened runtime and no JIT entitlement has to fail it.
+            cp "$BIN" "$RUNNER_TEMP/fixnote-mcp-hardened"
+            codesign --force --sign - --options runtime "$RUNNER_TEMP/fixnote-mcp-hardened"
+            if node apps/mcp/scripts/smoke.mjs "$RUNNER_TEMP/fixnote-mcp-hardened"; then
+              echo "::warning::the hardened-runtime copy did not crash; the JIT check proves nothing here"
+            else
+              echo "hardened-runtime copy fails as expected"
+            fi
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixnote-${{ matrix.os }}
+          path: ${{ matrix.artifacts }}
+          if-no-files-found: error
+          retention-days: 14

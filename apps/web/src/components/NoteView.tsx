@@ -1,0 +1,255 @@
+import { useTranslation } from '@fixnote/i18n'
+import {
+  Button,
+  cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@fixnote/ui'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  Check,
+  ChevronRight,
+  Folder,
+  FolderInput,
+  Inbox,
+  Link2,
+  Mic,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useUi } from '../app/store'
+import { useAccount } from '../lib/account/account'
+import { useLlm } from '../lib/assistant/llm'
+import { suggestForNewNote } from '../lib/assistant/tidy'
+import { useDb, useRepo } from '../lib/db'
+import {
+  keys,
+  useDeleteWithUndo,
+  useFolders,
+  useInvalidateNotes,
+  useMoveNote,
+  useNote,
+} from '../lib/queries'
+import { formatRelative } from '../lib/time'
+import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
+import { DailyBar } from './DailyBar'
+import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
+import { ShareDialog } from './ShareDialog'
+import { VOICE_KEYS } from './VoiceBar'
+
+export function NoteView({ id }: { id: string }) {
+  const { t, i18n } = useTranslation()
+  const repo = useRepo()
+  const { tidy, audit } = useDb()
+  const qc = useQueryClient()
+  const invalidate = useInvalidateNotes()
+  const navigate = useUi((s) => s.navigate)
+  const note = useNote(id, { fresh: true })
+  const folders = useFolders().data ?? []
+  const move = useMoveNote()
+  const deleteWithUndo = useDeleteWithUndo()
+  const [saveState, setSaveState] = useState<SaveState>('idle')
+  const editor = useRef<NoteEditorHandle>(null)
+  const voice = useVoice((s) => s.status)
+  const aiRequest = useUi((s) => s.aiRequest)
+  const [sharing, setSharing] = useState(false)
+  // Links live on the server: not in a build without one, and never in local-only mode.
+  const hasServer = useAccount((s) => s.phase !== 'disabled')
+  const localOnly = useLlm((s) => s.localOnly)
+  const canShare = hasServer && !localOnly
+
+  // While this note is open, dictation goes into it.
+  useEffect(() => registerVoiceSink('note', (text) => editor.current?.insertText(text)), [])
+
+  // "Tidy up" asked for from elsewhere (a toast after dictation).
+  useEffect(() => {
+    if (aiRequest?.noteId !== id || !note.isFetchedAfterMount) return
+    useUi.getState().requestAi(null)
+    // Let the editor mount first when the note has just been opened.
+    const timer = setTimeout(() => editor.current?.openAi('note', aiRequest.action), 50)
+    return () => clearTimeout(timer)
+  }, [aiRequest, id, note.isFetchedAfterMount])
+
+  if (!note.isFetchedAfterMount) return null
+  if (!note.data) {
+    return <p className="p-10 text-center text-sm text-muted-foreground">{t('note.notFound')}</p>
+  }
+  const n = note.data
+  const folder = folders.find((f) => f.id === n.folderId)
+
+  const onDelete = () => void deleteWithUndo(n.id)
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-6 pt-2 pb-32 sm:px-10">
+      <header className="flex h-10 items-center gap-2 text-[13px] text-muted-foreground">
+        <button
+          type="button"
+          className="flex max-w-[40%] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 py-1 hover:bg-accent hover:text-foreground"
+          onClick={() =>
+            navigate(folder ? { kind: 'folder', id: folder.id } : { kind: 'home', filter: 'inbox' })
+          }
+        >
+          {folder ? (
+            <Folder className="size-3.5 shrink-0" />
+          ) : (
+            <Inbox className="size-3.5 shrink-0" />
+          )}
+          <span className="truncate">{folder?.name ?? t('common.noFolder')}</span>
+        </button>
+        <ChevronRight className="size-3.5 shrink-0 opacity-50" />
+        <span className="min-w-0 truncate text-foreground">{n.title || t('common.untitled')}</span>
+
+        <span className="ml-auto shrink-0 tabular-nums" aria-live="polite">
+          {saveState === 'saving'
+            ? t('note.saving')
+            : t('note.edited', { time: formatRelative(n.updatedAt, i18n.resolvedLanguage) })}
+        </span>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => void toggleVoice('note')}
+              aria-label={t('voice.dictate')}
+              aria-pressed={voice === 'recording'}
+              className={cn(voice === 'recording' && 'text-destructive')}
+            >
+              <Mic />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => editor.current?.openAi('note')}
+              aria-label={t('ai.title')}
+            >
+              <Sparkles />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('ai.title')}</TooltipContent>
+        </Tooltip>
+
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon-xs" aria-label={t('note.moveTo')}>
+                  <FolderInput />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>{t('note.moveTo')}</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
+            <DropdownMenuLabel>{t('note.moveTo')}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => move.mutate({ id: n.id, folderId: null })}>
+              <Inbox />
+              <span className="flex-1">{t('common.noFolder')}</span>
+              <Check className={cn(n.folderId !== null && 'invisible')} />
+            </DropdownMenuItem>
+            {folders.map((f) => (
+              <DropdownMenuItem
+                key={f.id}
+                onSelect={() => move.mutate({ id: n.id, folderId: f.id })}
+              >
+                <Folder />
+                <span className="flex-1">{f.name}</span>
+                <Check className={cn(n.folderId !== f.id && 'invisible')} />
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {canShare ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setSharing(true)}
+                aria-label={t('share.button')}
+              >
+                <Link2 />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('share.button')}</TooltipContent>
+          </Tooltip>
+        ) : null}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon-xs" onClick={onDelete} aria-label={t('note.delete')}>
+              <Trash2 />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('note.delete')}</TooltipContent>
+        </Tooltip>
+      </header>
+      {canShare ? <ShareDialog note={n} open={sharing} onOpenChange={setSharing} /> : null}
+
+      {n.tags.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {n.tags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => navigate({ kind: 'tag', name: tag })}
+              className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand hover:bg-brand/15"
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {n.type === 'daily' && n.dailyDate ? <DailyBar note={n} /> : null}
+
+      <div className="mt-6">
+        <NoteEditor
+          key={n.id}
+          ref={editor}
+          note={n}
+          onStateChange={setSaveState}
+          onSave={async (markdown, base) => {
+            const saved = await repo.updateContent(n.id, markdown, { base })
+            qc.setQueryData(keys.note(n.id), saved)
+            void invalidate()
+            return saved
+          }}
+          onLeave={(markdown) => {
+            // A note left blank is not worth keeping: nothing to remember, nothing to tidy later.
+            if (n.type === 'text' && !markdown.trim()) {
+              void repo.deleteNote(n.id).then(invalidate)
+              return
+            }
+            // A fresh note without a folder: offer a folder, tags and a title for it.
+            const fresh = Date.now() - n.createdAt < 2 * 3600_000
+            if (n.type === 'text' && fresh && n.folderId === null && markdown.trim().length >= 80) {
+              void suggestForNewNote(n, {
+                tidy,
+                audit,
+                refresh: async () => {
+                  await Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['tidy'] })])
+                },
+                review: () => useUi.getState().navigate({ kind: 'tidy' }),
+              })
+            }
+          }}
+        />
+      </div>
+    </div>
+  )
+}

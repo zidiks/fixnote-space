@@ -1,0 +1,50 @@
+[package]
+name = "fixnote-desktop"
+version = "0.0.0"
+description = "FixNote desktop app"
+edition = "2021"
+rust-version = "1.80"
+
+[lib]
+# The _lib suffix avoids a name clash with the binary on Windows (cargo#8519).
+name = "fixnote_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2.11", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Bundled SQLite (with FTS5) so every OS runs the same engine as the web build.
+rusqlite = { version = "0.40", features = ["bundled"] }
+tauri-plugin-dialog = "2"
+# Opens links in the system browser.
+tauri-plugin-opener = "2"
+percent-encoding = "2"
+# Link cards: fetch a page's <head>. System TLS (SChannel on Windows), no C toolchain needed.
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "http2", "system-proxy"] }
+# Streaming LLM requests for the webview (see src/http.rs).
+tokio = { version = "1", features = ["sync", "macros"] }
+base64 = "0.22"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
+# OS credential store for the recovery secret: Credential Manager, Keychain, kernel keyring.
+[target.'cfg(windows)'.dependencies]
+keyring = { version = "3.6", features = ["windows-native"] }
+# Direct WebView2 access to switch off browser shortcuts (print, find, reload, zoom).
+webview2-com = "0.38"
+windows-core = "0.61"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6", features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6", features = ["linux-native"] }
