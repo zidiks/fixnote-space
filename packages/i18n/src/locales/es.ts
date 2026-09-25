@@ -199,6 +199,15 @@ const es: LocaleResource = {
     saved: 'Nota de voz guardada',
     tidy: 'Ordenar',
   },
+  capture: {
+    imported: 'Notas nuevas de Telegram: {{count}}',
+    title: 'Telegram',
+    body: 'Envía al bot ideas, mensajes de voz y fotos y se convierten en notas aquí. El bot solo los guarda cifrados con tu clave, así que solo tus dispositivos pueden leerlos; la voz se transcribe en el dispositivo.',
+    connect: 'Conectar Telegram',
+    waiting: 'Pulsa Iniciar en Telegram…',
+    linked: 'Conectado: {{label}}',
+    unlink: 'Desconectar',
+  },
   window: {
     minimize: 'Minimizar',
     maximize: 'Maximizar',

@@ -17,6 +17,7 @@ import {
   verifyCode,
 } from '../../lib/account/account'
 import { formatRelative } from '../../lib/time'
+import { TelegramSection } from './TelegramSection'
 
 function Heading({ title, body }: { title: string; body?: string }) {
   return (
@@ -353,6 +354,7 @@ function Ready() {
         </Button>
         {showPhrase && secret ? <PhraseGrid phrase={secretToPhrase(secret)} /> : null}
       </div>
+      <TelegramSection />
       <Button variant="outline" onClick={() => setConfirmOut(true)}>
         <LogOut />
         {t('account.signOut')}

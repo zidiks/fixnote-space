@@ -38,9 +38,10 @@ jobs:
         env:
           URL: ${{ vars.VITE_SUPABASE_URL }}
           KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          BOT: ${{ vars.VITE_TELEGRAM_BOT }}
         run: |
           if [ -n "$URL" ] && [ -n "$KEY" ]; then
-            printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$URL" "$KEY" > .env
+            printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nVITE_TELEGRAM_BOT=%s\n' "$URL" "$KEY" "$BOT" > .env
           else
             cp .env.example .env
           fi

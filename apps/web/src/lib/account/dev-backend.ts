@@ -1,13 +1,15 @@
 import { EDIT_MARKER, EXPANSION_MARKER } from '@fixnote/ai'
-import type {
-  PushResult,
-  RemoteFolder,
-  RemoteFolderWrite,
-  RemoteNote,
-  RemoteNoteWrite,
-  SyncRemote,
+import {
+  type InboxItem,
+  type PushResult,
+  type RemoteFolder,
+  type RemoteFolderWrite,
+  type RemoteNote,
+  type RemoteNoteWrite,
+  type SyncRemote,
+  sealToPublicKey,
 } from '@fixnote/core'
-import type { AccountBackend, Session, UserKeysRow } from './backend'
+import type { AccountBackend, CaptureLink, Session, UserKeysRow } from './backend'
 
 /**
  * Development-only stand-in for Supabase, enabled with `?dev-backend` in `pnpm dev`. The "server"
@@ -35,6 +37,62 @@ const save = (s: ServerState) => {
 const channel = new BroadcastChannel(KEY)
 const userIdFor = (email: string) =>
   `00000000-0000-4000-8000-${email.length.toString(16).padStart(12, '0')}`
+
+// ── Fake Telegram bot ────────────────────────────────────────────────────────
+// In the dev console: __devTelegram.start(code) links a chat as the bot would after /start;
+// __devTelegram.send({ kind: 'text', text: '…' }) seals a message to the account like the bot.
+
+const CAPTURE = 'fixnote.dev-capture'
+interface CaptureState {
+  codes: Record<string, string>
+  links: (CaptureLink & { userId: string })[]
+  inbox: (InboxItem & { userId: string })[]
+}
+const loadCapture = (): CaptureState =>
+  JSON.parse(localStorage.getItem(CAPTURE) ?? '{"codes":{},"links":[],"inbox":[]}')
+const saveCapture = (c: CaptureState) => {
+  localStorage.setItem(CAPTURE, JSON.stringify(c))
+  channel.postMessage('changed')
+}
+
+/** BroadcastChannel skips the tab that posts, so the fake bot also wakes this tab directly. */
+const localListeners = new Set<() => void>()
+
+const devTelegram = {
+  /** Without a code: the one the app just created, as if the user pressed Start. */
+  start(code?: string, label = '@dev_user') {
+    const c = loadCapture()
+    const pending = code ?? Object.keys(c.codes)[0] ?? ''
+    const userId = c.codes[pending]
+    if (!userId) return 'bad code'
+    delete c.codes[pending]
+    c.links = c.links.filter((l) => l.externalId !== 'dev-chat')
+    c.links.push({
+      channel: 'telegram',
+      externalId: 'dev-chat',
+      label,
+      createdAt: new Date().toISOString(),
+      userId,
+    })
+    saveCapture(c)
+    return 'linked'
+  },
+  send(payload: Record<string, unknown>) {
+    const c = loadCapture()
+    const link = c.links.find((l) => l.externalId === 'dev-chat')
+    const key = link && load().keys[link.userId]
+    if (!link || !key) return 'not linked'
+    const sealed = sealToPublicKey(
+      key.publicKey,
+      JSON.stringify({ v: 1, receivedAt: Date.now(), ...payload }),
+    )
+    c.inbox.push({ id: crypto.randomUUID(), channel: 'telegram', sealed, userId: link.userId })
+    saveCapture(c)
+    for (const l of localListeners) l()
+    return 'queued'
+  },
+}
+;(window as unknown as { __devTelegram: typeof devTelegram }).__devTelegram = devTelegram
 
 function write<T extends { version: number; seq: number }>(
   table: 'notes' | 'folders',
@@ -179,6 +237,39 @@ export const devBackend: AccountBackend = {
   },
   chatTransport: async () =>
     load().session ? { url: 'dev://llm', headers: {}, fetch: devLlm } : null,
+  inbox: {
+    list: async () => {
+      const userId = load().session?.userId
+      return loadCapture()
+        .inbox.filter((i) => i.userId === userId)
+        .map(({ id, channel: ch, sealed }) => ({ id, channel: ch, sealed }))
+    },
+    remove: async (id) => {
+      const c = loadCapture()
+      c.inbox = c.inbox.filter((i) => i.id !== id)
+      saveCapture(c)
+    },
+  },
+  createCaptureCode: async () => {
+    const userId = load().session?.userId
+    if (!userId) throw new Error('not authenticated')
+    const c = loadCapture()
+    const code = crypto.randomUUID().slice(0, 8)
+    c.codes = { [code]: userId }
+    saveCapture(c)
+    return code
+  },
+  captureLinks: async () => {
+    const userId = load().session?.userId
+    return loadCapture()
+      .links.filter((l) => l.userId === userId)
+      .map(({ userId: _u, ...l }) => l)
+  },
+  unlinkCapture: async (link) => {
+    const c = loadCapture()
+    c.links = c.links.filter((l) => l.externalId !== link.externalId)
+    saveCapture(c)
+  },
   // Any URL "resolves" to a small page, so link cards can be tried without a network.
   fetchPage: async (url) => {
     if (!load().session) return null
@@ -194,6 +285,10 @@ export const devBackend: AccountBackend = {
   subscribe: (_userId, onChange) => {
     const listener = () => onChange()
     channel.addEventListener('message', listener)
-    return () => channel.removeEventListener('message', listener)
+    localListeners.add(listener)
+    return () => {
+      channel.removeEventListener('message', listener)
+      localListeners.delete(listener)
+    }
   },
 }

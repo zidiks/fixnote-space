@@ -98,3 +98,10 @@ verify_jwt = true
 [functions.unfurl]
 enabled = true
 verify_jwt = true
+
+# Telegram capture bot (see supabase/functions/telegram-bot). Telegram calls it without a user
+# JWT; requests are authenticated by the webhook secret instead. Secrets:
+# `pnpm sb secrets set TELEGRAM_BOT_TOKEN=... TELEGRAM_WEBHOOK_SECRET=...`, then `pnpm tg:webhook`.
+[functions.telegram-bot]
+enabled = true
+verify_jwt = false

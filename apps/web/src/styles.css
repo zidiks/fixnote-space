@@ -229,12 +229,21 @@
   overflow: hidden;
 }
 
-/* Images in notes (attachments or web images). */
+/* Images and voice messages in notes (attachments or web images). */
+.fixnote-editor .fixnote-media {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.5rem 0;
+}
+.fixnote-editor .fixnote-audio {
+  display: block;
+  width: min(100%, 24rem);
+  height: 2.5rem;
+}
 .fixnote-editor img.fixnote-image {
   display: block;
   max-width: 100%;
   max-height: 32rem;
-  margin: 0.5rem 0;
   border-radius: 10px;
   background: var(--color-muted);
 }
@@ -243,6 +252,7 @@
   width: 12rem;
   height: 8rem;
 }
-.fixnote-editor img.ProseMirror-selectednode {
+.fixnote-editor .fixnote-media.ProseMirror-selectednode {
+  border-radius: 10px;
   outline: 2px solid color-mix(in oklch, var(--color-brand) 60%, transparent);
 }

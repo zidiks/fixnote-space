@@ -195,6 +195,15 @@ const en = {
     saved: 'Voice note saved',
     tidy: 'Tidy up',
   },
+  capture: {
+    imported: 'New notes from Telegram: {{count}}',
+    title: 'Telegram',
+    body: 'Send thoughts, voice messages and photos to the bot and they become notes here. The bot keeps them only sealed with your key, so only your devices can read them; voice is transcribed on the device.',
+    connect: 'Connect Telegram',
+    waiting: 'Press Start in Telegram…',
+    linked: 'Connected: {{label}}',
+    unlink: 'Disconnect',
+  },
   window: {
     minimize: 'Minimize',
     maximize: 'Maximize',

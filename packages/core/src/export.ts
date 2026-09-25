@@ -16,6 +16,10 @@ const EXTENSIONS: Record<string, string> = {
   'image/gif': 'gif',
   'image/svg+xml': 'svg',
   'image/avif': 'avif',
+  'audio/ogg': 'ogg',
+  'audio/mpeg': 'mp3',
+  'audio/mp4': 'm4a',
+  'audio/webm': 'webm',
 }
 
 interface Row extends SqlRow {

@@ -216,6 +216,11 @@ export function decryptAttachment(
   return { mime: header.mime ?? 'application/octet-stream', bytes: plain.slice(4 + headerLength) }
 }
 
+/** Seals a message to an account's public key, as capture channels do (for tests and dev tools). */
+export function sealToPublicKey(publicKey: string, message: string): string {
+  return b64(sodium.crypto_box_seal(sodium.from_string(message), unb64(publicKey)))
+}
+
 /**
  * Opens a message sealed to this account's public key (crypto_box_seal), e.g. by the Telegram bot.
  */

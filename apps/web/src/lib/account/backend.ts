@@ -1,4 +1,4 @@
-import type { AttachmentRemote, FetchedPage, SyncRemote } from '@fixnote/core'
+import type { AttachmentRemote, FetchedPage, InboxRemote, SyncRemote } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabaseRemote } from '../sync/supabase-remote'
 
@@ -12,6 +12,14 @@ export interface ChatTransport {
   url: string
   headers: Record<string, string>
   fetch?: typeof fetch
+}
+
+/** A chat linked to the account (Telegram today). */
+export interface CaptureLink {
+  channel: string
+  externalId: string
+  label: string
+  createdAt: string
 }
 
 export interface UserKeysRow {
@@ -30,6 +38,12 @@ export interface AccountBackend {
   remote: SyncRemote
   /** Encrypted attachment files of this user. */
   attachments(userId: string): AttachmentRemote
+  /** Sealed messages from capture channels, waiting for a device. */
+  inbox: InboxRemote
+  /** One-time code for t.me/<bot>?start=<code>. */
+  createCaptureCode(): Promise<string>
+  captureLinks(): Promise<CaptureLink[]>
+  unlinkCapture(link: CaptureLink): Promise<void>
   /** The default LLM route for the signed-in user, or null when signed out. */
   chatTransport(): Promise<ChatTransport | null>
   /** Reads a public page's <head> through the `unfurl` function; null when signed out. */
@@ -113,6 +127,47 @@ export function supabaseBackend(
         headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: config.anonKey },
       }
     },
+    inbox: {
+      async list() {
+        const { data, error } = await client
+          .from('inbox_items')
+          .select('id, channel, sealed')
+          .order('created_at')
+          .limit(50)
+        if (error) throw error
+        return data ?? []
+      },
+      async remove(id) {
+        const { error } = await client.from('inbox_items').delete().eq('id', id)
+        if (error) throw error
+      },
+    },
+    async createCaptureCode() {
+      const { data, error } = await client.rpc('create_capture_code')
+      if (error) throw error
+      return data as string
+    },
+    async captureLinks() {
+      const { data, error } = await client
+        .from('capture_links')
+        .select('channel, external_id, label, created_at')
+        .order('created_at')
+      if (error) throw error
+      return (data ?? []).map((r) => ({
+        channel: r.channel,
+        externalId: r.external_id,
+        label: r.label ?? '',
+        createdAt: r.created_at,
+      }))
+    },
+    async unlinkCapture(link) {
+      const { error } = await client
+        .from('capture_links')
+        .delete()
+        .eq('channel', link.channel)
+        .eq('external_id', link.externalId)
+      if (error) throw error
+    },
     async fetchPage(url) {
       const { data } = await client.auth.getSession()
       if (!data.session) return null
@@ -133,6 +188,11 @@ export function supabaseBackend(
         .channel(`sync:${userId}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, onChange)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'folders' }, onChange)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'inbox_items' },
+          onChange,
+        )
         .subscribe()
       return () => void client.removeChannel(channel)
     },

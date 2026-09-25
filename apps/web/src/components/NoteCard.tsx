@@ -40,7 +40,8 @@ function Cover({ src }: { src: string }) {
     enabled: id !== null,
     staleTime: Number.POSITIVE_INFINITY,
   }).data
-  const resolved = id ? url : src
+  if (id && url && !url.mime.startsWith('image/')) return null
+  const resolved = id ? url?.url : src
   if (!resolved) return null
   return (
     <img

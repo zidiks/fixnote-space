@@ -4,8 +4,10 @@ import {
   type Attachments,
   cryptoReady,
   deriveKeys,
+  importInbox,
   type KeyStore,
   makeKeyCheck,
+  type NotesRepo,
   newRecoverySecret,
   phraseToSecret,
   publicKeyB64,
@@ -57,6 +59,11 @@ interface Deps {
   db: SqlDriver
   keyStore: KeyStore
   attachments: Attachments
+  repo: NotesRepo
+  /** Speech to text for voice messages from capture channels; may fail (model unavailable). */
+  transcribe: (audio: Blob) => Promise<string>
+  /** Messages from Telegram became notes. */
+  onCaptured: (count: number) => void
   /** Refresh UI queries after remote changes arrived. */
   onRemoteChange: () => void
 }
@@ -268,7 +275,24 @@ export async function runSync() {
     const report = await e.sync()
     // Images go after the notes that use them; another device fetches them when shown.
     const sync = attachmentSync()
-    if (sync) await need().attachments.uploadPending(sync.keys, sync.remote)
+    if (sync) {
+      // Messages sent to the bot become notes here, then go up with the next sync.
+      const d = need()
+      const captured = await importInbox({
+        db: d.db,
+        keys: sync.keys,
+        remote: backend().inbox,
+        repo: d.repo,
+        attachments: d.attachments,
+        transcribe: d.transcribe,
+      })
+      if (captured.imported) {
+        d.onCaptured(captured.imported)
+        d.onRemoteChange()
+        requestSync()
+      }
+      await d.attachments.uploadPending(sync.keys, sync.remote)
+    }
     setSync({
       status: 'idle',
       lastSyncedAt: Date.now(),
@@ -283,6 +307,11 @@ export async function runSync() {
       pending: await e.pendingCount().catch(() => 0),
     })
   }
+}
+
+/** Capture channel settings (Telegram), when signed in and unlocked. */
+export function captureBackend() {
+  return engine ? (deps?.backend ?? null) : null
 }
 
 /** Keys and storage for attachments, when signed in and unlocked. */

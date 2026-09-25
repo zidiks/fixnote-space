@@ -22,12 +22,17 @@
     "sb:diff": "supabase config diff",
     "sb:push": "supabase config push",
     "sb:migrate": "supabase db push",
-    "sb:functions": "supabase functions deploy llm-proxy && supabase functions deploy unfurl"
+    "sb:functions": "supabase functions deploy llm-proxy && supabase functions deploy unfurl && supabase functions deploy telegram-bot",
+    "tg:webhook": "node scripts/telegram-webhook.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "supabase": "^2.117.0",
     "turbo": "^2.11.4",
     "typescript": "^7.0.2"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }
