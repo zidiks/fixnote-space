@@ -62,13 +62,24 @@ fn config_path(client: &str) -> Result<PathBuf, String> {
     }
 }
 
+/// macOS: the app runs straight from the mounted .dmg (/Volumes/…) or from a quarantine copy
+/// (AppTranslocation). Such a path disappears later, and the MCP client could not start the server.
+fn runs_from_temporary_place(command: &str) -> bool {
+    cfg!(target_os = "macos")
+        && (command.starts_with("/Volumes/") || command.contains("/AppTranslocation/"))
+}
+
 /// Adds (or updates) the "fixnote" server in the client's config, keeping everything else.
 /// Returns the config file path.
 #[tauri::command]
 pub fn mcp_connect(client: String) -> Result<String, String> {
     let info = mcp_info()?;
+    // Error codes; the UI shows them in the user's language.
     if !info.built {
-        return Err("The MCP server is not part of this build.".into());
+        return Err("not-built".into());
+    }
+    if runs_from_temporary_place(&info.command) {
+        return Err("not-installed".into());
     }
     let path = config_path(&client)?;
     let existing = std::fs::read_to_string(&path).unwrap_or_default();

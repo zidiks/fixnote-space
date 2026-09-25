@@ -38,7 +38,9 @@ export function McpSection() {
       const path = (await mcp?.connect(client)) ?? ''
       toast(t('mcp.connected', { path }))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : String(err))
+      const message = err instanceof Error ? err.message : String(err)
+      if (message === 'not-built' || message === 'not-installed') toast.error(t(`mcp.${message}`))
+      else toast.error(message)
     }
   }
   const copy = async () => {

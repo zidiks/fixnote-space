@@ -271,6 +271,9 @@ const en = {
     changed: 'The note changed after this, so it cannot be undone automatically.',
   },
   mcp: {
+    'not-built': 'The MCP server is not part of this build.',
+    'not-installed':
+      'Move FixNote to Applications and open it from there first: Claude cannot start the server from the disk image.',
     title: 'Connected apps (MCP)',
     body: 'Let Claude Desktop, Cursor and other MCP apps search and read your notes, and add notes if you allow it. The server runs on this computer and reads the local database; nothing goes through our servers.',
     webOnly: 'Available in the desktop app.',

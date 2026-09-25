@@ -276,6 +276,9 @@ const es: LocaleResource = {
     changed: 'La nota cambió después, así que no se puede deshacer automáticamente.',
   },
   mcp: {
+    'not-built': 'El servidor MCP no forma parte de esta compilación.',
+    'not-installed':
+      'Primero mueve FixNote a Aplicaciones y ábrelo desde allí: Claude no puede iniciar el servidor desde la imagen de disco.',
     title: 'Apps conectadas (MCP)',
     body: 'Permite que Claude Desktop, Cursor y otras apps MCP busquen y lean tus notas, y que añadan notas si lo permites. El servidor funciona en este ordenador y lee la base local; nada pasa por nuestros servidores.',
     webOnly: 'Disponible en la app de escritorio.',
