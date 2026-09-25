@@ -42,7 +42,19 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Capture (Telegram): the bot only seals and queues (`supabase/functions/telegram-bot`); notes are
   made on the device (`packages/core/src/capture`). The payload format lives in both places.
 - Speech and embeddings run in the webview on both platforms (transformers.js workers in
-  `platform-web`); the Rust side only fetches pages, stores files and holds keys.
+  `platform-web`); the Rust side only fetches pages, streams HTTP for the user's own LLM key,
+  stores files, holds keys and edits MCP client configs.
+- Every AI change to a note goes through `AuditLog` (`packages/core/src/ai/audit.ts`), so it shows
+  in Settings → AI and can be undone. LLM calls go through `llm()` in
+  `apps/web/src/lib/assistant/llm.ts` (FixNote AI, the user's key, or Ollama). In local-only mode
+  nothing may reach our server: no sync, Telegram, sharing or FixNote AI.
+- MCP server: `apps/mcp`; it writes only through `NotesRepo` and checks the `mcp.access` kv first.
+  Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
+  placeholder otherwise).
+- Import (`packages/core/src/import`) plans first and writes only in `runImport`; keep it
+  idempotent (notes with the same text are skipped).
+- Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
+  server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).
 
 ## Verify before pushing
