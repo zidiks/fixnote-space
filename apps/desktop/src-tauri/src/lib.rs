@@ -7,6 +7,7 @@
 mod db;
 mod files;
 mod keys;
+mod webview;
 
 use std::sync::Mutex;
 
@@ -56,6 +57,9 @@ pub fn run() {
             std::fs::create_dir_all(&dir)?;
             let conn = db::open(&dir.join("fixnote.db"))?;
             app.manage(db::Db(Mutex::new(conn)));
+            if let Some(window) = app.get_webview_window("main") {
+                webview::disable_browser_shortcuts(&window);
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

@@ -116,7 +116,7 @@ export function SidebarFolders() {
                 <ContextMenuTrigger asChild>
                   <div
                     className={cn(
-                      'group flex h-8 items-center rounded-md pr-1 text-[13.5px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
+                      'group mb-0.5 flex h-8 items-center rounded-md pr-1 text-[13.5px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
                       active && 'bg-sidebar-accent font-medium text-foreground',
                     )}
                     style={{ paddingLeft: depth * 14 }}
