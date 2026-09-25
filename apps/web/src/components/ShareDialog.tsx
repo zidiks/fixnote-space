@@ -1,5 +1,5 @@
 import type { Note } from '@fixnote/core'
-import { useTranslation } from '@fixnote/i18n'
+import { i18n, useTranslation } from '@fixnote/i18n'
 import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Input } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Link2 } from 'lucide-react'
@@ -7,9 +7,17 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
+import { errorMessage, isServerOutdated } from '../lib/errors'
 import { listShares, publishShare, revokeShare } from '../lib/share'
 
 export const SHARES_KEY = ['shares'] as const
+
+/** What went wrong, in words; a server without the shares migration gets its own message. */
+export function shareError(err: unknown): string {
+  return isServerOutdated(err)
+    ? i18n.t('share.serverOutdated')
+    : i18n.t('share.failed', { error: errorMessage(err) })
+}
 
 /** The signed-in user's shared links; empty when signed out. */
 export function useShares(enabled = true) {
@@ -45,7 +53,7 @@ export function ShareDialog({
       await qc.invalidateQueries({ queryKey: SHARES_KEY })
       if (done) toast(done)
     } catch (err) {
-      toast(t('share.failed', { error: err instanceof Error ? err.message : String(err) }))
+      toast(shareError(err))
     } finally {
       setBusy(false)
     }

@@ -1,5 +1,6 @@
 import type { AttachmentRemote, FetchedPage, InboxRemote, SyncRemote } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { toError } from '../errors'
 import { supabaseRemote } from '../sync/supabase-remote'
 
 export interface Session {
@@ -105,11 +106,11 @@ export function supabaseBackend(
         email,
         options: { shouldCreateUser: true, data: { lang } },
       })
-      if (error) throw error
+      if (error) throw toError(error)
     },
     async verifyCode(email, code) {
       const { data, error } = await client.auth.verifyOtp({ email, token: code, type: 'email' })
-      if (error || !data.session) throw error ?? new Error('No session')
+      if (error || !data.session) throw error ? toError(error) : new Error('No session')
       return session(data.session) as Session
     },
     async signOut() {
@@ -120,14 +121,14 @@ export function supabaseBackend(
         .from('user_keys')
         .select('public_key, key_check')
         .maybeSingle()
-      if (error) throw error
+      if (error) throw toError(error)
       return data ? { publicKey: data.public_key, keyCheck: data.key_check } : null
     },
     async createUserKeys(row) {
       const { error } = await client
         .from('user_keys')
         .insert({ public_key: row.publicKey, key_check: row.keyCheck })
-      if (error) throw error
+      if (error) throw toError(error)
     },
     remote: supabaseRemote(client),
     attachments(userId) {
@@ -138,7 +139,7 @@ export function supabaseBackend(
             contentType: 'application/octet-stream',
             upsert: true,
           })
-          if (error) throw error
+          if (error) throw toError(error)
         },
         async download(id) {
           const { data, error } = await bucket().download(`${userId}/${id}`)
@@ -149,7 +150,7 @@ export function supabaseBackend(
               )
             )
               return null
-            throw error
+            throw toError(error)
           }
           return new Uint8Array(await data.arrayBuffer())
         },
@@ -170,17 +171,17 @@ export function supabaseBackend(
           .select('id, channel, sealed')
           .order('created_at')
           .limit(50)
-        if (error) throw error
+        if (error) throw toError(error)
         return data ?? []
       },
       async remove(id) {
         const { error } = await client.from('inbox_items').delete().eq('id', id)
-        if (error) throw error
+        if (error) throw toError(error)
       },
     },
     async createCaptureCode() {
       const { data, error } = await client.rpc('create_capture_code')
-      if (error) throw error
+      if (error) throw toError(error)
       return data as string
     },
     async captureLinks() {
@@ -188,7 +189,7 @@ export function supabaseBackend(
         .from('capture_links')
         .select('channel, external_id, label, created_at')
         .order('created_at')
-      if (error) throw error
+      if (error) throw toError(error)
       return (data ?? []).map((r) => ({
         channel: r.channel,
         externalId: r.external_id,
@@ -202,7 +203,7 @@ export function supabaseBackend(
         .delete()
         .eq('channel', link.channel)
         .eq('external_id', link.externalId)
-      if (error) throw error
+      if (error) throw toError(error)
     },
     async createPairing(ephemeralKey, deviceLabel) {
       const { data, error } = await client
@@ -210,7 +211,7 @@ export function supabaseBackend(
         .insert({ ephemeral_key: ephemeralKey, device_label: deviceLabel })
         .select('id')
         .single()
-      if (error) throw error
+      if (error) throw toError(error)
       return data.id as string
     },
     async getPairing(id) {
@@ -219,7 +220,7 @@ export function supabaseBackend(
         .select('sealed_secret')
         .eq('id', id)
         .maybeSingle()
-      if (error) throw error
+      if (error) throw toError(error)
       return data ? { sealedSecret: data.sealed_secret } : null
     },
     async pendingPairings() {
@@ -229,7 +230,7 @@ export function supabaseBackend(
         .is('sealed_secret', null)
         .gt('expires_at', new Date().toISOString())
         .order('created_at')
-      if (error) throw error
+      if (error) throw toError(error)
       return (data ?? []).map((r) => ({
         id: r.id,
         ephemeralKey: r.ephemeral_key,
@@ -242,12 +243,12 @@ export function supabaseBackend(
         p_id: id,
         p_sealed: sealedSecret,
       })
-      if (error) throw error
+      if (error) throw toError(error)
       return Boolean(data)
     },
     async deletePairing(id) {
       const { error } = await client.from('device_pairings').delete().eq('id', id)
-      if (error) throw error
+      if (error) throw toError(error)
     },
     async fetchPage(url) {
       const { data } = await client.auth.getSession()
@@ -270,7 +271,7 @@ export function supabaseBackend(
           .from('shares')
           .select('id, note_id, created_at, updated_at')
           .order('created_at')
-        if (error) throw error
+        if (error) throw toError(error)
         return (data ?? []).map((r) => ({
           id: r.id,
           noteId: r.note_id,
@@ -282,20 +283,20 @@ export function supabaseBackend(
         const { error } = await client
           .from('shares')
           .insert({ id: row.id, note_id: row.noteId, payload: row.payload })
-        if (error) throw error
+        if (error) throw toError(error)
       },
       async update(id, payload) {
         const { error } = await client.from('shares').update({ payload }).eq('id', id)
-        if (error) throw error
+        if (error) throw toError(error)
       },
       async remove(id) {
         const { error } = await client.from('shares').delete().eq('id', id)
-        if (error) throw error
+        if (error) throw toError(error)
       },
     },
     async getShare(id) {
       const { data, error } = await client.rpc('get_share', { p_id: id })
-      if (error) throw error
+      if (error) throw toError(error)
       const row = (data as { payload: string; updated_at: string }[] | null)?.[0]
       return row ? { payload: row.payload, updatedAt: row.updated_at } : null
     },

@@ -455,6 +455,8 @@ const en = {
     updated: 'Link updated',
     stop: 'Stop sharing',
     stopped: 'Link turned off',
+    serverOutdated:
+      'Shared links are not set up on the server yet: its database needs the latest migrations (pnpm sb:migrate).',
     failed: 'Could not share: {{error}}',
     links: 'Shared links',
     linksBody: 'Links to your notes that anyone with the link can open.',

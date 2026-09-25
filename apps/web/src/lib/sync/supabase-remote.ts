@@ -8,6 +8,7 @@ import type {
   SyncRemote,
 } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { toError } from '../errors'
 
 interface NoteRow {
   id: string
@@ -86,7 +87,7 @@ export function supabaseRemote(client: SupabaseClient): SyncRemote {
         .gt('seq', after)
         .order('seq')
         .limit(limit)
-      if (error) throw error
+      if (error) throw toError(error)
       return (data as NoteRow[]).map(toNote)
     },
     async pullFolders(after, limit) {
@@ -96,7 +97,7 @@ export function supabaseRemote(client: SupabaseClient): SyncRemote {
         .gt('seq', after)
         .order('seq')
         .limit(limit)
-      if (error) throw error
+      if (error) throw toError(error)
       return (data as FolderRow[]).map(toFolder)
     },
     async pushNote(row: RemoteNoteWrite, baseVersion) {
@@ -114,7 +115,7 @@ export function supabaseRemote(client: SupabaseClient): SyncRemote {
         },
         p_base_version: baseVersion,
       })
-      if (error) throw error
+      if (error) throw toError(error)
       return unwrap(data as PushResponse<NoteRow>, toNote)
     },
     async pushFolder(row: RemoteFolderWrite, baseVersion) {
@@ -130,7 +131,7 @@ export function supabaseRemote(client: SupabaseClient): SyncRemote {
         },
         p_base_version: baseVersion,
       })
-      if (error) throw error
+      if (error) throw toError(error)
       return unwrap(data as PushResponse<FolderRow>, toFolder)
     },
   }

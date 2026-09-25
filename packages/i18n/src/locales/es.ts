@@ -462,6 +462,8 @@ const es: LocaleResource = {
     updated: 'Enlace actualizado',
     stop: 'Dejar de compartir',
     stopped: 'Enlace desactivado',
+    serverOutdated:
+      'Los enlaces aún no están configurados en el servidor: su base de datos necesita las últimas migraciones (pnpm sb:migrate).',
     failed: 'No se pudo compartir: {{error}}',
     links: 'Enlaces compartidos',
     linksBody: 'Enlaces a tus notas que cualquiera con el enlace puede abrir.',

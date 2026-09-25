@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useUi } from '../../app/store'
 import { useRepo } from '../../lib/db'
 import { revokeShare } from '../../lib/share'
-import { SHARES_KEY, useShares } from '../ShareDialog'
+import { SHARES_KEY, shareError, useShares } from '../ShareDialog'
 
 /** Every open link of the account, including links to notes deleted since. */
 export function SharedLinksSection() {
@@ -77,11 +77,7 @@ export function SharedLinksSection() {
                     await qc.invalidateQueries({ queryKey: SHARES_KEY })
                     toast(t('share.stopped'))
                   } catch (err) {
-                    toast(
-                      t('share.failed', {
-                        error: err instanceof Error ? err.message : String(err),
-                      }),
-                    )
+                    toast(shareError(err))
                   }
                 }}
               >
