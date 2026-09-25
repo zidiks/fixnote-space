@@ -2,6 +2,8 @@ name: Desktop build
 
 # Windows installers (NSIS, MSI) and macOS disk images (Apple Silicon and Intel). Runs on main, on `v*`
 # tags, on demand, and on any branch whose pushed commit message contains "[build desktop]".
+# A `v*` tag also publishes a GitHub release whose files have stable names, which the site's
+# /download/* links point at (apps/landing/public/_redirects).
 on:
   push:
     branches: ['**']
@@ -41,6 +43,15 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+      - name: Tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version=$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match version $version in tauri.conf.json"
+            exit 1
+          fi
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -95,3 +106,43 @@ jobs:
           path: ${{ matrix.artifacts }}
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Stable file names
+        shell: bash
+        run: |
+          set -e
+          mkdir release
+          one() { # exactly one file matches, so a missing or extra installer fails the release
+            local files=("$@")
+            [ "${#files[@]}" -eq 1 ] && [ -f "${files[0]}" ] || { echo "::error::expected one file, got: ${files[*]}" >&2; exit 1; }
+            echo "${files[0]}"
+          }
+          shopt -s globstar nullglob
+          cp "$(one artifacts/fixnote-windows-latest/**/*.exe)" release/FixNote-Windows-x64-setup.exe
+          # One MSI per installer language (FixNote_<version>_x64_<lang>.msi).
+          msis=(artifacts/fixnote-windows-latest/**/*.msi)
+          [ "${#msis[@]}" -gt 0 ] || { echo "::error::no MSI installers" >&2; exit 1; }
+          for msi in "${msis[@]}"; do
+            lang=$(basename "$msi" .msi); lang=${lang##*_}
+            cp "$msi" "release/FixNote-Windows-x64-$lang.msi"
+          done
+          cp "$(one artifacts/fixnote-macos-latest/**/*.dmg)" release/FixNote-macOS-arm64.dmg
+          cp "$(one artifacts/fixnote-macos-15-intel/**/*.dmg)" release/FixNote-macOS-x64.dmg
+          ls -l release
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" release/*
+          --repo "$GITHUB_REPOSITORY" --title "FixNote ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag

@@ -283,7 +283,12 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
 
 ## CI
 
-- `CI` runs lint, typecheck, tests, the web build, and Rust clippy on every push and PR.
+- `CI` runs lint, typecheck, tests, the web and landing builds, and Rust clippy on every push and PR.
 - `Desktop build` builds Windows installers and macOS `.dmg`s (Apple Silicon and Intel) on `main`, on `v*`
   tags, on demand, and on any branch when the pushed commit message contains `[build desktop]`,
   and uploads them as workflow artifacts.
+- A `v*` tag also publishes a GitHub release with stable file names
+  (`FixNote-Windows-x64-setup.exe`, `FixNote-Windows-x64-<lang>.msi`, `FixNote-macOS-arm64.dmg`,
+  `FixNote-macOS-x64.dmg`); the site's download buttons point at the latest release. To release,
+  set `version` in `apps/desktop/src-tauri/tauri.conf.json`, merge, then tag that commit on `main`:
+  `git tag v0.1.0 && git push origin v0.1.0`. The build fails if the tag and the version differ.
