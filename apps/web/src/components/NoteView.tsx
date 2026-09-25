@@ -79,16 +79,20 @@ export function NoteView({ id }: { id: string }) {
       <header className="flex h-10 items-center gap-2 text-[13px] text-muted-foreground">
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-accent hover:text-foreground"
+          className="flex max-w-[40%] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 py-1 hover:bg-accent hover:text-foreground"
           onClick={() =>
             navigate(folder ? { kind: 'folder', id: folder.id } : { kind: 'home', filter: 'inbox' })
           }
         >
-          {folder ? <Folder className="size-3.5" /> : <Inbox className="size-3.5" />}
-          {folder?.name ?? t('common.noFolder')}
+          {folder ? (
+            <Folder className="size-3.5 shrink-0" />
+          ) : (
+            <Inbox className="size-3.5 shrink-0" />
+          )}
+          <span className="truncate">{folder?.name ?? t('common.noFolder')}</span>
         </button>
-        <ChevronRight className="size-3.5 opacity-50" />
-        <span className="truncate text-foreground">{n.title || t('common.untitled')}</span>
+        <ChevronRight className="size-3.5 shrink-0 opacity-50" />
+        <span className="min-w-0 truncate text-foreground">{n.title || t('common.untitled')}</span>
 
         <span className="ml-auto shrink-0 tabular-nums" aria-live="polite">
           {saveState === 'saving'
