@@ -10,8 +10,8 @@ import {
 import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
 import { create } from 'zustand'
-import { chatTransport } from '../account/account'
-import { MODEL, providerLabel } from './assistant'
+import { providerLabel } from './assistant'
+import { llm } from './llm'
 
 interface TidyState {
   pending: number
@@ -57,17 +57,14 @@ export async function findSuggestions(
   tidy: Tidy,
   opts: { noteIds?: string[]; signal?: AbortSignal } = {},
 ): Promise<TidySuggestion[] | 'signed-out'> {
-  const transport = await chatTransport()
-  if (!transport) return 'signed-out'
+  const reach = await llm()
+  if (!reach.ok) return 'signed-out'
   const candidates = await tidy.candidates(opts.noteIds ? { noteIds: opts.noteIds } : {})
   let found: NewTidySuggestion[] = []
   if (candidates.notes.length) {
     let reply = ''
     for await (const delta of streamChat({
-      url: transport.url,
-      headers: transport.headers,
-      fetch: transport.fetch,
-      model: MODEL,
+      ...reach.route,
       messages: buildTidyMessages(candidates),
       temperature: 0.2,
       maxTokens: 1500,

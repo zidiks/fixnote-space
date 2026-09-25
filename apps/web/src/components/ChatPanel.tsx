@@ -38,6 +38,7 @@ import {
   stop,
   useAssistant,
 } from '../lib/assistant/assistant'
+import { useLlm } from '../lib/assistant/llm'
 import { useFolders, useNote } from '../lib/queries'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
@@ -204,6 +205,9 @@ export function ChatPanel() {
   const draft = useUi((s) => s.chatDraft)
   const setDraft = useUi((s) => s.setChatDraft)
   const phase = useAccount((s) => s.phase)
+  // FixNote AI goes through our server; your own key or Ollama work without an account.
+  const needsAccount = useLlm((s) => s.settings.kind === 'fixnote')
+  const error = useAssistant((s) => s.error)
   const messages = useAssistant((s) => s.messages)
   const status = useAssistant((s) => s.status)
   const scopeMode = useAssistant((s) => s.scopeMode)
@@ -323,9 +327,9 @@ export function ChatPanel() {
       </div>
 
       <div className="border-t p-3">
-        {phase === 'disabled' ? (
+        {needsAccount && phase === 'disabled' ? (
           <p className="text-sm text-muted-foreground">{t('chat.notConfigured')}</p>
-        ) : phase !== 'ready' ? (
+        ) : needsAccount && phase !== 'ready' ? (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">{t('chat.signIn')}</p>
             <Button size="sm" onClick={() => openSettings('account')}>
@@ -334,6 +338,11 @@ export function ChatPanel() {
           </div>
         ) : (
           <>
+            {status === 'error' && error && last?.status !== 'error' ? (
+              <p role="alert" className="mb-2 text-xs text-destructive">
+                {error}
+              </p>
+            ) : null}
             <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{t('chat.scope.label')}</span>
               <DropdownMenu>

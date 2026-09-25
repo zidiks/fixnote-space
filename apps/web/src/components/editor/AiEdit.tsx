@@ -27,7 +27,9 @@ import {
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../../app/store'
+import { unavailableText } from '../../lib/assistant/assistant'
 import { proposeEdit } from '../../lib/assistant/edit'
+import type { LlmUnavailable } from '../../lib/assistant/llm'
 import { useRepo } from '../../lib/db'
 import { useInvalidateNotes } from '../../lib/queries'
 import {
@@ -45,7 +47,7 @@ type Phase =
   | { kind: 'running'; text: string }
   | { kind: 'review'; proposal: string }
   | { kind: 'error'; message: string }
-  | { kind: 'signed-out' }
+  | { kind: 'unavailable'; reason: LlmUnavailable }
 
 interface Session {
   target: Target
@@ -127,7 +129,7 @@ export function useAiEdit(
           phase:
             result.kind === 'ok'
               ? { kind: 'review', proposal: result.text }
-              : { kind: 'signed-out' },
+              : { kind: 'unavailable', reason: result.reason },
         })
       } catch (err) {
         if (ctrl.signal.aborted) {
@@ -385,18 +387,21 @@ function AiEditBody({
     )
   }
 
-  if (phase.kind === 'signed-out') {
+  if (phase.kind === 'unavailable') {
+    const signIn = phase.reason === 'signed-out'
     return (
       <div className="space-y-2 p-3">
-        <p className="text-sm text-muted-foreground">{t('ai.signIn')}</p>
+        <p className="text-sm text-muted-foreground">
+          {signIn ? t('ai.signIn') : unavailableText(phase.reason)}
+        </p>
         <Button
           size="sm"
           onClick={() => {
             ai.close()
-            openSettings('account')
+            openSettings(signIn ? 'account' : 'ai')
           }}
         >
-          {t('chat.signInButton')}
+          {signIn ? t('chat.signInButton') : t('aiProvider.openSettings')}
         </Button>
       </div>
     )

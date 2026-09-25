@@ -8,6 +8,7 @@ import { useDb } from '../../lib/db'
 import { useInvalidateNotes } from '../../lib/queries'
 import { formatRelative } from '../../lib/time'
 import { McpSection } from './McpSection'
+import { ProviderSection } from './ProviderSection'
 
 const AUDIT_KEY = ['audit'] as const
 
@@ -69,6 +70,7 @@ function AuditLogList() {
 export function AiSection() {
   return (
     <div className="space-y-8">
+      <ProviderSection />
       <McpSection />
       <AuditLogList />
     </div>

@@ -4,7 +4,8 @@ import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { appDataBlobStore } from './blobs'
-import { osKeyStore } from './keys'
+import { tauriFetch } from './http'
+import { osKeyStore, osSecretStore } from './keys'
 import { openTauriSqlDriver } from './sql'
 import { windowControls } from './window'
 
@@ -61,6 +62,8 @@ export function createTauriPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     keyStore: osKeyStore,
+    secrets: osSecretStore,
+    httpFetch: tauriFetch,
     // Pages are read by the app itself: no server learns which links a note contains.
     fetchPage: (url) => invoke<FetchedPage>('fetch_page', { url }),
     openExternal: (url) => openUrl(url),

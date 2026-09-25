@@ -286,6 +286,43 @@ const es: LocaleResource = {
     writeNote:
       'Las notas que crean las apps conectadas van a Inicio sin carpeta y aparecen en la actividad de la IA, donde se pueden deshacer.',
   },
+  aiProvider: {
+    title: 'Modelo',
+    fixnote: 'FixNote AI',
+    fixnoteBody:
+      'DeepSeek a través de nuestro servidor; necesita una cuenta. Solo se envían los fragmentos encontrados para cada pregunta.',
+    custom: 'Tu propia clave',
+    customBody:
+      'OpenAI, OpenRouter, Groq, DeepSeek o cualquier dirección compatible con OpenAI. Las peticiones van directas al proveedor; la clave se queda en este dispositivo.',
+    ollama: 'Ollama',
+    ollamaBody: 'Un modelo que funciona en este ordenador. Nada sale a internet.',
+    desktopOnly: 'En la app de escritorio.',
+    provider: 'Proveedor',
+    other: 'Otro (compatible con OpenAI)',
+    address: 'Dirección',
+    model: 'Modelo',
+    key: 'Clave de API',
+    keySaved: 'Clave guardada en este dispositivo',
+    replaceKey: 'Cambiar',
+    removeKey: 'Quitar',
+    saveKey: 'Guardar clave',
+    test: 'Comprobar',
+    testing: 'Comprobando…',
+    works: 'Funciona: {{model}} respondió.',
+    failed: 'Sin respuesta: {{message}}',
+    noModels: 'No hay modelos. Instala uno con «ollama pull llama3.1».',
+    refresh: 'Actualizar lista',
+    localOnly: 'Solo en este dispositivo',
+    localOnlyBody:
+      'La sincronización, Telegram y FixNote AI se desactivan; el asistente funciona con Ollama. Nada sale de este ordenador.',
+    openSettings: 'Ajustes de IA',
+    unavailable: {
+      'signed-out': 'Inicia sesión para usar FixNote AI o elige otro modelo en Ajustes → IA.',
+      'no-key': 'Añade tu clave de API en Ajustes → IA.',
+      'no-model': 'Elige un modelo en Ajustes → IA.',
+      'local-only': 'El modo «solo en este dispositivo» está activo: elige Ollama en Ajustes → IA.',
+    },
+  },
   window: {
     minimize: 'Minimizar',
     maximize: 'Maximizar',

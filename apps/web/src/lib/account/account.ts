@@ -374,6 +374,13 @@ export function currentSecret(): Uint8Array | null {
 
 // ── Sync ─────────────────────────────────────────────────────────────────────
 
+let localOnly: () => boolean = () => false
+
+/** The desktop "only on this device" switch (lives with the AI settings). */
+export function setLocalOnlyCheck(check: () => boolean) {
+  localOnly = check
+}
+
 /** Local data changed: sync soon, batching bursts of edits. */
 export function requestSync() {
   if (!engine) return
@@ -384,6 +391,11 @@ export function requestSync() {
 export async function runSync() {
   const e = engine
   if (!e) return
+  // "Only on this device": nothing is sent or fetched, the account just stays signed in.
+  if (localOnly()) {
+    setSync({ status: 'idle', error: null })
+    return
+  }
   setSync({ status: 'syncing' })
   try {
     const report = await e.sync()

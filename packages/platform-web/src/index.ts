@@ -1,7 +1,7 @@
 import type { Platform, SqlDriver } from '@fixnote/core'
 import { opfsBlobStore } from './blobs'
 import { createTransformersEmbedder } from './embed/client'
-import { webKeyStore } from './keys'
+import { webKeyStore, webSecretStore } from './keys'
 import { openWebSqlDriver } from './sqlite/client'
 import { createWhisperTranscriber } from './whisper/client'
 
@@ -36,6 +36,7 @@ export function createWebPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     keyStore: webKeyStore,
+    secrets: webSecretStore,
     openExternal: async (url) => {
       window.open(url, '_blank', 'noopener,noreferrer')
     },

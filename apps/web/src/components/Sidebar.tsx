@@ -15,6 +15,7 @@ import {
   CloudAlert,
   CloudCheck,
   CloudOff,
+  HardDrive,
   Hash,
   House,
   RefreshCw,
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
+import { useLlm } from '../lib/assistant/llm'
 import { useTidy } from '../lib/assistant/tidy'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useOpenDaily, useTags } from '../lib/queries'
@@ -147,6 +149,19 @@ function SyncIndicator() {
   const phase = useAccount((s) => s.phase)
   const status = useAccount((s) => s.sync.status)
   const openSettings = useUi((s) => s.openSettings)
+  const localOnly = useLlm((s) => s.localOnly)
+  if (localOnly) {
+    return (
+      <button
+        type="button"
+        onClick={() => openSettings('ai')}
+        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground"
+      >
+        <HardDrive className="size-3.5" />
+        {t('aiProvider.localOnly')}
+      </button>
+    )
+  }
   if (phase === 'disabled') return null
   if (phase !== 'ready') {
     return (

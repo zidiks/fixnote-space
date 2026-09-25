@@ -5,6 +5,7 @@ import { Link2Off, Send } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { captureBackend } from '../../lib/account/account'
+import { useLlm } from '../../lib/assistant/llm'
 import { env } from '../../lib/env'
 import { usePlatform } from '../../lib/platform'
 
@@ -25,7 +26,8 @@ export function TelegramSection() {
     refetchInterval: (q) => (waiting && !q.state.data?.length ? 3000 : false),
   })
   const bot = env.telegramBot ?? (import.meta.env.DEV ? 'fixnote_dev_bot' : undefined)
-  if (!backend || !bot) return null
+  const localOnly = useLlm((s) => s.localOnly)
+  if (!backend || !bot || localOnly) return null
   const list = links.data ?? []
 
   const connect = async () => {

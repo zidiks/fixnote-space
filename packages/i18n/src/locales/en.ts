@@ -281,6 +281,43 @@ const en = {
     writeNote:
       'Notes created by connected apps go to Home without a folder and appear in the AI activity log, where they can be undone.',
   },
+  aiProvider: {
+    title: 'Model',
+    fixnote: 'FixNote AI',
+    fixnoteBody:
+      'DeepSeek through our server; needs an account. Only the passages found for a question are sent.',
+    custom: 'Your own key',
+    customBody:
+      'OpenAI, OpenRouter, Groq, DeepSeek or any OpenAI-compatible address. Requests go straight to the provider; the key stays on this device.',
+    ollama: 'Ollama',
+    ollamaBody: 'A model running on this computer. Nothing goes to the internet.',
+    desktopOnly: 'In the desktop app.',
+    provider: 'Provider',
+    other: 'Other (OpenAI-compatible)',
+    address: 'Address',
+    model: 'Model',
+    key: 'API key',
+    keySaved: 'Key saved on this device',
+    replaceKey: 'Replace',
+    removeKey: 'Remove',
+    saveKey: 'Save key',
+    test: 'Check',
+    testing: 'Checking…',
+    works: 'Works: {{model}} answered.',
+    failed: 'No answer: {{message}}',
+    noModels: 'No models found. Install one with “ollama pull llama3.1”.',
+    refresh: 'Refresh list',
+    localOnly: 'Only on this device',
+    localOnlyBody:
+      'Sync, Telegram and FixNote AI are off; the assistant works through Ollama. Nothing leaves this computer.',
+    openSettings: 'AI settings',
+    unavailable: {
+      'signed-out': 'Sign in to use FixNote AI, or pick another model in Settings → AI.',
+      'no-key': 'Add your API key in Settings → AI.',
+      'no-model': 'Choose a model in Settings → AI.',
+      'local-only': 'Only-on-this-device mode is on: choose Ollama in Settings → AI.',
+    },
+  },
   window: {
     minimize: 'Minimize',
     maximize: 'Maximize',

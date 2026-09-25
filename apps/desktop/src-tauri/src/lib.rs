@@ -7,6 +7,7 @@
 mod blobs;
 mod db;
 mod files;
+mod http;
 mod keys;
 mod links;
 mod mcp;
@@ -80,7 +81,12 @@ pub fn run() {
             blobs::blob_get,
             blobs::blob_delete,
             mcp::mcp_info,
-            mcp::mcp_connect
+            mcp::mcp_connect,
+            http::http_stream,
+            http::http_cancel,
+            keys::secret_load,
+            keys::secret_save,
+            keys::secret_clear
         ])
         .run(tauri::generate_context!())
         .expect("error while running FixNote");

@@ -37,6 +37,15 @@ describe('tidy helpers', () => {
     expect(addTags('Text #bot', ['bot'])).toBe('Text #bot')
   })
 
+  it('keeps the longer note when two were edited at the same moment', () => {
+    expect(
+      findDuplicates([
+        { id: 'long', title: 'A', content: 'A\nодин два три четыре', updatedAt: 5 },
+        { id: 'short', title: 'A', content: 'A\nодин два три', updatedAt: 5 },
+      ]),
+    ).toEqual([['long', 'short']])
+  })
+
   it('finds duplicates and merges without losing lines', () => {
     const pairs = findDuplicates([
       { id: 'old', title: 'Покупки', content: 'Покупки\nмолоко хлеб сыр', updatedAt: 1 },

@@ -18,8 +18,9 @@ import {
   sameScope,
   similarNotes,
 } from '@fixnote/core'
+import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
-import { chatTransport } from '../account/account'
+import { type LlmUnavailable, llm as llmRoute } from './llm'
 
 export type AssistantStatus = 'idle' | 'thinking' | 'answering' | 'done' | 'error'
 export type SemanticState = 'off' | 'loading' | 'ready' | 'unavailable'
@@ -45,12 +46,9 @@ export const useAssistant = create<AssistantState>()(() => ({
 }))
 
 const set = useAssistant.setState
-export const MODEL = 'deepseek-chat'
 
-/** Who answers, for the AI activity log. */
-export function providerLabel(): string {
-  return 'DeepSeek · FixNote'
-}
+export { providerLabel } from './llm'
+
 const SEMANTIC_KEY = 'assistant.semantic'
 
 interface Deps {
@@ -152,12 +150,16 @@ const errorText = (err: unknown) =>
   err instanceof ChatError ? err.message : err instanceof Error ? err.message : String(err)
 
 /** Asks one question about the notes in `scope`, streaming the answer into the thread. */
-export async function ask(question: string, scope: ChatScope): Promise<'ok' | 'signed-out'> {
+export async function ask(question: string, scope: ChatScope): Promise<'ok' | LlmUnavailable> {
   const repo = chat
   const d = deps
   if (!repo || !d || !question.trim()) return 'ok'
-  const transport = await chatTransport()
-  if (!transport) return 'signed-out'
+  const reach = await llmRoute()
+  if (!reach.ok) {
+    set({ status: 'error', error: unavailableText(reach.reason) })
+    return reach.reason
+  }
+  const route = reach.route
 
   clearTimeout(doneTimer)
   const before = useAssistant.getState().messages
@@ -181,13 +183,7 @@ export async function ask(question: string, scope: ChatScope): Promise<'ok' | 's
   controller = ctrl
   let text = ''
   try {
-    const llm = {
-      url: transport.url,
-      headers: transport.headers,
-      fetch: transport.fetch,
-      model: MODEL,
-      signal: ctrl.signal,
-    }
+    const llm = { ...route, signal: ctrl.signal }
     // Notes mix languages ("giveaway" vs "розыгрыш"): ask the model for translations and synonyms
     // of the question first. Best effort — on failure or timeout it's just the question's words.
     const extraKeywords = scope.kind === 'note' ? [] : await expandQuery(llm, question)
@@ -221,6 +217,11 @@ export async function ask(question: string, scope: ChatScope): Promise<'ok' | 's
     if (controller === ctrl) controller = null
   }
   return 'ok'
+}
+
+/** Why the model cannot be reached, in the UI language. */
+export function unavailableText(reason: LlmUnavailable): string {
+  return i18n.t(`aiProvider.unavailable.${reason}`)
 }
 
 export function stop() {

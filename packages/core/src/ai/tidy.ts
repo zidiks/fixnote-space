@@ -72,7 +72,10 @@ function similarity(a: Set<string>, b: Set<string>): number {
 export function findDuplicates(
   notes: { id: string; title: string; content: string; updatedAt: number }[],
 ): [string, string][] {
-  const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt)
+  // Newest first; on a tie the longer one, which is the one to keep.
+  const sorted = [...notes].sort(
+    (a, b) => b.updatedAt - a.updatedAt || b.content.length - a.content.length,
+  )
   const sets = new Map(sorted.map((n) => [n.id, words(n.content)]))
   const used = new Set<string>()
   const pairs: [string, string][] = []

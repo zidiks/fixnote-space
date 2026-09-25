@@ -70,6 +70,13 @@ export interface KeyStore {
   clear(): Promise<void>
 }
 
+/** Small secrets other than the account key (an LLM API key), kept like the account key. */
+export interface SecretStore {
+  get(name: string): Promise<string | null>
+  set(name: string, value: string): Promise<void>
+  delete(name: string): Promise<void>
+}
+
 /** Local attachment cache. Desktop: app-data dir. Web: OPFS. */
 export interface BlobStore {
   put(key: string, data: Blob): Promise<void>
@@ -114,6 +121,12 @@ export interface Platform {
   readonly embedder: () => Promise<Embedder>
   readonly transcriber: () => Promise<Transcriber>
   readonly keyStore: KeyStore
+  readonly secrets: SecretStore
+  /**
+   * fetch without browser limits (CORS, plain-http localhost), streaming. Desktop only: used for
+   * the user's own LLM endpoint and Ollama. The web app uses the browser's fetch.
+   */
+  readonly httpFetch?: typeof fetch
   readonly blobs: BlobStore
   /**
    * Reads a web page for a link card, from the device itself. Desktop only: browsers cannot read
