@@ -21,13 +21,13 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Public Supabase config
+        shell: bash
+        run: cp .env.example .env
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @fixnote/web build
-        env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist

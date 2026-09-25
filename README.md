@@ -26,12 +26,12 @@ Requirements: Node 22+, pnpm 10 (`corepack enable`), Rust stable for the desktop
 
 ```bash
 pnpm install
-cp .env.example .env        # fill in VITE_SUPABASE_ANON_KEY
+cp .env.example .env        # Windows PowerShell: copy .env.example .env
 pnpm dev                    # web app on http://localhost:5173
 pnpm dev:desktop            # desktop app (Tauri) with hot reload
 ```
 
-The app runs without Supabase configured; cloud features stay off until the env is set.
+The app also runs without `.env`; cloud features stay off until it is set.
 
 ### Windows (primary desktop target)
 
@@ -68,20 +68,24 @@ sudo apt-get install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3
 ## Supabase
 
 Project ref: `nsteehqbmljuczxgkvae`. Sign-in is passwordless: email plus a 6-digit code.
+`.env.example` already holds the public URL and anon key; `cp .env.example .env` is enough.
 
-- `.mcp.json` registers the Supabase MCP server for Claude Code; authenticate once with `claude /mcp`.
-- Auth settings and the trilingual code email live in `supabase/config.toml` and
-  `supabase/templates/otp.html`. Apply them to the hosted project with the
-  [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started):
+The Supabase CLI is a dev dependency of the repo, so it works on Windows without a global install.
+Auth settings and the trilingual code email live in `supabase/config.toml` and
+`supabase/templates/otp.html`. Apply them to the hosted project:
 
 ```bash
-supabase login
-supabase link --project-ref nsteehqbmljuczxgkvae
-supabase config push
+pnpm sb:login     # opens the browser, stores an access token
+pnpm sb:link      # links this folder to project nsteehqbmljuczxgkvae
+pnpm sb:diff      # review what would change in the hosted project
+pnpm sb:push      # apply; confirms each changed resource
 ```
 
-In CI, set the repository variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-(Settings → Secrets and variables → Actions → Variables).
+Any other CLI command runs as `pnpm sb <command>`, e.g. `pnpm sb migration new init`.
+
+`.mcp.json` registers the Supabase MCP server for Claude Code; authenticate once with `claude /mcp`.
+
+CI copies `.env.example` to `.env`, so no repository secrets are needed for the build.
 
 ## CI
 
