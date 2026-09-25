@@ -4,8 +4,10 @@ import { matchesHotkey } from './hotkeys'
 const ev = (
   key: string,
   m: Partial<Record<'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey', boolean>> = {},
+  code = '',
 ) => ({
   key,
+  code,
   metaKey: false,
   ctrlKey: false,
   shiftKey: false,
@@ -32,5 +34,22 @@ describe('matchesHotkey', () => {
     expect(
       matchesHotkey(ev('j', { ctrlKey: true, shiftKey: true }), { key: 'j', mod: true }, false),
     ).toBe(false)
+  })
+
+  it('works on any keyboard layout by physical key', () => {
+    // Russian layout: Ctrl+J types "о", Ctrl+\ types "\\", Ctrl+[ types "х"
+    expect(matchesHotkey(ev('о', { ctrlKey: true }, 'KeyJ'), { key: 'j', mod: true }, false)).toBe(
+      true,
+    )
+    expect(
+      matchesHotkey(ev('х', { ctrlKey: true }, 'BracketLeft'), { key: '[', mod: true }, false),
+    ).toBe(true)
+    expect(matchesHotkey(ev('о', { ctrlKey: true }, 'KeyJ'), { key: 'k', mod: true }, false)).toBe(
+      false,
+    )
+    // Dvorak: the key labelled K sits where QWERTY has V; the character wins
+    expect(matchesHotkey(ev('k', { ctrlKey: true }, 'KeyV'), { key: 'k', mod: true }, false)).toBe(
+      true,
+    )
   })
 })

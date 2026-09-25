@@ -10,7 +10,8 @@ interface NativeActions {
 /** Browser shortcuts that make no sense in a desktop app (reload, print, find, view source…). */
 function isBrowserShortcut(e: KeyboardEvent, apple: boolean): boolean {
   const mod = apple ? e.metaKey : e.ctrlKey
-  const key = e.key.toLowerCase()
+  // Physical key first, so the same shortcuts are caught on any layout.
+  const key = e.code.startsWith('Key') ? e.code.slice(3).toLowerCase() : e.key.toLowerCase()
   if (['f3', 'f5', 'f7'].includes(key)) return true
   if (mod && ['r', 'p', 'g', 'u', 's', 'h', 'o', 'l', 't', 'w'].includes(key) && !e.altKey)
     return true
@@ -54,7 +55,7 @@ export function useNativeFeel(platform: Platform, apple: boolean, actions: Nativ
       }
       if (!desktop) return
       const mod = apple ? e.metaKey : e.ctrlKey
-      if (mod && !e.shiftKey && e.key.toLowerCase() === 'f') {
+      if (mod && !e.shiftKey && (e.code === 'KeyF' || e.key.toLowerCase() === 'f')) {
         e.preventDefault()
         actions.search()
         return

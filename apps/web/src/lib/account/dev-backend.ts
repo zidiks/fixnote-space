@@ -1,3 +1,4 @@
+import { EXPANSION_MARKER } from '@fixnote/ai'
 import type {
   PushResult,
   RemoteFolder,
@@ -66,14 +67,36 @@ const remote: SyncRemote = {
  * Stand-in for DeepSeek: answers from the first note fragment in the prompt, cites it, and streams
  * the text word by word like a real model.
  */
+// A tiny stand-in for the model's multilingual knowledge in query expansion.
+const DEV_SYNONYMS: Record<string, string[]> = {
+  розыгрыш: ['giveaway', 'sorteo', 'raffle'],
+  гивевей: ['giveaway', 'розыгрыш'],
+  giveaway: ['розыгрыш', 'гивевей', 'sorteo'],
+  телега: ['telegram'],
+  покупки: ['shopping', 'compras'],
+}
+
+function devKeywords(question: string): string {
+  const words = question.toLowerCase().split(/[^\p{L}\p{N}]+/u)
+  const keywords = words.flatMap((w) =>
+    Object.entries(DEV_SYNONYMS)
+      .filter(([k]) => w.startsWith(k.slice(0, Math.max(4, k.length - 2))))
+      .flatMap(([, v]) => v),
+  )
+  return JSON.stringify({ keywords: [...new Set(keywords)] })
+}
+
 const devLlm: typeof fetch = async (_url, init) => {
   const body = JSON.parse(String(init?.body)) as { messages: { role: string; content: string }[] }
   const prompt = body.messages.at(-1)?.content ?? ''
+  const expansion = body.messages[0]?.content.includes(EXPANSION_MARKER)
   const first = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
-  const answer = first
-    ? `From your note "${first[1]}": ${first[2]} [1]`
-    : "I couldn't find this in your notes. Try other words."
-  const words = answer.split(/(?<= )/)
+  const answer = expansion
+    ? devKeywords(prompt)
+    : first
+      ? `From your note "${first[1]}": ${first[2]} [1]`
+      : "I couldn't find this in your notes. Try other words."
+  const words = expansion ? [answer] : answer.split(/(?<= )/)
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       for (const w of words) {

@@ -84,6 +84,7 @@ const en = {
     placeholder: 'Search notes or type a command…',
     recents: 'Recent',
     results: 'Notes',
+    related: 'Similar in meaning',
     commands: 'Commands',
     newNote: 'New note',
     today: "Open today's note",

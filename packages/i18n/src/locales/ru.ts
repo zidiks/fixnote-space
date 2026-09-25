@@ -86,6 +86,7 @@ const ru: LocaleResource = {
     placeholder: 'Найдите заметку или введите команду…',
     recents: 'Недавние',
     results: 'Заметки',
+    related: 'Похожие по смыслу',
     commands: 'Команды',
     newNote: 'Новая заметка',
     today: 'Открыть заметку на сегодня',

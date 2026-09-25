@@ -10,7 +10,7 @@ import {
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync } from './account/account'
-import { notifyNotesChanged } from './assistant/assistant'
+import { findSimilar, notifyNotesChanged, useAssistant } from './assistant/assistant'
 import { useRepo } from './db'
 
 export const keys = {
@@ -18,6 +18,7 @@ export const keys = {
   list: (filter: NoteFilter) => ['notes', 'list', filter] as const,
   note: (id: string) => ['notes', 'one', id] as const,
   search: (q: string) => ['notes', 'search', q] as const,
+  similar: (q: string) => ['notes', 'similar', q] as const,
   counts: ['counts'] as const,
   folders: ['folders'] as const,
   tags: ['tags'] as const,
@@ -69,6 +70,18 @@ export function useSearch(q: string) {
     queryKey: keys.search(query),
     queryFn: () => repo.search(query, { limit: 20 }),
     enabled: query.length > 0,
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** Meaning-based matches for Spotlight, once the assistant's local index is ready. */
+export function useSimilar(q: string) {
+  const query = q.trim()
+  const ready = useAssistant((s) => s.semantic === 'ready')
+  return useQuery({
+    queryKey: keys.similar(query),
+    queryFn: () => findSimilar(query),
+    enabled: ready && query.length >= 3,
     placeholderData: keepPreviousData,
   })
 }

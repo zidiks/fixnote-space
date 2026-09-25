@@ -1,11 +1,11 @@
-import { MARK_END, MARK_START, type NoteSummary } from '@fixnote/core'
+import { MARK_END, MARK_START, toPlainText } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Dialog, DialogContent, DialogTitle, Kbd } from '@fixnote/ui'
 import { Command } from 'cmdk'
-import { CalendarDays, FileText, Search, SquarePen } from 'lucide-react'
+import { CalendarDays, FileText, Search, Sparkles, SquarePen } from 'lucide-react'
 import { type ReactNode, useDeferredValue, useState } from 'react'
 import { useUi } from '../app/store'
-import { useCreateNote, useOpenDaily, useRecents, useSearch } from '../lib/queries'
+import { useCreateNote, useOpenDaily, useRecents, useSearch, useSimilar } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
 
 /** Renders an FTS snippet, turning the private-use markers into <mark> without any HTML parsing. */
@@ -49,6 +49,7 @@ export function Spotlight() {
   const query = useDeferredValue(q)
   const recents = useRecents(8)
   const search = useSearch(query)
+  const similar = useSimilar(query)
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
 
@@ -56,7 +57,7 @@ export function Spotlight() {
     setOpen(false)
     setQ('')
   }
-  const openNote = (n: NoteSummary) => {
+  const openNote = (n: { id: string }) => {
     close()
     navigate({ kind: 'note', id: n.id })
   }
@@ -82,6 +83,11 @@ export function Spotlight() {
   ].filter((c) => !q.trim() || c.label.toLowerCase().includes(q.trim().toLowerCase()))
 
   const hits = query.trim() ? (search.data ?? []) : []
+  // Word matches first; meaning matches only add notes the words missed ("розыгрыш" → "giveaway").
+  const hitIds = new Set(hits.map((h) => h.note.id))
+  const related = query.trim()
+    ? (similar.data ?? []).filter((s) => !hitIds.has(s.noteId)).slice(0, 4)
+    : []
   const lang = i18n.resolvedLanguage
 
   return (
@@ -100,7 +106,11 @@ export function Spotlight() {
             <Kbd>Esc</Kbd>
           </div>
           <Command.List className="overflow-y-auto p-1.5">
-            {q.trim() && !hits.length && !commands.length && !search.isFetching ? (
+            {q.trim() &&
+            !hits.length &&
+            !related.length &&
+            !commands.length &&
+            !search.isFetching ? (
               <Command.Empty className="px-3 py-8 text-center text-sm text-muted-foreground">
                 {t('spotlight.noResults')}
               </Command.Empty>
@@ -143,6 +153,27 @@ export function Spotlight() {
                     <span className="text-xs text-muted-foreground">
                       {formatCardDate(note.updatedAt, lang)}
                     </span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            ) : null}
+
+            {related.length ? (
+              <Command.Group heading={t('spotlight.related')} className={groupClass}>
+                {related.map((r) => (
+                  <Command.Item
+                    key={r.noteId}
+                    value={`similar-${r.noteId}`}
+                    onSelect={() => openNote({ id: r.noteId })}
+                    className={`${itemClass} items-start`}
+                  >
+                    <Sparkles className="mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{r.title || t('common.untitled')}</div>
+                      <div className="line-clamp-2 text-[13px] text-muted-foreground">
+                        {toPlainText(r.text)}
+                      </div>
+                    </div>
                   </Command.Item>
                 ))}
               </Command.Group>

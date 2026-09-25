@@ -86,6 +86,7 @@ const es: LocaleResource = {
     placeholder: 'Busca notas o escribe un comando…',
     recents: 'Recientes',
     results: 'Notas',
+    related: 'Parecidas en significado',
     commands: 'Comandos',
     newNote: 'Nueva nota',
     today: 'Abrir la nota de hoy',

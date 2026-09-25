@@ -12,7 +12,9 @@ Offline first, on web and desktop; an account is optional and only adds sync:
 - Notes in Markdown with a Bear-like editor: headings, lists, checklists, quotes, code, links.
 - Inbox by default; folders with subfolders; `#tags` and nested `#area/project` tags from the text.
 - Home with filters (Inbox, folder, type, period) and infinite scroll; lists per folder and tag.
-- Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en, commands.
+- Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en that also tries
+  the other alphabet ("телеграм" finds "Telegram"), notes similar in meaning once the assistant's
+  index is ready, commands.
 - Daily note, soft delete with undo, blank notes discarded automatically.
 - Sync across devices with end-to-end encryption: sign in with an email code, keep a 12-word
   recovery phrase; the server stores only ciphertext. Concurrent edits merge line by line; if two
@@ -22,7 +24,9 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   follows what is open (a note, a folder, everything), and a divider marks each switch. Search
   combines keywords with meaning; the embedding model (multilingual-e5-small, ~120 MB) downloads
   on the first visit to the assistant and runs on the device. Only the passages found for a
-  question are sent to the LLM (DeepSeek through our proxy). The avatar is
+  question are sent to the LLM (DeepSeek through our proxy). Before searching, the assistant asks
+  the LLM for translations and synonyms of the question, so "розыгрыши" finds a note about a
+  "giveaway". The avatar is
   [Bloub](https://github.com/jeremy-prt/bloub) (MIT).
 - Feels native: custom title bar with Windows caption buttons, right-click menus for notes,
   folders and the editor, no browser menus or shortcuts on desktop.
@@ -35,6 +39,8 @@ Offline first, on web and desktop; an account is optional and only adds sync:
 | Ctrl+[ / Ctrl+], Alt+← / Alt+→, mouse back/forward | Back / forward |
 | Ctrl+J | Assistant panel |
 | Ctrl+\\ | Sidebar |
+
+Shortcuts follow the physical key, so they work in any keyboard layout.
 
 Local data lives in `%APPDATA%\space.fixnote.app\fixnote.db` on Windows and in the browser's
 origin-private file system on the web.

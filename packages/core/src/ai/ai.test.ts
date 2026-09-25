@@ -6,7 +6,7 @@ import { FakeEmbedder } from '../testing/fake-embedder'
 import { createMemoryDriver } from '../testing/memory-driver'
 import { chunkNote, contentHash } from './chunk'
 import { Indexer } from './indexer'
-import { keywordQuery, retrieve } from './retrieve'
+import { keywordQuery, retrieve, similarNotes } from './retrieve'
 
 let db: SqlDriver
 let repo: NotesRepo
@@ -69,7 +69,9 @@ describe('Indexer', () => {
 
 describe('keywordQuery', () => {
   it('ORs content words, drops stopwords, stems long words', () => {
-    expect(keywordQuery('что я писал про CSS в заметках')).toBe('"писал"* OR "css"* OR "заметк"*')
+    expect(keywordQuery('что я писал про CSS в заметках')).toBe(
+      '"писал"* OR "pisal"* OR "css"* OR "ксс"* OR "заметк"* OR "zametk"*',
+    )
     expect(keywordQuery('и в на')).toBeNull()
   })
 
@@ -79,6 +81,27 @@ describe('keywordQuery', () => {
     expect(['заметках', 'заметки', 'заметка'].map(stem)).toEqual(['заметк', 'заметк', 'заметк'])
     expect(stem('сделать')).toBe('сдела')
     expect(['canciones', 'notes', 'budget'].map(stem)).toEqual(['canc', 'note', 'budget'])
+  })
+
+  it('finds a word written in the other script', async () => {
+    await repo.createNote({ content: 'Бот в Telegram для заметок' })
+    expect((await retrieve(db, null, 'что с телеграмом?', { kind: 'all' })).length).toBe(1)
+    expect((await repo.search('телеграм')).length).toBe(1)
+  })
+
+  it('uses extra keywords from query expansion for recall', async () => {
+    await repo.createNote({ content: 'Giveaway в канале\n\nПриз — наушники' })
+    expect(await retrieve(db, null, 'какие были розыгрыши?', { kind: 'all' })).toEqual([])
+    const hits = await retrieve(
+      db,
+      null,
+      'какие были розыгрыши?',
+      { kind: 'all' },
+      {
+        extraKeywords: ['giveaway', 'raffle'],
+      },
+    )
+    expect(hits.map((h) => h.title)).toEqual(['Giveaway в канале'])
   })
 
   it('finds an inflected word in a note', async () => {
@@ -104,6 +127,17 @@ describe('retrieve', () => {
     const hits = await retrieve(db, indexer, 'какие стили я поменял', { kind: 'all' })
     expect(hits[0]?.title).toBe('Design system')
     expect(hits[0]?.via.semantic).toBe(true)
+  })
+
+  it('lists notes similar in meaning, one per note, skipping excluded and deleted ones', async () => {
+    const a = await repo.createNote({ content: 'Design system\n\nupdated the oklch palette' })
+    const b = await repo.createNote({ content: 'CSS cleanup\n\nstyles' })
+    const c = await repo.createNote({ content: 'Стили для блога' })
+    await repo.createNote({ content: 'Бюджет на месяц' })
+    await indexer.indexSome()
+    await repo.deleteNote(c.id)
+    const hits = await similarNotes(db, indexer, 'оформление', { exclude: new Set([b.id]) })
+    expect(hits.map((h) => h.noteId)).toEqual([a.id])
   })
 
   it('ranks passages found both ways first and respects folder scope', async () => {

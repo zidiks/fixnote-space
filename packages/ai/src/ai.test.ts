@@ -138,3 +138,33 @@ describe('citations', () => {
     expect(confidence(parseCitations('[1]', fragments), fragments)).toBe('high')
   })
 })
+
+describe('query expansion', async () => {
+  const { expandQuery, parseKeywords, buildExpansionMessages, EXPANSION_MARKER } = await import(
+    './expand'
+  )
+
+  it('parses JSON, tolerates noise and plain lists', () => {
+    expect(
+      parseKeywords('Sure! {"keywords": ["Giveaway", "розыгрыш", "giveaway", "x"]} done'),
+    ).toEqual(['giveaway', 'розыгрыш'])
+    expect(parseKeywords('giveaway, розыгрыш\nsorteo')).toEqual(['giveaway', 'розыгрыш', 'sorteo'])
+  })
+
+  it('asks for multilingual keywords and never throws', async () => {
+    expect(buildExpansionMessages('q')[0]?.content).toContain(EXPANSION_MARKER)
+    const reply = `{"keywords":["giveaway","sorteo"]}`
+    const ok = await expandQuery(
+      { url: 'x', model: 'm', fetch: sse([delta(reply), 'data: [DONE]\n\n']) },
+      'розыгрыши',
+    )
+    expect(ok).toEqual(['giveaway', 'sorteo'])
+    const failing: typeof fetch = async () => new Response('nope', { status: 500 })
+    expect(await expandQuery({ url: 'x', model: 'm', fetch: failing }, 'q')).toEqual([])
+    const hanging: typeof fetch = (_u, init) =>
+      new Promise((_, reject) =>
+        init?.signal?.addEventListener('abort', () => reject(new Error('aborted'))),
+      )
+    expect(await expandQuery({ url: 'x', model: 'm', fetch: hanging }, 'q', 50)).toEqual([])
+  })
+})

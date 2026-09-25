@@ -15,7 +15,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   the locale test fails on missing keys or placeholders.
 - UI components: shadcn style in `packages/ui`, Tailwind 4 tokens in `packages/ui/src/styles.css`.
   Use semantic color tokens (`bg-card`, `text-muted-foreground`), not raw palette colors.
-- Hotkeys: Mod = Ctrl on Windows/Linux, ⌘ on macOS. Windows is the primary desktop target.
+- Hotkeys: Mod = Ctrl on Windows/Linux, ⌘ on macOS. Windows is the primary desktop target. Match
+  letters by physical key (`e.code`, see `hotkeys.ts`), never only by `e.key`: users type in RU/ES layouts.
 - Local DB: schema and all SQL live in `packages/core` (`db/schema.ts`, `notes/repo.ts`). Append
   migrations, never edit a shipped one. Inside `db.transaction(fn)` use only the `tx` argument;
   calling the driver itself there deadlocks.
@@ -27,7 +28,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `supabase/migrations/`; test RLS and RPCs on a local Postgres before pushing.
 - Try sync UI without Supabase: `pnpm dev` + `?dev-backend` (code 123456).
 - Assistant: retrieval in `packages/core/src/ai`, LLM client/prompt/citations in `packages/ai`,
-  app wiring in `apps/web/src/lib/assistant`. Model output is rendered as React elements only
+  app wiring in `apps/web/src/lib/assistant`. Query expansion (`expandQuery`) only adds FTS keywords;
+  embeddings always use the question as typed. Model output is rendered as React elements only
   (`AnswerText`), never as HTML. The LLM key stays in the `llm-proxy` edge function.
 - `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
   its numbers, update by copying from upstream (see its README).

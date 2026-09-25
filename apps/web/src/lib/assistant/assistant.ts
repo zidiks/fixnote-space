@@ -1,4 +1,11 @@
-import { buildMessages, ChatError, confidence, parseCitations, streamChat } from '@fixnote/ai'
+import {
+  buildMessages,
+  ChatError,
+  confidence,
+  expandQuery,
+  parseCitations,
+  streamChat,
+} from '@fixnote/ai'
 import {
   type ChatEntry,
   ChatRepo,
@@ -6,8 +13,10 @@ import {
   type Embedder,
   Indexer,
   retrieve,
+  type SimilarNote,
   type SqlDriver,
   sameScope,
+  similarNotes,
 } from '@fixnote/core'
 import { create } from 'zustand'
 import { chatTransport } from '../account/account'
@@ -114,6 +123,18 @@ export function notifyNotesChanged() {
   indexTimer = setTimeout(() => void runIndexing(), 3000)
 }
 
+/** Notes close in meaning to `query`; empty until the semantic index is on. */
+export async function findSimilar(query: string, limit = 8): Promise<SimilarNote[]> {
+  const ix = indexer
+  if (!deps || !ix || useAssistant.getState().semantic !== 'ready' || query.trim().length < 3)
+    return []
+  try {
+    return await similarNotes(deps.db, ix, query.trim(), { limit })
+  } catch {
+    return []
+  }
+}
+
 export function setScopeMode(scopeMode: 'auto' | 'all') {
   set({ scopeMode })
 }
@@ -155,21 +176,25 @@ export async function ask(question: string, scope: ChatScope): Promise<'ok' | 's
   controller = ctrl
   let text = ''
   try {
+    const llm = {
+      url: transport.url,
+      headers: transport.headers,
+      fetch: transport.fetch,
+      model: MODEL,
+      signal: ctrl.signal,
+    }
+    // Notes mix languages ("giveaway" vs "розыгрыш"): ask the model for translations and synonyms
+    // of the question first. Best effort — on failure or timeout it's just the question's words.
+    const extraKeywords = scope.kind === 'note' ? [] : await expandQuery(llm, question)
     const fragments = await retrieve(
       d.db,
       useAssistant.getState().semantic === 'ready' ? indexer : null,
       question,
       scope,
+      { extraKeywords },
     )
     const messages = buildMessages({ question: question.trim(), fragments, scope, history })
-    for await (const delta of streamChat({
-      url: transport.url,
-      headers: transport.headers,
-      fetch: transport.fetch,
-      model: MODEL,
-      messages,
-      signal: ctrl.signal,
-    })) {
+    for await (const delta of streamChat({ ...llm, messages })) {
       if (!text) set({ status: 'answering' })
       text += delta
       patchMessage(answer.id, { content: text })

@@ -1,3 +1,4 @@
+import { transliterate } from '../notes/translit'
 import type { SqlDriver } from '../platform'
 import { chunkNote } from './chunk'
 import type { Indexer } from './indexer'
@@ -92,16 +93,25 @@ export function stem(word: string): string {
 }
 
 /** Keywords for full-text recall: any word may match (OR), stopwords and 1–2 letter words dropped. */
-export function keywordQuery(input: string): string | null {
-  const terms = input
-    .normalize('NFC')
-    .toLowerCase()
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter((t) => t.length >= 3 && !STOPWORDS.has(t))
-    .slice(0, 16)
+export function keywordQuery(input: string, extra: readonly string[] = []): string | null {
+  const words = (text: string) =>
+    text
+      .normalize('NFC')
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((t) => t.length >= 3 && !STOPWORDS.has(t))
+  // Extra keywords (translations, synonyms from query expansion) get their own budget so they
+  // never crowd out the words the user actually typed.
+  const terms = [...words(input).slice(0, 16), ...extra.flatMap(words).slice(0, 16)]
   if (!terms.length) return null
-  // Russian and Spanish inflect: match on a stem so "заметках" finds "заметки".
-  return [...new Set(terms.map(stem))].map((t) => `"${t}"*`).join(' OR ')
+  // Russian and Spanish inflect: match on a stem so "заметках" finds "заметки"; and try the other
+  // script, so "телеграм" finds "Telegram".
+  const stems = terms.map(stem)
+  const variants = stems.flatMap((t) => {
+    const other = transliterate(t)
+    return other ? [t, other] : [t]
+  })
+  return [...new Set(variants)].map((t) => `"${t}"*`).join(' OR ')
 }
 
 interface NoteRow {
@@ -135,7 +145,12 @@ export async function retrieve(
   indexer: Indexer | null,
   question: string,
   scope: ChatScope,
-  opts: { limit?: number; now?: number } = {},
+  opts: {
+    limit?: number
+    now?: number
+    /** More words for full-text recall only, e.g. translations of the question. */
+    extraKeywords?: readonly string[]
+  } = {},
 ): Promise<Fragment[]> {
   const limit = opts.limit ?? 8
   const now = opts.now ?? Date.now()
@@ -198,7 +213,7 @@ export async function retrieve(
   }
 
   // Keyword recall at note level, then the best-matching passage of each note.
-  const match = keywordQuery(question)
+  const match = keywordQuery(question, opts.extraKeywords)
   if (match) {
     const hits = await db.query<{ id: string }>(
       `SELECT n.id FROM notes_fts JOIN notes n ON n.rowid = notes_fts.rowid
@@ -248,4 +263,54 @@ export async function retrieve(
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
+}
+
+export interface SimilarNote {
+  noteId: string
+  title: string
+  /** The passage closest to the query. */
+  text: string
+  similarity: number
+}
+
+/**
+ * Notes closest in meaning to `query`, one per note, best passage first. Only the ones near the top
+ * score are kept (`margin`): cosine values of real models sit in a narrow band, so an absolute
+ * threshold would be model-specific while "close to the best hit" is not.
+ */
+export async function similarNotes(
+  db: SqlDriver,
+  indexer: Indexer,
+  query: string,
+  opts: { limit?: number; margin?: number; exclude?: ReadonlySet<string> } = {},
+): Promise<SimilarNote[]> {
+  const limit = opts.limit ?? 5
+  const margin = opts.margin ?? 0.08
+  const q = await indexer.embedQuery(query)
+  const best = new Map<string, { text: string; sim: number }>()
+  for (const [noteId, chunks] of await indexer.all()) {
+    if (opts.exclude?.has(noteId)) continue
+    for (const c of chunks) {
+      const sim = dot(q, c.vector)
+      if (sim > (best.get(noteId)?.sim ?? -Infinity)) best.set(noteId, { text: c.text, sim })
+    }
+  }
+  const ranked = [...best.entries()].sort((a, b) => b[1].sim - a[1].sim)
+  const top = ranked[0]?.[1].sim ?? 0
+  const picked = ranked.filter(([, h]) => h.sim >= top - margin).slice(0, limit * 2)
+  if (!picked.length) return []
+  const rows = await db.query<{ id: string; title: string }>(
+    `SELECT id, title FROM notes WHERE deleted_at IS NULL AND id IN (${picked.map(() => '?').join(',')})`,
+    picked.map(([id]) => id),
+  )
+  const titles = new Map(rows.map((r) => [r.id, r.title]))
+  return picked
+    .filter(([id]) => titles.has(id))
+    .slice(0, limit)
+    .map(([noteId, h]) => ({
+      noteId,
+      title: titles.get(noteId) ?? '',
+      text: h.text,
+      similarity: h.sim,
+    }))
 }
