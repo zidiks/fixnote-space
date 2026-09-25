@@ -81,6 +81,10 @@ pnpm sb:diff      # review what would change in the hosted project
 pnpm sb:push      # apply; confirms each changed resource
 ```
 
+Sign-in codes need a custom SMTP provider: Supabase's built-in mailer only reaches project team
+members, is heavily rate limited, and on the free tier refuses the code email template. The
+ready-to-enable SMTP and template blocks are commented in `supabase/config.toml`.
+
 Any other CLI command runs as `pnpm sb <command>`, e.g. `pnpm sb migration new init`.
 
 `.mcp.json` registers the Supabase MCP server for Claude Code; authenticate once with `claude /mcp`.

@@ -17,8 +17,8 @@ major_version = 17
 enabled = true
 port = 54323
 
-[inbucket]
-# Local email catcher: http://localhost:54324
+[local_smtp]
+# Local email catcher for `supabase start`: http://localhost:54324
 enabled = true
 port = 54324
 
@@ -46,15 +46,31 @@ max_frequency = "30s"
 otp_length = 6
 otp_expiry = 600
 
+# Code emails need custom SMTP: on the free tier with Supabase's built-in mailer the hosted project
+# rejects template changes, and the default templates send a link instead of the code.
+# Setup (Resend or any SMTP provider), then uncomment both blocks below and run `pnpm sb:push`:
+#   PowerShell: $env:SUPABASE_AUTH_SMTP_PASS = "<provider API key>"
+#   bash:       export SUPABASE_AUTH_SMTP_PASS=<provider API key>
+#
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.resend.com"
+# port = 465
+# user = "resend"
+# pass = "env(SUPABASE_AUTH_SMTP_PASS)"
+# admin_email = "no-reply@YOUR_DOMAIN"
+# sender_name = "FixNote"
+#
 # New users get the "confirmation" email, returning users the "magic_link" one.
 # Both carry the same code; language comes from user metadata `lang` (en | es | ru).
-[auth.email.template.confirmation]
-subject = "FixNote code / Código / Код"
-content_path = "./supabase/templates/otp.html"
-
-[auth.email.template.magic_link]
-subject = "FixNote code / Código / Код"
-content_path = "./supabase/templates/otp.html"
+#
+# [auth.email.template.confirmation]
+# subject = "FixNote code / Código / Код"
+# content_path = "./supabase/templates/otp.html"
+#
+# [auth.email.template.magic_link]
+# subject = "FixNote code / Código / Код"
+# content_path = "./supabase/templates/otp.html"
 
 [auth.external.apple]
 enabled = false
