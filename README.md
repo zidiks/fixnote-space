@@ -120,7 +120,8 @@ on first launch.
 
 ### macOS
 
-CI builds a `.dmg` for Apple Silicon (see [CI](#ci)). It is ad-hoc signed but not notarized, so
+CI builds a `.dmg` for Apple Silicon (`fixnote-macos-latest`) and one for Intel Macs
+(`fixnote-macos-15-intel`), see [CI](#ci). It is ad-hoc signed but not notarized, so
 after dragging FixNote to Applications, clear the download flag once, or macOS reports the app
 as damaged:
 
@@ -247,6 +248,6 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
 ## CI
 
 - `CI` runs lint, typecheck, tests, the web build, and Rust clippy on every push and PR.
-- `Desktop build` builds Windows installers and a macOS `.dmg` (Apple Silicon) on `main`, on `v*`
+- `Desktop build` builds Windows installers and macOS `.dmg`s (Apple Silicon and Intel) on `main`, on `v*`
   tags, on demand, and on any branch when the pushed commit message contains `[build desktop]`,
   and uploads them as workflow artifacts.
