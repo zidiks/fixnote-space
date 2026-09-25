@@ -1,14 +1,16 @@
 import { NotImplementedError, type Platform, type SqlDriver } from '@fixnote/core'
+import { createTransformersEmbedder } from './embed/client'
 import { webKeyStore } from './keys'
 import { openWebSqlDriver } from './sqlite/client'
 
 /**
  * Browser / PWA adapters.
  * M1: sqlite-wasm over OPFS (done). M2: WebCrypto key store (done), OPFS blobs.
- * M3: transformers.js embedder. M4: edge-function transcriber.
+ * M3: transformers.js embedder (done). M4: edge-function transcriber.
  */
 export function createWebPlatform(): Platform {
   let sql: Promise<SqlDriver> | null = null
+  let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
   return {
     kind: 'web',
     chrome: 'browser',
@@ -22,7 +24,10 @@ export function createWebPlatform(): Platform {
       sql ??= openWebSqlDriver()
       return sql
     },
-    embedder: () => Promise.reject(new NotImplementedError('Embedder (transformers.js)', 'M3')),
+    embedder: () => {
+      embedder ??= createTransformersEmbedder()
+      return Promise.resolve(embedder)
+    },
     transcriber: () => Promise.reject(new NotImplementedError('Transcriber (edge)', 'M4')),
     keyStore: webKeyStore,
     saveFile: async (name, data, mime) => {

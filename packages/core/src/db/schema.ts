@@ -80,6 +80,31 @@ export const MIGRATIONS: readonly string[] = [
     value TEXT NOT NULL
   );
   `,
+  /* 3: assistant. chunks = embedded passages of each note (local only, recomputed per device);
+     indexed_at/indexed_hash tell the indexer what is stale; chat_messages = the single thread. */ `
+  CREATE TABLE chunks (
+    note_id   TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    ord       INTEGER NOT NULL,
+    text      TEXT NOT NULL,
+    model     TEXT NOT NULL,
+    embedding BLOB NOT NULL,
+    PRIMARY KEY (note_id, ord)
+  ) WITHOUT ROWID;
+
+  ALTER TABLE notes ADD COLUMN indexed_at INTEGER;
+  ALTER TABLE notes ADD COLUMN indexed_hash TEXT;
+
+  CREATE TABLE chat_messages (
+    id         TEXT PRIMARY KEY,
+    kind       TEXT NOT NULL CHECK (kind IN ('user', 'assistant', 'divider')),
+    content    TEXT NOT NULL,
+    scope      TEXT NOT NULL,
+    citations  TEXT,
+    status     TEXT,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX chat_messages_created ON chat_messages(created_at);
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

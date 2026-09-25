@@ -5,7 +5,7 @@ voice input, chat over your notes, MCP. Desktop (Tauri, Windows first) and web f
 
 - Product and architecture concept: [docs/CONCEPT.md](docs/CONCEPT.md)
 
-## What works today (M2)
+## What works today (M3)
 
 Offline first, on web and desktop; an account is optional and only adds sync:
 
@@ -18,6 +18,12 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   recovery phrase; the server stores only ciphertext. Concurrent edits merge line by line; if two
   devices changed the same line, both versions are kept.
 - Export of all notes as a Markdown zip (Settings → Data).
+- Assistant (Ctrl+J): one chat over your notes with answers that cite their sources. The context
+  follows what is open (a note, a folder, everything), and a divider marks each switch. Search
+  combines keywords with meaning; the embedding model (multilingual-e5-small, ~120 MB) downloads
+  on the first visit to the assistant and runs on the device. Only the passages found for a
+  question are sent to the LLM (DeepSeek through our proxy). The avatar is
+  [Bloub](https://github.com/jeremy-prt/bloub) (MIT).
 - Feels native: custom title bar with Windows caption buttons, right-click menus for notes,
   folders and the editor, no browser menus or shortcuts on desktop.
 
@@ -80,10 +86,22 @@ Follow the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/). On 
 sudo apt-get install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 ```
 
+### Assistant (DeepSeek)
+
+The DeepSeek key lives only in the Supabase project, never in the app. Once:
+
+```powershell
+pnpm sb secrets set DEEPSEEK_API_KEY=sk-...
+pnpm sb:functions        # deploys supabase/functions/llm-proxy
+```
+
+Function tests: `deno test --allow-net --allow-env supabase/functions`.
+
 ### Trying sync without Supabase
 
 `pnpm dev`, then open http://localhost:5173/?dev-backend. A development-only fake server lives in
-the browser's localStorage; the sign-in code is `123456`. It is never part of production builds.
+the browser's localStorage; the sign-in code is `123456`, and a fake LLM answers from the first found passage. It is never part
+of production builds.
 
 ## Scripts
 

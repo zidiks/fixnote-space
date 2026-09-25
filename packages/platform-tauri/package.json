@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@fixnote/core": "workspace:*",
-    "@tauri-apps/api": "^2.11.1"
+    "@tauri-apps/api": "^2.11.1",
+    "@fixnote/platform-web": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

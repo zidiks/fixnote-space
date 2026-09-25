@@ -10,6 +10,7 @@ import {
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync } from './account/account'
+import { notifyNotesChanged } from './assistant/assistant'
 import { useRepo } from './db'
 
 export const keys = {
@@ -85,6 +86,7 @@ export function useInvalidateNotes() {
   const qc = useQueryClient()
   return () => {
     requestSync()
+    notifyNotesChanged()
     return Promise.all([
       qc.invalidateQueries({ queryKey: keys.notes }),
       qc.invalidateQueries({ queryKey: keys.counts }),

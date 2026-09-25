@@ -13,7 +13,7 @@ import { useMemo, useState } from 'react'
 import { useUi } from '../app/store'
 import { useCounts, useCreateNote, useFolders } from '../lib/queries'
 import { startOfDay } from '../lib/time'
-import { AssistantOrb } from './AssistantOrb'
+import { AssistantAvatar } from './AssistantAvatar'
 import { EmptyState, NoteGrid } from './NoteGrid'
 
 type Period = 'any' | 'today' | 'week' | 'month'
@@ -97,7 +97,7 @@ export function Home() {
   return (
     <div className="mx-auto w-full max-w-4xl px-6 pt-12 pb-24">
       <div className="flex flex-col items-center gap-7 text-center">
-        <AssistantOrb size={72} />
+        <AssistantAvatar size={96} follow />
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {t('home.greeting')}
         </h1>

@@ -278,3 +278,9 @@ export async function runSync() {
     })
   }
 }
+
+/** Endpoint for the assistant, or null when signed out / not configured. */
+export async function chatTransport() {
+  const b = deps?.backend
+  return b ? b.chatTransport() : null
+}

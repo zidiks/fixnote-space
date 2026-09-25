@@ -12,6 +12,7 @@ import { StorageBanner } from '../components/StorageBanner'
 import { SettingsDialog } from '../components/settings/SettingsDialog'
 import { TitleBar } from '../components/TitleBar'
 import { AccountProvider } from '../lib/account/provider'
+import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider } from '../lib/db'
 import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
@@ -142,7 +143,9 @@ export function App() {
         <TooltipProvider>
           <DbProvider>
             <AccountProvider>
-              <AppShell />
+              <AssistantProvider>
+                <AppShell />
+              </AssistantProvider>
             </AccountProvider>
           </DbProvider>
         </TooltipProvider>

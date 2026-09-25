@@ -130,6 +130,10 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
+  /* Lucide draws at stroke 2; thinner lines match the quiet, text-first look. */
+  svg.lucide {
+    stroke-width: 1.75;
+  }
   ::selection {
     background: color-mix(in oklch, var(--color-brand) 25%, transparent);
   }

@@ -1,4 +1,5 @@
 import { NotImplementedError, type Platform, type WindowChrome } from '@fixnote/core'
+import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { osKeyStore } from './keys'
 import { openTauriSqlDriver } from './sql'
@@ -20,7 +21,7 @@ export function appInfo(): Promise<AppInfo> {
 /**
  * Desktop adapters backed by the Rust side of apps/desktop.
  * M1: rusqlite (done). M2: OS keychain (done), app-data blobs.
- * M3: fastembed embedder. M4: whisper.cpp transcriber.
+ * M3: embedder shared with the web app (done). M4: whisper.cpp transcriber.
  */
 /** Matches tauri.windows.conf.json (frameless) and tauri.macos.conf.json (overlay title bar). */
 function detectChrome(): WindowChrome {
@@ -33,6 +34,7 @@ function detectChrome(): WindowChrome {
 export function createTauriPlatform(): Platform {
   const sql = openTauriSqlDriver()
   const chrome = detectChrome()
+  let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
   return {
     kind: 'desktop',
     chrome,
@@ -44,7 +46,11 @@ export function createTauriPlatform(): Platform {
       globalShortcut: true,
     },
     sql: () => Promise.resolve(sql),
-    embedder: () => Promise.reject(new NotImplementedError('Embedder (fastembed)', 'M3')),
+    // Same engine as the web app (WebView2 is Chromium), so vectors match across devices.
+    embedder: () => {
+      embedder ??= createTransformersEmbedder()
+      return Promise.resolve(embedder)
+    },
     transcriber: () => Promise.reject(new NotImplementedError('Transcriber (whisper.cpp)', 'M4')),
     keyStore: osKeyStore,
     saveFile: async (name, data) =>

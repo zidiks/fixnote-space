@@ -62,6 +62,33 @@ const remote: SyncRemote = {
   pushFolder: async (row: RemoteFolderWrite, base) => write<RemoteFolder>('folders', row, base),
 }
 
+/**
+ * Stand-in for DeepSeek: answers from the first note fragment in the prompt, cites it, and streams
+ * the text word by word like a real model.
+ */
+const devLlm: typeof fetch = async (_url, init) => {
+  const body = JSON.parse(String(init?.body)) as { messages: { role: string; content: string }[] }
+  const prompt = body.messages.at(-1)?.content ?? ''
+  const first = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
+  const answer = first
+    ? `From your note "${first[1]}": ${first[2]} [1]`
+    : "I couldn't find this in your notes. Try other words."
+  const words = answer.split(/(?<= )/)
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      for (const w of words) {
+        if (init?.signal?.aborted) break
+        await new Promise((r) => setTimeout(r, 40))
+        const chunk = { choices: [{ delta: { content: w } }] }
+        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`))
+      }
+      controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
+      controller.close()
+    },
+  })
+  return new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } })
+}
+
 export const devBackend: AccountBackend = {
   getSession: async () => load().session,
   sendCode: async () => undefined,
@@ -88,6 +115,8 @@ export const devBackend: AccountBackend = {
     save(s)
   },
   remote,
+  chatTransport: async () =>
+    load().session ? { url: 'dev://llm', headers: {}, fetch: devLlm } : null,
   subscribe: (_userId, onChange) => {
     const listener = () => onChange()
     channel.addEventListener('message', listener)

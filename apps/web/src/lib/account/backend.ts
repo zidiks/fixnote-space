@@ -7,6 +7,13 @@ export interface Session {
   email: string
 }
 
+/** Where the assistant's chat requests go (an OpenAI-compatible endpoint). */
+export interface ChatTransport {
+  url: string
+  headers: Record<string, string>
+  fetch?: typeof fetch
+}
+
 export interface UserKeysRow {
   publicKey: string
   keyCheck: string
@@ -21,11 +28,16 @@ export interface AccountBackend {
   getUserKeys(): Promise<UserKeysRow | null>
   createUserKeys(row: UserKeysRow): Promise<void>
   remote: SyncRemote
+  /** The default LLM route for the signed-in user, or null when signed out. */
+  chatTransport(): Promise<ChatTransport | null>
   /** Calls back when another device changed something. Returns an unsubscribe. */
   subscribe(userId: string, onChange: () => void): () => void
 }
 
-export function supabaseBackend(client: SupabaseClient): AccountBackend {
+export function supabaseBackend(
+  client: SupabaseClient,
+  config: { url: string; anonKey: string },
+): AccountBackend {
   const session = (s: { user: { id: string; email?: string } } | null): Session | null =>
     s ? { userId: s.user.id, email: s.user.email ?? '' } : null
 
@@ -64,6 +76,14 @@ export function supabaseBackend(client: SupabaseClient): AccountBackend {
       if (error) throw error
     },
     remote: supabaseRemote(client),
+    async chatTransport() {
+      const { data } = await client.auth.getSession()
+      if (!data.session) return null
+      return {
+        url: `${config.url}/functions/v1/llm-proxy`,
+        headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: config.anonKey },
+      }
+    },
     subscribe(userId, onChange) {
       const channel = client
         .channel(`sync:${userId}`)

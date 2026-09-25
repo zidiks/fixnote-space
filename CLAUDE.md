@@ -26,6 +26,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   that sync applied meanwhile is merged, not overwritten. Server schema changes = new file in
   `supabase/migrations/`; test RLS and RPCs on a local Postgres before pushing.
 - Try sync UI without Supabase: `pnpm dev` + `?dev-backend` (code 123456).
+- Assistant: retrieval in `packages/core/src/ai`, LLM client/prompt/citations in `packages/ai`,
+  app wiring in `apps/web/src/lib/assistant`. Model output is rendered as React elements only
+  (`AnswerText`), never as HTML. The LLM key stays in the `llm-proxy` edge function.
+- `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
+  its numbers, update by copying from upstream (see its README).
 - AI never changes a note without an explicit accept; changes are shown as diffs.
 
 ## Verify before pushing

@@ -87,3 +87,9 @@ deno_version = 2
 
 [analytics]
 enabled = false
+
+# The assistant's default LLM route (see supabase/functions/llm-proxy). Needs the secret
+# DEEPSEEK_API_KEY: `pnpm sb secrets set DEEPSEEK_API_KEY=sk-...`, then `pnpm sb:functions`.
+[functions.llm-proxy]
+enabled = true
+verify_jwt = true

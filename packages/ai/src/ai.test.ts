@@ -1,0 +1,140 @@
+import type { Fragment } from '@fixnote/core'
+import { describe, expect, it } from 'vitest'
+import { confidence, parseCitations } from './citations'
+import { ChatError, streamChat } from './client'
+import { buildMessages } from './prompt'
+
+function sse(chunks: string[], status = 200): typeof fetch {
+  return async () =>
+    new Response(
+      new ReadableStream({
+        start(c) {
+          for (const ch of chunks) c.enqueue(new TextEncoder().encode(ch))
+          c.close()
+        },
+      }),
+      { status, headers: { 'Content-Type': 'text/event-stream' } },
+    )
+}
+
+const delta = (t: string) => `data: ${JSON.stringify({ choices: [{ delta: { content: t } }] })}\n\n`
+
+const collect = async (gen: AsyncGenerator<string>) => {
+  let s = ''
+  for await (const d of gen) s += d
+  return s
+}
+
+const frag = (over: Partial<Fragment>): Fragment => ({
+  noteId: 'n1',
+  title: 'T',
+  ord: 0,
+  text: 'text',
+  updatedAt: Date.UTC(2026, 8, 20),
+  via: { keyword: true, semantic: false },
+  score: 1,
+  ...over,
+})
+
+describe('streamChat', () => {
+  it('joins deltas split across network chunks and stops at [DONE]', async () => {
+    const body = `${delta('Hel')}${delta('lo, ')}${delta('мир')}data: [DONE]\n\n${delta('ignored')}`
+    const pieces = [body.slice(0, 17), body.slice(17, 50), body.slice(50)]
+    const text = await collect(
+      streamChat({ url: 'x', model: 'm', messages: [], fetch: sse(pieces) }),
+    )
+    expect(text).toBe('Hello, мир')
+  })
+
+  it('reports a stop even when the transport ends the stream quietly', async () => {
+    const ctrl = new AbortController()
+    const gen = streamChat({
+      url: 'x',
+      model: 'm',
+      messages: [],
+      fetch: sse([delta('a'), delta('b')]),
+      signal: ctrl.signal,
+    })
+    ctrl.abort()
+    await expect(collect(gen)).rejects.toMatchObject({ name: 'AbortError' })
+  })
+
+  it('surfaces HTTP errors with the provider message', async () => {
+    const f: typeof fetch = async () =>
+      new Response(JSON.stringify({ error: { message: 'Insufficient Balance' } }), { status: 402 })
+    await expect(
+      collect(streamChat({ url: 'x', model: 'm', messages: [], fetch: f })),
+    ).rejects.toEqual(new ChatError(402, 'Insufficient Balance'))
+  })
+
+  it('sends an OpenAI-compatible streaming request', async () => {
+    let sent: { url: string; body: Record<string, unknown>; headers: Headers } | undefined
+    const f: typeof fetch = async (url, init) => {
+      sent = {
+        url: String(url),
+        body: JSON.parse(String(init?.body)),
+        headers: new Headers(init?.headers),
+      }
+      return sse(['data: [DONE]\n\n'])(url, init)
+    }
+    await collect(
+      streamChat({
+        url: 'https://p/v1/chat/completions',
+        headers: { Authorization: 'Bearer t' },
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: 'hi' }],
+        fetch: f,
+      }),
+    )
+    expect(sent?.body).toMatchObject({
+      model: 'deepseek-chat',
+      stream: true,
+      messages: [{ role: 'user', content: 'hi' }],
+    })
+    expect(sent?.headers.get('authorization')).toBe('Bearer t')
+  })
+})
+
+describe('buildMessages', () => {
+  it('numbers fragments, keeps recent history, states the scope', () => {
+    const msgs = buildMessages({
+      question: 'Что с палитрой?',
+      fragments: [frag({ title: 'Design', text: 'oklch palette' }), frag({ title: '', text: 'b' })],
+      scope: { kind: 'folder', id: 'f', name: 'Work' },
+      history: Array.from(
+        { length: 10 },
+        (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: `m${i}` }) as const,
+      ),
+      now: new Date(Date.UTC(2026, 8, 25)),
+    })
+    expect(msgs[0]?.role).toBe('system')
+    expect(msgs).toHaveLength(1 + 6 + 1)
+    const last = msgs.at(-1)?.content ?? ''
+    expect(last).toContain('[1] "Design" (edited 2026-09-20)\noklch palette')
+    expect(last).toContain('[2] "Untitled"')
+    expect(last).toContain('notes in the folder "Work"')
+    expect(last).toContain('Today is 2026-09-25')
+    expect(last.endsWith('Question: Что с палитрой?')).toBe(true)
+  })
+})
+
+describe('citations', () => {
+  const fragments = [
+    frag({ noteId: 'a', title: 'A', via: { keyword: true, semantic: true } }),
+    frag({ noteId: 'b', title: 'B' }),
+  ]
+
+  it('parses single, grouped and repeated markers, ignoring unknown numbers', () => {
+    const c = parseCitations('One [2]. Two [1][2]. Three [1, 2]. Bad [7].', fragments)
+    expect(c.map((x) => [x.n, x.noteId])).toEqual([
+      [1, 'a'],
+      [2, 'b'],
+    ])
+  })
+
+  it('grades confidence by grounding', () => {
+    expect(confidence([], fragments)).toBe('low')
+    expect(confidence(parseCitations('[2]', fragments), fragments)).toBe('medium')
+    expect(confidence(parseCitations('[1]', fragments), fragments)).toBe('high')
+  })
+})

@@ -42,6 +42,16 @@ jobs:
           path: apps/web/dist
           retention-days: 14
 
+  functions:
+    name: Edge function tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --allow-net --allow-env supabase/functions
+
   rust:
     name: Rust clippy (desktop shell)
     runs-on: ubuntu-latest

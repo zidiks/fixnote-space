@@ -21,7 +21,8 @@
     "sb:link": "supabase link --project-ref nsteehqbmljuczxgkvae",
     "sb:diff": "supabase config diff",
     "sb:push": "supabase config push",
-    "sb:migrate": "supabase db push"
+    "sb:migrate": "supabase db push",
+    "sb:functions": "supabase functions deploy llm-proxy"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

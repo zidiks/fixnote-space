@@ -1,3 +1,4 @@
+export * from './bloub/Bloub'
 export * from './components/alert-dialog'
 export * from './components/badge'
 export * from './components/button'
