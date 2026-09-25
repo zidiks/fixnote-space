@@ -124,9 +124,14 @@ export class NotesRepo {
     folderId?: string | null
     type?: NoteType
     dailyDate?: string | null
+    /** Keep the original dates (imports); defaults to now. */
+    createdAt?: number
+    updatedAt?: number
   }): Promise<Note> {
     const id = this.newId()
     const ts = this.now()
+    const created = input.createdAt ?? input.updatedAt ?? ts
+    const updated = Math.max(input.updatedAt ?? created, created)
     await this.db.transaction(async (tx) => {
       await tx.execute(
         `INSERT INTO notes
@@ -140,8 +145,8 @@ export class NotesRepo {
           deriveTitle(input.content),
           input.content,
           toPlainText(input.content),
-          ts,
-          ts,
+          created,
+          updated,
         ],
       )
       await syncNoteTags(tx, id, input.content)
@@ -280,6 +285,18 @@ export class NotesRepo {
    * The daily note for a local date (`YYYY-MM-DD`), created from `template` on first open.
    * Safe to call concurrently: the unique index keeps one note per day.
    */
+  /** Content of every live note (for duplicate checks on import). */
+  async allContents(): Promise<string[]> {
+    const rows = await this.db.query<{ content: string }>(
+      'SELECT content FROM notes WHERE deleted_at IS NULL',
+    )
+    return rows.map((r) => r.content)
+  }
+
+  async hasDaily(date: string): Promise<boolean> {
+    return (await this.findDaily(date)) !== null
+  }
+
   async getOrCreateDaily(date: string, template: () => string): Promise<Note> {
     const existing = await this.findDaily(date)
     if (existing) return existing

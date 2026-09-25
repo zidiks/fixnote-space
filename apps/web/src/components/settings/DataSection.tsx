@@ -9,6 +9,7 @@ import { attachmentSync } from '../../lib/account/account'
 import { useDb } from '../../lib/db'
 import { usePlatform } from '../../lib/platform'
 import { localDate } from '../../lib/queries'
+import { ImportSection } from './ImportSection'
 
 export function DataSection() {
   const { t } = useTranslation()
@@ -44,13 +45,16 @@ export function DataSection() {
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="font-medium">{t('data.export')}</h3>
-      <p className="max-w-md text-sm text-muted-foreground">{t('data.exportBody')}</p>
-      <Button variant="outline" onClick={exportNotes} disabled={busy}>
-        <Download />
-        {busy ? t('data.exporting') : t('data.export')}
-      </Button>
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <h3 className="font-medium">{t('data.export')}</h3>
+        <p className="max-w-md text-sm text-muted-foreground">{t('data.exportBody')}</p>
+        <Button variant="outline" onClick={exportNotes} disabled={busy}>
+          <Download />
+          {busy ? t('data.exporting') : t('data.export')}
+        </Button>
+      </div>
+      <ImportSection />
     </div>
   )
 }
