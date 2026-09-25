@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useDb } from '../../lib/db'
 import { useInvalidateNotes } from '../../lib/queries'
 import { formatRelative } from '../../lib/time'
+import { McpSection } from './McpSection'
 
 const AUDIT_KEY = ['audit'] as const
 
@@ -68,6 +69,7 @@ function AuditLogList() {
 export function AiSection() {
   return (
     <div className="space-y-8">
+      <McpSection />
       <AuditLogList />
     </div>
   )

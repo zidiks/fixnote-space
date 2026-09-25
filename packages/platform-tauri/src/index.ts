@@ -64,6 +64,10 @@ export function createTauriPlatform(): Platform {
     // Pages are read by the app itself: no server learns which links a note contains.
     fetchPage: (url) => invoke<FetchedPage>('fetch_page', { url }),
     openExternal: (url) => openUrl(url),
+    mcp: {
+      info: () => invoke<{ command: string; built: boolean }>('mcp_info'),
+      connect: (client) => invoke<string>('mcp_connect', { client }),
+    },
     saveFile: async (name, data) =>
       (await invoke<boolean>('save_file', data, {
         headers: { 'x-file-name': encodeURIComponent(name) },

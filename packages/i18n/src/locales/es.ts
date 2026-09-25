@@ -269,6 +269,23 @@ const es: LocaleResource = {
     undone: 'Deshecho',
     changed: 'La nota cambió después, así que no se puede deshacer automáticamente.',
   },
+  mcp: {
+    title: 'Apps conectadas (MCP)',
+    body: 'Permite que Claude Desktop, Cursor y otras apps MCP busquen y lean tus notas, y que añadan notas si lo permites. El servidor funciona en este ordenador y lee la base local; nada pasa por nuestros servidores.',
+    webOnly: 'Disponible en la app de escritorio.',
+    notBuilt: 'Esta versión no incluye el servidor MCP (versión de desarrollo).',
+    access: 'Acceso',
+    off: 'Desactivado',
+    read: 'Solo lectura',
+    write: 'Lectura y escritura',
+    claude: 'Añadir a Claude Desktop',
+    cursor: 'Añadir a Cursor',
+    copy: 'Copiar ajustes',
+    copied: 'Ajustes copiados',
+    connected: 'Añadido a {{path}}. Reinicia la app para conectar.',
+    writeNote:
+      'Las notas que crean las apps conectadas van a Inicio sin carpeta y aparecen en la actividad de la IA, donde se pueden deshacer.',
+  },
   window: {
     minimize: 'Minimizar',
     maximize: 'Maximizar',

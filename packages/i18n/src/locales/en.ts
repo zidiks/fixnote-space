@@ -264,6 +264,23 @@ const en = {
     undone: 'Undone',
     changed: 'The note changed after this, so it cannot be undone automatically.',
   },
+  mcp: {
+    title: 'Connected apps (MCP)',
+    body: 'Let Claude Desktop, Cursor and other MCP apps search and read your notes, and add notes if you allow it. The server runs on this computer and reads the local database; nothing goes through our servers.',
+    webOnly: 'Available in the desktop app.',
+    notBuilt: 'This build has no MCP server (development build).',
+    access: 'Access',
+    off: 'Off',
+    read: 'Read only',
+    write: 'Read and write',
+    claude: 'Add to Claude Desktop',
+    cursor: 'Add to Cursor',
+    copy: 'Copy settings',
+    copied: 'Settings copied',
+    connected: 'Added to {{path}}. Restart the app to connect.',
+    writeNote:
+      'Notes created by connected apps go to Home without a folder and appear in the AI activity log, where they can be undone.',
+  },
   window: {
     minimize: 'Minimize',
     maximize: 'Maximize',

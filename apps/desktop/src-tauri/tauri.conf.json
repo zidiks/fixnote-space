@@ -36,6 +36,7 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": ["binaries/fixnote-mcp"],
     "targets": "all",
     "category": "Productivity",
     "shortDescription": "Private personal notes",

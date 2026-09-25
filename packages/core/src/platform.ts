@@ -120,6 +120,15 @@ export interface Platform {
    * other sites (CORS), so the web app goes through the `unfurl` edge function when signed in.
    */
   readonly fetchPage?: PageFetcher
+  /**
+   * The local MCP server shipped with the desktop app, and adding it to MCP clients' configs.
+   * Absent on the web: a page cannot run a process for Claude Desktop to talk to.
+   */
+  readonly mcp?: {
+    info(): Promise<{ command: string; built: boolean }>
+    /** Adds FixNote to the client's config; resolves with the config file path. */
+    connect(client: 'claude' | 'cursor'): Promise<string>
+  }
   /** Opens a link in the system browser (desktop) or a new tab (web). */
   openExternal(url: string): Promise<void>
   /** Lets the user save a file. Desktop: native "Save as" dialog. Web: a download. */

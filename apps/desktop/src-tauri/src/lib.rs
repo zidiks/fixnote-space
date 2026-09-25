@@ -9,6 +9,7 @@ mod db;
 mod files;
 mod keys;
 mod links;
+mod mcp;
 mod webview;
 
 use std::sync::Mutex;
@@ -77,7 +78,9 @@ pub fn run() {
             links::fetch_page,
             blobs::blob_put,
             blobs::blob_get,
-            blobs::blob_delete
+            blobs::blob_delete,
+            mcp::mcp_info,
+            mcp::mcp_connect
         ])
         .run(tauri::generate_context!())
         .expect("error while running FixNote");

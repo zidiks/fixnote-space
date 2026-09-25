@@ -12,3 +12,5 @@ apps/desktop/src-tauri/gen/
 supabase/.temp/
 supabase/.branches/
 supabase/.env
+/deno.lock
+apps/desktop/src-tauri/binaries/

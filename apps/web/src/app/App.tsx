@@ -17,6 +17,7 @@ import { VoiceBar } from '../components/VoiceBar'
 import { AccountProvider } from '../lib/account/provider'
 import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider } from '../lib/db'
+import { useExternalChanges } from '../lib/external-changes'
 import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
 import { PlatformProvider, usePlatform } from '../lib/platform'
@@ -90,6 +91,7 @@ function AppShell() {
   )
 
   useNativeFeel(platform, isApple, nativeActions)
+  useExternalChanges()
   useHotkey(HK.chat, ui.toggleChat, isApple)
   useHotkey(HK.sidebar, ui.toggleSidebar, isApple)
   useHotkey(HK.spotlight, () => ui.setSpotlightOpen(!ui.spotlightOpen), isApple)

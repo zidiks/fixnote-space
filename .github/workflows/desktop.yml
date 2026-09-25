@@ -45,6 +45,8 @@ jobs:
           else
             cp .env.example .env
           fi
+      - name: MCP server (single executable, bundled with the app)
+        run: pnpm --filter @fixnote/mcp build:sea
       - name: Build installers
         run: pnpm --filter @fixnote/desktop tauri build --bundles ${{ matrix.bundles }}
       - uses: actions/upload-artifact@v4
