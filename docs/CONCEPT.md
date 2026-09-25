@@ -1,6 +1,6 @@
 # FixNote — концепт продукта и архитектуры
 
-> Статус: v0.3 — решения ревью 1 и 2 внесены (см. раздел 10). После согласования разбиваем на ADR (docs/adr/) и спеки фич (docs/specs/).
+> Статус: v0.4 — решения ревью 1–3 внесены (см. раздел 10). Web — полноценная платформа с M0. После согласования разбиваем на ADR (docs/adr/) и спеки фич (docs/specs/).
 
 ---
 
@@ -197,17 +197,19 @@ UI: список карточек с Approve / Reject / Approve all, кажда�
 Источник истины — **локальная БД на устройстве**. Сервер — реле синхронизации, хранилище зашифрованных данных и (опционально) AI-прокси. Приложение полностью работает без сети; синк догоняет при появлении интернета.
 
 ```
-┌───────────── Client (Tauri; web позже) ────────────┐
-│ React UI ── core (domain, search, sync, crypto)    │
-│              │ Storage interface                   │
-│              │  └ Rust: SQLite (FTS5), fastembed,  │
-│              │          whisper.cpp, keychain      │
+┌───────────── Client: один React-код ───────────────┐
+│ UI ── core (domain, sync, crypto, retrieval, tidy) │
+│         │ Platform interface (sql/embed/stt/keys)  │
+│   Tauri: SQLite via plugin-sql, fastembed (Rust),  │
+│          whisper.cpp (Rust), OS keychain           │
+│   Web:   SQLite WASM (OPFS), transformers.js       │
+│          (WebGPU/WASM), transcribe edge, IndexedDB │
 └──────────────┼─────────────────────────────────────┘
                │ ciphertext + metadata
 ┌──────────────▼── Supabase ─────────────────────────┐
 │ Auth │ Postgres (+RLS) │ Realtime │ Storage │       │
 │ Edge Functions: llm-proxy, unfurl, share,          │
-│                 telegram-webhook                   │
+│                 telegram-webhook, transcribe (web)  │
 └────────────────────────────────────────────────────┘
                │ только найденные фрагменты
             DeepSeek (OpenAI-compatible)
@@ -220,7 +222,9 @@ UI: список карточек с Approve / Reject / Approve all, кажда�
 - **Конфликт**: клиент делает трёхсторонний merge текста (`diff3` / `diff-match-patch`: база → моя → чужая). Если merge чистый — отправляет результат. Если нет — сохраняет свою версию как отдельную заметку «Конфликтная копия (устройство, дата)» рядом с оригиналом. Ничего не теряется, пользователь разбирается сам.
 - Удаление — soft delete (`deleted_at`), корзина 30 дней.
 - Realtime-подписка на `notes` по `user_id` для мгновенного появления правок с другого устройства; при старте и по таймеру — pull по `updated_at > last_sync`.
-- **Локально (Tauri)**: SQLite в Rust (`rusqlite`, bundled), FTS5 для полнотекста, вектора как BLOB, brute-force cosine в Rust: для личной базы (десятки тысяч чанков) это единицы миллисекунд, расширений не нужно. `packages/core` работает через интерфейс `Storage`, чтобы веб-версия позже получила адаптер на SQLite WASM.
+- **Локально — SQLite на обеих платформах, одна схема, один SQL.** `packages/core` содержит всю логику (схема, миграции, запросы, синк, ранжирование) на TypeScript и работает через узкий интерфейс `SqlDriver { execute, query }`. Адаптеры тонкие: Tauri → `tauri-plugin-sql` (sqlx, bundled SQLite с FTS5), Web → `@sqlite.org/sqlite-wasm` в Worker поверх OPFS. Ни одна доменная строка не дублируется в Rust.
+- FTS5 для полнотекста, вектора как BLOB, brute-force cosine в TS (typed arrays): для личной базы (десятки тысяч чанков) это единицы миллисекунд, расширений не нужно.
+- **Локальная БД хранится в открытом виде** (FTS-индекс иначе невозможен), защищена ОС: FileVault/BitLocker на десктопе, per-origin OPFS в браузере. Шифруется всё, что покидает устройство.
 - **Вектора синхронизируются как зашифрованные блобы** (`note_vectors`: note_id, model, sealed blob). Эмбеддинг считается один раз на том устройстве, которое первым увидело правку, остальные качают. Новое устройство не пересчитывает базу с нуля.
 - Вложения (изображения, аудио) — Supabase Storage, зашифрованы на клиенте, локальный кеш в app-data.
 
@@ -233,11 +237,11 @@ UI: список карточек с Approve / Reject / Approve all, кажда�
 **Вход и ключи разделены. Паролей нет вообще.**
 
 1. **Вход**: email + 6-значный код (Supabase Auth email-OTP). Это идентификация пользователя для синка, платежей и контакта. Google/Apple — позже, схему не ломают.
-2. **Master Key (MK)** генерируется случайно на устройстве при первом входе и хранится в OS keychain. Пользователь ничего не придумывает и не запоминает.
+2. **Master Key (MK)** генерируется случайно на устройстве при первом входе. Desktop: OS keychain (`tauri-plugin-stronghold` / keyring). Web: MK завёрнут non-extractable AES-ключом из WebCrypto, обёртка лежит в IndexedDB — сырой ключ в storage не попадает. Пользователь ничего не придумывает и не запоминает.
 3. Из MK выводится пара ключей `(pk, sk)` (X25519). `pk` хранится на сервере — им бот и будущие каналы захвата запечатывают входящие.
 4. Каждая заметка шифруется своим **Data Key (DK)** (XChaCha20-Poly1305), DK завёрнут в MK. Сервер хранит ciphertext + завёрнутые DK.
 5. **Recovery-фраза (12 слов, BIP39)** = MK. Показывается один раз после первого входа, просим сохранить и подтвердить 3 случайных слова. Это единственная резервная копия ключа.
-6. **Второе устройство**: вход по коду → «введи recovery-фразу» или «отсканируй QR на первом устройстве» (QR несёт MK напрямую, сервер не участвует).
+6. **Второе устройство**: вход по коду → «введи recovery-фразу» или «отсканируй QR на первом устройстве» (QR несёт MK напрямую, сервер не участвует). Для web без камеры — тот же QR показывается как 6-словный код для ручного ввода.
 7. **Потеря фразы и всех устройств** = заметки не восстановить, это говорится прямо на онбординге. Opt-in «хранить резервный ключ у нас» (выключен по умолчанию, с честным текстом «тогда мы теоретически можем прочитать заметки») — для тех, кому удобство важнее.
 
 **Что видит сервер**: шифротекст заметок, метаданные (папка, даты, теги), вектора не видит вообще (они локальные), фрагменты заметок — только транзитом через `llm-proxy` при запросе в чат, без логирования.
@@ -259,7 +263,9 @@ UI: список карточек с Approve / Reject / Approve all, кажда�
 | Приватность | Шифрование «от утечки базы», мы читать можем; Vault, GDPR | Настоящее E2E, позиционирование честное |
 | Бэкенд | + embed, tidy-воркеры, Vault | Только llm-proxy |
 
-Решение: Private по умолчанию. Интерфейс `Embedder` в core оставляет возможность добавить Cloud-эмбеддинги как opt-in, если web-версия станет приоритетом.
+Решение: Private по умолчанию на обеих платформах. Web считает эмбеддинги через transformers.js (WebGPU, fallback WASM) в Worker. Благодаря синку зашифрованных векторов web-клиенту обычно нужно эмбеддить только свои новые заметки и поисковые запросы, а не всю базу. Интерфейс `Embedder` в core оставляет возможность добавить Cloud-эмбеддинги как opt-in.
+
+**Одна модель — один ONNX-файл.** Вектора с desktop и web должны быть побитово совместимы, поэтому обе платформы грузят один и тот же ONNX-артефакт `multilingual-e5-small` (int8) с нашего CDN: desktop через `ort` (fastembed с user-defined моделью), web через `onnxruntime-web`. Смена файла = смена `model` в `note_vectors` и реиндекс.
 
 ### 6.4 Модель данных (ядро)
 
@@ -292,23 +298,44 @@ RLS: `user_id = auth.uid()` на всех таблицах. Никаких се�
 
 ---
 
+### 6.6 Платформенные адаптеры
+
+Единственное место, где desktop и web различаются. Всё остальное — общий код.
+
+| Возможность | Интерфейс в `core` | Tauri (desktop) | Web (PWA) |
+|---|---|---|---|
+| Локальная БД | `SqlDriver` | `tauri-plugin-sql` (SQLite, FTS5) | `sqlite-wasm` + OPFS в Worker |
+| Эмбеддинги | `Embedder` | fastembed (`ort`) в Rust | transformers.js, WebGPU/WASM в Worker |
+| Голос → текст | `Transcriber` | whisper.cpp в Rust, локально | edge `transcribe` (Whisper API); честно помечено «аудио уходит на сервер»; локальный whisper через WebGPU — позже |
+| Хранение MK | `KeyStore` | OS keychain | WebCrypto non-extractable wrap + IndexedDB |
+| Крипто | `libsodium-wrappers` (WASM) | то же | то же |
+| Unfurl ссылок | `Unfurler` | edge `unfurl`; в local-only — Rust `reqwest` | edge `unfurl` |
+| Файлы/вложения | `BlobStore` | app-data dir | OPFS |
+| Оффлайн | — | нативно | Service Worker (app shell + модели в Cache API) |
+| MCP | — | локальный stdio-сервер над той же SQLite | только remote MCP (позже) |
+| Local-only режим | — | да | нет (нет Ollama из браузера, нет локального Whisper) — режим скрыт |
+| Глобальный хоткей / трей | — | да | нет |
+
+Web-версия — статика (Cloudflare Pages / Vercel), PWA с установкой. Ограничения web показываются в настройках как «недоступно в браузере», а не прячутся.
+
 ## 7. Технологический стек
 
 | Слой | Выбор | Почему |
 |---|---|---|
 | Монорепо | pnpm workspaces + Turborepo | web и desktop делят 95% кода |
-| UI-код | React 19 + Vite + TypeScript | один код для Tauri и будущего web |
-| Desktop (**first**) | **Tauri 2** | Rust-ядро (whisper.cpp, fastembed, SQLite, keychain), бинарь ~10 MB, и мобильные iOS/Android из той же кодовой базы, если понадобятся |
+| UI-код | React 19 + Vite + TypeScript | один код для Tauri и web; `apps/web` — само приложение, `apps/desktop` — его Tauri-обёртка |
+| Desktop (**first**) | **Tauri 2** | Rust только для тяжёлого: whisper.cpp, fastembed, keychain, sql-plugin. Бинарь ~10 MB. Мобильные iOS/Android из той же кодовой базы, если понадобятся |
+| Web | Vite-сборка того же кода как PWA | статический хостинг, Service Worker |
 | UI | **Tailwind 4 + shadcn/ui** (Radix-примитивы, компоненты копируются в репо) | «свои» компоненты без написания a11y с нуля; тема Bear-подобная; bloub тоже на Tailwind 4 |
 | Иконки | Lucide | |
 | Редактор | Tiptap 2 (StarterKit + markdown) | минимальное форматирование, кастомные ноды для карточек и highlight |
 | Data / API | **TanStack Query** для серверных данных и AI-вызовов; Zustand для UI-стейта | |
-| Локальная БД | SQLite в Rust (`rusqlite` bundled) + FTS5 | нативная скорость; web-адаптер на SQLite WASM позже |
+| Локальная БД | SQLite + FTS5 через `SqlDriver`: `tauri-plugin-sql` / `@sqlite.org/sqlite-wasm` | одна схема и SQL на обеих платформах |
 | Бэкенд | Supabase: Auth, Postgres + RLS, Realtime, Storage, Edge Functions (Deno) | |
 | LLM | свой тонкий OpenAI-compatible клиент (`fetch` + SSE) | DeepSeek / OpenRouter / Ollama — один протокол |
-| Embeddings | `fastembed-rs`, модель `multilingual-e5-small` (~120 MB, качается при первом запуске) | ru/es/en из коробки, всё на устройстве |
-| Voice | `whisper-rs` (whisper.cpp), модель `small` multilingual; в Telegram-боте — Whisper API | |
-| Крипто | libsodium в Rust (`sodiumoxide`/`libsodium-sys`), вызовы через Tauri commands | Argon2id, XChaCha20-Poly1305, X25519 sealed box |
+| Embeddings | один ONNX `multilingual-e5-small` int8 (~120 MB, с нашего CDN): desktop `fastembed`/`ort`, web `transformers.js` | ru/es/en, вектора совместимы между платформами |
+| Voice | desktop `whisper-rs` (whisper.cpp, `small`); web и Telegram-бот — Whisper API через edge | |
+| Крипто | `libsodium-wrappers` (WASM) в TS, одна реализация для всех платформ | XChaCha20-Poly1305, X25519 sealed box, BIP39 для recovery-фразы |
 | i18n | i18next + react-i18next, ICU | |
 | Тесты | Vitest, Playwright, Rust `cargo test` | |
 | Аналитика | PostHog (только события UI, никогда контент) | |
@@ -317,16 +344,19 @@ RLS: `user_id = auth.uid()` на всех таблицах. Никаких се�
 
 ```
 apps/
-  desktop/        Tauri 2: src/ — React (Vite), src-tauri/ — Rust (SQLite, crypto, whisper, embed, keychain)
-  mcp/            fixnote-mcp: stdio MCP-сервер над локальной БД
+  web/            React + Vite: само приложение, собирается как PWA; выбирает платформенные адаптеры в рантайме
+  desktop/        Tauri 2, frontendDist → apps/web/dist; src-tauri/ — Rust (plugin-sql, whisper, embed, keychain)
+  mcp/            fixnote-mcp: stdio MCP-сервер над локальной SQLite (desktop)
 packages/
-  core/           домен, интерфейс Storage, синк, retrieval, tidy — без React
+  core/           домен, схема и миграции SQL, SqlDriver/Embedder/Transcriber/KeyStore интерфейсы, синк, crypto, retrieval, tidy — без React
+  platform-web/   адаптеры: sqlite-wasm, transformers.js, WebCrypto keystore, OPFS
+  platform-tauri/ адаптеры: plugin-sql, invoke(embed/transcribe/keychain)
   ai/             OpenAI-compatible клиент, промпты
   ui/             shadcn-компоненты, тема, bloub-react
   i18n/           словари en/es/ru
 supabase/
   migrations/     схема + RLS
-  functions/      llm-proxy, unfurl, share, telegram-webhook
+  functions/      llm-proxy, unfurl, share, telegram-webhook, transcribe
 docs/
   CONCEPT.md, adr/, specs/
 ```
@@ -335,19 +365,19 @@ docs/
 
 ## 8. Дорожная карта
 
-**M0 — Каркас (1 нед.)**: монорепо, Tauri 2 + Vite + React, Tailwind + shadcn, i18n, Supabase проект + env, CI со сборкой .dmg. Пустое приложение с тремя колонками запускается.
+**M0 — Каркас (1 нед.)**: монорепо, `apps/web` (Vite + React, PWA-манифест) + `apps/desktop` (Tauri 2), Tailwind + shadcn, i18n, интерфейсы платформы, Supabase проект + env, CI: сборка .dmg и деплой web-статики. Пустое приложение с тремя колонками запускается в браузере и как .app.
 
-**M1 — Заметки локально (2 нед.)**: SQLite в Rust, Tiptap + Markdown, Inbox/папки/теги, Home с infinite scroll, Spotlight, FTS-поиск, daily note. Полностью оффлайн, без аккаунта.
+**M1 — Заметки локально (2 нед.)**: схема SQLite в core, оба `SqlDriver` (plugin-sql, sqlite-wasm), Tiptap + Markdown, Inbox/папки/теги, Home с infinite scroll, Spotlight, FTS-поиск, daily note. Полностью оффлайн, без аккаунта, на обеих платформах.
 
 **M2 — Аккаунт, шифрование, синк (2 нед.)**: email-OTP, MK в keychain + recovery-фраза + QR-пейринг, синк по версии + diff3, Realtime, вложения, экспорт Markdown/JSON.
 
-**M3 — AI-чат (2 нед.)**: fastembed + чанкинг, гибридный поиск, единый чат со скоупами и разделителями, цитаты, Bloub-статусы, DeepSeek через llm-proxy.
+**M3 — AI-чат (2 нед.)**: чанкинг, оба `Embedder` (fastembed, transformers.js) на одном ONNX, синк зашифрованных векторов, гибридный поиск, единый чат со скоупами и разделителями, цитаты, Bloub-статусы, DeepSeek через llm-proxy.
 
-**M4 — Ввод (2 нед.)**: whisper.cpp, selection-popover с diff, paste-to-card (unfurl), автоструктурирование дампа, **Telegram-бот**.
+**M4 — Ввод (2 нед.)**: whisper.cpp на desktop + edge `transcribe` для web, selection-popover с diff, paste-to-card (unfurl), автоструктурирование дампа, **Telegram-бот**.
 
-**M5 — Контроль и порядок (2–3 нед.)**: Tidy с approve/reject/undo, audit log, BYOK, Local-only с Ollama, MCP-сервер, шеринг снапшотом, импорт (Markdown-папка, Bear, Notion).
+**M5 — Контроль и порядок (2–3 нед.)**: Tidy с approve/reject/undo, audit log, BYOK, Local-only с Ollama (desktop), MCP-сервер, шеринг снапшотом, импорт (Markdown-папка, Bear, Notion), Service Worker для полного оффлайна web.
 
-После: web-версия (адаптер SQLite WASM), мобильные (Tauri iOS/Android), другие каналы захвата, remote MCP.
+После: мобильные (Tauri iOS/Android), другие каналы захвата, remote MCP, локальный Whisper в браузере через WebGPU.
 
 ---
 
@@ -364,8 +394,8 @@ docs/
 | Формат заметки | Markdown-строка, форматирование уровня Telegram. Без Yjs/CRDT. Плюс дешёвый импорт от конкурентов. |
 | Синк | Версия + optimistic concurrency, diff3 при конфликте, конфликтная копия как fallback. |
 | LLM-слой | Свой OpenAI-compatible клиент, без Vercel AI SDK. |
-| Платформа | Tauri-first. Хранилище и AI в Rust. Web и мобилка позже, через интерфейс Storage. |
-| Где живёт AI | На устройстве (эмбеддинги, поиск, Whisper), вектора синкаются зашифрованными. Cloud-эмбеддинги — возможный opt-in позже через интерфейс `Embedder`. В LLM — только найденные фрагменты, провайдер прокси выбирается. |
+| Платформа | Tauri-first по приоритету, но web — полноценная платформа с M0: один React-код, различаются только адаптеры (`SqlDriver`, `Embedder`, `Transcriber`, `KeyStore`). Rust только для тяжёлого. Мобилка по спросу. |
+| Где живёт AI | На устройстве на обеих платформах (desktop: Rust, web: transformers.js/WebGPU), один ONNX-файл, вектора синкаются зашифрованными. Исключение: Whisper в web через edge, помечено. Cloud-эмбеддинги — opt-in позже. В LLM — только найденные фрагменты, провайдер прокси выбирается. |
 | Вход | Email + 6-значный код (Supabase OTP), как в lumi-tasks-app. Google/Apple позже. |
 | Ключ шифрования | Случайный MK на устройстве, keychain, recovery-фраза 12 слов, QR-пейринг второго устройства. Паролей нет. Opt-in escrow ключа у нас, выключен по умолчанию. |
 | Мобилка | Не планируем, решаем по спросу на десктоп. |
