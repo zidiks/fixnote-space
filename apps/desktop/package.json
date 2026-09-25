@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "tauri": "tauri",
-    "icons": "tauri icon ../web/public/icon.svg"
+    "icons": "node scripts/icons.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.5"
