@@ -309,6 +309,22 @@ export class NotesRepo {
     }
   }
 
+  /** The nearest daily note before or after `date` (YYYY-MM-DD) that exists. */
+  async adjacentDaily(
+    date: string,
+    direction: 'before' | 'after',
+  ): Promise<{ id: string; dailyDate: string } | null> {
+    const [row] = await this.db.query<{ id: string; daily_date: string }>(
+      direction === 'before'
+        ? `SELECT id, daily_date FROM notes WHERE type = 'daily' AND daily_date < ?
+             AND deleted_at IS NULL ORDER BY daily_date DESC LIMIT 1`
+        : `SELECT id, daily_date FROM notes WHERE type = 'daily' AND daily_date > ?
+             AND deleted_at IS NULL ORDER BY daily_date ASC LIMIT 1`,
+      [date],
+    )
+    return row ? { id: row.id, dailyDate: row.daily_date } : null
+  }
+
   private async findDaily(date: string): Promise<Note | null> {
     const [row] = await this.db.query<{ id: string }>(
       'SELECT id FROM notes WHERE daily_date = ? AND deleted_at IS NULL',

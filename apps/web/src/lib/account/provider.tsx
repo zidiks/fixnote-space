@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useEffect } from 'react'
 import { toast } from 'sonner'
 import { notifyNotesChanged } from '../assistant/assistant'
+import { appendToToday, captureToDaily } from '../daily'
 import { useDb } from '../db'
 import { platform } from '../platform'
 import { initAccount } from './account'
@@ -23,6 +24,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         keyStore: platform.keyStore,
         attachments,
         repo,
+        saveCaptured: async (content) => {
+          if (await captureToDaily(driver)) await appendToToday(repo, content)
+          else await repo.createNote({ content })
+        },
         transcribe: async (audio) => (await (await platform.transcriber()).transcribe(audio)).text,
         onCaptured: (count) => toast(i18n.t('capture.imported', { count })),
         onRemoteChange: () => {

@@ -73,6 +73,8 @@ interface Deps {
   repo: NotesRepo
   /** Speech to text for voice messages from capture channels; may fail (model unavailable). */
   transcribe: (audio: Blob) => Promise<string>
+  /** Where a captured message goes (a new note, or today's note). */
+  saveCaptured?: (content: string) => Promise<void>
   /** Messages from Telegram became notes. */
   onCaptured: (count: number) => void
   /** Refresh UI queries after remote changes arrived. */
@@ -412,6 +414,7 @@ export async function runSync() {
         repo: d.repo,
         attachments: d.attachments,
         transcribe: d.transcribe,
+        ...(d.saveCaptured ? { save: d.saveCaptured } : {}),
       })
       if (captured.imported) {
         d.onCaptured(captured.imported)

@@ -39,6 +39,7 @@ import {
 } from '../lib/queries'
 import { formatRelative } from '../lib/time'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
+import { DailyBar } from './DailyBar'
 import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
 import { ShareDialog } from './ShareDialog'
 import { VOICE_KEYS } from './VoiceBar'
@@ -213,6 +214,8 @@ export function NoteView({ id }: { id: string }) {
           ))}
         </div>
       ) : null}
+
+      {n.type === 'daily' && n.dailyDate ? <DailyBar note={n} /> : null}
 
       <div className="mt-6">
         <NoteEditor

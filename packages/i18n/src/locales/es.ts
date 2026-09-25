@@ -88,6 +88,17 @@ const es: LocaleResource = {
     saved: 'Guardado',
   },
   daily: {
+    carry: 'Tareas sin terminar del {{date}}: {{count}}.',
+    carryMove: 'Pasar aquí',
+    carryDismiss: 'Ahora no',
+    carried: 'Tareas pasadas: {{count}}',
+    earlier: 'Día anterior',
+    later: 'Día siguiente',
+    toToday: 'Hoy',
+    toDaily: 'Notas de voz y Telegram en la nota del día',
+    toDailyBody:
+      'Las notas dictadas y los mensajes al bot se añaden a la nota de hoy con la hora, en lugar de crear notas aparte.',
+    savedToDaily: 'Añadido a la nota del día',
     tasks: 'Tareas',
     notes: 'Notas',
   },

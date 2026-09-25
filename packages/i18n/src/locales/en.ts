@@ -84,6 +84,17 @@ const en = {
     saved: 'Saved',
   },
   daily: {
+    carry: 'Unfinished tasks from {{date}}: {{count}}.',
+    carryMove: 'Move here',
+    carryDismiss: 'Not now',
+    carried: 'Moved tasks: {{count}}',
+    earlier: 'Previous day',
+    later: 'Next day',
+    toToday: 'Today',
+    toDaily: 'Voice notes and Telegram go to today’s note',
+    toDailyBody:
+      'Dictated notes and messages to the bot are added to today’s note with the time, instead of becoming separate notes.',
+    savedToDaily: 'Added to today’s note',
     tasks: 'Tasks',
     notes: 'Notes',
   },

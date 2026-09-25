@@ -85,6 +85,8 @@ export async function importInbox(opts: {
   repo: NotesRepo
   attachments: Attachments
   transcribe?: (audio: Blob) => Promise<string>
+  /** Where a message goes; a new note without a folder by default. */
+  save?: (content: string) => Promise<void>
 }): Promise<{ imported: number; failed: number }> {
   const { db, keys, remote, repo, attachments } = opts
   let imported = 0
@@ -128,7 +130,10 @@ export async function importInbox(opts: {
         .filter(Boolean)
         .join('\n\n')
     }
-    if (content) await repo.createNote({ content })
+    if (content) {
+      if (opts.save) await opts.save(content)
+      else await repo.createNote({ content })
+    }
     await db.execute(
       'INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
       [DONE_PREFIX + item.id, '1'],

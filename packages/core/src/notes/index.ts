@@ -1,3 +1,4 @@
+export * from './daily'
 export * from './diff'
 export * from './markdown'
 export * from './repo'

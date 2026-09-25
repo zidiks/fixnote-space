@@ -4,7 +4,8 @@ import { Check, LoaderCircle, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
-import { useRepo } from '../lib/db'
+import { appendToToday, captureToDaily } from '../lib/daily'
+import { useDb, useRepo } from '../lib/db'
 import { usePlatform } from '../lib/platform'
 import { useInvalidateNotes } from '../lib/queries'
 import { cancelVoice, setVoiceDeps, stopVoice, useVoice } from '../lib/voice/voice'
@@ -40,6 +41,7 @@ export function VoiceBar() {
   const { t } = useTranslation()
   const platform = usePlatform()
   const repo = useRepo()
+  const { driver } = useDb()
   const invalidate = useInvalidateNotes()
   const status = useVoice((s) => s.status)
   const level = useVoice((s) => s.level)
@@ -51,6 +53,13 @@ export function VoiceBar() {
     setVoiceDeps({
       transcriber: platform.transcriber,
       createNote: async (text) => {
+        if (await captureToDaily(driver)) {
+          const daily = await appendToToday(repo, text)
+          await invalidate()
+          useUi.getState().navigate({ kind: 'note', id: daily.id })
+          toast(t('daily.savedToDaily'))
+          return
+        }
         const route = useUi.getState().route
         const note = await repo.createNote({
           content: text,
@@ -66,7 +75,7 @@ export function VoiceBar() {
         })
       },
     })
-  }, [platform, repo, invalidate, t])
+  }, [platform, repo, driver, invalidate, t])
 
   useEffect(() => {
     if (status !== 'recording') return
