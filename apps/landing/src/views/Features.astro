@@ -1,0 +1,70 @@
+---
+import CalendarCheck from '@lucide/astro/icons/calendar-check'
+import Check from '@lucide/astro/icons/check'
+import FileInput from '@lucide/astro/icons/file-input'
+import Mic from '@lucide/astro/icons/mic'
+import Plug from '@lucide/astro/icons/plug'
+import Search from '@lucide/astro/icons/search'
+import Send from '@lucide/astro/icons/send'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import SpellCheck from '@lucide/astro/icons/spell-check'
+import SectionHeader from '../components/SectionHeader.astro'
+import { type Lang, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import FinalCta from './home/FinalCta.astro'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.featuresPage
+const look: Record<string, { icon: typeof Search; tint: string }> = {
+  search: { icon: Search, tint: 'bg-[#dde8f7] text-[#2d64b3]' },
+  assistant: { icon: Sparkles, tint: 'bg-[#fde2d3] text-[#e2561c]' },
+  voice: { icon: Mic, tint: 'bg-[#fde2d3] text-[#e2561c]' },
+  edit: { icon: SpellCheck, tint: 'bg-[#d9efdf] text-[#23883f]' },
+  daily: { icon: CalendarCheck, tint: 'bg-[#d9efdf] text-[#23883f]' },
+  capture: { icon: Send, tint: 'bg-[#dde8f7] text-[#2d64b3]' },
+  mcp: { icon: Plug, tint: 'bg-[#ece8e0] text-ink' },
+  import: { icon: FileInput, tint: 'bg-[#ece8e0] text-ink' },
+}
+---
+
+<Base lang={lang} title={d.meta.features.title} description={d.meta.features.description} path="/features/">
+  <section class="px-4 pb-10 pt-36 sm:px-6 sm:pt-44">
+    <SectionHeader as="h1" eyebrow={p.eyebrow} parts={p.headline} lead={p.lead} />
+  </section>
+  <section class="px-4 py-12 sm:px-6">
+    <div class="mx-auto max-w-[1100px] space-y-5">
+      {
+        p.sections.map((s) => {
+          const { icon: Icon, tint } = look[s.id] ?? { icon: Sparkles, tint: 'bg-canvas' }
+          return (
+            <article
+              id={s.id}
+              class="reveal grid scroll-mt-28 gap-8 rounded-[28px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] sm:p-10 md:grid-cols-[auto_1fr_0.8fr] md:gap-10"
+            >
+              <span class={`flex size-14 items-center justify-center rounded-[18px] ${tint}`}>
+                <Icon size={26} />
+              </span>
+              <div>
+                <h2 class="text-[24px] font-semibold leading-[1.2] tracking-[-0.03em] sm:text-[28px]">{s.title}</h2>
+                <p class="mt-4 text-[16px] leading-[1.65] text-muted">{s.text}</p>
+              </div>
+              <ul class="space-y-3 self-center md:border-l md:border-line md:pl-8">
+                {s.points.map((point) => (
+                  <li class="flex items-start gap-2.5 text-[15px] leading-snug">
+                    <Check size={17} class="mt-0.5 shrink-0 text-[#23883f]" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          )
+        })
+      }
+    </div>
+  </section>
+  <FinalCta lang={lang} />
+</Base>

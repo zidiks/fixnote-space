@@ -1,0 +1,16 @@
+---
+import DownloadCards from '../../components/DownloadCards.astro'
+import SectionHeader from '../../components/SectionHeader.astro'
+import { type Lang, t } from '../../i18n'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang).download
+---
+
+<section id="download" class="scroll-mt-24 px-4 py-24 sm:px-6 sm:py-32">
+  <SectionHeader eyebrow={d.eyebrow} parts={d.headline} lead={d.lead} />
+  <div class="mt-14 sm:mt-16"><DownloadCards lang={lang} /></div>
+</section>

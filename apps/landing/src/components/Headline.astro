@@ -1,0 +1,51 @@
+---
+import type { Part } from '../i18n'
+
+/**
+ * A headline from phrases, tinted chips and "\n" breaks. With `reveal`, words blur in one after
+ * another when the headline scrolls into view; the hero passes `reveal={false}` and animates with
+ * CSS instead, so it is visible from the first frame.
+ */
+interface Props {
+  parts: Part[]
+  as?: 'h1' | 'h2' | 'p'
+  class?: string
+  reveal?: boolean
+}
+const { parts, as: Tag = 'h2', class: className, reveal = true } = Astro.props
+
+type Node =
+  | { kind: 'br' }
+  | { kind: 'word'; text: string; i: number }
+  | { kind: 'mark'; text: string; tone: string; after?: string; i: number }
+const nodes: Node[] = []
+let i = 0
+for (const part of parts) {
+  if (part === '\n') nodes.push({ kind: 'br' })
+  else if (typeof part === 'string') {
+    for (const word of part.split(' ').filter(Boolean))
+      nodes.push({ kind: 'word', text: word, i: i++ })
+  } else nodes.push({ kind: 'mark', text: part.text, tone: part.tone, after: part.after, i: i++ })
+}
+---
+
+<Tag class:list={['headline', reveal && 'reveal words', className]}>
+  {
+    nodes.map((node) =>
+      node.kind === 'br' ? (
+        <br />
+      ) : node.kind === 'word' ? (
+        <>
+          <span class="word" style={`--i:${node.i}`}>{node.text}</span>{' '}
+        </>
+      ) : (
+        <>
+          <span class="word" style={`--i:${node.i}`}>
+            <span class={`mark mark-${node.tone}`}>{node.text}</span>
+            {node.after}
+          </span>{' '}
+        </>
+      ),
+    )
+  }
+</Tag>

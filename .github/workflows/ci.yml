@@ -38,6 +38,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @fixnote/web build
+      - run: pnpm --filter @fixnote/landing build
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist
@@ -52,7 +53,19 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno test --allow-net --allow-env supabase/functions
+      # Each function has its own Deno config (deno.json); run from its folder so Deno uses it
+      # instead of the repository's package.json.
+      - name: deno test (each function)
+        shell: bash
+        run: |
+          set -e
+          for dir in supabase/functions/*/; do
+            if compgen -G "${dir}*.test.ts" > /dev/null; then
+              echo "::group::${dir}"
+              (cd "$dir" && deno test --allow-net --allow-env)
+              echo "::endgroup::"
+            fi
+          done
 
   rust:
     name: Rust clippy (desktop shell)

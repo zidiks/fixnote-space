@@ -1,0 +1,63 @@
+---
+import ArrowDown from '@lucide/astro/icons/arrow-down'
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import Check from '@lucide/astro/icons/check'
+import Lock from '@lucide/astro/icons/lock'
+import Eyebrow from '../../components/Eyebrow.astro'
+import Headline from '../../components/Headline.astro'
+import { type Lang, localePath, t } from '../../i18n'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang).securityTeaser
+/** What the server stores instead of the note (illustrative). */
+const cipher =
+  'x9Fq2VbK0mRr7Zt+aLwE3uJc8yHnD5sPoQ1iGv4TkXe6MzNb/UhCj0WfYlSg2Ad7Rp9KqBnVt3LxEo5Iu8Hc=='
+---
+
+<section class="px-3 py-10 sm:px-6">
+  <div class="mx-auto grid max-w-[1180px] items-center gap-12 overflow-hidden rounded-[32px] bg-night px-6 py-16 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:px-16">
+    <div>
+      <div class="reveal"><Eyebrow tone="dark">{d.eyebrow}</Eyebrow></div>
+      <Headline parts={d.headline} class="mt-6 text-[36px] sm:text-[52px] lg:text-[60px]" />
+      <p class="reveal mt-6 max-w-[520px] text-[17px] leading-[1.6] text-white/65" style="--delay:150ms">{d.lead}</p>
+      <ul class="mt-8 space-y-3">
+        {
+          d.points.map((point, i) => (
+            <li class="reveal flex items-start gap-3 text-[15px] text-white/85" style={`--delay:${200 + i * 60}ms`}>
+              <span class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#23883f]">
+                <Check size={12} stroke-width={3} />
+              </span>
+              {point}
+            </li>
+          ))
+        }
+      </ul>
+      <a
+        href={localePath(lang, '/security/')}
+        class="reveal mt-9 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#ff9a66] hover:underline"
+      >
+        {d.more} <ArrowRight size={16} />
+      </a>
+    </div>
+    <div class="reveal space-y-3" style="--delay:200ms" aria-hidden="true">
+      <div class="rounded-[22px] bg-white p-6 text-ink">
+        <div class="text-[12px] font-medium uppercase tracking-[0.12em] text-muted">note.md</div>
+        <p class="mt-3 text-[19px] font-medium tracking-[-0.02em]">{d.plain}</p>
+      </div>
+      <div class="flex items-center justify-center gap-3 py-1 text-white/50">
+        <ArrowDown size={18} />
+        <span class="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-mono text-[12px] text-white/80">
+          <Lock size={13} /> XChaCha20-Poly1305
+        </span>
+        <ArrowDown size={18} />
+      </div>
+      <div class="rounded-[22px] bg-white/[0.06] p-6 ring-1 ring-white/10">
+        <div class="text-[12px] font-medium uppercase tracking-[0.12em] text-white/45">server</div>
+        <p class="mt-3 break-all font-mono text-[14px] leading-[1.6] text-[#8fd6a3]">{cipher}</p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,51 @@
+---
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right'
+import Download from '@lucide/astro/icons/download'
+import Globe from '@lucide/astro/icons/globe'
+import Laptop from '@lucide/astro/icons/laptop'
+import Monitor from '@lucide/astro/icons/monitor'
+import { APP_URL, DOWNLOADS, type Lang, t } from '../i18n'
+
+/** One card per installer plus the web app. The Mac cards share the #mac anchor the hero links to. */
+interface Props {
+  lang: Lang
+}
+const d = t(Astro.props.lang).download
+const cards = [
+  { ...d.windows, href: DOWNLOADS.windows, icon: Monitor, id: 'windows', external: false },
+  { ...d.macArm, href: DOWNLOADS.macArm, icon: Laptop, id: 'mac', external: false },
+  { ...d.macIntel, href: DOWNLOADS.macIntel, icon: Laptop, id: undefined, external: false },
+  { ...d.web, href: APP_URL, icon: Globe, id: 'web', external: true },
+]
+---
+
+<div class="mx-auto grid max-w-[1100px] gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  {
+    cards.map((card, i) => {
+      const Icon = card.icon
+      return (
+        <div
+          id={card.id}
+          class="reveal flex scroll-mt-28 flex-col rounded-[24px] bg-white p-6 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04]"
+          style={`--delay:${i * 80}ms`}
+        >
+          <span class="flex size-11 items-center justify-center rounded-2xl bg-canvas">
+            <Icon size={21} />
+          </span>
+          <h3 class="mt-6 text-[19px] font-semibold tracking-[-0.03em]">{card.name}</h3>
+          <p class="mt-1.5 flex-1 text-[14px] leading-[1.5] text-muted">{card.detail}</p>
+          <a
+            href={card.href}
+            class:list={[
+              'mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition active:scale-[0.98]',
+              card.external ? 'bg-canvas text-ink hover:bg-line' : 'bg-ink text-white hover:bg-[#2e2c29]',
+            ]}
+          >
+            {card.external ? <ArrowUpRight size={17} /> : <Download size={17} />}
+            {card.button}
+          </a>
+        </div>
+      )
+    })
+  }
+</div>

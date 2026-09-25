@@ -1,0 +1,55 @@
+---
+import { type Lang, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import BlogTeaser from './home/BlogTeaser.astro'
+import DownloadSection from './home/DownloadSection.astro'
+import FaqSection from './home/FaqSection.astro'
+import Features from './home/Features.astro'
+import FinalCta from './home/FinalCta.astro'
+import Hero from './home/Hero.astro'
+import How from './home/How.astro'
+import Questions from './home/Questions.astro'
+import SecurityTeaser from './home/SecurityTeaser.astro'
+import Story from './home/Story.astro'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const site = Astro.site ?? new URL('https://fixnote.space')
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'FixNote',
+    description: d.meta.home.description,
+    applicationCategory: 'ProductivityApplication',
+    operatingSystem: 'Windows, macOS, Web',
+    url: site.href,
+    inLanguage: lang,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: d.faq.items.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
+    })),
+  },
+]
+---
+
+<Base lang={lang} title={d.meta.home.title} description={d.meta.home.description} path="/" jsonLd={jsonLd}>
+  <Hero lang={lang} />
+  <Story lang={lang} />
+  <How lang={lang} />
+  <Features lang={lang} />
+  <SecurityTeaser lang={lang} />
+  <Questions lang={lang} />
+  <DownloadSection lang={lang} />
+  <FaqSection lang={lang} />
+  <BlogTeaser lang={lang} />
+  <FinalCta lang={lang} />
+</Base>

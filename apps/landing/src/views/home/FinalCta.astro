@@ -1,0 +1,30 @@
+---
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right'
+import Download from '@lucide/astro/icons/download'
+import Pill from '../../components/Pill.astro'
+import { APP_URL, type Lang, localePath, t } from '../../i18n'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang).cta
+---
+
+<section class="px-3 py-10 sm:px-6">
+  <div class="relative mx-auto max-w-[1180px] overflow-hidden rounded-[32px] bg-brand px-6 py-20 text-center text-white sm:py-24">
+    <div
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_50%_0%,rgba(255,255,255,0.28),transparent_60%)]"
+      aria-hidden="true"
+    >
+    </div>
+    <h2 class="headline reveal relative text-[38px] sm:text-[56px] lg:text-[64px]">{d.title}</h2>
+    <p class="reveal relative mx-auto mt-5 max-w-[520px] text-[17px] leading-[1.6] text-white/85 sm:text-lg" style="--delay:120ms">
+      {d.lead}
+    </p>
+    <div class="reveal relative mt-9 flex flex-wrap justify-center gap-3" style="--delay:200ms">
+      <Pill href={localePath(lang, '/download/')}><Download size={18} /> {d.download}</Pill>
+      <Pill href={APP_URL} variant="light">{d.open} <ArrowUpRight size={17} /></Pill>
+    </div>
+  </div>
+</section>

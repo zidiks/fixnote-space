@@ -1,0 +1,10 @@
+---
+interface Props {
+  dark?: boolean
+}
+---
+
+<span class="flex items-center gap-2">
+  <img src="/favicon.svg" alt="" width="28" height="28" class="h-7 w-7" />
+  <span class:list={['text-[17px] font-semibold tracking-[-0.02em]', Astro.props.dark && 'text-white']}>FixNote</span>
+</span>

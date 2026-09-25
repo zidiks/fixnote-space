@@ -56,11 +56,18 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).
+- Landing and blog: `apps/landing` (Astro, static, fixnote.space; the app is app.fixnote.space). Its copy
+  lives in `apps/landing/src/i18n` (ru is the reference, en/es must match its shape), not in
+  `@fixnote/i18n`. Keep pages script-free apart from the small inline scripts in `Base.astro` and
+  `Hero.astro`; only claim what the app does. No GitHub links on the site: downloads go through
+  `/download/*` in `public/_redirects`. Blog posts: `src/content/blog/<lang>/<slug>.md`, one
+  `translationKey` per article across languages.
 
 ## Verify before pushing
 
 ```bash
 pnpm check                      # lint + typecheck + test
 pnpm --filter @fixnote/web build
+pnpm --filter @fixnote/landing build
 (cd apps/desktop/src-tauri && cargo clippy --all-targets -- -D warnings)
 ```

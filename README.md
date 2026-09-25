@@ -84,6 +84,7 @@ apps/
   web/             React + Vite app; runs in the browser and inside the desktop shell
   desktop/         Tauri 2 shell; src-tauri/ holds the Rust side
   mcp/             fixnote-mcp: stdio MCP server over the local database (Node single executable)
+  landing/         fixnote.space: static Astro site (ru at the root, /en/, /es/) with the blog
 packages/
   core/            domain logic and platform interfaces (no React)
   platform-web/    browser adapters (sqlite-wasm, WebCrypto, OPFS files, transformers.js
@@ -193,11 +194,27 @@ import from Git) with
 Without a `.env`, the build takes the public values of `.env.example`; build variables set in
 Cloudflare (e.g. `VITE_TELEGRAM_BOT`) win. Cloudflare serves files up to 25 MiB, so the hosted app
 loads the ONNX runtime (26 MB) from jsDelivr; the desktop app and `pnpm dev` bundle it. Add the
-domain under the Worker's Settings → Domains & Routes.
+domain (`app.fixnote.space`) under the Worker's Settings → Domains & Routes.
+
+### Landing and blog (fixnote.space)
+
+`apps/landing` is a static [Astro](https://astro.build) site: prebuilt HTML, one inlined stylesheet
+and a few lines of inline JavaScript, so pages are fast and search engines read them as is.
+Russian lives at the root, English under `/en/`, Spanish under `/es/`; copy is in
+`apps/landing/src/i18n` (the Russian file sets the shape, the others must match it). Blog posts are
+Markdown in `src/content/blog/<lang>/<slug>.md`; translations of one post share `translationKey`.
+The build also writes the sitemap and an RSS feed per language.
+
+`pnpm --filter @fixnote/landing dev` serves it on http://localhost:4321. To deploy, create a second
+Cloudflare Worker from the same repository with root directory `apps/landing`, build command
+`pnpm install --frozen-lockfile && pnpm --filter @fixnote/landing build` and deploy command
+`npx wrangler deploy`, then add `fixnote.space` to it. Download buttons link to
+`/download/windows`, `/download/mac-arm` and `/download/mac-intel`, which `public/_redirects` sends
+to the latest GitHub release's installers.
 
 ### Shared links
 
-Links open the web app: `VITE_WEB_URL` (default `https://fixnote.space`) must serve it (see above).
+Links open the web app: `VITE_WEB_URL` (default `https://app.fixnote.space`) must serve it (see above).
 On the web the app uses its own address. The server keeps only the sealed copy (`shares` table);
 apply the migration with `pnpm sb:migrate`.
 
@@ -215,6 +232,7 @@ builds.
 | Command | What it does |
 |---|---|
 | `pnpm dev` | Web app dev server |
+| `pnpm --filter @fixnote/landing dev` | Landing and blog dev server |
 | `pnpm dev:desktop` | Desktop app with hot reload |
 | `pnpm build` | Build all packages and the web app |
 | `pnpm build:desktop` | Desktop installers for the current OS |

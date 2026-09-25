@@ -1,0 +1,55 @@
+---
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import CalendarCheck from '@lucide/astro/icons/calendar-check'
+import Mic from '@lucide/astro/icons/mic'
+import Plug from '@lucide/astro/icons/plug'
+import Search from '@lucide/astro/icons/search'
+import Send from '@lucide/astro/icons/send'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import SectionHeader from '../../components/SectionHeader.astro'
+import { type Lang, localePath, t } from '../../i18n'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang).features
+const cards = [
+  { key: 'search', icon: Search, tint: 'bg-[#dde8f7] text-[#2d64b3]' },
+  { key: 'voice', icon: Mic, tint: 'bg-[#fde2d3] text-[#e2561c]' },
+  { key: 'assistant', icon: Sparkles, tint: 'bg-[#fde2d3] text-[#e2561c]' },
+  { key: 'daily', icon: CalendarCheck, tint: 'bg-[#d9efdf] text-[#23883f]' },
+  { key: 'telegram', icon: Send, tint: 'bg-[#dde8f7] text-[#2d64b3]' },
+  { key: 'mcp', icon: Plug, tint: 'bg-[#ece8e0] text-ink' },
+] as const
+---
+
+<section class="px-4 py-24 sm:px-6 sm:py-32">
+  <SectionHeader eyebrow={d.eyebrow} parts={d.headline} lead={d.lead} />
+  <div class="mx-auto mt-16 grid max-w-[1100px] gap-4 sm:mt-20 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      cards.map((card, i) => {
+        const Icon = card.icon
+        const text = d.cards[card.key]
+        return (
+          <a
+            href={localePath(lang, `/features/#${card.key === 'telegram' ? 'capture' : card.key}`)}
+            class="reveal group rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(27,26,24,0.08)]"
+            style={`--delay:${(i % 3) * 80}ms`}
+          >
+            <span class={`flex size-11 items-center justify-center rounded-2xl ${card.tint}`}>
+              <Icon size={21} />
+            </span>
+            <h3 class="mt-6 text-[20px] font-semibold tracking-[-0.03em]">{text.title}</h3>
+            <p class="mt-2.5 text-[15px] leading-[1.6] text-muted">{text.text}</p>
+          </a>
+        )
+      })
+    }
+  </div>
+  <div class="reveal mt-10 text-center">
+    <a href={localePath(lang, '/features/')} class="inline-flex items-center gap-1.5 text-[15px] font-medium text-brand-deep hover:underline">
+      {d.more} <ArrowRight size={16} />
+    </a>
+  </div>
+</section>
