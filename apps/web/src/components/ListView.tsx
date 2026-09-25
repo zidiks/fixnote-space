@@ -60,7 +60,7 @@ export function ListView({ route }: { route: ListRoute }) {
   }[route.kind]
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 pt-6 pb-40">
+    <div className="mx-auto w-full max-w-4xl px-6 pt-6 pb-24">
       <header className="flex items-baseline gap-3">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <Icon className="size-5 text-muted-foreground" />

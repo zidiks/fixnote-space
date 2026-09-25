@@ -3,6 +3,11 @@ import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
   ConfirmDialog,
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -107,64 +112,89 @@ export function SidebarFolders() {
                 }}
               />
             ) : (
-              <div
-                className={cn(
-                  'group flex h-8 items-center rounded-md pr-1 text-[13.5px] text-sidebar-foreground hover:bg-sidebar-accent',
-                  active && 'bg-sidebar-accent font-medium text-foreground',
-                )}
-                style={{ paddingLeft: depth * 14 }}
-              >
-                <button
-                  type="button"
-                  aria-label={f.name}
-                  aria-expanded={kids ? open : undefined}
-                  onClick={() => kids && toggle(f.id)}
-                  className={cn('flex size-5 items-center justify-center', !kids && 'invisible')}
-                >
-                  <ChevronRight
-                    className={cn('size-3.5 opacity-60 transition-transform', open && 'rotate-90')}
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate({ kind: 'folder', id: f.id })}
-                  onDoubleClick={() => setRenaming(f.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
-                >
-                  <FolderIcon className="size-4 shrink-0 opacity-70" />
-                  <span className="truncate">{f.name}</span>
-                </button>
-                <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden">
-                  {f.noteCount || ''}
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      className="hidden size-6 group-hover:inline-flex data-[state=open]:inline-flex"
-                      aria-label={t('sidebar.folderActions')}
+              <ContextMenu>
+                <ContextMenuTrigger asChild>
+                  <div
+                    className={cn(
+                      'group flex h-8 items-center rounded-md pr-1 text-[13.5px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
+                      active && 'bg-sidebar-accent font-medium text-foreground',
+                    )}
+                    style={{ paddingLeft: depth * 14 }}
+                  >
+                    <button
+                      type="button"
+                      aria-label={f.name}
+                      aria-expanded={kids ? open : undefined}
+                      onClick={() => kids && toggle(f.id)}
+                      className={cn(
+                        'flex size-5 items-center justify-center',
+                        !kids && 'invisible',
+                      )}
                     >
-                      <MoreHorizontal />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem onSelect={() => setCreatingIn(f.id)}>
-                      <FolderPlus />
-                      {t('sidebar.newSubfolder')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setRenaming(f.id)}>
-                      <Pencil />
-                      {t('common.rename')}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
-                      <Trash2 />
-                      {t('common.delete')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                      <ChevronRight
+                        className={cn(
+                          'size-3.5 opacity-60 transition-transform',
+                          open && 'rotate-90',
+                        )}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate({ kind: 'folder', id: f.id })}
+                      onDoubleClick={() => setRenaming(f.id)}
+                      className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left"
+                    >
+                      <FolderIcon className="size-4 shrink-0 opacity-70" />
+                      <span className="truncate">{f.name}</span>
+                    </button>
+                    <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden">
+                      {f.noteCount || ''}
+                    </span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          className="hidden size-6 group-hover:inline-flex data-[state=open]:inline-flex"
+                          aria-label={t('sidebar.folderActions')}
+                        >
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onSelect={() => setCreatingIn(f.id)}>
+                          <FolderPlus />
+                          {t('sidebar.newSubfolder')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setRenaming(f.id)}>
+                          <Pencil />
+                          {t('common.rename')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
+                          <Trash2 />
+                          {t('common.delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem onSelect={() => setCreatingIn(f.id)}>
+                    <FolderPlus />
+                    {t('sidebar.newSubfolder')}
+                  </ContextMenuItem>
+                  <ContextMenuItem onSelect={() => setRenaming(f.id)}>
+                    <Pencil />
+                    {t('common.rename')}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem destructive onSelect={() => setConfirm(f)}>
+                    <Trash2 />
+                    {t('common.delete')}
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             )}
             {open ? renderLevel(f.id, depth + 1) : null}
             {creatingIn === f.id ? (

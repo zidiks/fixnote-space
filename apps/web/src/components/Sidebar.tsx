@@ -30,16 +30,14 @@ import {
   Inbox,
   Layers,
   Monitor,
-  PanelLeftClose,
   Search,
   Settings,
-  SquarePen,
 } from 'lucide-react'
 import { useState } from 'react'
 import { type Route, sameRoute, type Theme, useUi } from '../app/store'
 import { isSupabaseConfigured } from '../lib/env'
 import { usePlatform } from '../lib/platform'
-import { useCounts, useCreateNote, useOpenDaily, useTags } from '../lib/queries'
+import { useCounts, useOpenDaily, useTags } from '../lib/queries'
 import { SidebarFolders } from './SidebarFolders'
 
 function NavItem({
@@ -104,60 +102,15 @@ function SidebarTags() {
 
 export function Sidebar() {
   const { t } = useTranslation()
-  const toggleSidebar = useUi((s) => s.toggleSidebar)
   const setSpotlightOpen = useUi((s) => s.setSpotlightOpen)
   const route = useUi((s) => s.route)
   const navigate = useUi((s) => s.navigate)
   const counts = useCounts().data
-  const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const is = (r: Route) => sameRoute(route, r)
-  const newNote = () =>
-    createNote.mutate(
-      { content: '', folderId: route.kind === 'folder' ? route.id : null },
-      { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) },
-    )
-
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
-      <div data-tauri-drag-region className="flex h-12 items-center justify-between px-3">
-        <span className="text-sm font-semibold tracking-tight">{t('app.name')}</span>
-        <div className="flex items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={newNote}
-                aria-label={t('sidebar.newNote')}
-              >
-                <SquarePen />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('sidebar.newNote')}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={toggleSidebar}
-                aria-label={t('sidebar.collapse')}
-              >
-                <PanelLeftClose />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {t('sidebar.collapse')}{' '}
-              <Kbd className="border-transparent bg-primary-foreground/15 text-primary-foreground">
-                {shortcutLabel('\\')}
-              </Kbd>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-
+    <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
       <div className="px-2">
         <button
           type="button"

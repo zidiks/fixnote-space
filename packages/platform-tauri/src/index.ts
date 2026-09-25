@@ -1,6 +1,7 @@
-import { NotImplementedError, type Platform } from '@fixnote/core'
+import { NotImplementedError, type Platform, type WindowChrome } from '@fixnote/core'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { openTauriSqlDriver } from './sql'
+import { windowControls } from './window'
 
 export { isTauri }
 
@@ -20,10 +21,21 @@ export function appInfo(): Promise<AppInfo> {
  * M1: rusqlite (done). M2: OS keychain, app-data blobs.
  * M3: fastembed embedder. M4: whisper.cpp transcriber.
  */
+/** Matches tauri.windows.conf.json (frameless) and tauri.macos.conf.json (overlay title bar). */
+function detectChrome(): WindowChrome {
+  const ua = navigator.userAgent
+  if (/Windows/.test(ua)) return 'custom'
+  if (/Macintosh/.test(ua)) return 'mac-overlay'
+  return 'native'
+}
+
 export function createTauriPlatform(): Platform {
   const sql = openTauriSqlDriver()
+  const chrome = detectChrome()
   return {
     kind: 'desktop',
+    chrome,
+    ...(chrome === 'custom' ? { window: windowControls() } : {}),
     capabilities: {
       localTranscription: true,
       localOnlyMode: true,

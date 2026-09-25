@@ -1,6 +1,34 @@
 @import "tailwindcss";
 @import "@fixnote/ui/styles.css";
 
+/* App, not a page: chrome is not selectable or draggable, no rubber-band scrolling. */
+@layer base {
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+  body {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+  input,
+  textarea,
+  [contenteditable="true"],
+  [data-selectable] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  img,
+  a {
+    -webkit-user-drag: none;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--color-foreground) 22%, transparent) transparent;
+  }
+}
+
 /* Note editor: Bear-like reading rhythm, driven by design tokens. */
 .fixnote-editor {
   outline: none;

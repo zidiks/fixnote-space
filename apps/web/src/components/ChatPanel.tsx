@@ -72,7 +72,7 @@ export function ChatPanel() {
             aria-label={t('chat.placeholder')}
             className="flex-1 resize-none bg-transparent px-1.5 py-1 text-sm outline-none placeholder:text-muted-foreground"
           />
-          <Button size="icon-xs" className="rounded-lg" disabled aria-label={t('quickInput.ask')}>
+          <Button size="icon-xs" className="rounded-lg" disabled aria-label={t('chat.send')}>
             <ArrowUp />
           </Button>
         </div>

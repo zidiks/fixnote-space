@@ -8,10 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@fixnote/ui'
-import { Check, ChevronDown, Search } from 'lucide-react'
+import { Check, ChevronDown, MessageCircle, Search, SquarePen } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useUi } from '../app/store'
-import { useCounts, useFolders } from '../lib/queries'
+import { useCounts, useCreateNote, useFolders } from '../lib/queries'
 import { startOfDay } from '../lib/time'
 import { AssistantOrb } from './AssistantOrb'
 import { EmptyState, NoteGrid } from './NoteGrid'
@@ -71,6 +71,9 @@ function FilterMenu<T extends string>({
 export function Home() {
   const { t } = useTranslation()
   const setSpotlightOpen = useUi((s) => s.setSpotlightOpen)
+  const setChatOpen = useUi((s) => s.setChatOpen)
+  const navigate = useUi((s) => s.navigate)
+  const createNote = useCreateNote()
   const folders = useFolders().data ?? []
   const counts = useCounts().data
   const [scope, setScope] = useState<'all' | 'inbox'>('all')
@@ -92,12 +95,31 @@ export function Home() {
   const noNotes = counts?.all === 0
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 pt-12 pb-40">
+    <div className="mx-auto w-full max-w-4xl px-6 pt-12 pb-24">
       <div className="flex flex-col items-center gap-7 text-center">
         <AssistantOrb size={72} />
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {t('home.greeting')}
         </h1>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            variant="brand"
+            className="rounded-full"
+            onClick={() =>
+              createNote.mutate(
+                { content: '' },
+                { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) },
+              )
+            }
+          >
+            <SquarePen />
+            {t('sidebar.newNote')}
+          </Button>
+          <Button variant="outline" className="rounded-full" onClick={() => setChatOpen(true)}>
+            <MessageCircle />
+            {t('home.ask')}
+          </Button>
+        </div>
       </div>
 
       <div className="mt-12 flex flex-wrap items-center gap-1.5">

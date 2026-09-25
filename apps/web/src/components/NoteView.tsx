@@ -14,12 +14,11 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronRight, Folder, FolderInput, Inbox, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useRepo } from '../lib/db'
 import {
   keys,
-  useDeleteNote,
+  useDeleteWithUndo,
   useFolders,
   useInvalidateNotes,
   useMoveNote,
@@ -34,11 +33,10 @@ export function NoteView({ id }: { id: string }) {
   const qc = useQueryClient()
   const invalidate = useInvalidateNotes()
   const navigate = useUi((s) => s.navigate)
-  const goBack = useUi((s) => s.goBack)
   const note = useNote(id)
   const folders = useFolders().data ?? []
   const move = useMoveNote()
-  const del = useDeleteNote()
+  const deleteWithUndo = useDeleteWithUndo()
   const [saveState, setSaveState] = useState<SaveState>('idle')
 
   if (note.isPending) return null
@@ -48,24 +46,7 @@ export function NoteView({ id }: { id: string }) {
   const n = note.data
   const folder = folders.find((f) => f.id === n.folderId)
 
-  const onDelete = () => {
-    del.mutate(n.id, {
-      onSuccess: () => {
-        goBack()
-        toast(t('note.deleted'), {
-          action: {
-            label: t('common.undo'),
-            // This view is gone by the time Undo is pressed, so nothing here may depend on it.
-            onClick: () =>
-              void repo
-                .restoreNote(n.id)
-                .then(invalidate)
-                .then(() => useUi.getState().navigate({ kind: 'note', id: n.id })),
-          },
-        })
-      },
-    })
-  }
+  const onDelete = () => void deleteWithUndo(n.id)
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 pt-2 pb-32 sm:px-10">

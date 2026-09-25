@@ -1,15 +1,208 @@
 import type { Note } from '@fixnote/core'
-import { useTranslation } from '@fixnote/i18n'
+import { i18n, useTranslation } from '@fixnote/i18n'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+  isApple,
+  MenuShortcut,
+} from '@fixnote/ui'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
-import { EditorContent, useEditor } from '@tiptap/react'
+import { type Editor, EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import {
+  Bold,
+  Clipboard,
+  Code,
+  Copy,
+  Heading1,
+  Heading2,
+  Italic,
+  List,
+  ListChecks,
+  Scissors,
+  Strikethrough,
+  TextSelect,
+} from 'lucide-react'
 import { useEffect, useRef } from 'react'
+import { toast } from 'sonner'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
 const SAVE_DELAY = 400
+
+/** `Ctrl+Shift+S` on Windows, `⇧⌘S` on macOS. */
+function combo(key: string, opts: { shift?: boolean; alt?: boolean } = {}) {
+  if (isApple) return `${opts.alt ? '⌥' : ''}${opts.shift ? '⇧' : ''}⌘${key}`
+  return ['Ctrl', opts.alt && 'Alt', opts.shift && 'Shift', key].filter(Boolean).join('+')
+}
+
+function selectedText(editor: Editor) {
+  const { from, to } = editor.state.selection
+  return editor.state.doc.textBetween(from, to, '\n')
+}
+
+/** Editor right-click menu: clipboard, formatting and blocks, like a native text view. */
+function EditorMenu({ editor }: { editor: Editor }) {
+  const { t } = useTranslation()
+  // Subscribed, so the menu reflects the selection and marks at the moment it opens.
+  const state = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      hasSelection: !e.state.selection.empty,
+      bold: e.isActive('bold'),
+      italic: e.isActive('italic'),
+      strike: e.isActive('strike'),
+      code: e.isActive('code'),
+      h1: e.isActive('heading', { level: 1 }),
+      h2: e.isActive('heading', { level: 2 }),
+      bulletList: e.isActive('bulletList'),
+      taskList: e.isActive('taskList'),
+    }),
+  })
+  const hasSelection = state.hasSelection
+  const chain = () => editor.chain().focus()
+
+  const copy = async (cut: boolean) => {
+    await navigator.clipboard.writeText(selectedText(editor))
+    if (cut) chain().deleteSelection().run()
+    else editor.commands.focus()
+  }
+  const paste = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      chain().insertContent(text, { contentType: 'markdown' }).run()
+    } catch {
+      toast(i18n.t('menu.pasteBlocked'))
+      editor.commands.focus()
+    }
+  }
+
+  const items: (
+    | {
+        icon: typeof Bold
+        label: string
+        hint: string
+        run: () => void
+        disabled?: boolean
+        active?: boolean
+      }
+    | 'sep'
+  )[] = [
+    {
+      icon: Scissors,
+      label: t('menu.cut'),
+      hint: combo('X'),
+      run: () => void copy(true),
+      disabled: !hasSelection,
+    },
+    {
+      icon: Copy,
+      label: t('menu.copy'),
+      hint: combo('C'),
+      run: () => void copy(false),
+      disabled: !hasSelection,
+    },
+    { icon: Clipboard, label: t('menu.paste'), hint: combo('V'), run: () => void paste() },
+    {
+      icon: TextSelect,
+      label: t('menu.selectAll'),
+      hint: combo('A'),
+      run: () => chain().selectAll().run(),
+    },
+    'sep',
+    {
+      icon: Bold,
+      label: t('menu.bold'),
+      hint: combo('B'),
+      run: () => chain().toggleBold().run(),
+      active: state.bold,
+    },
+    {
+      icon: Italic,
+      label: t('menu.italic'),
+      hint: combo('I'),
+      run: () => chain().toggleItalic().run(),
+      active: state.italic,
+    },
+    {
+      icon: Strikethrough,
+      label: t('menu.strike'),
+      hint: combo('S', { shift: true }),
+      run: () => chain().toggleStrike().run(),
+      active: state.strike,
+    },
+    {
+      icon: Code,
+      label: t('menu.code'),
+      hint: combo('E'),
+      run: () => chain().toggleCode().run(),
+      active: state.code,
+    },
+    'sep',
+    {
+      icon: Heading1,
+      label: t('menu.heading1'),
+      hint: combo('1', { alt: true }),
+      run: () => chain().toggleHeading({ level: 1 }).run(),
+      active: state.h1,
+    },
+    {
+      icon: Heading2,
+      label: t('menu.heading2'),
+      hint: combo('2', { alt: true }),
+      run: () => chain().toggleHeading({ level: 2 }).run(),
+      active: state.h2,
+    },
+    {
+      icon: List,
+      label: t('menu.bulletList'),
+      hint: combo('8', { shift: true }),
+      run: () => chain().toggleBulletList().run(),
+      active: state.bulletList,
+    },
+    {
+      icon: ListChecks,
+      label: t('menu.taskList'),
+      hint: combo('9', { shift: true }),
+      run: () => chain().toggleTaskList().run(),
+      active: state.taskList,
+    },
+  ]
+
+  return (
+    <ContextMenuContent className="min-w-64 whitespace-nowrap">
+      {items.map((it, i) =>
+        it === 'sep' ? (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static list
+          <ContextMenuSeparator key={i} />
+        ) : (
+          <ContextMenuItem
+            key={it.label}
+            disabled={it.disabled}
+            onSelect={it.run}
+            className={it.active ? 'text-brand [&_svg]:opacity-100' : undefined}
+          >
+            <it.icon />
+            {it.label}
+            <MenuShortcut>{it.hint}</MenuShortcut>
+          </ContextMenuItem>
+        ),
+      )}
+    </ContextMenuContent>
+  )
+}
+
+/**
+ * Live editor instances per note. React may unmount and remount the same editor right away
+ * (StrictMode in dev, Suspense), so "the user left the note" is only true once no instance
+ * remains after the current task.
+ */
+const mounted = new Map<string, number>()
 
 /**
  * Markdown in, Markdown out. Mounted once per note (keyed by id): later query refreshes never reset
@@ -76,13 +269,25 @@ export function NoteEditor({
   })
 
   useEffect(() => {
+    mounted.set(note.id, (mounted.get(note.id) ?? 0) + 1)
+    return () => {
+      mounted.set(note.id, (mounted.get(note.id) ?? 1) - 1)
+      setTimeout(() => {
+        if (mounted.get(note.id)) return
+        mounted.delete(note.id)
+        callbacks.current.onLeave?.(latest.current)
+      }, 0)
+    }
+  }, [note.id])
+
+  useEffect(() => {
     const onHide = () => void flush()
     window.addEventListener('pagehide', onHide)
     document.addEventListener('visibilitychange', onHide)
     return () => {
       window.removeEventListener('pagehide', onHide)
       document.removeEventListener('visibilitychange', onHide)
-      void flush().finally(() => callbacks.current.onLeave?.(latest.current))
+      void flush()
     }
   }, [flush])
 
@@ -99,7 +304,12 @@ export function NoteEditor({
         editor.view.focus()
       }}
     >
-      <EditorContent editor={editor} />
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <EditorContent editor={editor} />
+        </ContextMenuTrigger>
+        {editor ? <EditorMenu editor={editor} /> : null}
+      </ContextMenu>
     </div>
   )
 }

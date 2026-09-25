@@ -1,6 +1,7 @@
 export * from './components/alert-dialog'
 export * from './components/badge'
 export * from './components/button'
+export * from './components/context-menu'
 export * from './components/dialog'
 export * from './components/dropdown-menu'
 export * from './components/input'

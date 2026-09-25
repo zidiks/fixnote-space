@@ -1,27 +1,18 @@
 import { useTranslation } from '@fixnote/i18n'
-import {
-  Button,
-  isApple,
-  Kbd,
-  shortcutLabel,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@fixnote/ui'
+import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ArrowLeft, ArrowRight, MessageCircle, PanelLeftOpen, Search } from 'lucide-react'
-import { lazy, type ReactNode, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useMemo } from 'react'
 import { Toaster } from 'sonner'
 import { ChatPanel } from '../components/ChatPanel'
 import { Home } from '../components/Home'
 import { ListView } from '../components/ListView'
-import { QuickInput } from '../components/QuickInput'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
+import { TitleBar } from '../components/TitleBar'
 import { DbProvider } from '../lib/db'
 import { useHotkey } from '../lib/hotkeys'
+import { useNativeFeel } from '../lib/native'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
 import { applyTheme, useUi } from './store'
@@ -46,97 +37,7 @@ const HK = {
   newNote: { key: 'n', mod: true },
 } as const
 
-function IconTip({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>
-        {label}
-        {hint ? (
-          <Kbd className="border-transparent bg-primary-foreground/15 text-primary-foreground">
-            {hint}
-          </Kbd>
-        ) : null}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
-function TopBar() {
-  const { t } = useTranslation()
-  const {
-    sidebarOpen,
-    chatOpen,
-    back,
-    forward,
-    toggleSidebar,
-    toggleChat,
-    goBack,
-    goForward,
-    setSpotlightOpen,
-  } = useUi()
-
-  return (
-    <div data-tauri-drag-region className="flex h-12 shrink-0 items-center gap-0.5 px-3">
-      {sidebarOpen ? null : (
-        <IconTip label={t('sidebar.expand')} hint={shortcutLabel('\\')}>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={toggleSidebar}
-            aria-label={t('sidebar.expand')}
-          >
-            <PanelLeftOpen />
-          </Button>
-        </IconTip>
-      )}
-      <IconTip label={t('nav.back')} hint={shortcutLabel('[')}>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={goBack}
-          disabled={!back.length}
-          aria-label={t('nav.back')}
-        >
-          <ArrowLeft />
-        </Button>
-      </IconTip>
-      <IconTip label={t('nav.forward')} hint={shortcutLabel(']')}>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={goForward}
-          disabled={!forward.length}
-          aria-label={t('nav.forward')}
-        >
-          <ArrowRight />
-        </Button>
-      </IconTip>
-
-      <div className="ml-auto flex items-center gap-1">
-        <IconTip label={t('sidebar.search')} hint={shortcutLabel('K')}>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => setSpotlightOpen(true)}
-            aria-label={t('sidebar.search')}
-          >
-            <Search />
-          </Button>
-        </IconTip>
-        {chatOpen ? null : (
-          <IconTip label={t('chat.open')}>
-            <Button variant="ghost" size="sm" onClick={toggleChat} aria-label={t('chat.open')}>
-              <MessageCircle />
-              {t('chat.title')}
-              <Kbd>{shortcutLabel('J')}</Kbd>
-            </Button>
-          </IconTip>
-        )}
-      </div>
-    </div>
-  )
-}
+const NONE = { key: '\u0000' } as const
 
 function Content() {
   const route = useUi((s) => s.route)
@@ -160,8 +61,25 @@ function AppShell() {
   const ui = useUi()
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
-  const { sidebarOpen, chatOpen, theme, route } = ui
+  const { sidebarOpen, chatOpen, theme } = ui
 
+  const newNote = () => {
+    const route = useUi.getState().route
+    createNote.mutate(
+      { content: '', folderId: route.kind === 'folder' ? route.id : null },
+      { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) },
+    )
+  }
+  const nativeActions = useMemo(
+    () => ({
+      back: () => useUi.getState().goBack(),
+      forward: () => useUi.getState().goForward(),
+      search: () => useUi.getState().setSpotlightOpen(true),
+    }),
+    [],
+  )
+
+  useNativeFeel(platform, isApple, nativeActions)
   useHotkey(HK.chat, ui.toggleChat, isApple)
   useHotkey(HK.sidebar, ui.toggleSidebar, isApple)
   useHotkey(HK.spotlight, () => ui.setSpotlightOpen(!ui.spotlightOpen), isApple)
@@ -174,15 +92,7 @@ function AppShell() {
     isApple,
   )
   // Browsers reserve Ctrl/⌘+N for a new window; only the desktop app can take it.
-  useHotkey(
-    platform.kind === 'desktop' ? HK.newNote : { key: '\u0000' },
-    () =>
-      createNote.mutate(
-        { content: '' },
-        { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) },
-      ),
-    isApple,
-  )
+  useHotkey(platform.kind === 'desktop' ? HK.newNote : NONE, newNote, isApple)
 
   useEffect(() => {
     applyTheme(theme)
@@ -199,15 +109,14 @@ function AppShell() {
 
   return (
     <div className="flex h-full flex-col">
+      <TitleBar onNewNote={newNote} />
       <StorageBanner />
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {sidebarOpen ? <Sidebar /> : null}
         <main className="relative flex min-w-0 flex-1 flex-col">
-          <TopBar />
           <div className="flex-1 overflow-y-auto">
             <Content />
           </div>
-          {route.kind === 'note' ? null : <QuickInput />}
         </main>
         {chatOpen ? <ChatPanel /> : null}
       </div>

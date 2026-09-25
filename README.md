@@ -14,13 +14,15 @@ Fully offline, no account needed, on web and desktop:
 - Home with filters (Inbox, folder, type, period) and infinite scroll; lists per folder and tag.
 - Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en, commands.
 - Daily note, soft delete with undo, blank notes discarded automatically.
+- Feels native: custom title bar with Windows caption buttons, right-click menus for notes,
+  folders and the editor, no browser menus or shortcuts on desktop.
 
 | Shortcut (Ctrl on Windows, ⌘ on macOS) | Action |
 |---|---|
-| Ctrl+K | Spotlight |
+| Ctrl+K or Ctrl+F | Spotlight (Ctrl+F on desktop) |
 | Ctrl+D | Today's note |
 | Ctrl+N | New note (desktop only; browsers reserve it) |
-| Ctrl+[ / Ctrl+] | Back / forward |
+| Ctrl+[ / Ctrl+], Alt+← / Alt+→, mouse back/forward | Back / forward |
 | Ctrl+J | Assistant panel |
 | Ctrl+\\ | Sidebar |
 

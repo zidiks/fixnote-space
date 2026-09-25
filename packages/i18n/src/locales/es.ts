@@ -14,6 +14,8 @@ const es: LocaleResource = {
     retry: 'Reintentar',
   },
   nav: {
+    home: 'Inicio',
+    recents: 'Notas recientes',
     back: 'Atrás',
     forward: 'Adelante',
   },
@@ -39,6 +41,7 @@ const es: LocaleResource = {
   },
   home: {
     greeting: '¿Qué tienes en mente?',
+    ask: 'Preguntar al asistente',
     filters: {
       all: 'Todas',
       inbox: 'Bandeja',
@@ -56,7 +59,7 @@ const es: LocaleResource = {
     },
     empty: {
       title: 'Aún no hay notas',
-      body: 'Escribe o di lo que quieras abajo. Va a la Bandeja; puedes ordenarlo después, o nunca.',
+      body: 'Crea una nota con el botón de arriba; va a la Bandeja. Ordénala después, o nunca.',
     },
     emptyFiltered: 'Nada coincide con estos filtros.',
   },
@@ -79,15 +82,6 @@ const es: LocaleResource = {
     tasks: 'Tareas',
     notes: 'Notas',
   },
-  quickInput: {
-    placeholder: 'Escribe cualquier cosa para empezar…',
-    save: 'Guardar en Bandeja',
-    ask: 'Preguntar',
-    voice: 'Entrada de voz',
-    attach: 'Adjuntar',
-    hint: 'Enter para guardar · {{mod}}+Enter para preguntar',
-    saved: 'Guardado en la Bandeja',
-  },
   spotlight: {
     placeholder: 'Busca notas o escribe un comando…',
     recents: 'Recientes',
@@ -99,6 +93,7 @@ const es: LocaleResource = {
   },
   chat: {
     title: 'Asistente',
+    send: 'Enviar',
     open: 'Abrir asistente',
     close: 'Cerrar asistente',
     scope: {
@@ -111,6 +106,31 @@ const es: LocaleResource = {
     scopeChanged: 'Ahora en contexto: {{scope}}',
     placeholder: 'Pregunta sobre tus notas…',
     empty: 'Pregunta lo que quieras. Las respuestas citan las notas de origen.',
+  },
+  menu: {
+    open: 'Abrir',
+    moveTo: 'Mover a',
+    cut: 'Cortar',
+    copy: 'Copiar',
+    paste: 'Pegar',
+    selectAll: 'Seleccionar todo',
+    bold: 'Negrita',
+    italic: 'Cursiva',
+    strike: 'Tachado',
+    code: 'Código',
+    heading1: 'Título 1',
+    heading2: 'Título 2',
+    bulletList: 'Lista con viñetas',
+    taskList: 'Lista de tareas',
+    newNote: 'Nueva nota',
+    newFolder: 'Nueva carpeta',
+    pasteBlocked: 'Pega con Ctrl+V: se denegó el acceso al portapapeles.',
+  },
+  window: {
+    minimize: 'Minimizar',
+    maximize: 'Maximizar',
+    restore: 'Restaurar',
+    close: 'Cerrar',
   },
   settings: {
     language: 'Idioma',

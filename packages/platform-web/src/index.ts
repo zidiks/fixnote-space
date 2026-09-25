@@ -10,6 +10,7 @@ export function createWebPlatform(): Platform {
   let sql: Promise<SqlDriver> | null = null
   return {
     kind: 'web',
+    chrome: 'browser',
     capabilities: {
       localTranscription: false,
       localOnlyMode: false,

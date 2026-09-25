@@ -14,6 +14,8 @@ const ru: LocaleResource = {
     retry: 'Повторить',
   },
   nav: {
+    home: 'Главная',
+    recents: 'Недавние заметки',
     back: 'Назад',
     forward: 'Вперёд',
   },
@@ -39,6 +41,7 @@ const ru: LocaleResource = {
   },
   home: {
     greeting: 'О чём думаете?',
+    ask: 'Спросить ассистента',
     filters: {
       all: 'Все',
       inbox: 'Входящие',
@@ -56,7 +59,7 @@ const ru: LocaleResource = {
     },
     empty: {
       title: 'Заметок пока нет',
-      body: 'Напишите или наговорите что угодно ниже. Всё попадёт во Входящие, разобрать можно потом или никогда.',
+      body: 'Создайте заметку кнопкой выше, она попадёт во Входящие. Разобрать можно потом или никогда.',
     },
     emptyFiltered: 'Под эти фильтры ничего не подходит.',
   },
@@ -79,15 +82,6 @@ const ru: LocaleResource = {
     tasks: 'Задачи',
     notes: 'Заметки',
   },
-  quickInput: {
-    placeholder: 'Напишите что-нибудь, чтобы начать…',
-    save: 'Сохранить во Входящие',
-    ask: 'Спросить',
-    voice: 'Голосовой ввод',
-    attach: 'Прикрепить',
-    hint: 'Enter — сохранить · {{mod}}+Enter — спросить',
-    saved: 'Сохранено во Входящие',
-  },
   spotlight: {
     placeholder: 'Найдите заметку или введите команду…',
     recents: 'Недавние',
@@ -99,6 +93,7 @@ const ru: LocaleResource = {
   },
   chat: {
     title: 'Ассистент',
+    send: 'Отправить',
     open: 'Открыть ассистента',
     close: 'Закрыть ассистента',
     scope: {
@@ -111,6 +106,31 @@ const ru: LocaleResource = {
     scopeChanged: 'Теперь в контексте: {{scope}}',
     placeholder: 'Спросите о своих заметках…',
     empty: 'Спрашивайте что угодно. Ответы ссылаются на заметки-источники.',
+  },
+  menu: {
+    open: 'Открыть',
+    moveTo: 'Переместить в',
+    cut: 'Вырезать',
+    copy: 'Копировать',
+    paste: 'Вставить',
+    selectAll: 'Выделить всё',
+    bold: 'Жирный',
+    italic: 'Курсив',
+    strike: 'Зачёркнутый',
+    code: 'Код',
+    heading1: 'Заголовок 1',
+    heading2: 'Заголовок 2',
+    bulletList: 'Маркированный список',
+    taskList: 'Чек-лист',
+    newNote: 'Новая заметка',
+    newFolder: 'Новая папка',
+    pasteBlocked: 'Вставьте через Ctrl+V: доступ к буферу обмена запрещён.',
+  },
+  window: {
+    minimize: 'Свернуть',
+    maximize: 'Развернуть',
+    restore: 'Восстановить',
+    close: 'Закрыть',
   },
   settings: {
     language: 'Язык',

@@ -72,6 +72,23 @@ export interface BlobStore {
   delete(key: string): Promise<void>
 }
 
+/** Window buttons for a frameless desktop window. */
+export interface WindowControls {
+  minimize(): Promise<void>
+  toggleMaximize(): Promise<void>
+  close(): Promise<void>
+  isMaximized(): Promise<boolean>
+  /** Calls back on resize (maximize/restore change the icon). Returns an unsubscribe. */
+  onResized(cb: () => void): Promise<() => void>
+}
+
+/**
+ * How the window frame is drawn. `browser`: a tab, no frame. `custom`: frameless, the app draws
+ * the caption buttons (Windows). `mac-overlay`: native traffic lights over the app's title bar.
+ * `native`: the OS draws a regular title bar above the app (Linux).
+ */
+export type WindowChrome = 'browser' | 'custom' | 'mac-overlay' | 'native'
+
 export interface PlatformCapabilities {
   /** Speech-to-text runs on the device. */
   localTranscription: boolean
@@ -85,6 +102,8 @@ export interface PlatformCapabilities {
 
 export interface Platform {
   readonly kind: PlatformKind
+  readonly chrome: WindowChrome
+  readonly window?: WindowControls
   readonly capabilities: PlatformCapabilities
   readonly sql: () => Promise<SqlDriver>
   readonly embedder: () => Promise<Embedder>

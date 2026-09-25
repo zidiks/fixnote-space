@@ -7,6 +7,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useUi } from '../app/store'
 import { useRepo } from './db'
 
 export const keys = {
@@ -32,9 +34,13 @@ export function useNotesInfinite(filter: NoteFilter) {
   })
 }
 
-export function useNote(id: string) {
+export function useNote(id: string, opts: { enabled?: boolean } = {}) {
   const repo = useRepo()
-  return useQuery({ queryKey: keys.note(id), queryFn: () => repo.getNote(id) })
+  return useQuery({
+    queryKey: keys.note(id),
+    queryFn: () => repo.getNote(id),
+    enabled: opts.enabled ?? true,
+  })
 }
 
 export function useCounts() {
@@ -92,13 +98,31 @@ export function useCreateNote() {
   })
 }
 
-export function useDeleteNote() {
+/**
+ * Soft-deletes a note and offers Undo. Everything after the delete goes through the repo and the
+ * store, because the component that asked may be gone by the time Undo is pressed.
+ */
+export function useDeleteWithUndo() {
   const repo = useRepo()
   const invalidate = useInvalidateNotes()
-  return useMutation({
-    mutationFn: (id: string) => repo.deleteNote(id),
-    onSuccess: invalidate,
-  })
+  return async (id: string) => {
+    const route = useUi.getState().route
+    await repo.deleteNote(id)
+    await invalidate()
+    if (route.kind === 'note' && route.id === id) useUi.getState().goBack()
+    toast(i18n.t('note.deleted'), {
+      action: {
+        label: i18n.t('common.undo'),
+        onClick: () =>
+          void repo
+            .restoreNote(id)
+            .then(invalidate)
+            .then(() => {
+              if (route.kind === 'note' && route.id === id) useUi.getState().navigate(route)
+            }),
+      },
+    })
+  }
 }
 
 export function useMoveNote() {

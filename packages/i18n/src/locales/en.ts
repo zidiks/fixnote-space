@@ -12,6 +12,8 @@ const en = {
     retry: 'Try again',
   },
   nav: {
+    home: 'Home',
+    recents: 'Recent notes',
     back: 'Back',
     forward: 'Forward',
   },
@@ -37,6 +39,7 @@ const en = {
   },
   home: {
     greeting: "What's on your mind?",
+    ask: 'Ask the assistant',
     filters: {
       all: 'All',
       inbox: 'Inbox',
@@ -54,7 +57,7 @@ const en = {
     },
     empty: {
       title: 'No notes yet',
-      body: 'Write or say anything below. It goes to Inbox; you can sort it out later, or never.',
+      body: 'Create a note with the button above; it goes to Inbox. Sort it out later, or never.',
     },
     emptyFiltered: 'Nothing matches these filters.',
   },
@@ -77,15 +80,6 @@ const en = {
     tasks: 'Tasks',
     notes: 'Notes',
   },
-  quickInput: {
-    placeholder: 'Write anything to get started…',
-    save: 'Save to Inbox',
-    ask: 'Ask',
-    voice: 'Voice input',
-    attach: 'Attach',
-    hint: 'Enter to save · {{mod}}+Enter to ask',
-    saved: 'Saved to Inbox',
-  },
   spotlight: {
     placeholder: 'Search notes or type a command…',
     recents: 'Recent',
@@ -97,6 +91,7 @@ const en = {
   },
   chat: {
     title: 'Assistant',
+    send: 'Send',
     open: 'Open assistant',
     close: 'Close assistant',
     scope: {
@@ -109,6 +104,31 @@ const en = {
     scopeChanged: 'Now in context: {{scope}}',
     placeholder: 'Ask about your notes…',
     empty: 'Ask anything. Answers cite the notes they come from.',
+  },
+  menu: {
+    open: 'Open',
+    moveTo: 'Move to',
+    cut: 'Cut',
+    copy: 'Copy',
+    paste: 'Paste',
+    selectAll: 'Select all',
+    bold: 'Bold',
+    italic: 'Italic',
+    strike: 'Strikethrough',
+    code: 'Code',
+    heading1: 'Heading 1',
+    heading2: 'Heading 2',
+    bulletList: 'Bulleted list',
+    taskList: 'Checklist',
+    newNote: 'New note',
+    newFolder: 'New folder',
+    pasteBlocked: 'Paste with Ctrl+V: clipboard access was denied.',
+  },
+  window: {
+    minimize: 'Minimize',
+    maximize: 'Maximize',
+    restore: 'Restore',
+    close: 'Close',
   },
   settings: {
     language: 'Language',
