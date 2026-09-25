@@ -46,31 +46,29 @@ max_frequency = "30s"
 otp_length = 6
 otp_expiry = 600
 
-# Code emails need custom SMTP: on the free tier with Supabase's built-in mailer the hosted project
-# rejects template changes, and the default templates send a link instead of the code.
-# Setup (Resend or any SMTP provider), then uncomment both blocks below and run `pnpm sb:push`:
-#   PowerShell: $env:SUPABASE_AUTH_SMTP_PASS = "<provider API key>"
-#   bash:       export SUPABASE_AUTH_SMTP_PASS=<provider API key>
-#
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.resend.com"
-# port = 465
-# user = "resend"
-# pass = "env(SUPABASE_AUTH_SMTP_PASS)"
-# admin_email = "no-reply@YOUR_DOMAIN"
-# sender_name = "FixNote"
-#
+# Code emails go through Resend (custom SMTP). Required: the built-in mailer only reaches team
+# members, and on the free tier it refuses template changes. The sender domain fixnote.space must
+# be verified in Resend. The API key is never committed; set it before `pnpm sb:push`:
+#   PowerShell: $env:SUPABASE_AUTH_SMTP_PASS = "re_..."
+#   bash:       export SUPABASE_AUTH_SMTP_PASS=re_...
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(SUPABASE_AUTH_SMTP_PASS)"
+admin_email = "no-reply@fixnote.space"
+sender_name = "FixNote"
+
 # New users get the "confirmation" email, returning users the "magic_link" one.
 # Both carry the same code; language comes from user metadata `lang` (en | es | ru).
-#
-# [auth.email.template.confirmation]
-# subject = "FixNote code / Código / Код"
-# content_path = "./supabase/templates/otp.html"
-#
-# [auth.email.template.magic_link]
-# subject = "FixNote code / Código / Код"
-# content_path = "./supabase/templates/otp.html"
+[auth.email.template.confirmation]
+subject = "FixNote: code / código / код"
+content_path = "./supabase/templates/otp.html"
+
+[auth.email.template.magic_link]
+subject = "FixNote: code / código / код"
+content_path = "./supabase/templates/otp.html"
 
 [auth.external.apple]
 enabled = false

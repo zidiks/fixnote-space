@@ -81,9 +81,13 @@ pnpm sb:diff      # review what would change in the hosted project
 pnpm sb:push      # apply; confirms each changed resource
 ```
 
-Sign-in codes need a custom SMTP provider: Supabase's built-in mailer only reaches project team
-members, is heavily rate limited, and on the free tier refuses the code email template. The
-ready-to-enable SMTP and template blocks are commented in `supabase/config.toml`.
+Sign-in code emails are sent through Resend from `no-reply@fixnote.space` (the domain must be
+verified in Resend). Set the Resend API key in the shell before pushing; it is never committed:
+
+```powershell
+$env:SUPABASE_AUTH_SMTP_PASS = "re_..."
+pnpm sb:push
+```
 
 Any other CLI command runs as `pnpm sb <command>`, e.g. `pnpm sb migration new init`.
 
