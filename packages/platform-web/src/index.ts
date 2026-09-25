@@ -35,6 +35,9 @@ export function createWebPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     keyStore: webKeyStore,
+    openExternal: async (url) => {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    },
     saveFile: async (name, data, mime) => {
       const url = URL.createObjectURL(new Blob([data as BlobPart], { type: mime }))
       const a = Object.assign(document.createElement('a'), { href: url, download: name })

@@ -32,6 +32,9 @@ import {
 } from 'lucide-react'
 import { type Ref, useEffect, useImperativeHandle, useRef } from 'react'
 import { toast } from 'sonner'
+import { useAccount } from '../../lib/account/account'
+import { useLoadPreview } from '../../lib/links'
+import { usePlatform } from '../../lib/platform'
 import { type AiEditHandle, AiEditLayer, useAiEdit } from './AiEdit'
 
 export interface NoteEditorHandle {
@@ -41,6 +44,7 @@ export interface NoteEditorHandle {
 }
 
 import { AiRangeExtension } from './ai-range'
+import { LinkCards, retryLinkCards } from './link-cards'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -256,6 +260,13 @@ export function NoteEditor({
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
+  const platform = usePlatform()
+  const loadPreview = useLoadPreview()
+  const links = useRef({
+    load: loadPreview,
+    open: (url: string) => void platform.openExternal(url),
+  })
+  links.current = { load: loadPreview, open: (url: string) => void platform.openExternal(url) }
   const callbacks = useRef({ onSave, onStateChange, onLeave })
   callbacks.current = { onSave, onStateChange, onLeave }
 
@@ -293,6 +304,10 @@ export function NoteEditor({
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       Markdown,
       AiRangeExtension,
+      LinkCards.configure({
+        load: (url) => links.current.load(url),
+        open: (url) => links.current.open(url),
+      }),
       Extension.create({
         name: 'aiShortcut',
         addKeyboardShortcuts: () => ({
@@ -311,6 +326,18 @@ export function NoteEditor({
         class: 'fixnote-editor',
         spellcheck: 'true',
         'aria-label': note.title || t('common.untitled'),
+      },
+      // Ctrl/⌘+click opens a link in the browser; a plain click just places the caret.
+      handleClick: (view, pos, event) => {
+        if (!(event.ctrlKey || event.metaKey)) return false
+        const link = view.state.doc
+          .resolve(pos)
+          .marks()
+          .find((m) => m.type.name === 'link')
+        const href = link?.attrs.href as string | undefined
+        if (!href || !/^https?:\/\//i.test(href)) return false
+        links.current.open(href)
+        return true
       },
       // A long unformatted paste (a dump from a chat or a dictation): offer to tidy it up.
       handlePaste: (_view, event) => {
@@ -373,6 +400,12 @@ export function NoteEditor({
     }),
     [],
   )
+
+  // Signing in lets the web app read pages: fill in the link cards that could not load before.
+  const accountPhase = useAccount((s) => s.phase)
+  useEffect(() => {
+    if (accountPhase === 'ready' && editor && !editor.isDestroyed) retryLinkCards(editor.view)
+  }, [accountPhase, editor])
 
   // Sync brought a newer version of this note: show it if there is no unsaved typing.
   useEffect(() => {

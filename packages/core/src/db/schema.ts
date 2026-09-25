@@ -105,6 +105,18 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX chat_messages_created ON chat_messages(created_at);
   `,
+  /* 4: link cards. Page metadata per URL, fetched on the device (or through our proxy on the web)
+     and kept locally; not synced, every device fetches what it shows. */ `
+  CREATE TABLE link_previews (
+    url         TEXT PRIMARY KEY,
+    kind        TEXT NOT NULL CHECK (kind IN ('page', 'image', 'video', 'none')),
+    title       TEXT,
+    description TEXT,
+    image       TEXT,
+    site        TEXT,
+    fetched_at  INTEGER NOT NULL
+  ) WITHOUT ROWID;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

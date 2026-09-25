@@ -1,7 +1,9 @@
+import type { FetchedPage } from '@fixnote/core'
 import { NotImplementedError, type Platform, type WindowChrome } from '@fixnote/core'
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
 import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { osKeyStore } from './keys'
 import { openTauriSqlDriver } from './sql'
 import { windowControls } from './window'
@@ -59,6 +61,9 @@ export function createTauriPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     keyStore: osKeyStore,
+    // Pages are read by the app itself: no server learns which links a note contains.
+    fetchPage: (url) => invoke<FetchedPage>('fetch_page', { url }),
+    openExternal: (url) => openUrl(url),
     saveFile: async (name, data) =>
       (await invoke<boolean>('save_file', data, {
         headers: { 'x-file-name': encodeURIComponent(name) },

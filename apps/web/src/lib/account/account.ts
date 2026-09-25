@@ -279,6 +279,12 @@ export async function runSync() {
   }
 }
 
+/** Reads a page for a link card through the server, or null when signed out. */
+export async function fetchPageViaServer(url: string) {
+  const b = deps?.backend
+  return b ? b.fetchPage(url) : null
+}
+
 /** Endpoint for the assistant, or null when signed out / not configured. */
 export async function chatTransport() {
   const b = deps?.backend

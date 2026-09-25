@@ -6,6 +6,8 @@
  * adapters; see docs/CONCEPT.md section 6.6.
  */
 
+import type { PageFetcher } from './links/preview'
+
 export type PlatformKind = 'desktop' | 'web'
 
 /** A single SQL value as SQLite understands it. */
@@ -113,6 +115,13 @@ export interface Platform {
   readonly transcriber: () => Promise<Transcriber>
   readonly keyStore: KeyStore
   readonly blobs: BlobStore
+  /**
+   * Reads a web page for a link card, from the device itself. Desktop only: browsers cannot read
+   * other sites (CORS), so the web app goes through the `unfurl` edge function when signed in.
+   */
+  readonly fetchPage?: PageFetcher
+  /** Opens a link in the system browser (desktop) or a new tab (web). */
+  openExternal(url: string): Promise<void>
   /** Lets the user save a file. Desktop: native "Save as" dialog. Web: a download. */
   saveFile(name: string, data: Uint8Array, mime: string): Promise<'saved' | 'cancelled'>
 }

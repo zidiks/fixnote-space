@@ -1,12 +1,13 @@
 //! Desktop shell for FixNote.
 //!
 //! The UI and all domain logic live in apps/web and packages/core. Rust hosts only what the browser
-//! cannot do well: the local SQLite database (M1), OS keychain (M2), fastembed (M3),
-//! whisper.cpp (M4).
+//! cannot do well: the local SQLite database, the OS keychain, native file dialogs and fetching
+//! pages for link cards (no CORS). Embeddings and speech run in the webview (transformers.js).
 
 mod db;
 mod files;
 mod keys;
+mod links;
 mod webview;
 
 use std::sync::Mutex;
@@ -52,6 +53,7 @@ fn db_query(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
@@ -70,7 +72,8 @@ pub fn run() {
             keys::key_load,
             keys::key_save,
             keys::key_clear,
-            files::save_file
+            files::save_file,
+            links::fetch_page
         ])
         .run(tauri::generate_context!())
         .expect("error while running FixNote");

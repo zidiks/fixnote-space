@@ -164,6 +164,18 @@ export const devBackend: AccountBackend = {
   remote,
   chatTransport: async () =>
     load().session ? { url: 'dev://llm', headers: {}, fetch: devLlm } : null,
+  // Any URL "resolves" to a small page, so link cards can be tried without a network.
+  fetchPage: async (url) => {
+    if (!load().session) return null
+    await new Promise((r) => setTimeout(r, 200))
+    const host = new URL(url).hostname.replace(/^www\./, '')
+    if (/\.(png|jpe?g|gif|webp)$/i.test(url)) return { url, contentType: 'image/png' }
+    return {
+      url,
+      contentType: 'text/html',
+      html: `<head><title>${host}</title><meta property="og:title" content="A page on ${host}"><meta property="og:description" content="What ${host} says about itself, in one or two sentences."><meta property="og:site_name" content="${host}"></head>`,
+    }
+  },
   subscribe: (_userId, onChange) => {
     const listener = () => onChange()
     channel.addEventListener('message', listener)

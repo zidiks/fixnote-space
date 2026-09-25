@@ -4,6 +4,8 @@
  * model is fixed server-side. Message content is never logged.
  */
 
+import { CORS, jsonError, rateLimiter, userId } from '../_shared/auth.ts'
+
 export interface ProxyEnv {
   apiKey: string | undefined
   baseUrl: string
@@ -22,49 +24,11 @@ export function envFromDeno(): ProxyEnv {
   }
 }
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
-
 const MAX_BODY = 256 * 1024
 const MAX_MESSAGES = 40
 
-const json = (status: number, message: string) =>
-  new Response(JSON.stringify({ error: { message } }), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  })
-
-/** Subject of a JWT, without verifying it (the platform already did). */
-function userId(req: Request): string | null {
-  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  const payload = token?.split('.')[1]
-  if (!payload) return null
-  try {
-    const claims = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
-      sub?: string
-      role?: string
-    }
-    return claims.role === 'authenticated' && claims.sub ? claims.sub : null
-  } catch {
-    return null
-  }
-}
-
-/** Best effort, per isolate: enough to stop a runaway loop from one account. */
-const recent = new Map<string, number[]>()
-function allow(user: string, perMinute: number, now: number): boolean {
-  const list = (recent.get(user) ?? []).filter((t) => now - t < 60_000)
-  if (list.length >= perMinute) {
-    recent.set(user, list)
-    return false
-  }
-  list.push(now)
-  recent.set(user, list)
-  return true
-}
+const json = jsonError
+const allow = rateLimiter()
 
 interface Incoming {
   messages?: unknown

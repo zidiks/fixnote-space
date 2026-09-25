@@ -1,4 +1,4 @@
-import type { SyncRemote } from '@fixnote/core'
+import type { FetchedPage, SyncRemote } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabaseRemote } from '../sync/supabase-remote'
 
@@ -30,6 +30,8 @@ export interface AccountBackend {
   remote: SyncRemote
   /** The default LLM route for the signed-in user, or null when signed out. */
   chatTransport(): Promise<ChatTransport | null>
+  /** Reads a public page's <head> through the `unfurl` function; null when signed out. */
+  fetchPage(url: string): Promise<FetchedPage | null>
   /** Calls back when another device changed something. Returns an unsubscribe. */
   subscribe(userId: string, onChange: () => void): () => void
 }
@@ -83,6 +85,21 @@ export function supabaseBackend(
         url: `${config.url}/functions/v1/llm-proxy`,
         headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: config.anonKey },
       }
+    },
+    async fetchPage(url) {
+      const { data } = await client.auth.getSession()
+      if (!data.session) return null
+      const res = await fetch(`${config.url}/functions/v1/unfurl`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${data.session.access_token}`,
+          apikey: config.anonKey,
+        },
+        body: JSON.stringify({ url }),
+      })
+      if (!res.ok) throw new Error(`unfurl: HTTP ${res.status}`)
+      return (await res.json()) as FetchedPage
     },
     subscribe(userId, onChange) {
       const channel = client
