@@ -5,13 +5,15 @@ voice input, chat over your notes, MCP. Desktop (Tauri, Windows first) and web f
 
 - Product and architecture concept: [docs/CONCEPT.md](docs/CONCEPT.md)
 
-## What works today (M3)
+## What works today (M4)
 
 Offline first, on web and desktop; an account is optional and only adds sync:
 
-- Notes in Markdown with a Bear-like editor: headings, lists, checklists, quotes, code, links.
-- Inbox by default; folders with subfolders; `#tags` and nested `#area/project` tags from the text.
-- Home with filters (Inbox, folder, type, period) and infinite scroll; lists per folder and tag.
+- Notes in Markdown with a Bear-like editor: headings, lists, checklists, quotes, code, links,
+  images (paste or drop; large ones are scaled down).
+- Home shows every note with filters (no folder, folder, type, period) and infinite scroll;
+  folders with subfolders; `#tags` and nested `#area/project` tags from the text.
+- Link cards: a URL alone on its line shows the page's title, description and image.
 - Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en that also tries
   the other alphabet ("телеграм" finds "Telegram"), notes similar in meaning once the assistant's
   index is ready, commands.
@@ -19,7 +21,17 @@ Offline first, on web and desktop; an account is optional and only adds sync:
 - Sync across devices with end-to-end encryption: sign in with an email code, keep a 12-word
   recovery phrase; the server stores only ciphertext. Concurrent edits merge line by line; if two
   devices changed the same line, both versions are kept.
-- Export of all notes as a Markdown zip (Settings → Data).
+- Export of all notes as a Markdown zip with images in `attachments/` (Settings → Data).
+- Voice: dictate a new note, into the open note or into the chat (Ctrl+Shift+Space). Whisper runs
+  on the device (model ~80 MB, downloaded on first use); the audio never leaves it.
+- Ask AI about a selection (Ctrl+Shift+E) or the whole note: rewrite, shorten, reformat, fix
+  mistakes, tidy up a dump, or your own instruction. The change is shown as a word diff and
+  applied only on Accept, as one undo step.
+- Telegram bot: send text, voice messages and photos to the bot; they become notes. The bot seals
+  each message to your public key, so only your devices can read it; voice is transcribed on
+  the device.
+- A new device can be let in from a device that is already set up (matching 6-digit codes), no
+  phrase typing needed. Images sync end-to-end encrypted too.
 - Assistant (Ctrl+J): one chat over your notes with answers that cite their sources. The context
   follows what is open (a note, a folder, everything), and a divider marks each switch. Search
   combines keywords with meaning; the embedding model (multilingual-e5-small, ~120 MB) downloads
@@ -38,6 +50,8 @@ Offline first, on web and desktop; an account is optional and only adds sync:
 | Ctrl+N | New note (desktop only; browsers reserve it) |
 | Ctrl+[ / Ctrl+], Alt+← / Alt+→, mouse back/forward | Back / forward |
 | Ctrl+J | Assistant panel |
+| Ctrl+Shift+E | Ask AI about the selection (or the whole note) |
+| Ctrl+Shift+Space | Start / stop dictation (Esc cancels) |
 | Ctrl+\\ | Sidebar |
 
 Shortcuts follow the physical key, so they work in any keyboard layout.
@@ -53,8 +67,9 @@ apps/
   desktop/         Tauri 2 shell; src-tauri/ holds the Rust side
 packages/
   core/            domain logic and platform interfaces (no React)
-  platform-web/    browser adapters (sqlite-wasm, WebCrypto, transformers.js)
-  platform-tauri/  desktop adapters (rusqlite commands, keychain, fastembed, whisper.cpp)
+  platform-web/    browser adapters (sqlite-wasm, WebCrypto, OPFS files, transformers.js
+                   embeddings and Whisper, shared with desktop)
+  platform-tauri/  desktop adapters (rusqlite commands, keychain, app-data files, page fetch)
   ui/              design tokens and shadcn-style components (Tailwind 4)
   i18n/            en / es / ru dictionaries
 supabase/          CLI config, auth email templates, migrations, edge functions
@@ -98,16 +113,33 @@ The DeepSeek key lives only in the Supabase project, never in the app. Once:
 
 ```powershell
 pnpm sb secrets set DEEPSEEK_API_KEY=sk-...
-pnpm sb:functions        # deploys supabase/functions/llm-proxy
+pnpm sb:functions        # deploys llm-proxy, unfurl (link cards on the web) and telegram-bot
 ```
 
-Function tests: `deno test --allow-net --allow-env supabase/functions`.
+Function tests: `deno test -A` inside each folder of `supabase/functions`.
+
+### Telegram bot
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) and copy its token.
+2. Pick a random webhook secret (letters, digits, `_`, `-`), then:
+
+```powershell
+pnpm sb secrets set TELEGRAM_BOT_TOKEN=123:abc TELEGRAM_WEBHOOK_SECRET=<secret>
+pnpm sb:functions
+$env:TELEGRAM_BOT_TOKEN = "123:abc"; $env:TELEGRAM_WEBHOOK_SECRET = "<secret>"
+pnpm tg:webhook          # points the bot at the function, prints its username
+```
+
+3. Put `VITE_TELEGRAM_BOT=<username>` into `.env` (and the CI variables). Settings → Account →
+   Telegram then shows "Connect Telegram".
 
 ### Trying sync without Supabase
 
 `pnpm dev`, then open http://localhost:5173/?dev-backend. A development-only fake server lives in
-the browser's localStorage; the sign-in code is `123456`, and a fake LLM answers from the first found passage. It is never part
-of production builds.
+the browser's localStorage; the sign-in code is `123456`, and a fake LLM answers from the first found
+passage (and makes simple AI edits). Speech recognition and link cards are faked too, and
+`__devTelegram.start()` / `__devTelegram.send({ kind: 'text', text: '…' })` in the console play
+the Telegram bot. It is never part of production builds.
 
 ## Scripts
 
@@ -121,6 +153,7 @@ of production builds.
 | `pnpm typecheck` | TypeScript across the workspace |
 | `pnpm test` | Vitest across the workspace |
 | `pnpm check` | lint + typecheck + test |
+| `pnpm tg:webhook` | Point the Telegram bot at its edge function |
 
 ## Supabase
 
@@ -157,7 +190,8 @@ Any other CLI command runs as `pnpm sb <command>`, e.g. `pnpm sb migration new i
 
 `.mcp.json` registers the Supabase MCP server for Claude Code; authenticate once with `claude /mcp`.
 
-CI builds with the repository variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and
+`VITE_TELEGRAM_BOT`
 (Settings → Secrets and variables → Actions → Variables) and falls back to `.env.example`.
 
 ## CI

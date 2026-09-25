@@ -9,8 +9,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Domain logic goes in `packages/core` and must not import React or platform APIs. Anything that
   differs between desktop and web goes behind an interface in `packages/core/src/platform.ts`
   with one adapter in `platform-web` and one in `platform-tauri`.
-- Rust in `apps/desktop/src-tauri` only for what the browser can't do well (SQLite plugin,
-  keychain, embeddings, whisper). No domain logic in Rust.
+- Rust in `apps/desktop/src-tauri` only for what the browser can't do well (SQLite, keychain,
+  files, fetching pages without CORS, WebView2 settings). No domain logic in Rust.
 - Every UI string goes through `@fixnote/i18n`. Add the key to `en.ts`, then `es.ts` and `ru.ts`;
   the locale test fails on missing keys or placeholders.
 - UI components: shadcn style in `packages/ui`, Tailwind 4 tokens in `packages/ui/src/styles.css`.
@@ -33,7 +33,17 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`AnswerText`), never as HTML. The LLM key stays in the `llm-proxy` edge function.
 - `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
   its numbers, update by copying from upstream (see its README).
-- AI never changes a note without an explicit accept; changes are shown as diffs.
+- AI never changes a note without an explicit accept; changes are shown as diffs (`AiEdit.tsx`,
+  prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
+  requests by the markers exported from `@fixnote/ai`; keep them in the prompts.
+- Attachments: Markdown `![](attachment:<id>)`, bytes in the platform `BlobStore`, one encrypted
+  blob per file in Storage (`packages/core/src/attachments`). Images are block nodes; the custom
+  paragraph in `editor/paragraph.ts` keeps images that share a line with text.
+- Capture (Telegram): the bot only seals and queues (`supabase/functions/telegram-bot`); notes are
+  made on the device (`packages/core/src/capture`). The payload format lives in both places.
+- Speech and embeddings run in the webview on both platforms (transformers.js workers in
+  `platform-web`); the Rust side only fetches pages, stores files and holds keys.
+- Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).
 
 ## Verify before pushing
 
