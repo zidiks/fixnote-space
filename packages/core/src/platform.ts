@@ -112,6 +112,21 @@ export interface PlatformCapabilities {
   globalShortcut: boolean
 }
 
+export interface AvailableUpdate {
+  version: string
+  /** Release notes, if any. */
+  notes: string | null
+  /** Downloads and installs, reporting progress 0…1 when the size is known, then restarts. */
+  install(onProgress?: (fraction: number | null) => void): Promise<void>
+}
+
+export interface AppUpdater {
+  /** This build's version, and whether it can install updates (release builds are signed). */
+  info(): Promise<{ version: string; enabled: boolean }>
+  /** The newer version, or null when this one is the latest (or updates are not enabled). */
+  check(): Promise<AvailableUpdate | null>
+}
+
 export interface Platform {
   readonly kind: PlatformKind
   readonly chrome: WindowChrome
@@ -142,6 +157,11 @@ export interface Platform {
     /** Adds FixNote to the client's config; resolves with the config file path. */
     connect(client: 'claude' | 'cursor'): Promise<string>
   }
+  /**
+   * Updates of the desktop app from signed releases. Absent on the web (it is always current) and
+   * in builds without an update key.
+   */
+  readonly updater?: AppUpdater
   /** Opens a link in the system browser (desktop) or a new tab (web). */
   openExternal(url: string): Promise<void>
   /** Lets the user save a file. Desktop: native "Save as" dialog. Web: a download. */

@@ -22,6 +22,7 @@ import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
+import { useAutoUpdateCheck } from '../lib/updates'
 import { toggleVoice } from '../lib/voice/voice'
 import { applyTheme, useUi } from './store'
 
@@ -94,6 +95,7 @@ function AppShell() {
 
   useNativeFeel(platform, isApple, nativeActions)
   useExternalChanges()
+  useAutoUpdateCheck()
   useHotkey(HK.chat, ui.toggleChat, isApple)
   useHotkey(HK.sidebar, ui.toggleSidebar, isApple)
   useHotkey(HK.spotlight, () => ui.setSpotlightOpen(!ui.spotlightOpen), isApple)

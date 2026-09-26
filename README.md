@@ -298,3 +298,16 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
   `FixNote-macOS-x64.dmg`); the site's download buttons point at the latest release. To release,
   set `version` in `apps/desktop/src-tauri/tauri.conf.json`, merge, then tag that commit on `main`:
   `git tag v0.1.0 && git push origin v0.1.0`. The build fails if the tag and the version differ.
+- Installed desktop apps update themselves from those releases (Tauri updater: a check shortly after
+  start and every 6 hours, or Settings → General → Check for updates). Updates are signed; set the
+  key up once:
+  1. `pnpm --filter @fixnote/desktop tauri signer generate -w ~/.tauri/fixnote.key` (choose a
+     password; keep the key file safe: without it, installed apps can no longer be updated).
+  2. In GitHub → Settings → Secrets and variables → Actions add the secrets
+     `TAURI_SIGNING_PRIVATE_KEY` (the contents of `~/.tauri/fixnote.key`) and
+     `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and the variable `TAURI_UPDATER_PUBKEY` (the contents of
+     `~/.tauri/fixnote.key.pub`).
+
+  Release builds then carry the public key and the release gets `latest.json` plus signed update
+  files; apps read it at `https://fixnote.space/download/latest.json`. Builds without the key
+  (local ones too) work normally but do not update themselves.
