@@ -36,9 +36,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - AI never changes a note without an explicit accept; changes are shown as diffs (`AiEdit.tsx`,
   prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
   requests by the markers exported from `@fixnote/ai`; keep them in the prompts.
-- Attachments: Markdown `![](attachment:<id>)`, bytes in the platform `BlobStore`, one encrypted
-  blob per file in Storage (`packages/core/src/attachments`). Images are block nodes; the custom
-  paragraph in `editor/paragraph.ts` keeps images that share a line with text.
+- Attachments: Markdown `![](attachment:<id>)` (images) or `[name](attachment:<id>)` (other files),
+  bytes in the platform `BlobStore`, one encrypted blob per file in Storage
+  (`packages/core/src/attachments`). Images are block nodes; the custom paragraph in
+  `editor/paragraph.ts` keeps images that share a line with text. Drops onto the window go through
+  `DropLayer` (`lib/drop.ts`): into the open note, else a new note.
 - Capture (Telegram): the bot only seals and queues (`supabase/functions/telegram-bot`); notes are
   made on the device (`packages/core/src/capture`). The payload format lives in both places.
 - Speech and embeddings run in the webview on both platforms (transformers.js workers in

@@ -1,4 +1,4 @@
-import type { Note } from '@fixnote/core'
+import { attachmentIdFromUrl, type Note } from '@fixnote/core'
 import { i18n, useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -35,7 +35,12 @@ import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState
 import { toast } from 'sonner'
 import { useAccount } from '../../lib/account/account'
 import { providerLabel } from '../../lib/assistant/assistant'
-import { attachmentObjectUrl, ImageTooLargeError, storeImage } from '../../lib/attachments'
+import {
+  attachmentObjectUrl,
+  ImageTooLargeError,
+  saveAttachment,
+  storeImage,
+} from '../../lib/attachments'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
@@ -45,8 +50,11 @@ export interface NoteEditorHandle {
   openAi: AiEditHandle['open']
   /** Dictated text: at the cursor while typing, otherwise as a new paragraph at the end. */
   insertText(text: string): void
-  /** Opens the file picker and inserts the chosen images at the cursor. */
-  pickImages(): void
+  /**
+   * Markdown dropped onto the window (images, files, links, text): as blocks next to the block
+   * under the pointer, or at the end when the drop was not over the text.
+   */
+  insertDropped(markdown: string, at: { x: number; y: number } | null): void
 }
 
 import { AiRangeExtension } from './ai-range'
@@ -345,6 +353,8 @@ export function NoteEditor({
           openOnClick: false,
           autolink: true,
           linkOnPaste: true,
+          // Files dropped into a note are links to attachment:<id>.
+          protocols: ['attachment'],
           shouldAutoLink: (url) => !plainUrls.current.has(url),
         },
       }),
@@ -388,22 +398,21 @@ export function NoteEditor({
         spellcheck: 'true',
         'aria-label': note.title || t('common.untitled'),
       },
-      // A click opens a link in the browser; Alt/Option+click places the caret in it to edit.
+      // A click opens a link in the browser (an attached file: saves it); Alt/Option+click places
+      // the caret in the link to edit it.
       handleClick: (_view, _pos, event) => {
         if (event.altKey || event.button !== 0) return false
         const target = event.target instanceof Element ? event.target : null
-        const href = target?.closest('a[href]')?.getAttribute('href')
-        if (!href || !/^https?:\/\//i.test(href)) return false
+        const anchor = target?.closest('a[href]')
+        const href = anchor?.getAttribute('href')
+        if (!href) return false
+        const fileId = attachmentIdFromUrl(href)
+        if (fileId) {
+          void saveAttachment(images.current, fileId, anchor?.textContent?.trim() || 'file')
+          return true
+        }
+        if (!/^https?:\/\//i.test(href)) return false
         links.current.open(href)
-        return true
-      },
-      // Images pasted or dropped become attachments: stored here, synced encrypted.
-      handleDrop: (view, event) => {
-        const files = imageFiles(event.dataTransfer)
-        if (!files.length) return false
-        event.preventDefault()
-        const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
-        void insertImages(files, at)
         return true
       },
       // A long unformatted paste (a dump from a chat or a dictation): offer to tidy it up.
@@ -493,7 +502,30 @@ export function NoteEditor({
     ref,
     () => ({
       openAi: (target, action) => openAi.current(target, action),
-      pickImages: () => fileInput.current?.click(),
+      insertDropped: (markdown, at) => {
+        const e = editorRef.current
+        if (!e || e.isDestroyed || !markdown.trim()) return
+        const { doc } = e.state
+        // After the top-level block under the pointer, so text is never split mid-line.
+        const hit = at ? e.view.posAtCoords({ left: at.x, top: at.y }) : null
+        let pos = doc.content.size
+        if (hit) {
+          const $pos = doc.resolve(hit.pos)
+          pos = $pos.depth > 0 ? $pos.after(1) : hit.pos
+        }
+        const last = doc.lastChild
+        // An empty last line takes the drop instead of staying below it.
+        if (!hit && last?.type.name === 'paragraph' && last.content.size === 0) {
+          pos = doc.content.size - last.nodeSize
+        }
+        e.chain().insertContentAt(pos, markdown.trim(), { contentType: 'markdown' }).run()
+        // One empty line at the end, to keep typing below what was dropped.
+        const end = e.state.doc.lastChild
+        if (end?.type.name !== 'paragraph' || end.content.size > 0) {
+          e.chain().insertContentAt(e.state.doc.content.size, { type: 'paragraph' }).run()
+        }
+        e.commands.focus()
+      },
       insertText: (text) => {
         const e = editorRef.current
         if (!e || e.isDestroyed) return

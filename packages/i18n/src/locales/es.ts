@@ -174,6 +174,13 @@ const es: LocaleResource = {
     pinned: 'Fijada',
     section: 'Fijadas',
   },
+  drop: {
+    intoNote: 'Suelta para añadir a esta nota',
+    newNote: 'Suelta para crear una nota',
+    created: 'Nota creada con lo que soltaste',
+    tooLarge: '{{name}} ocupa más de 20 MB',
+    fileMissing: 'Este archivo aún no está disponible en este dispositivo.',
+  },
   linkPaste: {
     title: 'Pegar como',
     bookmark: 'Marcador',

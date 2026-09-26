@@ -170,6 +170,13 @@ const en = {
     pinned: 'Pinned',
     section: 'Pinned',
   },
+  drop: {
+    intoNote: 'Drop to add to this note',
+    newNote: 'Drop to create a note',
+    created: 'Created a note from what you dropped',
+    tooLarge: '{{name}} is larger than 20 MB',
+    fileMissing: 'This file is not available on this device yet.',
+  },
   linkPaste: {
     title: 'Paste as',
     bookmark: 'Bookmark',

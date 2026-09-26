@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo } from 'react'
 import { Toaster } from 'sonner'
 import { ChatPanel } from '../components/ChatPanel'
+import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
 import { ListView } from '../components/ListView'
 import { PairingRequestDialog } from '../components/PairingRequestDialog'
@@ -151,6 +152,7 @@ function AppShell() {
       <Spotlight />
       <SettingsDialog />
       <VoiceBar />
+      <DropLayer />
       <PairingRequestDialog />
       <Toaster
         theme={theme}
