@@ -10,7 +10,14 @@ export const MODEL = 'onnx-community/whisper-base'
 
 env.allowLocalModels = false
 env.useBrowserCache = true
-if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = await ortPaths()
+/**
+ * Where the ONNX runtime comes from, set before the first model loads. Not a top-level await: a
+ * module worker that is still evaluating misses the first message in WebKit (macOS), so the
+ * handler below must be in place from the start.
+ */
+const runtime = (async () => {
+  if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = await ortPaths()
+})()
 
 type Device = 'webgpu' | 'wasm'
 
@@ -58,6 +65,7 @@ async function create(device: Device) {
 
 function load() {
   asr ??= (async () => {
+    await runtime
     if (await hasWebGpu()) {
       try {
         return await create('webgpu')
