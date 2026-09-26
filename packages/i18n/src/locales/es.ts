@@ -239,6 +239,8 @@ const es: LocaleResource = {
     newFolder: 'Nueva carpeta',
     pasteBlocked: 'Pega con Ctrl+V: se denegó el acceso al portapapeles.',
     insertImage: 'Insertar imagen…',
+    deleteFile: 'Eliminar archivo',
+    deleteImage: 'Eliminar imagen',
   },
   ai: {
     button: 'Preguntar a la IA',

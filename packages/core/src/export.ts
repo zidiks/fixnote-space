@@ -112,10 +112,13 @@ export async function buildExport(
     const up = '../'.repeat(path.split('/').length - 1)
     files.push({
       path,
-      content: n.content.replace(/\]\(attachment:([\w-]{1,64})\)/g, (m, id: string) => {
-        const file = attachmentPaths.get(id)
-        return file ? `](${up}${file})` : m
-      }),
+      content: n.content.replace(
+        /\]\(attachment:([\w-]{1,64})(\s+"[^"]*")?\)/g,
+        (m, id: string, title = '') => {
+          const file = attachmentPaths.get(id)
+          return file ? `](${up}${file}${title})` : m
+        },
+      ),
     })
   }
 

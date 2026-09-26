@@ -1,5 +1,5 @@
 import type { Embedder, SqlDriver, SqlRow } from '../platform'
-import { chunkNote, contentHash } from './chunk'
+import { CHUNKS_VERSION, chunkNote, contentHash } from './chunk'
 import { fromBlob, normalize, toBlob } from './vectors'
 
 const MODEL_KEY = 'index.model'
@@ -23,18 +23,19 @@ export class Indexer {
     private readonly embedder: Embedder,
   ) {}
 
-  /** Clears everything if the embedding model changed since the last run. */
+  /** Clears everything if the embedding model or the passages changed since the last run. */
   async prepare(): Promise<void> {
     const [row] = await this.db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
       MODEL_KEY,
     ])
-    if (row?.value === this.embedder.modelId) return
+    const current = `${this.embedder.modelId}#chunks${CHUNKS_VERSION}`
+    if (row?.value === current) return
     await this.db.transaction(async (tx) => {
       await tx.execute('DELETE FROM chunks')
       await tx.execute('UPDATE notes SET indexed_at = NULL, indexed_hash = NULL')
       await tx.execute(
         'INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
-        [MODEL_KEY, this.embedder.modelId],
+        [MODEL_KEY, current],
       )
     })
     this.cache = null

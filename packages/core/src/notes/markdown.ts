@@ -16,27 +16,30 @@ function stripInline(line: string): string {
     .replace(/\\([\\`*_{}[\]()#+\-.!>~=|/:])/g, '$1')
 }
 
-function stripBlock(line: string): string {
+function stripBlock(line: string, tasks: boolean): string {
   return line
     .replace(/^\s{0,3}#{1,6}\s+/, '') // headings
     .replace(/^\s*>\s?/, '') // quotes
-    .replace(/^\s*(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?/, '') // list items and tasks
+    .replace(/^\s*(?:[-*+]|\d+[.)])\s+(?:\[([ xX])\]\s+)?/, (_, box?: string) =>
+      // list items and tasks; with `tasks`, a task keeps whether it is done
+      tasks && box ? (box === ' ' ? '[ ] ' : '[x] ') : '',
+    )
     .trim()
 }
 
-function plainLines(markdown: string): string[] {
+function plainLines(markdown: string, tasks = false): string[] {
   return markdown
     .replace(FENCE, '')
     .split('\n')
-    .map((l) => stripInline(stripBlock(l)))
+    .map((l) => stripInline(stripBlock(l, tasks)))
     .filter((l) => l.length > 0 && !/^([-*_]\s*){3,}$/.test(l))
 }
 
 /** The whole note as plain text, one line per block: what full-text search indexes. */
-export function toPlainText(markdown: string): string {
+export function toPlainText(markdown: string, opts: { tasks?: boolean } = {}): string {
   // Code blocks stay searchable: keep their contents, drop only the fences.
   const unfenced = markdown.replace(FENCE, (block) => block.split('\n').slice(1, -1).join('\n'))
-  return plainLines(unfenced).join('\n')
+  return plainLines(unfenced, opts.tasks).join('\n')
 }
 
 /** First non-empty line as plain text, Bear-style. Empty string when the note is blank. */

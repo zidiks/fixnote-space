@@ -72,12 +72,22 @@ const lang = (code: string | undefined): Lang =>
       ? 'es'
       : 'en'
 
+/** A span of a message: `text_link` carries a link hidden behind words. */
+interface TgEntity {
+  type: string
+  offset: number
+  length: number
+  url?: string
+}
+
 interface TgMessage {
   message_id: number
   chat: { id: number; type: string; title?: string; username?: string; first_name?: string }
   from?: { language_code?: string }
   text?: string
+  entities?: TgEntity[]
   caption?: string
+  caption_entities?: TgEntity[]
   voice?: { file_id: string; duration?: number; mime_type?: string; file_size?: number }
   audio?: { file_id: string; duration?: number; mime_type?: string; file_size?: number }
   photo?: { file_id: string; width: number; height: number; file_size?: number }[]
@@ -85,7 +95,8 @@ interface TgMessage {
     type: string
     sender_user?: { first_name?: string; last_name?: string }
     sender_user_name?: string
-    chat?: { title?: string }
+    chat?: { title?: string; username?: string }
+    message_id?: number
   }
 }
 
@@ -97,11 +108,44 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(bin)
 }
 
+const label = (text: string) => text.replace(/[[\]\\]/g, '\\$&')
+const target = (url: string) =>
+  url.replace(/[()\s]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`)
+
+/**
+ * The message text as Markdown, keeping links hidden behind words (`text_link`, what a forwarded
+ * post usually has): Telegram sends those apart from the text. Offsets count UTF-16 units, as JS
+ * strings do.
+ */
+export function withLinks(text: string, entities: TgEntity[] = []): string {
+  const links = entities
+    .filter((e) => e.type === 'text_link' && e.url && /^https?:\/\//i.test(e.url))
+    .sort((a, b) => a.offset - b.offset)
+  let out = ''
+  let at = 0
+  for (const e of links) {
+    if (e.offset < at) continue
+    const span = text.slice(e.offset, e.offset + e.length)
+    const words = span.trim()
+    if (!words) continue
+    const lead = span.slice(0, span.indexOf(words))
+    const trail = span.slice(lead.length + words.length)
+    out += `${text.slice(at, e.offset)}${lead}[${label(words)}](${target(e.url as string)})${trail}`
+    at = e.offset + e.length
+  }
+  return out + text.slice(at)
+}
+
+/** Who a forwarded message is from; a public channel's post links back to it. */
 function forwardedFrom(m: TgMessage): string | null {
   const o = m.forward_origin
   if (!o) return null
   const user = [o.sender_user?.first_name, o.sender_user?.last_name].filter(Boolean).join(' ')
-  return o.sender_user_name || user || o.chat?.title || null
+  const name = o.sender_user_name || user || o.chat?.title || null
+  if (name && o.type === 'channel' && o.chat?.username && o.message_id) {
+    return `[${label(name)}](https://t.me/${o.chat.username}/${o.message_id})`
+  }
+  return name
 }
 
 export async function handle(req: Request, deps: BotDeps): Promise<Response> {
@@ -167,12 +211,18 @@ async function onMessage(m: TgMessage, deps: BotDeps) {
 
   const receivedAt = (deps.now ?? Date.now)()
   const from = forwardedFrom(m)
-  const caption = [m.caption ?? '', from ? `— ${from}` : ''].filter(Boolean).join('\n\n')
+  const caption = [
+    m.caption ? withLinks(m.caption, m.caption_entities) : '',
+    from ? `— ${from}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n')
   let payload: Record<string, unknown>
   const file = m.voice ?? m.audio
   const photo = m.photo?.at(-1)
   if (m.text) {
-    payload = { kind: 'text', text: [m.text, from ? `— ${from}` : ''].filter(Boolean).join('\n\n') }
+    const text = withLinks(m.text, m.entities)
+    payload = { kind: 'text', text: [text, from ? `— ${from}` : ''].filter(Boolean).join('\n\n') }
   } else if (file) {
     if ((file.file_size ?? 0) > MAX_FILE) return void (await say(t.tooBig))
     const bytes = await deps.telegram.download(file.file_id, MAX_FILE)

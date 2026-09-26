@@ -234,6 +234,8 @@ const en = {
     newFolder: 'New folder',
     pasteBlocked: 'Paste with Ctrl+V: clipboard access was denied.',
     insertImage: 'Insert image…',
+    deleteFile: 'Delete file',
+    deleteImage: 'Delete image',
   },
   ai: {
     button: 'Ask AI',

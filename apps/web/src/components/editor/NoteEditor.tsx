@@ -9,7 +9,7 @@ import {
   isApple,
   MenuShortcut,
 } from '@fixnote/ui'
-import { Extension } from '@tiptap/core'
+import { Extension, getMarkRange } from '@tiptap/core'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
@@ -31,6 +31,7 @@ import {
   Sparkles,
   Strikethrough,
   TextSelect,
+  Trash2,
 } from 'lucide-react'
 import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -104,12 +105,15 @@ function EditorMenu({
   onAskAi,
   onInsertImage,
   onRepeat,
+  onRemove,
 }: {
   editor: Editor
   onAskAi: () => void
   onInsertImage: () => void
   /** Set when the menu was opened on a task of a daily note. */
   onRepeat?: () => void
+  /** Set when the menu was opened on an attached file or an image. */
+  onRemove?: { label: string; run: () => void }
 }) {
   const { t } = useTranslation()
   // Subscribed, so the menu reflects the selection and marks at the moment it opens.
@@ -246,6 +250,7 @@ function EditorMenu({
   ]
   if (onRepeat)
     items.unshift({ icon: Repeat, label: t('repeat.menu'), hint: '', run: onRepeat }, 'sep')
+  if (onRemove) items.unshift({ icon: Trash2, hint: '', ...onRemove }, 'sep')
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
@@ -268,6 +273,32 @@ function EditorMenu({
       )}
     </ContextMenuContent>
   )
+}
+
+interface AttachmentRange {
+  kind: 'file' | 'image'
+  from: number
+  to: number
+}
+
+/** The attached file chip or image under a right-click, as the document range it takes. */
+function attachmentAt(editor: Editor, target: EventTarget | null): AttachmentRange | null {
+  if (!(target instanceof Element)) return null
+  const { view, state } = editor
+  const chip = target.closest('a[href^="attachment:"]')
+  const link = state.schema.marks.link
+  if (chip && link) {
+    const range = getMarkRange(state.doc.resolve(view.posAtDOM(chip, 0)), link)
+    return range ? { kind: 'file', ...range } : null
+  }
+  const img = target.closest('img')
+  if (!img) return null
+  const pos = view.posAtDOM(img, 0)
+  for (const at of [pos, pos - 1]) {
+    const node = at >= 0 ? state.doc.nodeAt(at) : null
+    if (node?.type.name === 'image') return { kind: 'image', from: at, to: at + node.nodeSize }
+  }
+  return null
 }
 
 /**
@@ -333,6 +364,8 @@ export function NoteEditor({
   callbacks.current = { onSave, onStateChange, onLeave, onRepeat }
   /** The task right-clicked in a daily note, and the one whose repeat is being edited. */
   const [menuTask, setMenuTask] = useState<TaskTarget | null>(null)
+  /** The attached file or image right-clicked, as the range that removes it. */
+  const [menuAttachment, setMenuAttachment] = useState<AttachmentRange | null>(null)
   const [repeatTask, setRepeatTask] = useState<(TaskTarget & { rule: Recurrence | null }) | null>(
     null,
   )
@@ -627,6 +660,7 @@ export function NoteEditor({
           asChild
           onContextMenu={(e) => {
             setMenuTask(editor && note.dailyDate ? taskAt(editor, e.clientX, e.clientY) : null)
+            setMenuAttachment(editor ? attachmentAt(editor, e.target) : null)
           }}
         >
           <EditorContent editor={editor} />
@@ -636,6 +670,21 @@ export function NoteEditor({
             editor={editor}
             onAskAi={() => ai.open('selection')}
             onInsertImage={() => fileInput.current?.click()}
+            onRemove={
+              menuAttachment
+                ? {
+                    label: t(
+                      menuAttachment.kind === 'file' ? 'menu.deleteFile' : 'menu.deleteImage',
+                    ),
+                    run: () =>
+                      editor
+                        .chain()
+                        .focus()
+                        .deleteRange({ from: menuAttachment.from, to: menuAttachment.to })
+                        .run(),
+                  }
+                : undefined
+            }
             onRepeat={
               menuTask
                 ? () => {

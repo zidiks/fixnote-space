@@ -28,7 +28,9 @@ describe('chunkNote', () => {
   it('packs short blocks and splits long ones, as plain text', () => {
     const md = `# Plan\n\n- [ ] **one**\n\n${'Long sentence here. '.repeat(120)}`
     const chunks = chunkNote(md)
-    expect(chunks[0]?.text.startsWith('Plan\none')).toBe(true)
+    // Tasks keep whether they are done, so the assistant can tell.
+    expect(chunks[0]?.text.startsWith('Plan\n[ ] one')).toBe(true)
+    expect(chunkNote('- [x] Buy milk\n- [ ] Call mom')[0]?.text).toBe('[x] Buy milk\n[ ] Call mom')
     expect(chunks.every((c) => c.text.length <= 1200)).toBe(true)
     expect(chunks.map((c) => c.ord)).toEqual(chunks.map((_, i) => i))
     expect(chunkNote('')).toEqual([])

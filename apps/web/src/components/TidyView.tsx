@@ -69,12 +69,12 @@ export function TidyView() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 pt-8 pb-24 sm:px-10">
-      <div className="flex items-start gap-3">
-        <WandSparkles className="mt-1 size-5 text-brand" />
-        <div className="flex-1 space-y-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight">{t('tidy.title')}</h1>
-          <p className="max-w-xl text-sm text-muted-foreground">{t('tidy.intro')}</p>
-        </div>
+      <div className="space-y-1.5">
+        <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight">
+          <WandSparkles className="size-5 shrink-0 text-brand" />
+          {t('tidy.title')}
+        </h1>
+        <p className="max-w-xl text-sm text-muted-foreground">{t('tidy.intro')}</p>
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <Button
