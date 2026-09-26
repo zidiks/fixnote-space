@@ -202,6 +202,13 @@ export function localDate(d = new Date()): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 }
 
+/** `date` (YYYY-MM-DD) moved by `days`. */
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T12:00:00`)
+  d.setDate(d.getDate() + days)
+  return localDate(d)
+}
+
 export function dailyTemplate(d = new Date()): string {
   const title = new Intl.DateTimeFormat(i18n.resolvedLanguage, { dateStyle: 'full' }).format(d)
   const heading = title.charAt(0).toLocaleUpperCase() + title.slice(1)
@@ -212,7 +219,11 @@ export function useOpenDaily() {
   const repo = useRepo()
   const invalidate = useInvalidateNotes()
   return useMutation({
-    mutationFn: (): Promise<Note> => repo.getOrCreateDaily(localDate(), () => dailyTemplate()),
+    /** Today's note, or the one of `date` (YYYY-MM-DD), made if it does not exist yet. */
+    mutationFn: (date?: string): Promise<Note> =>
+      repo.getOrCreateDaily(date ?? localDate(), () =>
+        dailyTemplate(date ? new Date(`${date}T12:00:00`) : undefined),
+      ),
     onSuccess: invalidate,
   })
 }

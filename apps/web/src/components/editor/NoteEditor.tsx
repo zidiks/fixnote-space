@@ -1,4 +1,4 @@
-import { attachmentIdFromUrl, type Note } from '@fixnote/core'
+import { attachmentIdFromUrl, type Note, noteTasks, type Recurrence } from '@fixnote/core'
 import { i18n, useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -26,6 +26,7 @@ import {
   Italic,
   List,
   ListChecks,
+  Repeat,
   Scissors,
   Sparkles,
   Strikethrough,
@@ -62,6 +63,8 @@ import { AttachmentImage } from './attachment-image'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
 import { ImageAwareParagraph } from './paragraph'
+import { RepeatDialog } from './RepeatDialog'
+import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -100,10 +103,13 @@ function EditorMenu({
   editor,
   onAskAi,
   onInsertImage,
+  onRepeat,
 }: {
   editor: Editor
   onAskAi: () => void
   onInsertImage: () => void
+  /** Set when the menu was opened on a task of a daily note. */
+  onRepeat?: () => void
 }) {
   const { t } = useTranslation()
   // Subscribed, so the menu reflects the selection and marks at the moment it opens.
@@ -238,6 +244,8 @@ function EditorMenu({
       active: state.taskList,
     },
   ]
+  if (onRepeat)
+    items.unshift({ icon: Repeat, label: t('repeat.menu'), hint: '', run: onRepeat }, 'sep')
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
@@ -278,9 +286,12 @@ export function NoteEditor({
   onSave,
   onStateChange,
   onLeave,
+  onRepeat,
   ref,
 }: {
   note: Note
+  /** A task of this daily note got a new repeat rule (null: stopped repeating). */
+  onRepeat?: (task: string, rule: Recurrence | null) => void
   /** Lets the note header open the AI popover for the whole note. */
   ref?: Ref<NoteEditorHandle>
   /** Persists `markdown`, an edit that started from `base`; resolves with what was stored. */
@@ -318,8 +329,13 @@ export function NoteEditor({
     setLinkPaste(next)
   }, [])
   const fileInput = useRef<HTMLInputElement>(null)
-  const callbacks = useRef({ onSave, onStateChange, onLeave })
-  callbacks.current = { onSave, onStateChange, onLeave }
+  const callbacks = useRef({ onSave, onStateChange, onLeave, onRepeat })
+  callbacks.current = { onSave, onStateChange, onLeave, onRepeat }
+  /** The task right-clicked in a daily note, and the one whose repeat is being edited. */
+  const [menuTask, setMenuTask] = useState<TaskTarget | null>(null)
+  const [repeatTask, setRepeatTask] = useState<(TaskTarget & { rule: Recurrence | null }) | null>(
+    null,
+  )
 
   /** Swaps the document without firing a save, keeping the caret roughly where it was. */
   const replaceContent = useRef((markdown: string) => {
@@ -364,6 +380,7 @@ export function NoteEditor({
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       Markdown,
       AiRangeExtension,
+      RecurringTasks,
       AttachmentImage.configure({
         resolve: (id) => attachmentObjectUrl(images.current, id),
       }),
@@ -606,7 +623,12 @@ export function NoteEditor({
       }}
     >
       <ContextMenu>
-        <ContextMenuTrigger asChild>
+        <ContextMenuTrigger
+          asChild
+          onContextMenu={(e) => {
+            setMenuTask(editor && note.dailyDate ? taskAt(editor, e.clientX, e.clientY) : null)
+          }}
+        >
           <EditorContent editor={editor} />
         </ContextMenuTrigger>
         {editor ? (
@@ -614,9 +636,32 @@ export function NoteEditor({
             editor={editor}
             onAskAi={() => ai.open('selection')}
             onInsertImage={() => fileInput.current?.click()}
+            onRepeat={
+              menuTask
+                ? () => {
+                    const target = { ...menuTask, rule: repeatOf(editor, menuTask.pos) }
+                    // After the menu has closed, so the dialog gets focus.
+                    setTimeout(() => setRepeatTask(target), 0)
+                  }
+                : undefined
+            }
           />
         ) : null}
       </ContextMenu>
+      {editor && repeatTask && note.dailyDate ? (
+        <RepeatDialog
+          date={note.dailyDate}
+          rule={repeatTask.rule}
+          onClose={() => setRepeatTask(null)}
+          onSave={(rule) => {
+            setRepeatTask(null)
+            if (editor.state.doc.nodeAt(repeatTask.pos)?.type.name !== 'taskItem') return
+            setRepeat(editor, repeatTask.pos, rule)
+            const task = noteTasks(editor.getMarkdown())[repeatTask.index]
+            if (task) callbacks.current.onRepeat?.(task.text, rule)
+          }}
+        />
+      ) : null}
       {editor ? <AiEditLayer editor={editor} ai={ai} /> : null}
       {editor && linkPaste ? (
         <LinkPasteMenu

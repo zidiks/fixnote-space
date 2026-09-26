@@ -1,6 +1,8 @@
 import type { SqlDriver, SqlRow, SqlValue } from '../platform'
 import { merge3 } from '../sync/merge'
+import { addTasks } from './daily'
 import { deriveExcerpt, deriveTitle, extractTags, taskProgress, toPlainText } from './markdown'
+import { applyTaskRule, dueRecurringTasks, type Recurrence } from './recurrence'
 import { buildFtsQuery } from './search'
 import {
   type Counts,
@@ -319,12 +321,55 @@ export class NotesRepo {
     const existing = await this.findDaily(date)
     if (existing) return existing
     try {
-      return await this.createNote({ content: template(), type: 'daily', dailyDate: date })
+      const note = await this.createNote({ content: template(), type: 'daily', dailyDate: date })
+      return (await this.addRecurringTasks(note.id)) ?? note
     } catch (err) {
       const raced = await this.findDaily(date)
       if (raced) return raced
       throw err
     }
+  }
+
+  /**
+   * Adds the repeating tasks due on a daily note's date (see recurrence.ts) that it does not have
+   * yet. Returns the updated note, or null when nothing was added.
+   */
+  async addRecurringTasks(noteId: string): Promise<Note | null> {
+    const note = await this.getNote(noteId)
+    if (!note?.dailyDate) return null
+    const earlier = await this.db.query<{ content: string }>(
+      `SELECT content FROM notes WHERE type = 'daily' AND daily_date < ? AND deleted_at IS NULL
+        ORDER BY daily_date DESC LIMIT 120`,
+      [note.dailyDate],
+    )
+    const due = dueRecurringTasks(
+      earlier.map((r) => r.content),
+      note.dailyDate,
+    )
+    const next = addTasks(note.content, due)
+    if (next === note.content) return null
+    return this.updateContent(note.id, next, { base: note.content })
+  }
+
+  /**
+   * Carries a changed repeat of task `text` (set in the daily note of `date`) into the daily notes
+   * after it that exist already. Returns the notes that changed.
+   */
+  async applyRecurrence(date: string, text: string, rule: Recurrence | null): Promise<Note[]> {
+    const rows = await this.db.query<{ id: string }>(
+      `SELECT id FROM notes WHERE type = 'daily' AND daily_date > ? AND deleted_at IS NULL
+        ORDER BY daily_date LIMIT 400`,
+      [date],
+    )
+    const changed: Note[] = []
+    for (const { id } of rows) {
+      const note = await this.getNote(id)
+      if (!note?.dailyDate) continue
+      const next = applyTaskRule(note.content, note.dailyDate, text, rule)
+      if (next !== note.content)
+        changed.push(await this.updateContent(id, next, { base: note.content }))
+    }
+    return changed
   }
 
   /** The nearest daily note before or after `date` (YYYY-MM-DD) that exists. */

@@ -56,6 +56,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.
   Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
   placeholder otherwise).
+- Repeating tasks live in the task line (`- [ ] Call mom 🔁 weekly:mon`, rules in
+  `packages/core/src/notes/recurrence.ts`); a new daily note gets the tasks due that day
+  (`getOrCreateDaily`), and a changed rule reaches existing later days via `applyRecurrence`.
 - Import (`packages/core/src/import`) plans first and writes only in `runImport`; keep it
   idempotent (notes with the same text are skipped).
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the

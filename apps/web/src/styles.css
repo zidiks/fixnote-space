@@ -368,3 +368,23 @@
 .fixnote-editor a[href^="attachment:"]:hover {
   background: var(--color-accent);
 }
+
+/* A repeating task: the rule reads as a small label; raw text only while the caret is in the line. */
+.fixnote-editor .fixnote-repeat-hidden {
+  display: none;
+}
+.fixnote-editor .fixnote-repeat-raw {
+  color: var(--color-muted-foreground);
+  font-size: 0.85em;
+}
+.fixnote-repeat-chip {
+  margin-left: 0.5em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-muted);
+  color: var(--color-muted-foreground);
+  font-size: 12px;
+  white-space: nowrap;
+  user-select: none;
+  vertical-align: 1px;
+}

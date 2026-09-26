@@ -131,6 +131,40 @@ describe('listNotes', () => {
   })
 })
 
+describe('repeating tasks', () => {
+  it('lands in the daily notes it is due on', async () => {
+    const fri = await repo.getOrCreateDaily('2026-09-25', () => '# Fri\n\n- [ ] ')
+    await repo.updateContent(
+      fri.id,
+      '# Fri\n\n- [ ] Позвонить маме 🔁 weekly:mon\n- [ ] Вода 🔁 daily',
+    )
+    const sat = await repo.getOrCreateDaily('2026-09-26', () => '# Sat\n\n- [ ] ')
+    expect(sat.content).toBe('# Sat\n\n- [ ] Вода 🔁 daily')
+    const mon = await repo.getOrCreateDaily('2026-09-28', () => '# Mon\n\n- [ ] ')
+    // Order: as in the newest note (Saturday's water first), then the rest.
+    expect(mon.content).toBe('# Mon\n\n- [ ] Вода 🔁 daily\n- [ ] Позвонить маме 🔁 weekly:mon')
+    // Nothing new to add the second time.
+    expect(await repo.addRecurringTasks(mon.id)).toBeNull()
+  })
+
+  it('carries a changed rule into the days that exist already', async () => {
+    const fri = await repo.getOrCreateDaily('2026-09-25', () => '- [ ] Вода 🔁 daily')
+    const sat = await repo.getOrCreateDaily('2026-09-26', () => '- [ ] ')
+    const sun = await repo.getOrCreateDaily('2026-09-27', () => '- [x] Вода 🔁 daily')
+    const mon = await repo.getOrCreateDaily('2026-09-28', () => '- [ ] ')
+    expect(mon.content).toBe('- [ ] Вода 🔁 daily')
+    const weekdays = { kind: 'weekdays' } as const
+    await repo.updateContent(fri.id, '- [ ] Вода 🔁 weekdays')
+    const changed = await repo.applyRecurrence('2026-09-25', 'Вода', weekdays)
+    expect(changed.map((n) => n.id)).toEqual([sat.id, mon.id])
+    expect((await repo.getNote(sat.id))?.content).toBe('')
+    expect((await repo.getNote(sun.id))?.content).toBe('- [x] Вода 🔁 daily')
+    expect((await repo.getNote(mon.id))?.content).toBe('- [ ] Вода 🔁 weekdays')
+    await repo.applyRecurrence('2026-09-25', 'Вода', null)
+    expect((await repo.getNote(mon.id))?.content).toBe('')
+  })
+})
+
 describe('pinned notes', () => {
   it('pins without touching the edit time and filters by pin', async () => {
     const a = await repo.createNote({ content: 'a' })

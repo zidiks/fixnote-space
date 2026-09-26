@@ -7,14 +7,14 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useDb, useRepo } from '../lib/db'
 import { kvStore } from '../lib/kv'
-import { keys, localDate, useInvalidateNotes, useOpenDaily } from '../lib/queries'
+import { addDays, keys, localDate, useInvalidateNotes, useOpenDaily } from '../lib/queries'
 
 const dayLabel = (date: string, lang: string | undefined) =>
   new Intl.DateTimeFormat(lang, { weekday: 'short', day: 'numeric', month: 'short' }).format(
     new Date(`${date}T12:00:00`),
   )
 
-/** Previous / next day links of a daily note, and the offer to carry over unfinished tasks. */
+/** Previous / next day links of a daily note (forward into the coming days too), and the offer to carry over unfinished tasks. */
 export function DailyBar({ note }: { note: Note }) {
   const { t, i18n } = useTranslation()
   const repo = useRepo()
@@ -32,6 +32,16 @@ export function DailyBar({ note }: { note: Note }) {
   }).data
   const before = adjacent?.before
   const after = adjacent?.after
+  // In the past: the next note that exists, up to today. From today on: the next day, made on click.
+  const next: { id: string | null; date: string } | null = !adjacent
+    ? null
+    : date < today
+      ? after && after.dailyDate <= today
+        ? { id: after.id, date: after.dailyDate }
+        : { id: null, date: today }
+      : after?.dailyDate === addDays(date, 1)
+        ? { id: after.id, date: after.dailyDate }
+        : { id: null, date: addDays(date, 1) }
 
   return (
     <>
@@ -50,31 +60,25 @@ export function DailyBar({ note }: { note: Note }) {
         ) : (
           <span />
         )}
-        {after ? (
+        {next ? (
           <Button
             variant="ghost"
             size="sm"
             className="-mr-2"
             aria-label={t('daily.later')}
-            onClick={() => navigate({ kind: 'note', id: after.id })}
-          >
-            {after.dailyDate === today
-              ? t('daily.toToday')
-              : dayLabel(after.dailyDate, i18n.resolvedLanguage)}
-            <ChevronRight />
-          </Button>
-        ) : date < today ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-mr-2"
             onClick={() =>
-              openDaily.mutate(undefined, {
-                onSuccess: (n) => navigate({ kind: 'note', id: n.id }),
-              })
+              next.id
+                ? navigate({ kind: 'note', id: next.id })
+                : openDaily.mutate(next.date, {
+                    onSuccess: (n) => navigate({ kind: 'note', id: n.id }),
+                  })
             }
           >
-            {t('daily.toToday')}
+            {next.date === today
+              ? t('daily.toToday')
+              : next.date === addDays(today, 1)
+                ? t('daily.toTomorrow')
+                : dayLabel(next.date, i18n.resolvedLanguage)}
             <ChevronRight />
           </Button>
         ) : null}

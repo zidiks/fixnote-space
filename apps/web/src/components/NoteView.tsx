@@ -251,6 +251,12 @@ export function NoteView({ id }: { id: string }) {
           ref={editor}
           note={n}
           onStateChange={setSaveState}
+          onRepeat={async (task, rule) => {
+            // The days after this one that exist already follow the new rule too.
+            const changed = await repo.applyRecurrence(n.dailyDate as string, task, rule)
+            for (const c of changed) qc.setQueryData(keys.note(c.id), c)
+            if (changed.length) void invalidate()
+          }}
           onSave={async (markdown, base) => {
             const saved = await repo.updateContent(n.id, markdown, { base })
             qc.setQueryData(keys.note(n.id), saved)
