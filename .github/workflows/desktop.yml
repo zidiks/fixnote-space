@@ -2,8 +2,10 @@ name: Desktop build
 
 # Windows installers (NSIS, MSI) and macOS disk images (Apple Silicon and Intel). Runs on main, on `v*`
 # tags, on demand, and on any branch whose pushed commit message contains "[build desktop]".
-# A `v*` tag also publishes a GitHub release whose files have stable names, which the site's
-# /download/* links point at (apps/landing/public/_redirects). With the update signing key set up
+# A release (Run workflow on main with "release" set, or a pushed `v*` tag) also publishes a GitHub
+# release whose files have stable names, which the site's /download/* links point at
+# (apps/landing/public/_redirects). The version comes from the tag: Run workflow picks the next one
+# after the latest `v*` tag and stamps it into the build, so no file needs a version bump. With the update signing key set up
 # (secret TAURI_SIGNING_PRIVATE_KEY, variable TAURI_UPDATER_PUBKEY; see README → Releases), the
 # release also carries signed update files and latest.json, from which installed apps update.
 on:
@@ -11,9 +13,56 @@ on:
     branches: ['**']
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Publish a release: the next version after the latest v* tag (main only)'
+        type: choice
+        options: [patch, minor, major, none]
+        default: patch
 
 jobs:
+  version:
+    name: Version
+    if: >-
+      github.event_name != 'push' || github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      contains(github.event.head_commit.message, '[build desktop]')
+    runs-on: ubuntu-latest
+    outputs:
+      # vX.Y.Z when this run publishes a release, else empty.
+      tag: ${{ steps.pick.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pick
+        shell: bash
+        env:
+          BUMP: ${{ inputs.release }}
+        run: |
+          set -euo pipefail
+          semver='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag=$GITHUB_REF_NAME
+            [[ "$tag" =~ $semver ]] || { echo "::error::tag $tag is not vX.Y.Z"; exit 1; }
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ "${BUMP:-none}" != none ]; then
+            [ "$GITHUB_REF" = refs/heads/main ] || { echo "::error::releases are made from main"; exit 1; }
+            latest=$(git ls-remote --tags --refs origin 'v*' | sed 's#.*refs/tags/##' | { grep -E "$semver" || true; } | sort -V | tail -n1)
+            IFS=. read -r major minor patch <<< "${latest:-v0.0.0}"
+            major=${major#v}
+            case "$BUMP" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              *) patch=$((patch + 1)) ;;
+            esac
+            tag="v$major.$minor.$patch"
+            echo "latest ${latest:-none} -> $tag"
+          else
+            tag=
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          [ -z "$tag" ] || echo "::notice::releasing $tag"
+
   build:
+    needs: version
     strategy:
       fail-fast: false
       matrix:
@@ -37,26 +86,14 @@ jobs:
               apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
               apps/desktop/src-tauri/target/release/bundle/macos/*.app.tar.gz*
     name: Build (${{ matrix.os }})
-    if: >-
-      github.event_name != 'push' || github.ref == 'refs/heads/main' ||
-      startsWith(github.ref, 'refs/tags/v') ||
-      contains(github.event.head_commit.message, '[build desktop]')
     runs-on: ${{ matrix.os }}
-    # Per job, so a push that builds nothing does not cancel a running build.
+    # Per job, so a push that builds nothing does not cancel a running build; a release build is
+    # never cancelled by the next push to main.
     concurrency:
-      group: desktop-${{ github.ref }}-${{ matrix.os }}
-      cancel-in-progress: true
+      group: desktop-${{ github.ref }}-${{ needs.version.outputs.tag }}-${{ matrix.os }}
+      cancel-in-progress: ${{ needs.version.outputs.tag == '' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Tag matches the app version
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
-        run: |
-          version=$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::tag $GITHUB_REF_NAME does not match version $version in tauri.conf.json"
-            exit 1
-          fi
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -67,6 +104,25 @@ jobs:
         with:
           workspaces: apps/desktop/src-tauri
       - run: pnpm install --frozen-lockfile
+      - name: Stamp the release version (app and MCP server)
+        if: needs.version.outputs.tag != ''
+        shell: bash
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          node -e '
+            const fs = require("node:fs")
+            const version = process.env.TAG.replace(/^v/, "")
+            const conf = "apps/desktop/src-tauri/tauri.conf.json"
+            const json = JSON.parse(fs.readFileSync(conf, "utf8"))
+            json.version = version
+            fs.writeFileSync(conf, `${JSON.stringify(json, null, 2)}\n`)
+            const mcp = "apps/mcp/src/server.ts"
+            const src = fs.readFileSync(mcp, "utf8")
+            if (!/export const VERSION = /.test(src)) throw new Error(`VERSION not found in ${mcp}`)
+            fs.writeFileSync(mcp, src.replace(/export const VERSION = .*/, `export const VERSION = ${JSON.stringify(version)}`))
+            console.log("version", version)
+          '
       - name: Supabase config (repo variables, else .env.example)
         shell: bash
         env:
@@ -128,11 +184,13 @@ jobs:
 
   release:
     name: Publish release
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, build]
+    if: needs.version.outputs.tag != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -169,7 +227,7 @@ jobs:
             X64_SIG="$(one artifacts/fixnote-macos-15-intel/**/*.app.tar.gz.sig)" \
             node -e '
               const fs = require("node:fs")
-              const tag = process.env.GITHUB_REF_NAME
+              const tag = process.env.TAG
               const url = (name) => `https://github.com/${process.env.GITHUB_REPOSITORY}/releases/download/${tag}/${name}`
               const entry = (sig, name) => ({ signature: fs.readFileSync(sig, "utf8").trim(), url: url(name) })
               const manifest = {
@@ -192,6 +250,7 @@ jobs:
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+        # Makes the tag on the built commit when it does not exist yet (a release from Run workflow).
         run: >-
-          gh release create "$GITHUB_REF_NAME" release/*
-          --repo "$GITHUB_REPOSITORY" --title "FixNote ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag
+          gh release create "$TAG" release/*
+          --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "FixNote ${TAG#v}" --generate-notes
