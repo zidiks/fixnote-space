@@ -131,6 +131,7 @@ const ru: LocaleResource = {
     },
     index: {
       preparing: 'Готовлю поиск по смыслу… {{percent}}%',
+      starting: 'Запускаю поиск по смыслу…',
       indexing: 'Индексирую заметки: осталось {{count}}',
       unavailable: 'Поиск по смыслу недоступен, отвечаю по ключевым словам.',
     },

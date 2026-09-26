@@ -133,6 +133,7 @@ const es: LocaleResource = {
     },
     index: {
       preparing: 'Preparando la búsqueda por significado… {{percent}}%',
+      starting: 'Iniciando la búsqueda por significado…',
       indexing: 'Indexando notas: quedan {{count}}',
       unavailable: 'La búsqueda por significado no está disponible; respondo por palabras clave.',
     },

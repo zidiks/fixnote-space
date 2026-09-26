@@ -235,6 +235,20 @@
 .fixnote-link-card.is-video .fixnote-link-card-body {
   padding-left: 0.9rem;
 }
+/* The URL line of a bookmark: a small caption right above its card. */
+.fixnote-editor p.fixnote-bookmark-url {
+  margin-bottom: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.fixnote-editor p.fixnote-bookmark-url a {
+  color: var(--color-muted-foreground);
+  text-decoration: none;
+}
+.fixnote-link-card.is-loading {
+  opacity: 0.6;
+}
 .fixnote-link-card-site {
   font-size: 12px;
   color: var(--color-muted-foreground);
@@ -284,4 +298,22 @@
 .fixnote-editor .fixnote-media.ProseMirror-selectednode {
   border-radius: 10px;
   outline: 2px solid color-mix(in oklch, var(--color-brand) 60%, transparent);
+}
+
+/* A bar that slides while progress is unknown (loading a model from the cache, indexing). */
+.fx-indeterminate {
+  animation: fx-indeterminate 1.4s ease-in-out infinite;
+}
+@keyframes fx-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-indeterminate {
+    animation: none;
+  }
 }

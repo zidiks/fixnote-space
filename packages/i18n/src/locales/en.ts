@@ -129,6 +129,7 @@ const en = {
     },
     index: {
       preparing: 'Preparing search by meaning… {{percent}}%',
+      starting: 'Starting search by meaning…',
       indexing: 'Indexing notes: {{count}} left',
       unavailable: 'Search by meaning is unavailable; answering by keywords.',
     },

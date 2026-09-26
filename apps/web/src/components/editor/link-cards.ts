@@ -21,14 +21,28 @@ export function retryLinkCards(view: EditorView) {
  * Top-level paragraphs that are just a link (a bookmark): they get a card below. A link pasted
  * "as a link" (`plainLink`) or a URL kept as plain text gets none.
  */
-function linkParagraphs(doc: PmNode): { pos: number; url: string }[] {
-  const out: { pos: number; url: string }[] = []
+function linkParagraphs(doc: PmNode): { from: number; pos: number; url: string }[] {
+  const out: { from: number; pos: number; url: string }[] = []
   doc.forEach((node, offset) => {
     if (node.type.name !== 'paragraph' || node.attrs.plainLink) return
     const url = onlyLink(node.toJSON() as Parameters<typeof onlyLink>[0])
-    if (url) out.push({ pos: offset + node.nodeSize, url })
+    if (url) out.push({ from: offset, pos: offset + node.nodeSize, url })
   })
   return out
+}
+
+/** What a bookmark shows before (or without) a preview: the site and the address. */
+function fallbackPreview(url: string): LinkPreview {
+  let site = url
+  let rest = ''
+  try {
+    const u = new URL(url)
+    site = u.hostname.replace(/^www\./, '')
+    rest = decodeURI(u.pathname + u.search).replace(/\/$/, '')
+  } catch {
+    // Not a URL we can take apart: show it as it is.
+  }
+  return { url, kind: 'page', title: site, ...(rest ? { description: rest } : {}) }
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string) {
@@ -38,8 +52,12 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, te
   return node
 }
 
-function renderCard(preview: LinkPreview, open: (url: string) => void): HTMLElement {
-  const card = el('div', `fixnote-link-card is-${preview.kind}`)
+function renderCard(
+  preview: LinkPreview,
+  open: (url: string) => void,
+  loading = false,
+): HTMLElement {
+  const card = el('div', `fixnote-link-card is-${preview.kind}${loading ? ' is-loading' : ''}`)
   card.contentEditable = 'false'
   card.setAttribute('role', 'link')
   card.tabIndex = 0
@@ -99,15 +117,21 @@ export const LinkCards = Extension.create<LinkCardsOptions>({
         })
     }
 
+    // A bookmark always shows a card: the page's preview when it loads, else the site and address
+    // (pages that give nothing, the web app before signing in). Its URL line becomes a caption.
     const build = (doc: PmNode) => {
       const decorations: Decoration[] = []
-      for (const { pos, url } of linkParagraphs(doc)) {
-        const preview = previews.get(url)
-        if (preview === undefined) request(url)
-        if (!preview || preview === 'loading' || preview.kind === 'none') continue
+      for (const { from, pos, url } of linkParagraphs(doc)) {
+        const loaded = previews.get(url)
+        if (loaded === undefined) request(url)
+        const full = loaded && loaded !== 'loading' && loaded.kind !== 'none'
+        const preview = full ? loaded : fallbackPreview(url)
+        const state =
+          loaded === undefined || loaded === 'loading' ? 'loading' : full ? 'full' : 'bare'
         decorations.push(
-          Decoration.widget(pos, () => renderCard(preview, open), {
-            key: `${url}:${preview.kind}:${preview.title ?? ''}`,
+          Decoration.node(from, pos, { class: 'fixnote-bookmark-url' }),
+          Decoration.widget(pos, () => renderCard(preview, open, state === 'loading'), {
+            key: `${url}:${state}:${preview.kind}:${preview.title ?? ''}`,
             side: -1,
             ignoreSelection: true,
           }),

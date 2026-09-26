@@ -179,21 +179,46 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
   )
 }
 
+/**
+ * Search-by-meaning status under the header: one steady line with a thin bar, so the thread below
+ * does not jump. The percentage shows only while the model downloads; loading it from the cache
+ * and starting it has no percentage to show.
+ */
 function IndexStatus() {
   const { t } = useTranslation()
   const semantic = useAssistant((s) => s.semantic)
   const progress = useAssistant((s) => s.modelProgress)
   const pending = useAssistant((s) => s.pending)
+  const downloading = semantic === 'loading' && progress > 0 && progress < 1
   const text =
     semantic === 'loading'
-      ? t('chat.index.preparing', { percent: Math.round(progress * 100) })
+      ? downloading
+        ? t('chat.index.preparing', { percent: Math.round(progress * 100) })
+        : t('chat.index.starting')
       : semantic === 'ready' && pending > 0
         ? t('chat.index.indexing', { count: pending })
         : semantic === 'unavailable'
           ? t('chat.index.unavailable')
           : null
   if (!text) return null
-  return <div className="border-b px-4 py-1.5 text-[11px] text-muted-foreground">{text}</div>
+  const busy = semantic === 'loading' || pending > 0
+  return (
+    <div className="relative shrink-0 border-b bg-card px-4 py-1.5 text-[11px] text-muted-foreground tabular-nums">
+      <p className="truncate">{text}</p>
+      {busy ? (
+        <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden" aria-hidden>
+          {downloading ? (
+            <div
+              className="h-full bg-brand/70 transition-[width] duration-300"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
+          ) : (
+            <div className="fx-indeterminate h-full w-1/3 bg-brand/50" />
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 /**
