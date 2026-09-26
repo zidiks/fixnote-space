@@ -30,6 +30,7 @@ import { useUi } from '../../app/store'
 import { unavailableText } from '../../lib/assistant/assistant'
 import { proposeEdit } from '../../lib/assistant/edit'
 import type { LlmUnavailable } from '../../lib/assistant/llm'
+import { useLlm } from '../../lib/assistant/llm'
 import { useRepo } from '../../lib/db'
 import { useInvalidateNotes } from '../../lib/queries'
 import {
@@ -80,10 +81,12 @@ export function useAiEdit(
   const sessionRef = useRef(session)
   sessionRef.current = session
 
-  const update = useCallback(
-    (patch: Partial<Session>) => setSession((s) => (s ? { ...s, ...patch } : s)),
-    [],
-  )
+  // The ref follows at once, so code right after an update (auto-accept) sees the new phase.
+  const update = useCallback((patch: Partial<Session>) => {
+    const next = sessionRef.current ? { ...sessionRef.current, ...patch } : null
+    sessionRef.current = next
+    setSession(next)
+  }, [])
 
   const close = useCallback(() => {
     controller.current?.abort()
@@ -131,6 +134,14 @@ export function useAiEdit(
               ? { kind: 'review', proposal: result.text }
               : { kind: 'unavailable', reason: result.reason },
         })
+        // "Accept edits" and "Auto" modes: an edit you asked for applies without the review step.
+        if (
+          result.kind === 'ok' &&
+          useLlm.getState().mode !== 'ask' &&
+          result.text.trim() !== s.original.trim()
+        ) {
+          acceptRef.current(true)
+        }
       } catch (err) {
         if (ctrl.signal.aborted) {
           if (controller.current === ctrl || controller.current === null)
@@ -170,20 +181,42 @@ export function useAiEdit(
     [editor, run],
   )
 
-  const accept = useCallback(() => {
-    const s = sessionRef.current
-    if (!editor || !s || s.phase.kind !== 'review') return
-    const range = getAiRange(editor)
-    if (!range || rangeMarkdown(editor, range) !== s.original) {
-      update({ phase: { kind: 'error', message: t('ai.changed') } })
-      return
-    }
-    const before = editor.getMarkdown()
-    replaceWithMarkdown(editor, range, s.phase.proposal)
-    onApplied?.(before, editor.getMarkdown())
-    setSession(null)
-    editor.commands.focus()
-  }, [editor, t, update, onApplied])
+  const accept = useCallback(
+    (auto = false) => {
+      const s = sessionRef.current
+      if (!editor || !s || s.phase.kind !== 'review') return
+      const range = getAiRange(editor)
+      if (!range || rangeMarkdown(editor, range) !== s.original) {
+        update({ phase: { kind: 'error', message: t('ai.changed') } })
+        return
+      }
+      const before = editor.getMarkdown()
+      replaceWithMarkdown(editor, range, s.phase.proposal)
+      const after = editor.getMarkdown()
+      onApplied?.(before, after)
+      setSession(null)
+      editor.commands.focus()
+      if (auto) {
+        // Undo is the editor's own step back, as long as nothing was typed since.
+        toast(t('ai.autoApplied'), {
+          duration: 8000,
+          action: {
+            label: t('ai.undo'),
+            onClick: () => {
+              if (editor.isDestroyed || editor.getMarkdown() !== after) {
+                toast(t('audit.changed'))
+                return
+              }
+              editor.commands.undo()
+            },
+          },
+        })
+      }
+    },
+    [editor, t, update, onApplied],
+  )
+  const acceptRef = useRef(accept)
+  acceptRef.current = accept
 
   const stop = useCallback(() => {
     controller.current?.abort()
@@ -366,7 +399,7 @@ function AiEditBody({
         )}
         <div className="flex flex-wrap items-center gap-1.5 border-t px-2 py-2">
           {unchanged ? null : (
-            <Button size="sm" autoFocus onClick={ai.accept}>
+            <Button size="sm" autoFocus onClick={() => ai.accept()}>
               <CheckCheck />
               {t('ai.accept')}
               <Kbd className="ml-1 bg-white/20 text-inherit">↵</Kbd>

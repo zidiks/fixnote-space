@@ -40,7 +40,17 @@ export const API_KEY_SECRET = 'llm-api-key'
 
 const DEFAULTS: ProviderSettings = { kind: 'fixnote', preset: 'openai', baseUrl: '', model: '' }
 
+/**
+ * How AI changes reach notes, like Claude Code's modes. ask: every change waits for Accept;
+ * edits: changes you ask for in a note apply at once (with Undo); auto: Tidy's suggestions too.
+ * Everything still goes to the AI activity log.
+ */
+export type AiMode = 'ask' | 'edits' | 'auto'
+export const AI_MODES: readonly AiMode[] = ['ask', 'edits', 'auto']
+const AI_MODE_KEY = 'ai.mode'
+
 interface LlmState {
+  mode: AiMode
   settings: ProviderSettings
   /** Desktop: nothing leaves the device (no sync, no server AI; Ollama only). */
   localOnly: boolean
@@ -48,6 +58,7 @@ interface LlmState {
 }
 
 export const useLlm = create<LlmState>()(() => ({
+  mode: 'ask',
   settings: DEFAULTS,
   localOnly: false,
   hasKey: false,
@@ -70,9 +81,11 @@ export async function initLlm(store: Kv) {
   } catch {
     // keep defaults
   }
+  const saved = await store.get(AI_MODE_KEY)
+  const mode = AI_MODES.find((m) => m === saved) ?? 'ask'
   const localOnly = platform.kind === 'desktop' && (await store.get(LOCAL_ONLY_KEY)) === 'on'
   const hasKey = Boolean(await platform.secrets.get(API_KEY_SECRET).catch(() => null))
-  useLlm.setState({ settings, localOnly, hasKey })
+  useLlm.setState({ mode, settings, localOnly, hasKey })
 }
 
 export async function saveProvider(patch: Partial<ProviderSettings>) {
@@ -183,4 +196,9 @@ export async function ollamaModels(baseUrl: string): Promise<string[]> {
   if (!res.ok) throw new Error(`Ollama: HTTP ${res.status}`)
   const json = (await res.json()) as { models?: { name: string }[] }
   return (json.models ?? []).map((m) => m.name)
+}
+
+export async function setAiMode(mode: AiMode) {
+  useLlm.setState({ mode })
+  await kv?.set(AI_MODE_KEY, mode)
 }

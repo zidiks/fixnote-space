@@ -181,6 +181,18 @@ const es: LocaleResource = {
     tooLarge: '{{name}} ocupa más de 20 MB',
     fileMissing: 'Este archivo aún no está disponible en este dispositivo.',
   },
+  aiMode: {
+    title: 'Cambios de la IA',
+    body: 'Qué pasa cuando la IA cambia una nota. Cada cambio queda en el registro de abajo y se puede deshacer.',
+    ask: 'Preguntar siempre',
+    askBody: 'Ves cada cambio como diferencias y lo aceptas o rechazas.',
+    edits: 'Aceptar ediciones',
+    editsBody:
+      'Las ediciones que pides en una nota (acortar, reescribir, corregir) se aplican al momento, con Deshacer. Las sugerencias de Poner orden siguen esperándote.',
+    auto: 'Automático',
+    autoBody:
+      'También aplica las sugerencias de Poner orden (carpetas, etiquetas, títulos) según llegan, con Deshacer.',
+  },
   linkPaste: {
     title: 'Pegar como',
     bookmark: 'Marcador',
@@ -223,6 +235,8 @@ const es: LocaleResource = {
     thinking: 'Preparando una propuesta…',
     stop: 'Detener',
     accept: 'Aceptar',
+    autoApplied: 'Edición de la IA aplicada',
+    undo: 'Deshacer',
     reject: 'Descartar',
     retry: 'Otra vez',
     noChanges: 'No hay nada que cambiar.',

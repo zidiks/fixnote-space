@@ -33,8 +33,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`AnswerText`), never as HTML. The LLM key stays in the `llm-proxy` edge function.
 - `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
   its numbers, update by copying from upstream (see its README).
-- AI never changes a note without an explicit accept; changes are shown as diffs (`AiEdit.tsx`,
-  prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
+- AI never changes a note without an explicit accept unless the user picked "Accept edits" or "Auto"
+  in Settings → AI (`useLlm().mode`); then the change applies with an Undo toast and still goes to
+  `AuditLog`. Changes are shown as diffs (`AiEdit.tsx`, prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
   requests by the markers exported from `@fixnote/ai`; keep them in the prompts.
 - Attachments: Markdown `![](attachment:<id>)` (images) or `[name](attachment:<id>)` (other files),
   bytes in the platform `BlobStore`, one encrypted blob per file in Storage

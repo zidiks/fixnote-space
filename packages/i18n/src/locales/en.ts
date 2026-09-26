@@ -177,6 +177,17 @@ const en = {
     tooLarge: '{{name}} is larger than 20 MB',
     fileMissing: 'This file is not available on this device yet.',
   },
+  aiMode: {
+    title: 'AI changes',
+    body: 'What happens when the AI changes a note. Every change is in the activity log below and can be undone.',
+    ask: 'Ask every time',
+    askBody: 'You see each change as a diff and accept or reject it.',
+    edits: 'Accept edits',
+    editsBody:
+      'Edits you ask for in a note (shorten, rewrite, fix) apply at once, with Undo. Tidy suggestions still wait for you.',
+    auto: 'Auto',
+    autoBody: 'Also applies Tidy suggestions (folders, tags, titles) as they come, with Undo.',
+  },
   linkPaste: {
     title: 'Paste as',
     bookmark: 'Bookmark',
@@ -219,6 +230,8 @@ const en = {
     thinking: 'Writing a suggestion…',
     stop: 'Stop',
     accept: 'Accept',
+    autoApplied: 'AI edit applied',
+    undo: 'Undo',
     reject: 'Reject',
     retry: 'Try again',
     noChanges: 'Nothing to change here.',

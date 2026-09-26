@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, FileText, LoaderCircle, WandSparkles, X } from 'lucide-react'
 import { useState } from 'react'
 import { useUi } from '../app/store'
+import { useLlm } from '../lib/assistant/llm'
 import {
   acceptWithUndo,
   describeSuggestion,
@@ -82,6 +83,11 @@ export function TidyView() {
           onClick={async () => {
             await runTidy(tidy, kvStore(driver))
             await qc.invalidateQueries({ queryKey: TIDY_KEY })
+            // Auto mode: what was found is applied at once (Undo in the toast).
+            if (useLlm.getState().mode === 'auto') {
+              const found = await tidy.pending()
+              if (found.length) await accept(found)
+            }
           }}
         >
           {running ? <LoaderCircle className="animate-spin" /> : <WandSparkles />}
