@@ -1,8 +1,9 @@
-import { type LinkPreview, standaloneUrl } from '@fixnote/core'
+import type { LinkPreview } from '@fixnote/core'
 import { Extension } from '@tiptap/core'
 import type { Node as PmNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view'
+import { onlyLink } from './paragraph'
 
 export interface LinkCardsOptions {
   load: (url: string) => Promise<LinkPreview | null>
@@ -16,12 +17,15 @@ export function retryLinkCards(view: EditorView) {
   if (!view.isDestroyed) view.dispatch(view.state.tr.setMeta(key, 'retry'))
 }
 
-/** Paragraphs that are just a link: they get a card below, the Markdown stays a plain URL. */
+/**
+ * Top-level paragraphs that are just a link (a bookmark): they get a card below. A link pasted
+ * "as a link" (`plainLink`) or a URL kept as plain text gets none.
+ */
 function linkParagraphs(doc: PmNode): { pos: number; url: string }[] {
   const out: { pos: number; url: string }[] = []
   doc.forEach((node, offset) => {
-    if (node.type.name !== 'paragraph') return
-    const url = standaloneUrl(node.textContent)
+    if (node.type.name !== 'paragraph' || node.attrs.plainLink) return
+    const url = onlyLink(node.toJSON() as Parameters<typeof onlyLink>[0])
     if (url) out.push({ pos: offset + node.nodeSize, url })
   })
   return out

@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Folder,
   FolderInput,
+  ImagePlus,
   Inbox,
   Link2,
   Mic,
@@ -126,6 +127,20 @@ export function NoteView({ id }: { id: string }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => editor.current?.pickImages()}
+              aria-label={t('menu.insertImage')}
+            >
+              <ImagePlus />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('menu.insertImage')}</TooltipContent>
         </Tooltip>
 
         <Tooltip>

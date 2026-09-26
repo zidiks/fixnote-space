@@ -147,6 +147,12 @@ const en = {
     placeholder: 'Ask about your notes…',
     empty: 'Ask anything. Answers cite the notes they come from.',
   },
+  linkPaste: {
+    title: 'Paste as',
+    bookmark: 'Bookmark',
+    link: 'Link',
+    text: 'Plain text',
+  },
   menu: {
     askAi: 'Ask AI…',
     open: 'Open',
@@ -166,6 +172,7 @@ const en = {
     newNote: 'New note',
     newFolder: 'New folder',
     pasteBlocked: 'Paste with Ctrl+V: clipboard access was denied.',
+    insertImage: 'Insert image…',
   },
   ai: {
     button: 'Ask AI',

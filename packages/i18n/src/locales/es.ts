@@ -151,6 +151,12 @@ const es: LocaleResource = {
     placeholder: 'Pregunta sobre tus notas…',
     empty: 'Pregunta lo que quieras. Las respuestas citan las notas de origen.',
   },
+  linkPaste: {
+    title: 'Pegar como',
+    bookmark: 'Marcador',
+    link: 'Enlace',
+    text: 'Texto sin formato',
+  },
   menu: {
     askAi: 'Preguntar a la IA…',
     open: 'Abrir',
@@ -170,6 +176,7 @@ const es: LocaleResource = {
     newNote: 'Nueva nota',
     newFolder: 'Nueva carpeta',
     pasteBlocked: 'Pega con Ctrl+V: se denegó el acceso al portapapeles.',
+    insertImage: 'Insertar imagen…',
   },
   ai: {
     button: 'Preguntar a la IA',

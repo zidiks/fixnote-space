@@ -149,6 +149,12 @@ const ru: LocaleResource = {
     placeholder: 'Спросите о своих заметках…',
     empty: 'Спрашивайте что угодно. Ответы ссылаются на заметки-источники.',
   },
+  linkPaste: {
+    title: 'Вставить как',
+    bookmark: 'Закладка',
+    link: 'Ссылка',
+    text: 'Обычный текст',
+  },
   menu: {
     askAi: 'Спросить AI…',
     open: 'Открыть',
@@ -168,6 +174,7 @@ const ru: LocaleResource = {
     newNote: 'Новая заметка',
     newFolder: 'Новая папка',
     pasteBlocked: 'Вставьте через Ctrl+V: доступ к буферу обмена запрещён.',
+    insertImage: 'Вставить картинку…',
   },
   ai: {
     button: 'Спросить AI',
