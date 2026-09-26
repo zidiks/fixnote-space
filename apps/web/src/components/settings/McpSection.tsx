@@ -65,12 +65,12 @@ export function McpSection() {
         <p className="text-sm text-muted-foreground">{t('mcp.webOnly')}</p>
       ) : (
         <>
-          <div className="flex items-center gap-3">
-            <span className="text-sm">{t('mcp.access')}</span>
+          <div className="space-y-1.5">
+            <span className="block text-sm">{t('mcp.access')}</span>
             <div
               role="radiogroup"
               aria-label={t('mcp.access')}
-              className="flex rounded-lg border p-0.5"
+              className="inline-flex max-w-full rounded-lg border p-0.5"
             >
               {ACCESS.map((a) => (
                 <button
@@ -79,7 +79,7 @@ export function McpSection() {
                   aria-pressed={access === a}
                   onClick={() => void setAccess(a)}
                   className={cn(
-                    'rounded-md px-3 py-1 text-[13px] text-muted-foreground',
+                    'whitespace-nowrap rounded-md px-3 py-1 text-[13px] text-muted-foreground',
                     access === a && 'bg-accent font-medium text-foreground',
                   )}
                 >

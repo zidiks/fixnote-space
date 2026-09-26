@@ -2,6 +2,8 @@ import type { Embedder, ProgressListener } from '@fixnote/core'
 import type { EmbedBody, EmbedResponse } from './protocol'
 
 const BATCH = 16
+/** A worker that has not even acknowledged a request by then is stuck; it is restarted. */
+const STALL_MS = 15_000
 
 /**
  * multilingual-e5-small (int8) in a dedicated worker, shared by the web app and the desktop app
@@ -13,7 +15,11 @@ export function createTransformersEmbedder(): Embedder {
   let nextId = 1
   const pending = new Map<
     number,
-    { resolve: (v: Float32Array[]) => void; reject: (e: Error) => void }
+    {
+      resolve: (v: Float32Array[]) => void
+      reject: (e: Error) => void
+      stall: ReturnType<typeof setTimeout>
+    }
   >()
   const listeners = new Set<ProgressListener>()
   let ready: Promise<void> | null = null
@@ -32,24 +38,33 @@ export function createTransformersEmbedder(): Embedder {
       }
       const p = pending.get(msg.id)
       if (!p) return
+      clearTimeout(p.stall)
+      if (msg.kind === 'received') return
       pending.delete(msg.id)
       if (msg.ok) p.resolve(msg.vectors ?? [])
       else p.reject(new Error(msg.error))
     }
-    worker.onerror = (e) => {
-      for (const p of pending.values()) p.reject(new Error(e.message || 'Embedding worker failed'))
-      pending.clear()
-      worker?.terminate()
-      worker = null
-      ready = null
-    }
+    worker.onerror = (e) => fail(new Error(e.message || 'Embedding worker failed'))
     return worker
+  }
+
+  /** Every open request fails and the next one starts a fresh worker. */
+  const fail = (error: Error) => {
+    for (const p of pending.values()) {
+      clearTimeout(p.stall)
+      p.reject(error)
+    }
+    pending.clear()
+    worker?.terminate()
+    worker = null
+    ready = null
   }
 
   const call = (body: EmbedBody) =>
     new Promise<Float32Array[]>((resolve, reject) => {
       const id = nextId++
-      pending.set(id, { resolve, reject })
+      const stall = setTimeout(() => fail(new Error('Embedding worker did not respond')), STALL_MS)
+      pending.set(id, { resolve, reject, stall })
       start().postMessage({ ...body, id })
     })
 

@@ -7,3 +7,5 @@ export type EmbedResponse =
   | { kind: 'result'; id: number; ok: true; vectors?: Float32Array[] }
   | { kind: 'result'; id: number; ok: false; error: string }
   | { kind: 'progress'; progress: number }
+  /** The worker got the request: it is alive, whatever loading takes after this. */
+  | { kind: 'received'; id: number }

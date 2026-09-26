@@ -10,7 +10,15 @@ export const MODEL = 'Xenova/multilingual-e5-small'
 // Only the model is downloaded, once, then served from the browser cache (runtime: see ../ort).
 env.allowLocalModels = false
 env.useBrowserCache = true
-if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = await ortPaths()
+
+/**
+ * Where the ONNX runtime comes from, set before the first model loads. Not a top-level await: a
+ * module worker that is still evaluating misses the first message in WebKit (macOS), so the
+ * handler below must be in place from the start.
+ */
+const runtime = (async () => {
+  if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = await ortPaths()
+})()
 
 let extractor: Promise<FeatureExtractionPipeline> | null = null
 
@@ -40,12 +48,14 @@ function downloadProgress() {
 }
 
 function load(): Promise<FeatureExtractionPipeline> {
-  extractor ??= pipeline('feature-extraction', MODEL, {
-    // CPU everywhere: identical vectors on every device, so they stay comparable.
-    device: 'wasm',
-    dtype: 'q8',
-    progress_callback: downloadProgress(),
-  }) as Promise<FeatureExtractionPipeline>
+  extractor ??= runtime.then(() =>
+    pipeline('feature-extraction', MODEL, {
+      // CPU everywhere: identical vectors on every device, so they stay comparable.
+      device: 'wasm',
+      dtype: 'q8',
+      progress_callback: downloadProgress(),
+    }),
+  ) as Promise<FeatureExtractionPipeline>
   extractor.catch(() => {
     extractor = null
   })
@@ -54,6 +64,7 @@ function load(): Promise<FeatureExtractionPipeline> {
 
 self.onmessage = async (event: MessageEvent<EmbedRequest>) => {
   const req = event.data
+  self.postMessage({ kind: 'received', id: req.id } satisfies EmbedResponse)
   try {
     const model = await load()
     if (req.op === 'init') {

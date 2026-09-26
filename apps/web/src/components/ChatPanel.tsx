@@ -204,7 +204,18 @@ function IndexStatus() {
   const busy = semantic === 'loading' || pending > 0
   return (
     <div className="relative shrink-0 border-b bg-card px-4 py-1.5 text-[11px] text-muted-foreground tabular-nums">
-      <p className="truncate">{text}</p>
+      <div className="flex items-center gap-2">
+        <p className="min-w-0 flex-1 truncate">{text}</p>
+        {semantic === 'unavailable' ? (
+          <button
+            type="button"
+            className="shrink-0 text-foreground underline-offset-2 hover:underline"
+            onClick={() => void enableSemantic()}
+          >
+            {t('common.retry')}
+          </button>
+        ) : null}
+      </div>
       {busy ? (
         <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden" aria-hidden>
           {downloading ? (
