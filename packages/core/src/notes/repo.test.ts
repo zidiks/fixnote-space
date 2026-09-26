@@ -131,6 +131,24 @@ describe('listNotes', () => {
   })
 })
 
+describe('pinned notes', () => {
+  it('pins without touching the edit time and filters by pin', async () => {
+    const a = await repo.createNote({ content: 'a' })
+    await repo.createNote({ content: 'b' })
+    await repo.setPinned(a.id, true)
+    const pinned = await repo.getNote(a.id)
+    expect(pinned?.pinnedAt).not.toBeNull()
+    expect(pinned?.updatedAt).toBe(a.updatedAt)
+    const titles = async (filter: object) =>
+      (await repo.listNotes({ filter })).items.map((n) => n.title)
+    expect(await titles({ pinned: true })).toEqual(['a'])
+    expect(await titles({ pinned: false })).toEqual(['b'])
+    await repo.setPinned(a.id, false)
+    expect((await repo.getNote(a.id))?.pinnedAt).toBeNull()
+    expect(await titles({ pinned: true })).toEqual([])
+  })
+})
+
 describe('search', () => {
   it('matches word prefixes across ru/es/en, ignoring case and accents', async () => {
     await repo.createNote({ content: 'Контраст в дизайн-системе\nПроверить токены' })

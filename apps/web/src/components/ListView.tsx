@@ -55,7 +55,11 @@ export function ListView({ route }: { route: ListRoute }) {
           <span className="text-sm text-muted-foreground">{t('list.count', { count })}</span>
         ) : null}
       </header>
-      <NoteGrid filter={filter} empty={<EmptyState body={empty} />} />
+      <NoteGrid
+        filter={filter}
+        empty={<EmptyState body={empty} />}
+        pinnedFirst={route.kind === 'folder'}
+      />
     </div>
   )
 }

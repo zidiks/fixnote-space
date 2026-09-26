@@ -141,6 +141,30 @@ describe('SyncEngine', () => {
     expect(await b.repo.getNote(n.id)).toBeNull()
   })
 
+  it('keeps the latest pin change even when the other device edited the text later', async () => {
+    const a = await device('a')
+    const b = await device('b')
+    const n = await a.repo.createNote({ content: 'x' })
+    await a.engine.sync()
+    await b.engine.sync()
+
+    await a.repo.setPinned(n.id, true)
+    await b.repo.updateContent(n.id, 'x edited') // later edit, no pin change
+    await a.engine.sync()
+    await b.engine.sync()
+    await a.engine.sync()
+    for (const d of [a, b]) {
+      const note = await d.repo.getNote(n.id)
+      expect(note?.content).toBe('x edited')
+      expect(note?.pinnedAt).not.toBeNull()
+    }
+
+    await b.repo.setPinned(n.id, false)
+    await b.engine.sync()
+    await a.engine.sync()
+    expect((await a.repo.getNote(n.id))?.pinnedAt).toBeNull()
+  })
+
   it('renames folders last-writer-wins', async () => {
     const a = await device('a')
     const b = await device('b')

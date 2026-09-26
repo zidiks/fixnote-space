@@ -37,6 +37,18 @@ export function useNotesInfinite(filter: NoteFilter) {
   })
 }
 
+/** Pinned notes for a list: all of them, they are few. */
+export function usePinnedNotes(filter: NoteFilter, enabled = true) {
+  const repo = useRepo()
+  return useQuery({
+    queryKey: keys.list({ ...filter, pinned: true }),
+    queryFn: async () =>
+      (await repo.listNotes({ filter: { ...filter, pinned: true }, limit: 200 })).items,
+    enabled,
+    placeholderData: keepPreviousData,
+  })
+}
+
 export function useNote(id: string, opts: { enabled?: boolean; fresh?: boolean } = {}) {
   const repo = useRepo()
   return useQuery({
@@ -151,6 +163,15 @@ export function useMoveNote() {
   return useMutation({
     mutationFn: ({ id, folderId }: { id: string; folderId: string | null }) =>
       repo.moveNote(id, folderId),
+    onSuccess: invalidate,
+  })
+}
+
+export function useSetPinned() {
+  const repo = useRepo()
+  const invalidate = useInvalidateNotes()
+  return useMutation({
+    mutationFn: ({ id, pinned }: { id: string; pinned: boolean }) => repo.setPinned(id, pinned),
     onSuccess: invalidate,
   })
 }

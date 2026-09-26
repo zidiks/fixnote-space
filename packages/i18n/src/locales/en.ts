@@ -147,6 +147,12 @@ const en = {
     placeholder: 'Ask about your notes…',
     empty: 'Ask anything. Answers cite the notes they come from.',
   },
+  pin: {
+    pin: 'Pin to top',
+    unpin: 'Unpin',
+    pinned: 'Pinned',
+    section: 'Pinned',
+  },
   linkPaste: {
     title: 'Paste as',
     bookmark: 'Bookmark',

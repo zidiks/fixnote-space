@@ -47,6 +47,7 @@ interface NoteRow extends SqlRow {
   title: string
   body: string
   tags: string | null
+  pinned_at: number | null
   created_at: number
   updated_at: number
 }
@@ -56,7 +57,7 @@ const PREVIEW_CHARS = 4000
 const TAG_SEP = '\u001f'
 
 const SUMMARY_COLUMNS = `
-  n.id, n.folder_id, n.type, n.daily_date, n.title, n.created_at, n.updated_at,
+  n.id, n.folder_id, n.type, n.daily_date, n.title, n.pinned_at, n.created_at, n.updated_at,
   (SELECT group_concat(t.name, '${TAG_SEP}') FROM note_tags nt JOIN tags t ON t.id = nt.tag_id
      WHERE nt.note_id = n.id) AS tags`
 
@@ -72,6 +73,7 @@ function toSummary(row: NoteRow): NoteSummary {
     tags: row.tags ? row.tags.split(TAG_SEP) : [],
     tasks: taskProgress(body),
     cover: body.match(/!\[[^\]]*\]\(((?:attachment:|https?:\/\/)[^)\s]+)/)?.[1] ?? null,
+    pinnedAt: row.pinned_at === null ? null : Number(row.pinned_at),
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
   }
@@ -88,6 +90,9 @@ function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } 
   if (filter.type) {
     where.push('n.type = ?')
     params.push(filter.type)
+  }
+  if (filter.pinned !== undefined) {
+    where.push(filter.pinned ? 'n.pinned_at IS NOT NULL' : 'n.pinned_at IS NULL')
   }
   if (filter.updatedSince !== undefined) {
     where.push('n.updated_at >= ?')
@@ -218,6 +223,19 @@ export class NotesRepo {
       `UPDATE notes SET folder_id = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1
         WHERE id = ? AND deleted_at IS NULL AND folder_id IS NOT ?`,
       [folderId, this.now(), id, folderId],
+    )
+  }
+
+  /**
+   * Pins a note to the top of Home and its folder, or unpins it. Not an edit: `updated_at` stays,
+   * so the note keeps its place among recent notes once unpinned.
+   */
+  async setPinned(id: string, pinned: boolean): Promise<void> {
+    const ts = this.now()
+    await this.db.execute(
+      `UPDATE notes SET pinned_at = ?, pin_updated_at = ?, dirty = 1, local_rev = local_rev + 1
+        WHERE id = ? AND deleted_at IS NULL AND (pinned_at IS NULL) = ?`,
+      [pinned ? ts : null, ts, id, pinned ? 1 : 0],
     )
   }
 

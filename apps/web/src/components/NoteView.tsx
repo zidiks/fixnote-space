@@ -21,6 +21,8 @@ import {
   Inbox,
   Link2,
   Mic,
+  Pin,
+  PinOff,
   Sparkles,
   Trash2,
 } from 'lucide-react'
@@ -37,6 +39,7 @@ import {
   useInvalidateNotes,
   useMoveNote,
   useNote,
+  useSetPinned,
 } from '../lib/queries'
 import { formatRelative } from '../lib/time'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
@@ -56,6 +59,7 @@ export function NoteView({ id }: { id: string }) {
   const folders = useFolders().data ?? []
   const move = useMoveNote()
   const deleteWithUndo = useDeleteWithUndo()
+  const setPinned = useSetPinned()
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const editor = useRef<NoteEditorHandle>(null)
   const voice = useVoice((s) => s.status)
@@ -86,6 +90,7 @@ export function NoteView({ id }: { id: string }) {
   const folder = folders.find((f) => f.id === n.folderId)
 
   const onDelete = () => void deleteWithUndo(n.id)
+  const pinned = n.pinnedAt !== null
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 pt-2 pb-32 sm:px-10">
@@ -155,6 +160,22 @@ export function NoteView({ id }: { id: string }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('ai.title')}</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => setPinned.mutate({ id: n.id, pinned: !pinned })}
+              aria-label={pinned ? t('pin.unpin') : t('pin.pin')}
+              aria-pressed={pinned}
+              className={cn(pinned && 'text-brand')}
+            >
+              {pinned ? <PinOff /> : <Pin />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{pinned ? t('pin.unpin') : t('pin.pin')}</TooltipContent>
         </Tooltip>
 
         <DropdownMenu>

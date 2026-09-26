@@ -207,6 +207,7 @@ export function Home() {
 
       <NoteGrid
         filter={filter}
+        pinnedFirst
         empty={
           noNotes || !filtered ? (
             <EmptyState title={t('home.empty.title')} body={t('home.empty.body')} />

@@ -13,6 +13,8 @@ export interface NoteSummary {
   tasks: { done: number; total: number } | null
   /** First image of the note (attachment:<id> or a web URL), shown on its card. */
   cover: string | null
+  /** When the note was pinned; pinned notes stay on top of Home and their folder. */
+  pinnedAt: number | null
   createdAt: number
   updatedAt: number
 }
@@ -29,6 +31,8 @@ export interface NoteFilter {
   type?: NoteType
   /** Only notes updated at or after this timestamp (ms). */
   updatedSince?: number
+  /** true: only pinned notes; false: only notes that are not pinned. */
+  pinned?: boolean
 }
 
 export interface NoteCursor {

@@ -151,6 +151,12 @@ const es: LocaleResource = {
     placeholder: 'Pregunta sobre tus notas…',
     empty: 'Pregunta lo que quieras. Las respuestas citan las notas de origen.',
   },
+  pin: {
+    pin: 'Fijar arriba',
+    unpin: 'Desfijar',
+    pinned: 'Fijada',
+    section: 'Fijadas',
+  },
   linkPaste: {
     title: 'Pegar como',
     bookmark: 'Marcador',

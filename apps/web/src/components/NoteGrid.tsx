@@ -1,7 +1,8 @@
 import type { NoteFilter, NoteSummary } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
+import { Pin } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
-import { useNotesInfinite } from '../lib/queries'
+import { useNotesInfinite, usePinnedNotes } from '../lib/queries'
 import { type DateGroup, dateGroup, dateGroupKey } from '../lib/time'
 import { NoteCard } from './NoteCard'
 
@@ -38,10 +39,26 @@ function useGroupLabel() {
   }
 }
 
-/** Card grid with infinite scroll: the next page loads as the sentinel nears the viewport. */
-export function NoteGrid({ filter, empty }: { filter: NoteFilter; empty: React.ReactNode }) {
+/**
+ * Card grid with infinite scroll: the next page loads as the sentinel nears the viewport. With
+ * `pinnedFirst` (Home, folders), pinned notes get their own section on top.
+ */
+export function NoteGrid({
+  filter,
+  empty,
+  pinnedFirst = false,
+}: {
+  filter: NoteFilter
+  empty: React.ReactNode
+  pinnedFirst?: boolean
+}) {
   const { t } = useTranslation()
-  const query = useNotesInfinite(filter)
+  const listFilter = useMemo(
+    () => (pinnedFirst ? { ...filter, pinned: false } : filter),
+    [filter, pinnedFirst],
+  )
+  const query = useNotesInfinite(listFilter)
+  const pinned = usePinnedNotes(filter, pinnedFirst).data ?? []
   const sentinel = useRef<HTMLDivElement>(null)
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query
 
@@ -65,10 +82,25 @@ export function NoteGrid({ filter, empty }: { filter: NoteFilter; empty: React.R
   if (query.isPending) {
     return <p className="mt-6 text-sm text-muted-foreground">{t('common.loading')}</p>
   }
-  if (!notes.length) return <>{empty}</>
+  if (!notes.length && !(pinnedFirst && pinned.length)) return <>{empty}</>
 
   return (
     <>
+      {pinnedFirst && pinned.length ? (
+        <section aria-label={t('pin.section')} className="mt-6">
+          <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            <Pin className="size-3.5" />
+            {t('pin.section')}
+          </h2>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {pinned.map((n) => (
+              <li key={n.id}>
+                <NoteCard note={n} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {groups.map((section) => (
         <section key={section.key} aria-label={label(section.group)} className="mt-6">
           <h2 className="mb-2 text-sm font-semibold text-muted-foreground">

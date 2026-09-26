@@ -20,6 +20,9 @@ interface NoteRow {
   created_at: number
   updated_at: number
   deleted_at: number | null
+  /** Absent until the server has the pinned-notes migration. */
+  pinned_at?: number | null
+  pin_updated_at?: number | null
   version: number
   seq: number
 }
@@ -38,8 +41,8 @@ interface FolderRow {
 
 type PushResponse<Row> = { ok: true; version: number; seq: number } | { ok: false; current: Row }
 
-const NOTE_COLUMNS =
-  'id, folder_id, type, daily_date, wrapped_key, ciphertext, created_at, updated_at, deleted_at, version, seq'
+// All columns: a server without a newer column (pinned_at before its migration) still syncs.
+const NOTE_COLUMNS = '*'
 const FOLDER_COLUMNS =
   'id, parent_id, name_sealed, sort, created_at, updated_at, deleted_at, version, seq'
 
@@ -55,6 +58,8 @@ const toNote = (r: NoteRow): RemoteNote => ({
   createdAt: Number(r.created_at),
   updatedAt: Number(r.updated_at),
   deletedAt: n(r.deleted_at),
+  pinnedAt: n(r.pinned_at ?? null),
+  pinUpdatedAt: n(r.pin_updated_at ?? null),
   version: Number(r.version),
   seq: Number(r.seq),
 })
@@ -112,6 +117,8 @@ export function supabaseRemote(client: SupabaseClient): SyncRemote {
           created_at: row.createdAt,
           updated_at: row.updatedAt,
           deleted_at: row.deletedAt,
+          pinned_at: row.pinnedAt,
+          pin_updated_at: row.pinUpdatedAt,
         },
         p_base_version: baseVersion,
       })
