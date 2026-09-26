@@ -428,6 +428,27 @@ export class NotesRepo {
     )
   }
 
+  /** Brings back a deleted folder (its notes are not moved back; undo does that note by note). */
+  async restoreFolder(id: string): Promise<void> {
+    await this.db.execute(
+      `UPDATE folders SET deleted_at = NULL, updated_at = ?, dirty = 1, local_rev = local_rev + 1
+        WHERE id = ? AND deleted_at IS NOT NULL`,
+      [this.now(), id],
+    )
+  }
+
+  /** The folder and all folders inside it, at any depth. */
+  async folderSubtree(id: string): Promise<string[]> {
+    const rows = await this.db.query<{ id: string }>(
+      `WITH RECURSIVE sub(id) AS (
+          SELECT ? UNION ALL SELECT f.id FROM folders f JOIN sub ON f.parent_id = sub.id
+            WHERE f.deleted_at IS NULL)
+        SELECT id FROM sub`,
+      [id],
+    )
+    return rows.map((r) => r.id)
+  }
+
   /**
    * Removes a folder and its subfolders. Their notes are never deleted with them: they move back to
    * Inbox, so nothing the user wrote disappears as a side effect of tidying.

@@ -182,6 +182,12 @@ pnpm --filter @fixnote/mcp build:sea   # apps/desktop/src-tauri/binaries/fixnote
 
 Without it the desktop app still builds (a placeholder is used) and MCP shows as unavailable.
 
+Tools: `search_notes`, `get_note`, `list_recent`, `list_folders`, `daily_note`, `create_note`,
+`append_to_note`, `update_note`, `move_note`, `delete_note`, `create_folder`, `rename_folder`,
+`delete_folder`. Settings → AI → Connected apps sets the access level (off, read, read and write,
+full with deletion) and what apps can see: every note, or chosen folders (with their subfolders) and
+single notes. Every change is in the AI activity log and can be undone, deletions included.
+
 ### Web app hosting (Cloudflare)
 
 The web app is static files (`apps/web/dist`). `wrangler.jsonc` deploys them as a Cloudflare

@@ -158,6 +158,10 @@ export const MIGRATIONS: readonly string[] = [
   ALTER TABLE notes ADD COLUMN pinned_at INTEGER;
   ALTER TABLE notes ADD COLUMN pin_updated_at INTEGER;
   `,
+  /* 8: folder changes in the AI activity log (MCP clients can create, rename and delete folders),
+     JSON like `changes`, so they can be undone too. */ `
+  ALTER TABLE ai_actions ADD COLUMN folder_changes TEXT;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

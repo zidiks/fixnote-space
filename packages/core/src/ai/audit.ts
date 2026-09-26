@@ -13,6 +13,18 @@ export interface NoteChange {
   after: NoteState | null
 }
 
+/** A folder as far as undo is concerned; null = the folder did not exist (or was deleted). */
+export interface FolderState {
+  name: string
+  parentId: string | null
+}
+
+export interface FolderChange {
+  folderId: string
+  before: FolderState | null
+  after: FolderState | null
+}
+
 export type AiActionKind =
   | 'edit'
   | 'tidy.move'
@@ -21,6 +33,10 @@ export type AiActionKind =
   | 'tidy.merge'
   | 'mcp.create'
   | 'mcp.append'
+  | 'mcp.update'
+  | 'mcp.move'
+  | 'mcp.delete'
+  | 'mcp.folder'
 
 export interface AiAction {
   id: string
@@ -30,6 +46,7 @@ export interface AiAction {
   /** Who made the change: "DeepSeek via FixNote", "Ollama llama3.1", "Claude Desktop (MCP)". */
   provider: string
   changes: NoteChange[]
+  folderChanges: FolderChange[]
   createdAt: number
   undoneAt: number | null
 }
@@ -42,12 +59,26 @@ interface Row {
   summary: string
   provider: string
   changes: string
+  folder_changes: string | null
   created_at: number
   undone_at: number | null
 }
 
 const sameState = (a: NoteState | null, b: NoteState | null) =>
   a === b || (a !== null && b !== null && a.content === b.content && a.folderId === b.folderId)
+const sameFolder = (a: FolderState | null, b: FolderState | null) =>
+  a === b || (a !== null && b !== null && a.name === b.name && a.parentId === b.parentId)
+
+const toAction = (r: Row): AiAction => ({
+  id: r.id,
+  kind: r.kind as AiActionKind,
+  summary: r.summary,
+  provider: r.provider,
+  changes: JSON.parse(r.changes) as NoteChange[],
+  folderChanges: r.folder_changes ? (JSON.parse(r.folder_changes) as FolderChange[]) : [],
+  createdAt: Number(r.created_at),
+  undoneAt: r.undone_at === null ? null : Number(r.undone_at),
+})
 
 /**
  * The AI audit log: every change made by the AI or an MCP client, with before/after states of the
@@ -75,19 +106,35 @@ export class AuditLog {
     return out
   }
 
+  async folderStates(ids: readonly string[]): Promise<Map<string, FolderState | null>> {
+    const out = new Map<string, FolderState | null>(ids.map((id) => [id, null]))
+    if (!ids.length) return out
+    const rows = await this.db.query<{ id: string; name: string; parent_id: string | null }>(
+      `SELECT id, name, parent_id FROM folders
+        WHERE deleted_at IS NULL AND id IN (${ids.map(() => '?').join(',')})`,
+      [...ids],
+    )
+    for (const r of rows) out.set(r.id, { name: r.name, parentId: r.parent_id })
+    return out
+  }
+
   /**
-   * Runs `change`, recording how the listed notes (plus any it reports creating) looked before
-   * and after. Returns what `change` returned and the logged action.
+   * Runs `change`, recording how the listed notes and folders (plus any it reports creating)
+   * looked before and after. Returns what `change` returned and the logged action.
    */
   async track<T>(
     meta: { kind: AiActionKind; summary: string; provider: string },
     noteIds: readonly string[],
-    change: () => Promise<T & { created?: string[] }>,
-  ): Promise<{ result: T & { created?: string[] }; action: AiAction }> {
+    change: () => Promise<T & { created?: string[]; createdFolders?: string[] }>,
+    folderIds: readonly string[] = [],
+  ): Promise<{ result: T & { created?: string[]; createdFolders?: string[] }; action: AiAction }> {
     const before = await this.states(noteIds)
+    const foldersBefore = await this.folderStates(folderIds)
     const result = await change()
     const ids = [...new Set([...noteIds, ...(result.created ?? [])])]
+    const fids = [...new Set([...folderIds, ...(result.createdFolders ?? [])])]
     const after = await this.states(ids)
+    const foldersAfter = await this.folderStates(fids)
     const changes: NoteChange[] = ids
       .map((noteId) => ({
         noteId,
@@ -95,23 +142,32 @@ export class AuditLog {
         after: after.get(noteId) ?? null,
       }))
       .filter((c) => !sameState(c.before, c.after))
+    const folderChanges: FolderChange[] = fids
+      .map((folderId) => ({
+        folderId,
+        before: foldersBefore.get(folderId) ?? null,
+        after: foldersAfter.get(folderId) ?? null,
+      }))
+      .filter((c) => !sameFolder(c.before, c.after))
     const action: AiAction = {
       id: (this.opts.newId ?? (() => crypto.randomUUID()))(),
       ...meta,
       changes,
+      folderChanges,
       createdAt: this.now(),
       undoneAt: null,
     }
-    if (changes.length) {
+    if (changes.length || folderChanges.length) {
       await this.db.execute(
-        `INSERT INTO ai_actions (id, kind, summary, provider, changes, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO ai_actions (id, kind, summary, provider, changes, folder_changes, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           action.id,
           action.kind,
           action.summary,
           action.provider,
           JSON.stringify(changes),
+          folderChanges.length ? JSON.stringify(folderChanges) : null,
           action.createdAt,
         ],
       )
@@ -140,15 +196,7 @@ export class AuditLog {
       'SELECT * FROM ai_actions ORDER BY created_at DESC LIMIT ?',
       [limit],
     )
-    return rows.map((r) => ({
-      id: r.id,
-      kind: r.kind as AiActionKind,
-      summary: r.summary,
-      provider: r.provider,
-      changes: JSON.parse(r.changes) as NoteChange[],
-      createdAt: Number(r.created_at),
-      undoneAt: r.undone_at === null ? null : Number(r.undone_at),
-    }))
+    return rows.map(toAction)
   }
 
   async undo(id: string): Promise<UndoResult> {
@@ -158,10 +206,21 @@ export class AuditLog {
     )
     if (!row) return { ok: false, reason: 'missing' }
     if (row.undone_at !== null) return { ok: false, reason: 'already' }
-    const changes = JSON.parse(row.changes) as NoteChange[]
+    const { changes, folderChanges } = toAction(row)
     const now = await this.states(changes.map((c) => c.noteId))
-    if (changes.some((c) => !sameState(now.get(c.noteId) ?? null, c.after))) {
+    const foldersNow = await this.folderStates(folderChanges.map((c) => c.folderId))
+    if (
+      changes.some((c) => !sameState(now.get(c.noteId) ?? null, c.after)) ||
+      folderChanges.some((c) => !sameFolder(foldersNow.get(c.folderId) ?? null, c.after))
+    ) {
       return { ok: false, reason: 'changed' }
+    }
+    // Folders first (a note may move back into a restored folder), created ones removed last.
+    for (const c of folderChanges) {
+      if (!c.before) continue
+      if (!c.after) await this.repo.restoreFolder(c.folderId)
+      else if (c.after.name !== c.before.name)
+        await this.repo.renameFolder(c.folderId, c.before.name)
     }
     for (const c of changes) {
       if (c.before === null) {
@@ -175,6 +234,7 @@ export class AuditLog {
       if (current?.folderId !== c.before.folderId)
         await this.repo.moveNote(c.noteId, c.before.folderId)
     }
+    for (const c of folderChanges) if (!c.before) await this.repo.deleteFolder(c.folderId)
     await this.db.execute('UPDATE ai_actions SET undone_at = ? WHERE id = ?', [this.now(), id])
     return { ok: true }
   }
