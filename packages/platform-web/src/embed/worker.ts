@@ -14,16 +14,37 @@ if (env.backends.onnx.wasm) env.backends.onnx.wasm.wasmPaths = await ortPaths()
 
 let extractor: Promise<FeatureExtractionPipeline> | null = null
 
+/**
+ * One progress for the whole download: transformers.js reports each file (config, tokenizer,
+ * weights) from 0 to 100 separately, which made the percentage jump back and forth. Bytes of all
+ * files so far, never going backwards.
+ */
+function downloadProgress() {
+  const files = new Map<string, { loaded: number; total: number }>()
+  let shown = 0
+  return (p: { status: string; file?: string; loaded?: number; total?: number }) => {
+    if (p.status !== 'progress' || !p.file || !p.total) return
+    files.set(p.file, { loaded: p.loaded ?? 0, total: p.total })
+    let loaded = 0
+    let total = 0
+    for (const f of files.values()) {
+      loaded += f.loaded
+      total += f.total
+    }
+    const next = Math.min(loaded / total, 1)
+    // Whole percents only: fewer messages, no flicker.
+    if (next - shown < 0.01 && next < 1) return
+    shown = next
+    self.postMessage({ kind: 'progress', progress: next } satisfies EmbedResponse)
+  }
+}
+
 function load(): Promise<FeatureExtractionPipeline> {
   extractor ??= pipeline('feature-extraction', MODEL, {
     // CPU everywhere: identical vectors on every device, so they stay comparable.
     device: 'wasm',
     dtype: 'q8',
-    progress_callback: (p: { status: string; progress?: number }) => {
-      if (p.status === 'progress' && typeof p.progress === 'number') {
-        self.postMessage({ kind: 'progress', progress: p.progress / 100 } satisfies EmbedResponse)
-      }
-    },
+    progress_callback: downloadProgress(),
   }) as Promise<FeatureExtractionPipeline>
   extractor.catch(() => {
     extractor = null

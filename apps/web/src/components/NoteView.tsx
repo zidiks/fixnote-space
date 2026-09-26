@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Folder,
   FolderInput,
-  ImagePlus,
   Inbox,
   Link2,
   Mic,
@@ -32,6 +31,7 @@ import { useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { suggestForNewNote } from '../lib/assistant/tidy'
 import { useDb, useRepo } from '../lib/db'
+import { registerDropSink } from '../lib/drop'
 import {
   keys,
   useDeleteWithUndo,
@@ -72,6 +72,12 @@ export function NoteView({ id }: { id: string }) {
 
   // While this note is open, dictation goes into it.
   useEffect(() => registerVoiceSink('note', (text) => editor.current?.insertText(text)), [])
+  // Anything dropped onto the window goes into this note.
+  useEffect(
+    () =>
+      registerDropSink({ insert: (markdown, at) => editor.current?.insertDropped(markdown, at) }),
+    [],
+  )
 
   // "Tidy up" asked for from elsewhere (a toast after dictation).
   useEffect(() => {
@@ -132,20 +138,6 @@ export function NoteView({ id }: { id: string }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => editor.current?.pickImages()}
-              aria-label={t('menu.insertImage')}
-            >
-              <ImagePlus />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('menu.insertImage')}</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -259,6 +251,12 @@ export function NoteView({ id }: { id: string }) {
           ref={editor}
           note={n}
           onStateChange={setSaveState}
+          onRepeat={async (task, rule) => {
+            // The days after this one that exist already follow the new rule too.
+            const changed = await repo.applyRecurrence(n.dailyDate as string, task, rule)
+            for (const c of changed) qc.setQueryData(keys.note(c.id), c)
+            if (changed.length) void invalidate()
+          }}
           onSave={async (markdown, base) => {
             const saved = await repo.updateContent(n.id, markdown, { base })
             qc.setQueryData(keys.note(n.id), saved)

@@ -33,12 +33,15 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`AnswerText`), never as HTML. The LLM key stays in the `llm-proxy` edge function.
 - `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
   its numbers, update by copying from upstream (see its README).
-- AI never changes a note without an explicit accept; changes are shown as diffs (`AiEdit.tsx`,
-  prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
+- AI never changes a note without an explicit accept unless the user picked "Accept edits" or "Auto"
+  in Settings → AI (`useLlm().mode`); then the change applies with an Undo toast and still goes to
+  `AuditLog`. Changes are shown as diffs (`AiEdit.tsx`, prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
   requests by the markers exported from `@fixnote/ai`; keep them in the prompts.
-- Attachments: Markdown `![](attachment:<id>)`, bytes in the platform `BlobStore`, one encrypted
-  blob per file in Storage (`packages/core/src/attachments`). Images are block nodes; the custom
-  paragraph in `editor/paragraph.ts` keeps images that share a line with text.
+- Attachments: Markdown `![](attachment:<id>)` (images) or `[name](attachment:<id>)` (other files),
+  bytes in the platform `BlobStore`, one encrypted blob per file in Storage
+  (`packages/core/src/attachments`). Images are block nodes; the custom paragraph in
+  `editor/paragraph.ts` keeps images that share a line with text. Drops onto the window go through
+  `DropLayer` (`lib/drop.ts`): into the open note, else a new note.
 - Capture (Telegram): the bot only seals and queues (`supabase/functions/telegram-bot`); notes are
   made on the device (`packages/core/src/capture`). The payload format lives in both places.
 - Speech and embeddings run in the webview on both platforms (transformers.js workers in
@@ -53,6 +56,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.
   Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
   placeholder otherwise).
+- Repeating tasks live in the task line (`- [ ] Call mom 🔁 weekly:mon`, rules in
+  `packages/core/src/notes/recurrence.ts`); a new daily note gets the tasks due that day
+  (`getOrCreateDaily`), and a changed rule reaches existing later days via `applyRecurrence`.
 - Import (`packages/core/src/import`) plans first and writes only in `runImport`; keep it
   idempotent (notes with the same text are skipped).
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the

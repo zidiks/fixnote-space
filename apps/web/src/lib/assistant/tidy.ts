@@ -11,7 +11,7 @@ import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { providerLabel } from './assistant'
-import { llm } from './llm'
+import { llm, useLlm } from './llm'
 
 interface TidyState {
   pending: number
@@ -171,6 +171,11 @@ export async function suggestForNewNote(
   }
   if (found === 'signed-out' || !found.length) return
   const list = found
+  // Auto mode: applied right away; the toast offers Undo.
+  if (useLlm.getState().mode === 'auto') {
+    await acceptWithUndo(list, deps)
+    return
+  }
   const title = note.title || i18n.t('common.untitled')
   toast(
     i18n.t('tidy.noteSuggestion', {

@@ -235,6 +235,20 @@
 .fixnote-link-card.is-video .fixnote-link-card-body {
   padding-left: 0.9rem;
 }
+/* The URL line of a bookmark: a small caption right above its card. */
+.fixnote-editor p.fixnote-bookmark-url {
+  margin-bottom: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.fixnote-editor p.fixnote-bookmark-url a {
+  color: var(--color-muted-foreground);
+  text-decoration: none;
+}
+.fixnote-link-card.is-loading {
+  opacity: 0.6;
+}
 .fixnote-link-card-site {
   font-size: 12px;
   color: var(--color-muted-foreground);
@@ -284,4 +298,93 @@
 .fixnote-editor .fixnote-media.ProseMirror-selectednode {
   border-radius: 10px;
   outline: 2px solid color-mix(in oklch, var(--color-brand) 60%, transparent);
+}
+
+/* A bar that slides while progress is unknown (loading a model from the cache, indexing). */
+.fx-indeterminate {
+  animation: fx-indeterminate 1.4s ease-in-out infinite;
+}
+@keyframes fx-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-indeterminate {
+    animation: none;
+  }
+}
+
+/* Dragging something in from outside: a soft glow along the window's edges, breathing gently. */
+.fixnote-drop-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset 0 0 0 1.5px color-mix(in oklch, var(--color-brand) 55%, transparent),
+    inset 0 0 42px 8px color-mix(in oklch, var(--color-brand) 22%, transparent);
+  animation: fixnote-drop-breathe 1.6s ease-in-out infinite alternate;
+}
+@keyframes fixnote-drop-breathe {
+  from {
+    opacity: 0.65;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fixnote-drop-glow::before {
+    animation: none;
+  }
+}
+
+/* An attached file (a link to attachment:<id>): a chip with a paperclip; a click saves the file. */
+.fixnote-editor a[href^="attachment:"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.6rem 0.1rem 0.45rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-card);
+  color: var(--color-foreground);
+  font-size: 0.9em;
+  text-decoration: none;
+}
+.fixnote-editor a[href^="attachment:"]::before {
+  content: "";
+  width: 0.95em;
+  height: 0.95em;
+  flex-shrink: 0;
+  background: var(--color-muted-foreground);
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.fixnote-editor a[href^="attachment:"]:hover {
+  background: var(--color-accent);
+}
+
+/* A repeating task: the rule reads as a small label; raw text only while the caret is in the line. */
+.fixnote-editor .fixnote-repeat-hidden {
+  display: none;
+}
+.fixnote-editor .fixnote-repeat-raw {
+  color: var(--color-muted-foreground);
+  font-size: 0.85em;
+}
+.fixnote-repeat-chip {
+  margin-left: 0.5em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-muted);
+  color: var(--color-muted-foreground);
+  font-size: 12px;
+  white-space: nowrap;
+  user-select: none;
+  vertical-align: 1px;
 }

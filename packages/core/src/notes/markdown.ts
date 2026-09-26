@@ -9,6 +9,7 @@ function stripInline(line: string): string {
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links
     .replace(/<(https?:\/\/[^\s<>]+)>/g, '$1') // <https://…> links
     .replace(/\[\[([^\]]+)\]\]/g, '$1') // wiki links
+    .replace(/\s*🔁\s*[\w:,@-]+\s*$/u, '') // a repeating task's rule
     .replace(/(\*\*|__|~~|==)(.+?)\1/g, '$2')
     .replace(/(^|[^\w*])[*_]([^*_\n]+)[*_](?=[^\w*]|$)/g, '$1$2')
     .replace(/`([^`]*)`/g, '$1')

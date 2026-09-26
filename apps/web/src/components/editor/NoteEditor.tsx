@@ -1,4 +1,4 @@
-import type { Note } from '@fixnote/core'
+import { attachmentIdFromUrl, type Note, noteTasks, type Recurrence } from '@fixnote/core'
 import { i18n, useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -26,6 +26,7 @@ import {
   Italic,
   List,
   ListChecks,
+  Repeat,
   Scissors,
   Sparkles,
   Strikethrough,
@@ -35,7 +36,12 @@ import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState
 import { toast } from 'sonner'
 import { useAccount } from '../../lib/account/account'
 import { providerLabel } from '../../lib/assistant/assistant'
-import { attachmentObjectUrl, ImageTooLargeError, storeImage } from '../../lib/attachments'
+import {
+  attachmentObjectUrl,
+  ImageTooLargeError,
+  saveAttachment,
+  storeImage,
+} from '../../lib/attachments'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
@@ -45,8 +51,11 @@ export interface NoteEditorHandle {
   openAi: AiEditHandle['open']
   /** Dictated text: at the cursor while typing, otherwise as a new paragraph at the end. */
   insertText(text: string): void
-  /** Opens the file picker and inserts the chosen images at the cursor. */
-  pickImages(): void
+  /**
+   * Markdown dropped onto the window (images, files, links, text): as blocks next to the block
+   * under the pointer, or at the end when the drop was not over the text.
+   */
+  insertDropped(markdown: string, at: { x: number; y: number } | null): void
 }
 
 import { AiRangeExtension } from './ai-range'
@@ -54,6 +63,8 @@ import { AttachmentImage } from './attachment-image'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
 import { ImageAwareParagraph } from './paragraph'
+import { RepeatDialog } from './RepeatDialog'
+import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -92,10 +103,13 @@ function EditorMenu({
   editor,
   onAskAi,
   onInsertImage,
+  onRepeat,
 }: {
   editor: Editor
   onAskAi: () => void
   onInsertImage: () => void
+  /** Set when the menu was opened on a task of a daily note. */
+  onRepeat?: () => void
 }) {
   const { t } = useTranslation()
   // Subscribed, so the menu reflects the selection and marks at the moment it opens.
@@ -230,6 +244,8 @@ function EditorMenu({
       active: state.taskList,
     },
   ]
+  if (onRepeat)
+    items.unshift({ icon: Repeat, label: t('repeat.menu'), hint: '', run: onRepeat }, 'sep')
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
@@ -270,9 +286,12 @@ export function NoteEditor({
   onSave,
   onStateChange,
   onLeave,
+  onRepeat,
   ref,
 }: {
   note: Note
+  /** A task of this daily note got a new repeat rule (null: stopped repeating). */
+  onRepeat?: (task: string, rule: Recurrence | null) => void
   /** Lets the note header open the AI popover for the whole note. */
   ref?: Ref<NoteEditorHandle>
   /** Persists `markdown`, an edit that started from `base`; resolves with what was stored. */
@@ -310,8 +329,13 @@ export function NoteEditor({
     setLinkPaste(next)
   }, [])
   const fileInput = useRef<HTMLInputElement>(null)
-  const callbacks = useRef({ onSave, onStateChange, onLeave })
-  callbacks.current = { onSave, onStateChange, onLeave }
+  const callbacks = useRef({ onSave, onStateChange, onLeave, onRepeat })
+  callbacks.current = { onSave, onStateChange, onLeave, onRepeat }
+  /** The task right-clicked in a daily note, and the one whose repeat is being edited. */
+  const [menuTask, setMenuTask] = useState<TaskTarget | null>(null)
+  const [repeatTask, setRepeatTask] = useState<(TaskTarget & { rule: Recurrence | null }) | null>(
+    null,
+  )
 
   /** Swaps the document without firing a save, keeping the caret roughly where it was. */
   const replaceContent = useRef((markdown: string) => {
@@ -345,6 +369,8 @@ export function NoteEditor({
           openOnClick: false,
           autolink: true,
           linkOnPaste: true,
+          // Files dropped into a note are links to attachment:<id>.
+          protocols: ['attachment'],
           shouldAutoLink: (url) => !plainUrls.current.has(url),
         },
       }),
@@ -354,6 +380,7 @@ export function NoteEditor({
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       Markdown,
       AiRangeExtension,
+      RecurringTasks,
       AttachmentImage.configure({
         resolve: (id) => attachmentObjectUrl(images.current, id),
       }),
@@ -388,22 +415,21 @@ export function NoteEditor({
         spellcheck: 'true',
         'aria-label': note.title || t('common.untitled'),
       },
-      // A click opens a link in the browser; Alt/Option+click places the caret in it to edit.
+      // A click opens a link in the browser (an attached file: saves it); Alt/Option+click places
+      // the caret in the link to edit it.
       handleClick: (_view, _pos, event) => {
         if (event.altKey || event.button !== 0) return false
         const target = event.target instanceof Element ? event.target : null
-        const href = target?.closest('a[href]')?.getAttribute('href')
-        if (!href || !/^https?:\/\//i.test(href)) return false
+        const anchor = target?.closest('a[href]')
+        const href = anchor?.getAttribute('href')
+        if (!href) return false
+        const fileId = attachmentIdFromUrl(href)
+        if (fileId) {
+          void saveAttachment(images.current, fileId, anchor?.textContent?.trim() || 'file')
+          return true
+        }
+        if (!/^https?:\/\//i.test(href)) return false
         links.current.open(href)
-        return true
-      },
-      // Images pasted or dropped become attachments: stored here, synced encrypted.
-      handleDrop: (view, event) => {
-        const files = imageFiles(event.dataTransfer)
-        if (!files.length) return false
-        event.preventDefault()
-        const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos
-        void insertImages(files, at)
         return true
       },
       // A long unformatted paste (a dump from a chat or a dictation): offer to tidy it up.
@@ -493,7 +519,30 @@ export function NoteEditor({
     ref,
     () => ({
       openAi: (target, action) => openAi.current(target, action),
-      pickImages: () => fileInput.current?.click(),
+      insertDropped: (markdown, at) => {
+        const e = editorRef.current
+        if (!e || e.isDestroyed || !markdown.trim()) return
+        const { doc } = e.state
+        // After the top-level block under the pointer, so text is never split mid-line.
+        const hit = at ? e.view.posAtCoords({ left: at.x, top: at.y }) : null
+        let pos = doc.content.size
+        if (hit) {
+          const $pos = doc.resolve(hit.pos)
+          pos = $pos.depth > 0 ? $pos.after(1) : hit.pos
+        }
+        const last = doc.lastChild
+        // An empty last line takes the drop instead of staying below it.
+        if (!hit && last?.type.name === 'paragraph' && last.content.size === 0) {
+          pos = doc.content.size - last.nodeSize
+        }
+        e.chain().insertContentAt(pos, markdown.trim(), { contentType: 'markdown' }).run()
+        // One empty line at the end, to keep typing below what was dropped.
+        const end = e.state.doc.lastChild
+        if (end?.type.name !== 'paragraph' || end.content.size > 0) {
+          e.chain().insertContentAt(e.state.doc.content.size, { type: 'paragraph' }).run()
+        }
+        e.commands.focus()
+      },
       insertText: (text) => {
         const e = editorRef.current
         if (!e || e.isDestroyed) return
@@ -574,7 +623,12 @@ export function NoteEditor({
       }}
     >
       <ContextMenu>
-        <ContextMenuTrigger asChild>
+        <ContextMenuTrigger
+          asChild
+          onContextMenu={(e) => {
+            setMenuTask(editor && note.dailyDate ? taskAt(editor, e.clientX, e.clientY) : null)
+          }}
+        >
           <EditorContent editor={editor} />
         </ContextMenuTrigger>
         {editor ? (
@@ -582,9 +636,32 @@ export function NoteEditor({
             editor={editor}
             onAskAi={() => ai.open('selection')}
             onInsertImage={() => fileInput.current?.click()}
+            onRepeat={
+              menuTask
+                ? () => {
+                    const target = { ...menuTask, rule: repeatOf(editor, menuTask.pos) }
+                    // After the menu has closed, so the dialog gets focus.
+                    setTimeout(() => setRepeatTask(target), 0)
+                  }
+                : undefined
+            }
           />
         ) : null}
       </ContextMenu>
+      {editor && repeatTask && note.dailyDate ? (
+        <RepeatDialog
+          date={note.dailyDate}
+          rule={repeatTask.rule}
+          onClose={() => setRepeatTask(null)}
+          onSave={(rule) => {
+            setRepeatTask(null)
+            if (editor.state.doc.nodeAt(repeatTask.pos)?.type.name !== 'taskItem') return
+            setRepeat(editor, repeatTask.pos, rule)
+            const task = noteTasks(editor.getMarkdown())[repeatTask.index]
+            if (task) callbacks.current.onRepeat?.(task.text, rule)
+          }}
+        />
+      ) : null}
       {editor ? <AiEditLayer editor={editor} ai={ai} /> : null}
       {editor && linkPaste ? (
         <LinkPasteMenu

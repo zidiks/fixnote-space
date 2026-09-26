@@ -4,6 +4,7 @@ import { Button, cn } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { AI_MODES, setAiMode, useLlm } from '../../lib/assistant/llm'
 import { useDb } from '../../lib/db'
 import { useInvalidateNotes } from '../../lib/queries'
 import { formatRelative } from '../../lib/time'
@@ -67,10 +68,48 @@ function AuditLogList() {
   )
 }
 
+/** How AI changes reach notes: ask every time, accept edits, or auto (like Claude Code). */
+function AiModeSection() {
+  const { t } = useTranslation()
+  const mode = useLlm((s) => s.mode)
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <h3 className="font-medium">{t('aiMode.title')}</h3>
+        <p className="max-w-md text-sm text-muted-foreground">{t('aiMode.body')}</p>
+      </div>
+      <div role="radiogroup" aria-label={t('aiMode.title')} className="max-w-xl space-y-2">
+        {AI_MODES.map((m) => (
+          <label
+            key={m}
+            className={cn(
+              'flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5',
+              mode === m && 'border-brand/50 bg-brand/5',
+            )}
+          >
+            <input
+              type="radio"
+              name="ai-mode"
+              className="mt-1 size-4 accent-brand"
+              checked={mode === m}
+              onChange={() => void setAiMode(m)}
+            />
+            <span className="space-y-0.5">
+              <span className="block text-sm font-medium">{t(`aiMode.${m}`)}</span>
+              <span className="block text-sm text-muted-foreground">{t(`aiMode.${m}Body`)}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function AiSection() {
   return (
     <div className="space-y-8">
       <ProviderSection />
+      <AiModeSection />
       <McpSection />
       <AuditLogList />
     </div>
