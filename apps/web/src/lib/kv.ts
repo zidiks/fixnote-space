@@ -13,5 +13,8 @@ export function kvStore(db: SqlDriver) {
         [key, value],
       )
     },
+    async delete(key: string): Promise<void> {
+      await db.execute('DELETE FROM kv WHERE key = ?', [key])
+    },
   }
 }

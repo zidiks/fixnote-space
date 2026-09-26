@@ -16,12 +16,18 @@ it('serves the notes tools over MCP', async () => {
   const { tools } = await client.listTools()
   expect(tools.map((t) => t.name).sort()).toEqual([
     'append_to_note',
+    'create_folder',
     'create_note',
     'daily_note',
+    'delete_folder',
+    'delete_note',
     'get_note',
     'list_folders',
     'list_recent',
+    'move_note',
+    'rename_folder',
     'search_notes',
+    'update_note',
   ])
   const denied = await client.callTool({ name: 'create_note', arguments: { content: 'x' } })
   expect(denied.isError).toBe(true)

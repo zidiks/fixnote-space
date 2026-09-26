@@ -21,13 +21,15 @@ import {
   Folder,
   FolderInput,
   Inbox,
+  Pin,
+  PinOff,
   SquareArrowOutUpRight,
   Trash2,
 } from 'lucide-react'
 import { useUi } from '../app/store'
 import { attachmentObjectUrl } from '../lib/attachments'
 import { useDb } from '../lib/db'
-import { useDeleteWithUndo, useFolders, useMoveNote } from '../lib/queries'
+import { useDeleteWithUndo, useFolders, useMoveNote, useSetPinned } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
 
 /** The note's first image: attachments resolve to a local object URL, web images load as is. */
@@ -64,6 +66,8 @@ export function NoteCard({ note }: { note: NoteSummary }) {
   const folders = useFolders().data ?? []
   const move = useMoveNote()
   const deleteWithUndo = useDeleteWithUndo()
+  const setPinned = useSetPinned()
+  const pinned = note.pinnedAt !== null
   const Icon = note.type === 'daily' ? CalendarDays : FileText
   const open = () => navigate({ kind: 'note', id: note.id })
 
@@ -79,6 +83,7 @@ export function NoteCard({ note }: { note: NoteSummary }) {
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Icon className="size-3.5" />
             <span>{formatCardDate(note.updatedAt, i18n.resolvedLanguage)}</span>
+            {pinned ? <Pin className="size-3.5 text-brand" aria-label={t('pin.pinned')} /> : null}
             {note.tasks ? (
               <span className="ml-auto flex items-center gap-1 tabular-nums">
                 <CheckSquare className="size-3.5" />
@@ -117,6 +122,10 @@ export function NoteCard({ note }: { note: NoteSummary }) {
         <ContextMenuItem onSelect={open}>
           <SquareArrowOutUpRight />
           {t('menu.open')}
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => setPinned.mutate({ id: note.id, pinned: !pinned })}>
+          {pinned ? <PinOff /> : <Pin />}
+          {pinned ? t('pin.unpin') : t('pin.pin')}
         </ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger>

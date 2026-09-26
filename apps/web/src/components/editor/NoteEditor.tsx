@@ -22,6 +22,7 @@ import {
   Copy,
   Heading1,
   Heading2,
+  ImagePlus,
   Italic,
   List,
   ListChecks,
@@ -30,7 +31,7 @@ import {
   Strikethrough,
   TextSelect,
 } from 'lucide-react'
-import { type Ref, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useAccount } from '../../lib/account/account'
 import { providerLabel } from '../../lib/assistant/assistant'
@@ -44,17 +45,27 @@ export interface NoteEditorHandle {
   openAi: AiEditHandle['open']
   /** Dictated text: at the cursor while typing, otherwise as a new paragraph at the end. */
   insertText(text: string): void
+  /** Opens the file picker and inserts the chosen images at the cursor. */
+  pickImages(): void
 }
 
 import { AiRangeExtension } from './ai-range'
 import { AttachmentImage } from './attachment-image'
 import { LinkCards, retryLinkCards } from './link-cards'
+import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
 import { ImageAwareParagraph } from './paragraph'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
+/** Images in a paste or drop. Some webviews list a pasted image only under `items`. */
 function imageFiles(data: DataTransfer | null): File[] {
-  return [...(data?.files ?? [])].filter((f) => f.type.startsWith('image/'))
+  if (!data) return []
+  const files = [...data.files].filter((f) => f.type.startsWith('image/'))
+  if (files.length) return files
+  return [...data.items]
+    .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+    .map((item) => item.getAsFile())
+    .filter((f): f is File => f !== null)
 }
 
 /** Long text with no Markdown structure: paragraphs of prose, no headings or lists. */
@@ -77,7 +88,15 @@ function selectedText(editor: Editor) {
 }
 
 /** Editor right-click menu: clipboard, formatting and blocks, like a native text view. */
-function EditorMenu({ editor, onAskAi }: { editor: Editor; onAskAi: () => void }) {
+function EditorMenu({
+  editor,
+  onAskAi,
+  onInsertImage,
+}: {
+  editor: Editor
+  onAskAi: () => void
+  onInsertImage: () => void
+}) {
   const { t } = useTranslation()
   // Subscribed, so the menu reflects the selection and marks at the moment it opens.
   const state = useEditorState({
@@ -145,6 +164,7 @@ function EditorMenu({ editor, onAskAi }: { editor: Editor; onAskAi: () => void }
       disabled: !hasSelection,
     },
     { icon: Clipboard, label: t('menu.paste'), hint: combo('V'), run: () => void paste() },
+    { icon: ImagePlus, label: t('menu.insertImage'), hint: '', run: onInsertImage },
     {
       icon: TextSelect,
       label: t('menu.selectAll'),
@@ -226,7 +246,7 @@ function EditorMenu({ editor, onAskAi }: { editor: Editor; onAskAi: () => void }
           >
             <it.icon />
             {it.label}
-            <MenuShortcut>{it.hint}</MenuShortcut>
+            {it.hint ? <MenuShortcut>{it.hint}</MenuShortcut> : null}
           </ContextMenuItem>
         ),
       )}
@@ -281,6 +301,15 @@ export function NoteEditor({
     open: (url: string) => void platform.openExternal(url),
   })
   links.current = { load: loadPreview, open: (url: string) => void platform.openExternal(url) }
+  const [linkPaste, setLinkPaste] = useState<LinkPaste | null>(null)
+  const closeLinkPaste = useCallback(() => setLinkPaste(null), [])
+  /** URLs kept as plain text: typing a space after one must not turn it back into a link. */
+  const plainUrls = useRef(new Set<string>())
+  const changeLinkPaste = useCallback((next: LinkPaste) => {
+    if (next.mode === 'text') plainUrls.current.add(next.url)
+    setLinkPaste(next)
+  }, [])
+  const fileInput = useRef<HTMLInputElement>(null)
   const callbacks = useRef({ onSave, onStateChange, onLeave })
   callbacks.current = { onSave, onStateChange, onLeave }
 
@@ -312,7 +341,12 @@ export function NoteEditor({
       StarterKit.configure({
         paragraph: false,
         heading: { levels: [1, 2, 3] },
-        link: { openOnClick: false, autolink: true, linkOnPaste: true },
+        link: {
+          openOnClick: false,
+          autolink: true,
+          linkOnPaste: true,
+          shouldAutoLink: (url) => !plainUrls.current.has(url),
+        },
       }),
       ImageAwareParagraph,
       TaskList,
@@ -339,6 +373,14 @@ export function NoteEditor({
     ],
     content: note.content,
     contentType: 'markdown',
+    onCreate: ({ editor: e }) => {
+      // URLs stored as plain text stay text when the user types next to them.
+      e.state.doc.descendants((node) => {
+        if (!node.isText || node.marks.some((m) => m.type.name === 'link')) return
+        for (const url of node.text?.match(/https?:\/\/[^\s<>"]+/g) ?? [])
+          plainUrls.current.add(url)
+      })
+    },
     autofocus: note.content.trim() ? false : 'end',
     editorProps: {
       attributes: {
@@ -346,14 +388,11 @@ export function NoteEditor({
         spellcheck: 'true',
         'aria-label': note.title || t('common.untitled'),
       },
-      // Ctrl/⌘+click opens a link in the browser; a plain click just places the caret.
-      handleClick: (view, pos, event) => {
-        if (!(event.ctrlKey || event.metaKey)) return false
-        const link = view.state.doc
-          .resolve(pos)
-          .marks()
-          .find((m) => m.type.name === 'link')
-        const href = link?.attrs.href as string | undefined
+      // A click opens a link in the browser; Alt/Option+click places the caret in it to edit.
+      handleClick: (_view, _pos, event) => {
+        if (event.altKey || event.button !== 0) return false
+        const target = event.target instanceof Element ? event.target : null
+        const href = target?.closest('a[href]')?.getAttribute('href')
         if (!href || !/^https?:\/\//i.test(href)) return false
         links.current.open(href)
         return true
@@ -375,6 +414,13 @@ export function NoteEditor({
           return true
         }
         const text = event.clipboardData?.getData('text/plain') ?? ''
+        // A lone URL: inserted as a bookmark or a link, with a menu to pick another form.
+        const url = pastedUrl(text)
+        const e = editorRef.current
+        if (url && e && !e.isActive('code') && !e.isActive('codeBlock')) {
+          setLinkPaste(pasteUrl(e, url))
+          return true
+        }
         if (looksLikeDump(text)) {
           setTimeout(() => {
             toast(t('ai.structureOffer'), {
@@ -447,6 +493,7 @@ export function NoteEditor({
     ref,
     () => ({
       openAi: (target, action) => openAi.current(target, action),
+      pickImages: () => fileInput.current?.click(),
       insertText: (text) => {
         const e = editorRef.current
         if (!e || e.isDestroyed) return
@@ -530,9 +577,37 @@ export function NoteEditor({
         <ContextMenuTrigger asChild>
           <EditorContent editor={editor} />
         </ContextMenuTrigger>
-        {editor ? <EditorMenu editor={editor} onAskAi={() => ai.open('selection')} /> : null}
+        {editor ? (
+          <EditorMenu
+            editor={editor}
+            onAskAi={() => ai.open('selection')}
+            onInsertImage={() => fileInput.current?.click()}
+          />
+        ) : null}
       </ContextMenu>
       {editor ? <AiEditLayer editor={editor} ai={ai} /> : null}
+      {editor && linkPaste ? (
+        <LinkPasteMenu
+          editor={editor}
+          paste={linkPaste}
+          onChange={changeLinkPaste}
+          onClose={closeLinkPaste}
+        />
+      ) : null}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = [...(e.currentTarget.files ?? [])].filter((f) =>
+            f.type.startsWith('image/'),
+          )
+          e.currentTarget.value = ''
+          if (files.length) void insertImages(files)
+        }}
+      />
     </div>
   )
 }

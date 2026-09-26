@@ -7,6 +7,7 @@ import { appDataBlobStore } from './blobs'
 import { tauriFetch } from './http'
 import { osKeyStore, osSecretStore } from './keys'
 import { openTauriSqlDriver } from './sql'
+import { tauriUpdater } from './updater'
 import { windowControls } from './window'
 
 export { isTauri }
@@ -15,6 +16,7 @@ export interface AppInfo {
   version: string
   os: string
   arch: string
+  updates: boolean
 }
 
 /** Round-trip to the Rust side; proves the bridge works. */
@@ -67,6 +69,7 @@ export function createTauriPlatform(): Platform {
     // Pages are read by the app itself: no server learns which links a note contains.
     fetchPage: (url) => invoke<FetchedPage>('fetch_page', { url }),
     openExternal: (url) => openUrl(url),
+    updater: tauriUpdater(),
     mcp: {
       info: () => invoke<{ command: string; built: boolean }>('mcp_info'),
       connect: (client) => invoke<string>('mcp_connect', { client }),

@@ -152,6 +152,16 @@ export const MIGRATIONS: readonly string[] = [
   );
   CREATE INDEX tidy_pending ON tidy_suggestions(status, created_at);
   `,
+  /* 7: pinned notes. pinned_at = when it was pinned (NULL = not pinned); pin_updated_at = when the
+     pin was last set or cleared, so sync keeps the latest pin change even if the text was edited
+     elsewhere in between. */ `
+  ALTER TABLE notes ADD COLUMN pinned_at INTEGER;
+  ALTER TABLE notes ADD COLUMN pin_updated_at INTEGER;
+  `,
+  /* 8: folder changes in the AI activity log (MCP clients can create, rename and delete folders),
+     JSON like `changes`, so they can be undone too. */ `
+  ALTER TABLE ai_actions ADD COLUMN folder_changes TEXT;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

@@ -137,6 +137,8 @@
   color: var(--color-brand);
   text-decoration: underline;
   text-underline-offset: 3px;
+  /* A click opens the link (Alt/Option+click puts the caret in it instead). */
+  cursor: pointer;
 }
 .fixnote-editor code {
   font-family: var(--font-mono);

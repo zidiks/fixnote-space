@@ -182,6 +182,12 @@ pnpm --filter @fixnote/mcp build:sea   # apps/desktop/src-tauri/binaries/fixnote
 
 Without it the desktop app still builds (a placeholder is used) and MCP shows as unavailable.
 
+Tools: `search_notes`, `get_note`, `list_recent`, `list_folders`, `daily_note`, `create_note`,
+`append_to_note`, `update_note`, `move_note`, `delete_note`, `create_folder`, `rename_folder`,
+`delete_folder`. Settings → AI → Connected apps sets the access level (off, read, read and write,
+full with deletion) and what apps can see: every note, or chosen folders (with their subfolders) and
+single notes. Every change is in the AI activity log and can be undone, deletions included.
+
 ### Web app hosting (Cloudflare)
 
 The web app is static files (`apps/web/dist`). `wrangler.jsonc` deploys them as a Cloudflare
@@ -292,3 +298,16 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
   `FixNote-macOS-x64.dmg`); the site's download buttons point at the latest release. To release,
   set `version` in `apps/desktop/src-tauri/tauri.conf.json`, merge, then tag that commit on `main`:
   `git tag v0.1.0 && git push origin v0.1.0`. The build fails if the tag and the version differ.
+- Installed desktop apps update themselves from those releases (Tauri updater: a check shortly after
+  start and every 6 hours, or Settings → General → Check for updates). Updates are signed; set the
+  key up once:
+  1. `pnpm --filter @fixnote/desktop tauri signer generate -w ~/.tauri/fixnote.key` (choose a
+     password; keep the key file safe: without it, installed apps can no longer be updated).
+  2. In GitHub → Settings → Secrets and variables → Actions add the secrets
+     `TAURI_SIGNING_PRIVATE_KEY` (the contents of `~/.tauri/fixnote.key`) and
+     `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and the variable `TAURI_UPDATER_PUBKEY` (the contents of
+     `~/.tauri/fixnote.key.pub`).
+
+  Release builds then carry the public key and the release gets `latest.json` plus signed update
+  files; apps read it at `https://fixnote.space/download/latest.json`. Builds without the key
+  (local ones too) work normally but do not update themselves.

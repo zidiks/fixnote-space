@@ -11,6 +11,9 @@ export interface RemoteNote {
   createdAt: number
   updatedAt: number
   deletedAt: number | null
+  /** When the note was pinned (null = not pinned) and when that last changed. */
+  pinnedAt: number | null
+  pinUpdatedAt: number | null
   /** Bumped by the server on every accepted write. */
   version: number
   /** Server-wide monotonic counter; pulls ask for everything after the last one seen. */

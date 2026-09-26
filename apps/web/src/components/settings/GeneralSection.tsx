@@ -13,6 +13,7 @@ import { type Theme, useUi } from '../../app/store'
 import { CAPTURE_TO_DAILY } from '../../lib/daily'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
+import { UpdatesSection } from './UpdatesSection'
 
 export function GeneralSection() {
   const { t } = useTranslation()
@@ -82,6 +83,7 @@ export function GeneralSection() {
           <span className="block text-sm text-muted-foreground">{t('daily.toDailyBody')}</span>
         </span>
       </label>
+      <UpdatesSection />
     </div>
   )
 }

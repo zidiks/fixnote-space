@@ -1,3 +1,4 @@
+import { MCP_ACCESS_KEY, type McpAccess, parseMcpAccess } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button, cn } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -6,9 +7,9 @@ import { toast } from 'sonner'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
 import { usePlatform } from '../../lib/platform'
+import { McpScopePicker } from './McpScopePicker'
 
-type Access = 'off' | 'read' | 'write'
-const ACCESS = ['off', 'read', 'write'] as const
+const ACCESS: readonly McpAccess[] = ['off', 'read', 'write', 'full']
 const KEY = ['mcp', 'access'] as const
 
 /** Connect Claude Desktop, Cursor and other MCP apps to the notes (desktop only). */
@@ -24,13 +25,14 @@ export function McpSection() {
     queryFn: () => mcp?.info() ?? null,
     enabled: Boolean(mcp),
   }).data
-  const access = (useQuery({
-    queryKey: KEY,
-    queryFn: async () => ((await kv.get('mcp.access')) as Access | null) ?? 'read',
-  }).data ?? 'read') as Access
+  const access =
+    useQuery({
+      queryKey: KEY,
+      queryFn: async () => parseMcpAccess(await kv.get(MCP_ACCESS_KEY)),
+    }).data ?? 'read'
 
-  const setAccess = async (value: Access) => {
-    await kv.set('mcp.access', value)
+  const setAccess = async (value: McpAccess) => {
+    await kv.set(MCP_ACCESS_KEY, value)
     await qc.invalidateQueries({ queryKey: KEY })
   }
   const connect = async (client: 'claude' | 'cursor') => {
@@ -86,9 +88,12 @@ export function McpSection() {
               ))}
             </div>
           </div>
-          {access === 'write' ? (
-            <p className="max-w-md text-xs text-muted-foreground">{t('mcp.writeNote')}</p>
+          {access === 'write' || access === 'full' ? (
+            <p className="max-w-md text-xs text-muted-foreground">
+              {t(access === 'full' ? 'mcp.fullNote' : 'mcp.writeNote')}
+            </p>
           ) : null}
+          {access !== 'off' ? <McpScopePicker /> : null}
           {info && !info.built ? (
             <p className="text-sm text-muted-foreground">{t('mcp.notBuilt')}</p>
           ) : (

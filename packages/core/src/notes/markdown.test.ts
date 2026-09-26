@@ -48,6 +48,12 @@ describe('taskProgress', () => {
 })
 
 describe('toPlainText', () => {
+  it('reads links pasted as links or as plain text as their address', () => {
+    expect(toPlainText('<https://example.com/a>\n\nhttps://example.com/b')).toBe(
+      'https://example.com/a\nhttps://example.com/b',
+    )
+  })
+
   it('keeps one line per block without syntax', () => {
     expect(toPlainText('# A\n\n- [ ] b **c**\n> d\n```css\ncolor: oklch(0.7 0.1 50)\n```')).toBe(
       'A\nb c\nd\ncolor: oklch(0.7 0.1 50)',

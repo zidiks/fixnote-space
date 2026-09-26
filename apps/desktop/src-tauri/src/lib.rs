@@ -24,15 +24,26 @@ struct AppInfo {
     version: String,
     os: &'static str,
     arch: &'static str,
+    /// Built with an update key (release builds from CI), so it can install signed updates.
+    updates: bool,
 }
 
 /// Round-trip used by the UI to confirm the Rust bridge works.
 #[tauri::command]
 fn app_info(app: tauri::AppHandle) -> AppInfo {
+    let updates = app
+        .config()
+        .plugins
+        .0
+        .get("updater")
+        .and_then(|u| u.get("pubkey"))
+        .and_then(Value::as_str)
+        .is_some_and(|key| !key.is_empty());
     AppInfo {
         version: app.package_info().version.to_string(),
         os: std::env::consts::OS,
         arch: std::env::consts::ARCH,
+        updates,
     }
 }
 
@@ -57,6 +68,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;

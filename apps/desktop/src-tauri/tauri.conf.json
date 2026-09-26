@@ -18,7 +18,8 @@
         "height": 820,
         "minWidth": 900,
         "minHeight": 600,
-        "center": true
+        "center": true,
+        "dragDropEnabled": false
       }
     ],
     "security": {
@@ -32,6 +33,13 @@
         "connect-src": "'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co https://huggingface.co https://*.huggingface.co https://*.hf.co",
         "worker-src": "'self' blob:"
       }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": ["https://fixnote.space/download/latest.json"],
+      "windows": { "installMode": "passive" }
     }
   },
   "bundle": {

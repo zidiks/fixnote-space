@@ -48,7 +48,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   in Settings → AI and can be undone. LLM calls go through `llm()` in
   `apps/web/src/lib/assistant/llm.ts` (FixNote AI, the user's key, or Ollama). In local-only mode
   nothing may reach our server: no sync, Telegram, sharing or FixNote AI.
-- MCP server: `apps/mcp`; it writes only through `NotesRepo` and checks the `mcp.access` kv first.
+- MCP server: `apps/mcp`; it writes only through `NotesRepo` and logs every change in `AuditLog`
+  (folders too). Each call checks the `mcp.access` level and the `mcp.scope` kv (see
+  `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.
   Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
   placeholder otherwise).
 - Import (`packages/core/src/import`) plans first and writes only in `runImport`; keep it

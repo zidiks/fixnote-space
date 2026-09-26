@@ -2,7 +2,7 @@ import { AuditLog, NotesRepo, prepareDatabase, type SqlDriver } from '@fixnote/c
 import { beforeEach, describe, expect, it } from 'vitest'
 import { defaultDatabasePath } from './paths'
 import { openNodeSqlite } from './sqlite'
-import { ACCESS_KEY, NotesTools } from './tools'
+import { ACCESS_KEY, NotesTools, SCOPE_KEY } from './tools'
 
 let db: SqlDriver
 let tools: NotesTools
@@ -35,7 +35,7 @@ describe('NotesTools', () => {
     expect(got).toContain('tags: #bot')
     expect(got).toContain('команды /today')
     expect(await tools.recent(5)).toContain('Рецепт борща')
-    expect(await tools.folders()).toBe('(no folder): 1 notes\nРабота: 1 notes')
+    expect(await tools.folders()).toBe(`(no folder): 1 notes\nРабота (id: ${work.id}): 1 notes`)
   })
 
   it('writes only when the user allowed it, and logs writes for undo', async () => {
@@ -66,9 +66,85 @@ describe('NotesTools', () => {
 
   it('stops everything when access is off, and finds folders by name only', async () => {
     await setAccess('write')
-    await expect(tools.create('x', 'Нет такой')).rejects.toThrow('No folder named')
+    await expect(tools.create('x', 'Нет такой')).rejects.toThrow('No folder "Нет такой"')
     await setAccess('off')
     await expect(tools.search('x')).rejects.toThrow('turned off')
+  })
+
+  it('changes and deletes notes and folders with the matching access, all undoable', async () => {
+    const repo = new NotesRepo(db)
+    const audit = new AuditLog(db, repo)
+    const home = await repo.createFolder('Дом')
+    const n = await repo.createNote({ content: '# Покупки\n\nмолоко', folderId: home.id })
+
+    await setAccess('write')
+    await tools.update(n.id, '# Покупки\n\nмолоко, хлеб')
+    await tools.createFolder('Ремонт', 'дом')
+    const repair = (await repo.listFolders()).find((f) => f.name === 'Ремонт')
+    expect(repair?.parentId).toBe(home.id)
+    await tools.move(n.id, 'Дом / Ремонт')
+    expect((await repo.getNote(n.id))?.folderId).toBe(repair?.id)
+    await tools.renameFolder('Ремонт', 'Ремонт кухни')
+    await expect(tools.remove(n.id)).rejects.toThrow('does not let connected apps delete')
+    await expect(tools.deleteFolder('Дом')).rejects.toThrow('does not let connected apps delete')
+
+    await setAccess('full')
+    expect(await tools.deleteFolder('Дом')).toContain(
+      'and 1 folders inside it. Its 1 notes were kept',
+    )
+    expect(await repo.listFolders()).toEqual([])
+    expect((await repo.getNote(n.id))?.folderId).toBeNull()
+
+    // Undo the folder deletion: both folders come back and the note returns to its folder.
+    const [deleted] = await audit.list()
+    expect(deleted?.kind).toBe('mcp.folder')
+    expect(await audit.undo(deleted?.id ?? '')).toEqual({ ok: true })
+    expect((await repo.listFolders()).map((f) => f.name).sort()).toEqual(['Дом', 'Ремонт кухни'])
+    expect((await repo.getNote(n.id))?.folderId).toBe(repair?.id)
+
+    await tools.remove(n.id)
+    expect(await repo.getNote(n.id)).toBeNull()
+    const [removal] = await audit.list()
+    expect(await audit.undo(removal?.id ?? '')).toEqual({ ok: true })
+    expect((await repo.getNote(n.id))?.content).toBe('# Покупки\n\nмолоко, хлеб')
+
+    // Undo the rename, then the creation of the folder.
+    const log = await audit.list()
+    const rename = log.find((a) => a.summary.startsWith('Renamed'))
+    expect(await audit.undo(rename?.id ?? '')).toEqual({ ok: true })
+    expect((await repo.listFolders()).map((f) => f.name).sort()).toEqual(['Дом', 'Ремонт'])
+  })
+
+  it('sees only the folders and notes the user shared, subfolders included', async () => {
+    const repo = new NotesRepo(db)
+    const work = await repo.createFolder('Работа')
+    const sub = await repo.createFolder('Проекты', work.id)
+    const personal = await repo.createFolder('Личное')
+    const a = await repo.createNote({ content: 'бот задача', folderId: sub.id })
+    const b = await repo.createNote({ content: 'бот дневник', folderId: personal.id })
+    const c = await repo.createNote({ content: 'бот идея' })
+    const shared = await repo.createNote({ content: 'бот список', folderId: personal.id })
+    await db.execute('INSERT INTO kv (key, value) VALUES (?, ?)', [
+      SCOPE_KEY,
+      JSON.stringify({ folders: [work.id], notes: [shared.id] }),
+    ])
+    await setAccess('full')
+
+    const found = await tools.search('бот')
+    expect(found).toContain(a.id)
+    expect(found).toContain(shared.id)
+    expect(found).not.toContain(b.id)
+    expect(found).not.toContain(c.id)
+    await expect(tools.get(b.id)).rejects.toThrow(`No note with id ${b.id}`)
+    await expect(tools.remove(c.id)).rejects.toThrow('No note with id')
+    expect(await tools.folders()).not.toContain('Личное')
+    expect(await tools.folders()).toContain('Работа / Проекты')
+    await expect(tools.create('x')).rejects.toThrow('only use some folders')
+    await expect(tools.create('x', 'Личное')).rejects.toThrow('No folder "Личное"')
+    expect(await tools.create('в проекты', 'Проекты')).toMatch(/^Saved/)
+    await expect(tools.createFolder('Новая')).rejects.toThrow('inside one of them')
+    await expect(tools.daily()).rejects.toThrow('not shared')
+    expect(await tools.recent()).not.toContain('дневник')
   })
 
   it('knows where the desktop app keeps the database', () => {

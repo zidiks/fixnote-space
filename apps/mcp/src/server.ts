@@ -11,7 +11,7 @@ export function createServer(db: SqlDriver): McpServer {
     { name: 'fixnote', version: VERSION },
     {
       instructions:
-        "FixNote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Create or append only when the user asks; every change is shown to the user in FixNote and can be undone there.",
+        "FixNote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Create, change, move or delete notes and folders only when the user asks; every change is shown to the user in FixNote and can be undone there. The user decides in FixNote what this app may do and which folders and notes it can see.",
     },
   )
   const tools = new NotesTools(db, () => server.server.getClientVersion()?.name ?? 'MCP client')
@@ -67,7 +67,7 @@ export function createServer(db: SqlDriver): McpServer {
     'list_folders',
     {
       title: 'Folders',
-      description: 'Folders with their note counts.',
+      description: 'Folders this app can use, with their ids and note counts.',
       inputSchema: {},
       annotations: { readOnlyHint: true },
     },
@@ -81,7 +81,7 @@ export function createServer(db: SqlDriver): McpServer {
         'Saves a new note (Markdown; the first line becomes its title; #tags work). Without a folder it lands on Home without a folder. The user sees it in FixNote and can undo it.',
       inputSchema: {
         content: z.string().min(1),
-        folder: z.string().optional().describe('Name of an existing folder'),
+        folder: z.string().optional().describe('Folder id, name or path ("Work / Projects")'),
       },
     },
     ({ content, folder }) => run(() => tools.create(content, folder)),
@@ -94,6 +94,73 @@ export function createServer(db: SqlDriver): McpServer {
       inputSchema: { id: z.string().min(1), content: z.string().min(1) },
     },
     ({ id, content }) => run(() => tools.append(id, content)),
+  )
+  server.registerTool(
+    'update_note',
+    {
+      title: 'Rewrite a note',
+      description:
+        'Replaces the whole Markdown of a note. Read it with get_note first and keep what the user did not ask to change.',
+      inputSchema: { id: z.string().min(1), content: z.string().min(1) },
+    },
+    ({ id, content }) => run(() => tools.update(id, content)),
+  )
+  server.registerTool(
+    'move_note',
+    {
+      title: 'Move a note',
+      description: 'Moves a note to a folder, or out of any folder when `folder` is omitted.',
+      inputSchema: {
+        id: z.string().min(1),
+        folder: z.string().optional().describe('Folder id, name or path'),
+      },
+    },
+    ({ id, folder }) => run(() => tools.move(id, folder ?? null)),
+  )
+  server.registerTool(
+    'delete_note',
+    {
+      title: 'Delete a note',
+      description: 'Deletes a note. The user can restore it from the AI activity log in FixNote.',
+      inputSchema: { id: z.string().min(1) },
+      annotations: { destructiveHint: true },
+    },
+    ({ id }) => run(() => tools.remove(id)),
+  )
+  server.registerTool(
+    'create_folder',
+    {
+      title: 'Create a folder',
+      description: 'Creates a folder, at the top level or inside `parent`.',
+      inputSchema: {
+        name: z.string().min(1),
+        parent: z.string().optional().describe('Parent folder id, name or path'),
+      },
+    },
+    ({ name, parent }) => run(() => tools.createFolder(name, parent)),
+  )
+  server.registerTool(
+    'rename_folder',
+    {
+      title: 'Rename a folder',
+      description: 'Gives a folder a new name.',
+      inputSchema: {
+        folder: z.string().min(1).describe('Folder id, name or path'),
+        name: z.string().min(1).describe('New name'),
+      },
+    },
+    ({ folder, name }) => run(() => tools.renameFolder(folder, name)),
+  )
+  server.registerTool(
+    'delete_folder',
+    {
+      title: 'Delete a folder',
+      description:
+        'Deletes a folder and the folders inside it. Their notes are kept and end up without a folder. The user can undo it in FixNote.',
+      inputSchema: { folder: z.string().min(1).describe('Folder id, name or path') },
+      annotations: { destructiveHint: true },
+    },
+    ({ folder }) => run(() => tools.deleteFolder(folder)),
   )
   server.registerTool(
     'daily_note',

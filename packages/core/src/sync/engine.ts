@@ -29,6 +29,8 @@ interface LocalNote extends SqlRow {
   created_at: number
   updated_at: number
   deleted_at: number | null
+  pinned_at: number | null
+  pin_updated_at: number | null
   sync_version: number
   dirty: number
   local_rev: number
@@ -188,8 +190,9 @@ export class SyncEngine {
       const dailyDate = await this.claimDailyDate(tx, r.id, r.deletedAt ? null : r.dailyDate)
       await tx.execute(
         `INSERT INTO notes (id, folder_id, type, daily_date, title, content, search_text,
-                            created_at, updated_at, deleted_at, sync_version, dirty, local_rev, base_content)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+                            created_at, updated_at, deleted_at, pinned_at, pin_updated_at,
+                            sync_version, dirty, local_rev, base_content)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
         [
           r.id,
           folderId,
@@ -201,6 +204,8 @@ export class SyncEngine {
           r.createdAt,
           r.updatedAt,
           r.deletedAt,
+          r.pinnedAt ?? null,
+          r.pinUpdatedAt ?? null,
           r.version,
           dailyDate === r.dailyDate || r.deletedAt ? 0 : 1,
           theirs,
@@ -217,6 +222,13 @@ export class SyncEngine {
 
     let content = theirs
     let dirty = localMetaWins ? 1 : 0
+    // The pin is merged on its own: the latest pin change wins, whoever edited the text.
+    const localPinWins =
+      local.dirty === 1 && Number(local.pin_updated_at ?? 0) > Number(r.pinUpdatedAt ?? 0)
+    const pin = localPinWins
+      ? { pinnedAt: local.pinned_at, pinUpdatedAt: local.pin_updated_at }
+      : { pinnedAt: r.pinnedAt ?? null, pinUpdatedAt: r.pinUpdatedAt ?? null }
+    if (localPinWins) dirty = 1
     if (local.dirty === 1 && local.content !== theirs) {
       const merged = merge3(local.content, local.base_content ?? '', theirs)
       if (merged !== null) {
@@ -236,7 +248,8 @@ export class SyncEngine {
 
     await tx.execute(
       `UPDATE notes SET folder_id = ?, type = ?, daily_date = ?, title = ?, content = ?, search_text = ?,
-              updated_at = ?, deleted_at = ?, sync_version = ?, base_content = ?, dirty = ?
+              updated_at = ?, deleted_at = ?, pinned_at = ?, pin_updated_at = ?, sync_version = ?,
+              base_content = ?, dirty = ?
         WHERE id = ?`,
       [
         meta.folderId,
@@ -247,6 +260,8 @@ export class SyncEngine {
         toPlainText(content),
         meta.updatedAt,
         meta.deletedAt,
+        pin.pinnedAt,
+        pin.pinUpdatedAt,
         r.version,
         theirs,
         dirty,
@@ -353,6 +368,8 @@ export class SyncEngine {
             createdAt: Number(local.created_at),
             updatedAt: Number(local.updated_at),
             deletedAt: local.deleted_at === null ? null : Number(local.deleted_at),
+            pinnedAt: local.pinned_at === null ? null : Number(local.pinned_at),
+            pinUpdatedAt: local.pin_updated_at === null ? null : Number(local.pin_updated_at),
           },
           Number(local.sync_version),
         )
