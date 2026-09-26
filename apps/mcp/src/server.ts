@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { NotesTools } from './tools'
 
-export const VERSION = '0.1.1'
+export const VERSION = '0.1.2'
 
 /** The FixNote MCP server over an open notes database. */
 export function createServer(db: SqlDriver): McpServer {
