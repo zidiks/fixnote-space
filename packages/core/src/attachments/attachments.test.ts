@@ -33,6 +33,8 @@ describe('attachment references', () => {
         '![](attachment:a1)\ntext ![x](attachment:b-2) ![](attachment:a1) ![](https://x/y.png)',
       ),
     ).toEqual(['a1', 'b-2'])
+    // A file's link carries its size as the title.
+    expect(attachmentIds('[report.pdf](attachment:f-1 "1,2 МБ")')).toEqual(['f-1'])
     expect(attachmentIdFromUrl('attachment:abc')).toBe('abc')
     expect(attachmentIdFromUrl('attachment:../etc')).toBeNull()
     expect(attachmentIdFromUrl('https://x')).toBeNull()

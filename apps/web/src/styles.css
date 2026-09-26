@@ -365,6 +365,13 @@
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48'/%3E%3C/svg%3E")
     center / contain no-repeat;
 }
+/* Its size, kept as the link's title. */
+.fixnote-editor a[href^="attachment:"][title]::after {
+  content: attr(title);
+  color: var(--color-muted-foreground);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
 .fixnote-editor a[href^="attachment:"]:hover {
   background: var(--color-accent);
 }

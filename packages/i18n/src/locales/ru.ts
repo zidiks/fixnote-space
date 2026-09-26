@@ -237,6 +237,8 @@ const ru: LocaleResource = {
     newFolder: 'Новая папка',
     pasteBlocked: 'Вставьте через Ctrl+V: доступ к буферу обмена запрещён.',
     insertImage: 'Вставить картинку…',
+    deleteFile: 'Удалить файл',
+    deleteImage: 'Удалить картинку',
   },
   ai: {
     button: 'Спросить AI',

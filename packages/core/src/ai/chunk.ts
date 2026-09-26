@@ -6,6 +6,12 @@ export interface Chunk {
   text: string
 }
 
+/**
+ * Bump when passages come out differently, so every device embeds its notes again. 2: tasks keep
+ * `[ ]` / `[x]`, so the assistant knows what is done.
+ */
+export const CHUNKS_VERSION = 2
+
 const TARGET = 800
 const HARD_MAX = 1200
 /** A passage this short (a heading, a one-liner) joins the next block rather than standing alone. */
@@ -35,7 +41,7 @@ function splitLong(text: string): string[] {
 export function chunkNote(markdown: string): Chunk[] {
   const blocks = markdown
     .split(/\n\s*\n/)
-    .map((b) => toPlainText(b).trim())
+    .map((b) => toPlainText(b, { tasks: true }).trim())
     .filter(Boolean)
     .flatMap(splitLong)
   const chunks: Chunk[] = []

@@ -15,10 +15,12 @@ export function attachmentIdFromUrl(url: string): string | null {
   return /^[\w-]{1,64}$/.test(id) ? id : null
 }
 
-/** Attachment ids a note refers to, in order, without repeats. */
+/** Attachment ids a note refers to, in order, without repeats. A file's link may carry its size
+ * as the title: `[report.pdf](attachment:<id> "1.2 MB")`. */
 export function attachmentIds(markdown: string): string[] {
   const ids = new Set<string>()
-  for (const m of markdown.matchAll(/\]\(attachment:([\w-]{1,64})\)/g)) ids.add(m[1] as string)
+  for (const m of markdown.matchAll(/\]\(attachment:([\w-]{1,64})(?:\s+"[^"]*")?\)/g))
+    ids.add(m[1] as string)
   return [...ids]
 }
 

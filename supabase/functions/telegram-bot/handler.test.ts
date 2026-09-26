@@ -141,3 +141,32 @@ Deno.test('refuses big files, unsupported messages and group chats; /stop unlink
   assertEquals(links.has('42'), false)
   assertEquals(items.length, 0)
 })
+
+Deno.test('keeps links hidden behind words, in text and captions, and links a channel post', async () => {
+  const { send, items, links } = setup()
+  links.set('42', 'user-1')
+  const text = 'Статья про 🔥 билды и ещё тут'
+  await send({
+    text,
+    entities: [
+      { type: 'bold', offset: 0, length: 6 },
+      { type: 'text_link', offset: 11, length: 8, url: 'https://example.com/a(1)' },
+      { type: 'text_link', offset: 26, length: 3, url: 'https://t.me/x' },
+    ],
+    forward_origin: {
+      type: 'channel',
+      chat: { title: 'Game [dev]', username: 'gamedev' },
+      message_id: 77,
+    },
+  })
+  await send({
+    photo: [{ file_id: 'p', width: 10, height: 10 }],
+    caption: 'Смотри тут',
+    caption_entities: [{ type: 'text_link', offset: 7, length: 3, url: 'https://example.com' }],
+  })
+  assertEquals(
+    open(items[0]?.sealed ?? '').text,
+    'Статья про [🔥 билды](https://example.com/a%281%29) и ещё [тут](https://t.me/x)\n\n— [Game \\[dev\\]](https://t.me/gamedev/77)',
+  )
+  assertEquals(open(items[1]?.sealed ?? '').caption, 'Смотри [тут](https://example.com)')
+})

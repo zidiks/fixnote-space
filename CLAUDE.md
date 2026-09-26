@@ -37,7 +37,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   in Settings → AI (`useLlm().mode`); then the change applies with an Undo toast and still goes to
   `AuditLog`. Changes are shown as diffs (`AiEdit.tsx`, prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
   requests by the markers exported from `@fixnote/ai`; keep them in the prompts.
-- Attachments: Markdown `![](attachment:<id>)` (images) or `[name](attachment:<id>)` (other files),
+- Attachments: Markdown `![](attachment:<id>)` (images) or `[name](attachment:<id> "1.2 MB")` (other
+  files; the title is the size, so id regexes must allow a title),
   bytes in the platform `BlobStore`, one encrypted blob per file in Storage
   (`packages/core/src/attachments`). Images are block nodes; the custom paragraph in
   `editor/paragraph.ts` keeps images that share a line with text. Drops onto the window go through
