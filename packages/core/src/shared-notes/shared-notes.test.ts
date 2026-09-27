@@ -5,8 +5,8 @@ import { prepareDatabase } from '../db/migrate'
 import { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
 import { createMemoryDriver } from '../testing/memory-driver'
-import { MemorySharedServer } from '../testing/memory-shared'
 import { type DocProjector, PersonNotFoundError, SharedNotes } from './index'
+import { MemorySharedServer } from './memory-server'
 
 /** The editor's projection, for tests: the note is one Y.Text; edits keep a common prefix/suffix. */
 const projector: DocProjector = {
@@ -49,6 +49,9 @@ async function typeInEditor(d: Device, sharedId: string, edit: (t: Y.Text) => vo
 }
 
 let server: MemorySharedServer
+/** Moves every clock of the test (server and devices) forward. */
+let offset = 0
+const clock = () => Date.now() + offset
 interface Device {
   db: SqlDriver
   repo: NotesRepo
@@ -73,6 +76,7 @@ async function account(userId: string, email: string) {
         remote: server.remoteFor(userId),
         projector,
         userId,
+        now: clock,
       }),
     }
   }
@@ -84,6 +88,8 @@ const content = async (d: Device, noteId: string) => (await d.repo.getNote(noteI
 beforeAll(cryptoReady)
 beforeEach(() => {
   server = new MemorySharedServer()
+  server.now = clock
+  offset = 0
 })
 
 describe('SharedNotes', () => {
@@ -106,7 +112,7 @@ describe('SharedNotes', () => {
     expect(report.invites).toEqual([id])
     expect((await bob.repo.listNotes()).items).toHaveLength(0)
     expect(await bob.shared.invites()).toEqual([
-      { sharedId: id, from: 'ann@x.io', role: 'edit', title: 'Plan' },
+      { kind: 'note', sharedId: id, from: 'ann@x.io', role: 'edit', title: 'Plan' },
     ])
     const bobNote = await bob.shared.accept(id)
     expect((await bob.shared.sync()).invites).toEqual([])
@@ -241,5 +247,174 @@ describe('SharedNotes', () => {
     await bob.shared.sync()
     expect(await content(bob, bobNote)).toBe('Agenda v2')
     expect(await content(ann, note.id)).toBe('Agenda v2')
+  })
+
+  it('invitations expire after 30 days; inviting again sends a fresh one', async () => {
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    const note = await ann.repo.createNote({ content: 'Old' })
+    const id = await ann.shared.share(note.id)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    offset = 31 * 86_400_000
+    expect(await bob.shared.invites()).toEqual([])
+    expect((await bob.shared.sync()).invites).toEqual([])
+    await expect(bob.shared.accept(id)).rejects.toThrow('not invited')
+    const [, invited] = await ann.shared.members(id)
+    expect(invited && ann.shared.isExpired(invited)).toBe(true)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    expect((await bob.shared.invites()).map((i) => i.sharedId)).toEqual([id])
+    await bob.shared.accept(id)
+  })
+})
+
+describe('shared folders', () => {
+  const inFolder = async (d: Device, folderId: string) =>
+    (
+      await d.db.query<{ content: string }>(
+        `SELECT content FROM notes WHERE deleted_at IS NULL AND folder_id IN (
+           WITH RECURSIVE sub(id) AS (SELECT ? UNION ALL SELECT f.id FROM folders f JOIN sub ON f.parent_id = sub.id)
+           SELECT id FROM sub) ORDER BY content`,
+        [folderId],
+      )
+    ).map((r) => r.content)
+
+  async function setUp() {
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    const cat = await (await account('cat', 'cat@x.io')).device()
+    const trip = await ann.repo.createFolder('Trip')
+    const hotels = await ann.repo.createFolder('Hotels', trip.id)
+    const plan = await ann.repo.createNote({ content: 'Plan', folderId: trip.id })
+    const hotel = await ann.repo.createNote({ content: 'Hotel Roma', folderId: hotels.id })
+    await ann.repo.createNote({ content: 'Not in the folder' })
+    const id = await ann.shared.shareFolder(trip.id)
+    await ann.shared.inviteToFolder(id, 'bob@x.io', 'edit')
+    await ann.shared.inviteToFolder(id, 'cat@x.io', 'view')
+    return { ann, bob, cat, trip, plan, hotel, id }
+  }
+
+  it('gives members every note of the folder and its subfolders, once they accept', async () => {
+    const { ann, bob, trip, id } = await setUp()
+    expect(await ann.shared.folder(trip.id)).toMatchObject({ sharedId: id, owner: true })
+    // The server has only ciphertext.
+    expect(server.folders.get(id)?.name).not.toContain('Trip')
+
+    const report = await bob.shared.sync()
+    expect(report.invites).toEqual([id])
+    expect(await bob.repo.listFolders()).toEqual([])
+    expect(await bob.shared.invites()).toEqual([
+      { kind: 'folder', sharedId: id, from: 'ann@x.io', role: 'edit', title: 'Trip' },
+    ])
+    const bobTrip = await bob.shared.acceptFolder(id)
+    expect((await bob.repo.listFolders()).map((f) => f.name)).toEqual(['Trip'])
+    expect(await inFolder(bob, bobTrip)).toEqual(['Hotel Roma', 'Plan'])
+    // Ann's folder, not Bob's: it stays out of his personal sync.
+    const [row] = await bob.db.query<{ shared_id: string | null; dirty: number }>(
+      'SELECT shared_id, dirty FROM folders WHERE id = ?',
+      [bobTrip],
+    )
+    expect(row).toEqual({ shared_id: id, dirty: 0 })
+    expect(await bob.shared.folderOf(bobTrip)).toMatchObject({ role: 'edit', owner: false })
+  })
+
+  it('an editor adds notes and edits; the owner renames; everyone sees it', async () => {
+    const { ann, bob, trip, plan, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    await bob.repo.createNote({ content: 'Tickets', folderId: bobTrip })
+    await bob.repo.createNote({ content: '', folderId: bobTrip }) // empty: not shared yet
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma', 'Plan', 'Tickets'])
+
+    const bobPlan = (await bob.repo.listNotes()).items.find((n) => n.title === 'Plan')
+    await typeInEditor(bob, bobPlan?.sharedId as string, (t) => t.insert(t.length, ' v2'))
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect(await content(ann, plan.id)).toBe('Plan v2')
+
+    await ann.repo.renameFolder(trip.id, 'Rome trip')
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect((await bob.repo.listFolders()).map((f) => f.name)).toEqual(['Rome trip'])
+  })
+
+  it('a note deleted in the folder is deleted for everyone once its undo has run out', async () => {
+    const { ann, bob, trip, plan, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    const bobPlan = (await bob.repo.listNotes()).items.find((n) => n.title === 'Plan')
+    await bob.repo.deleteNote(bobPlan?.id as string)
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect(await content(ann, plan.id)).toBe('Plan') // still undoable on Bob's side
+    offset = 20_000
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect(await ann.repo.getNote(plan.id)).toBeNull()
+    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma'])
+    expect(await inFolder(bob, bobTrip)).toEqual(['Hotel Roma'])
+  })
+
+  it('the owner moves a note out: members lose it, the owner keeps it', async () => {
+    const { ann, bob, hotel, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    await ann.repo.moveNote(hotel.id, null)
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect(await inFolder(bob, bobTrip)).toEqual(['Plan'])
+    expect(await content(ann, hotel.id)).toBe('Hotel Roma')
+    expect((await ann.repo.getNote(hotel.id))?.sharedId).toBeNull()
+  })
+
+  it('a viewer reads but adds nothing', async () => {
+    const { ann, cat, trip, id } = await setUp()
+    const catTrip = await cat.shared.acceptFolder(id)
+    expect(await cat.shared.folderOf(catTrip)).toMatchObject({ role: 'view' })
+    await cat.repo.createNote({ content: 'From the viewer', folderId: catTrip })
+    await cat.shared.sync()
+    await ann.shared.sync()
+    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma', 'Plan'])
+  })
+
+  it('unsharing: members lose folder and notes, the owner keeps both', async () => {
+    const { ann, bob, trip, id } = await setUp()
+    await bob.shared.acceptFolder(id)
+    await ann.shared.unshareFolder(id)
+    expect(await ann.shared.folder(trip.id)).toBeNull()
+    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma', 'Plan'])
+    const report = await bob.shared.sync()
+    expect(report.removedFolders).toHaveLength(1)
+    expect(await bob.repo.listFolders()).toEqual([])
+    expect((await bob.repo.listNotes()).items).toEqual([])
+  })
+
+  it('a member deleting their copy of the folder leaves it (after the undo)', async () => {
+    const { ann, bob, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    await bob.repo.deleteFolder(bobTrip)
+    await bob.shared.sync()
+    expect((await ann.shared.folderMembers(id)).map((m) => m.email)).toContain('bob@x.io')
+    offset = 20_000
+    await bob.shared.sync()
+    expect((await ann.shared.folderMembers(id)).map((m) => m.email)).not.toContain('bob@x.io')
+    expect((await bob.repo.listNotes()).items).toEqual([])
+  })
+
+  it("links the owner's notes on the owner's other device instead of copying them", async () => {
+    const annAccount = await account('ann', 'ann@x.io')
+    const mac = await annAccount.device()
+    const pc = await annAccount.device()
+    const folder = await mac.repo.createFolder('Work')
+    const note = await mac.repo.createNote({ content: 'Budget', folderId: folder.id })
+    // The personal sync brought the folder and note (same ids) to the other device earlier.
+    await new NotesRepo(pc.db, { newId: () => folder.id }).createFolder('Work')
+    await new NotesRepo(pc.db, { newId: () => note.id }).createNote({
+      content: 'Budget',
+      folderId: folder.id,
+    })
+    await mac.shared.shareFolder(folder.id)
+    await pc.shared.sync()
+    expect((await pc.repo.listFolders()).map((f) => f.name)).toEqual(['Work'])
+    expect((await pc.repo.listNotes()).items).toHaveLength(1)
+    expect((await pc.repo.getNote(note.id))?.sharedId).not.toBeNull()
   })
 })

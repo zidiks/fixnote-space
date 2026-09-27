@@ -31,7 +31,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
-import { sharedContext, useAccount } from '../lib/account/account'
+import { useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { suggestForNewNote } from '../lib/assistant/tidy'
 import { useDb, useRepo } from '../lib/db'
@@ -110,24 +110,8 @@ export function NoteView({ id }: { id: string }) {
   const n = note.data
   const folder = folders.find((f) => f.id === n.folderId)
 
-  const onDelete = async () => {
-    const sharedId = n.sharedId
-    const ctx = sharedId ? sharedContext() : null
-    if (sharedId && ctx) {
-      // A shared note: its owner stops sharing it (then deletes their copy as usual); anyone
-      // else leaves it, and it goes away from their devices.
-      const doc = await ctx.shared.doc(sharedId)
-      if (doc?.role !== 'owner') {
-        await ctx.shared.leave(sharedId)
-        await invalidate()
-        navigate({ kind: 'home' })
-        toast(t('people.left'))
-        return
-      }
-      await ctx.shared.unshare(sharedId)
-    }
-    void deleteWithUndo(n.id)
-  }
+  // Shared notes: leaving or unsharing is handled there too.
+  const onDelete = () => void deleteWithUndo(n.id)
   const pinned = n.pinnedAt !== null
 
   return (

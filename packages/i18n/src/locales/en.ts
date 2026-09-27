@@ -129,6 +129,7 @@ const en = {
     you: 'you',
     invite: 'Invite',
     invited: '{{email}} is invited; the note appears for them once they accept',
+    invitedFolder: '{{email}} is invited; the folder appears for them once they accept',
     notFound: '{{email}} has no FixNote account yet. Invite them again once they sign up.',
     self: 'That is your own address.',
     failed: 'Could not do it: {{error}}',
@@ -145,6 +146,23 @@ const en = {
     nowView: 'You can only view this note now',
     nowEdit: 'You can edit this note now',
     lost: 'You no longer have access to this note',
+    shareFolder: 'Share…',
+    sharedFolder: 'Shared folder',
+    folderTitle: 'Share “{{name}}”',
+    folderBody:
+      'People you invite get an invitation in their app. Once they accept, they see every note in this folder and its subfolders; editors also add, change and delete notes here. Everything stays encrypted.',
+    inFolder: 'This note is in the shared folder “{{name}}”: everyone in the folder sees it.',
+    expired: 'invitation expired',
+    inviteAgain: 'Invite again',
+    leaveFolder: 'Leave folder',
+    leftFolder: 'You left the folder',
+    leaveFolderTitle: 'Leave “{{name}}”?',
+    leaveFolderBody:
+      'The folder and its notes go away from your devices. The owner and the others keep them.',
+    unsharedFolder: 'No longer shared; you keep the folder and its notes',
+    deleteSharedFolder: 'It is shared: the others lose access to it.',
+    viewOnly: 'You can only view the notes in this folder',
+    lostFolder: 'You no longer have access to this folder',
   },
   notifications: {
     title: 'Notifications',
@@ -155,6 +173,8 @@ const en = {
     accept: 'Accept',
     decline: 'Decline',
     declined: 'Invitation declined',
+    folderEdit: '{{from}} invites you to edit a folder',
+    folderView: '{{from}} invites you to view a folder',
   },
 
   spotlight: {

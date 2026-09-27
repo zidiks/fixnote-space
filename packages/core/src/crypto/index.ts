@@ -367,3 +367,27 @@ export function sealSharedState(noteKey: string, sharedId: string, state: Uint8A
 export function openSharedState(noteKey: string, sharedId: string, sealed: string): Uint8Array {
   return open(unb64(noteKey), sealed, `shared:${sharedId}`, 'shared note')
 }
+
+// ── Shared folders ───────────────────────────────────────────────────────────
+// A shared folder has its own key (sealed to each member like a note key). It seals the folder's
+// name and the key of each note in the folder, so a member reads every note with one key.
+
+/** A shared folder's name, sealed with the folder key, bound to the folder's owner-side id. */
+export function sealFolderShareName(folderKey: string, originId: string, name: string): string {
+  return seal(unb64(folderKey), sodium.from_string(name), `folder-name:${originId}`)
+}
+
+export function openFolderShareName(folderKey: string, originId: string, sealed: string): string {
+  return sodium.to_string(
+    open(unb64(folderKey), sealed, `folder-name:${originId}`, 'shared folder name'),
+  )
+}
+
+/** A note's key sealed with its shared folder's key. */
+export function sealKeyForFolder(folderKey: string, folderId: string, noteKey: string): string {
+  return seal(unb64(folderKey), unb64(noteKey), `folder-key:${folderId}`)
+}
+
+export function openKeyFromFolder(folderKey: string, folderId: string, sealed: string): string {
+  return b64(open(unb64(folderKey), sealed, `folder-key:${folderId}`, 'folder note key'))
+}

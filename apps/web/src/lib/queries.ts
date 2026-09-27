@@ -1,4 +1,4 @@
-import type { Note, NoteCursor, NoteFilter } from '@fixnote/core'
+import type { Note, NoteCursor, NoteFilter, NotesRepo } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import {
   keepPreviousData,
@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
-import { requestSync } from './account/account'
+import { requestSync, sharedContext } from './account/account'
 import { findSimilar, notifyNotesChanged, useAssistant } from './assistant/assistant'
 import { useRepo } from './db'
 
@@ -139,6 +139,11 @@ export function useDeleteWithUndo() {
   const invalidate = useInvalidateNotes()
   return async (id: string) => {
     const route = useUi.getState().route
+    if ((await deleteShared(repo, id)) === 'done') {
+      await invalidate()
+      if (route.kind === 'note' && route.id === id) useUi.getState().navigate({ kind: 'home' })
+      return
+    }
     await repo.deleteNote(id)
     await invalidate()
     if (route.kind === 'note' && route.id === id) useUi.getState().goBack()
@@ -155,6 +160,30 @@ export function useDeleteWithUndo() {
       },
     })
   }
+}
+
+/**
+ * Deleting a shared note. One shared on its own: its owner stops sharing it and then deletes it as
+ * usual; anyone else leaves it ('done'). One in a shared folder: owner and editors delete it as
+ * usual (sync deletes it for everyone once its undo has run out); a viewer cannot ('done').
+ */
+async function deleteShared(repo: NotesRepo, id: string): Promise<'done' | 'delete'> {
+  const note = await repo.getNote(id)
+  const ctx = note?.sharedId ? sharedContext() : null
+  const doc = ctx && note?.sharedId ? await ctx.shared.doc(note.sharedId) : null
+  if (!ctx || !doc) return 'delete'
+  if (doc.folderSharedId) {
+    if (doc.role !== 'view') return 'delete'
+    toast(i18n.t('people.viewOnly'))
+    return 'done'
+  }
+  if (doc.role === 'owner') {
+    await ctx.shared.unshare(doc.sharedId)
+    return 'delete'
+  }
+  await ctx.shared.leave(doc.sharedId)
+  toast(i18n.t('people.left'))
+  return 'done'
 }
 
 export function useMoveNote() {

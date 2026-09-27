@@ -187,6 +187,22 @@ export const MIGRATIONS: readonly string[] = [
     projected       TEXT
   );
   `,
+  // 11: shared folders. A member's copy of someone's folder is a local folder with `shared_id`
+  // (kept out of the personal sync); `shared_folders` holds the folder key and role, for the
+  // owner too. A shared note that came through a folder remembers which one.
+  `
+  ALTER TABLE folders ADD COLUMN shared_id TEXT;
+  CREATE TABLE shared_folders (
+    shared_id   TEXT PRIMARY KEY,
+    folder_id   TEXT NOT NULL,
+    role        TEXT NOT NULL,
+    folder_key  TEXT NOT NULL,
+    owner_id    TEXT NOT NULL,
+    name        TEXT
+  );
+  ALTER TABLE shared_docs ADD COLUMN folder_shared_id TEXT;
+  ALTER TABLE shared_docs ADD COLUMN created_by TEXT;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

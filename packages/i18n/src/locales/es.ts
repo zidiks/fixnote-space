@@ -133,6 +133,7 @@ const es: LocaleResource = {
     you: 'tú',
     invite: 'Invitar',
     invited: '{{email}} está invitado; la nota le aparecerá cuando acepte',
+    invitedFolder: '{{email}} está invitado; la carpeta le aparecerá cuando acepte',
     notFound: '{{email}} aún no tiene cuenta de FixNote. Invítale de nuevo cuando se registre.',
     self: 'Es tu propia dirección.',
     failed: 'No se pudo: {{error}}',
@@ -149,6 +150,24 @@ const es: LocaleResource = {
     nowView: 'Ahora solo puedes ver esta nota',
     nowEdit: 'Ahora puedes editar esta nota',
     lost: 'Ya no tienes acceso a esta nota',
+    shareFolder: 'Compartir…',
+    sharedFolder: 'Carpeta compartida',
+    folderTitle: 'Compartir «{{name}}»',
+    folderBody:
+      'Las personas que invites recibirán una invitación en su app. Cuando la acepten, verán todas las notas de esta carpeta y sus subcarpetas; quienes pueden editar también añaden, cambian y eliminan notas. Todo sigue cifrado.',
+    inFolder:
+      'Esta nota está en la carpeta compartida «{{name}}»: la ve todo el que tiene acceso a la carpeta.',
+    expired: 'invitación caducada',
+    inviteAgain: 'Invitar de nuevo',
+    leaveFolder: 'Salir de la carpeta',
+    leftFolder: 'Has salido de la carpeta',
+    leaveFolderTitle: '¿Salir de «{{name}}»?',
+    leaveFolderBody:
+      'La carpeta y sus notas desaparecen de tus dispositivos. El propietario y los demás las conservan.',
+    unsharedFolder: 'Ya no se comparte; conservas la carpeta y sus notas',
+    deleteSharedFolder: 'Es compartida: los demás pierden el acceso.',
+    viewOnly: 'Las notas de esta carpeta solo se pueden ver',
+    lostFolder: 'Ya no tienes acceso a esta carpeta',
   },
   notifications: {
     title: 'Notificaciones',
@@ -159,6 +178,8 @@ const es: LocaleResource = {
     accept: 'Aceptar',
     decline: 'Rechazar',
     declined: 'Invitación rechazada',
+    folderEdit: '{{from}} te invita a editar una carpeta',
+    folderView: '{{from}} te invita a ver una carpeta',
   },
 
   spotlight: {

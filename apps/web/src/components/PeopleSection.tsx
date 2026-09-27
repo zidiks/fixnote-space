@@ -1,4 +1,10 @@
-import { type Note, PersonNotFoundError, type SharedRole } from '@fixnote/core'
+import {
+  type Note,
+  PersonNotFoundError,
+  type SharedMember,
+  type SharedNotes,
+  type SharedRole,
+} from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -10,30 +16,81 @@ import {
   SelectValue,
 } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { UserPlus, Users, X } from 'lucide-react'
+import { FolderOpen, UserPlus, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync, sharedContext } from '../lib/account/account'
 import { errorMessage } from '../lib/errors'
-import { useInvalidateNotes } from '../lib/queries'
+import { useFolders, useInvalidateNotes } from '../lib/queries'
 
 const MEMBERS = 'shared-members'
 
+/** What is shared: a note, or a folder (with all its notes). */
+export type PeopleTarget = { kind: 'note'; note: Note } | { kind: 'folder'; folderId: string }
+
+/** The calls for a note or a folder, so the section below is the same for both. */
+function actions(shared: SharedNotes, target: PeopleTarget) {
+  if (target.kind === 'note')
+    return {
+      share: () => shared.share(target.note.id),
+      members: (id: string) => shared.members(id),
+      invite: (id: string, email: string, role: 'edit' | 'view') => shared.invite(id, email, role),
+      setRole: (id: string, user: string, role: 'edit' | 'view') => shared.setRole(id, user, role),
+      remove: (id: string, user: string) => shared.removeMember(id, user),
+      leave: (id: string) => shared.leave(id),
+      unshare: (id: string) => shared.unshare(id),
+    }
+  return {
+    share: () => shared.shareFolder(target.folderId),
+    members: (id: string) => shared.folderMembers(id),
+    invite: (id: string, email: string, role: 'edit' | 'view') =>
+      shared.inviteToFolder(id, email, role),
+    setRole: (id: string, user: string, role: 'edit' | 'view') =>
+      shared.setFolderRole(id, user, role),
+    remove: (id: string, user: string) => shared.removeFolderMember(id, user),
+    leave: (id: string) => shared.leaveFolder(id),
+    unshare: (id: string) => shared.unshareFolder(id),
+  }
+}
+
 /**
- * People a note is shared with: invite by email (they must have a FixNote account), change what
- * they may do, remove them; a member can leave. The note key goes to each person sealed to their
- * own key, so the server never reads the note.
+ * People a note or folder is shared with: invite by email (they must have a FixNote account and
+ * accept), change what they may do, remove them; a member can leave. The key goes to each person
+ * sealed to their own key, so the server never reads the notes.
  */
-export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void }) {
+export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone: () => void }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const invalidate = useInvalidateNotes()
+  const folders = useFolders().data ?? []
   const ctx = sharedContext()
-  const sharedId = note.sharedId
+  // The shared note or folder behind it, and (for a note) the shared folder it came through.
+  const info = useQuery({
+    queryKey: [
+      MEMBERS,
+      'info',
+      target.kind,
+      target.kind === 'note' ? target.note.id : target.folderId,
+      // Shared for the first time from here: ask again once the note knows its shared id.
+      target.kind === 'note' ? target.note.sharedId : null,
+    ],
+    queryFn: async () => {
+      if (!ctx) return null
+      if (target.kind === 'folder') {
+        const folder = await ctx.shared.folder(target.folderId)
+        return { sharedId: folder?.sharedId ?? null, viaFolder: null }
+      }
+      const doc = target.note.sharedId ? await ctx.shared.doc(target.note.sharedId) : null
+      const via = doc?.folderSharedId ? await ctx.shared.folderOf(target.note.folderId) : null
+      return { sharedId: target.note.sharedId, viaFolder: via?.folderId ?? null }
+    },
+    enabled: Boolean(ctx),
+  })
+  const sharedId = info.data?.sharedId ?? null
   const members = useQuery({
-    queryKey: [MEMBERS, sharedId],
-    queryFn: () => (ctx && sharedId ? ctx.shared.members(sharedId) : []),
+    queryKey: [MEMBERS, target.kind, sharedId],
+    queryFn: () => (ctx && sharedId ? actions(ctx.shared, target).members(sharedId) : []),
     enabled: Boolean(ctx && sharedId),
     // Someone may have left or been added on another device since: always ask when opened.
     refetchOnMount: 'always',
@@ -41,7 +98,9 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<'edit' | 'view'>('edit')
   const [busy, setBusy] = useState(false)
-  if (!ctx) return null
+  if (!ctx || !info.data) return null
+  const calls = actions(ctx.shared, target)
+  const viaFolder = folders.find((f) => f.id === info.data?.viaFolder)
 
   const myRole: SharedRole = sharedId
     ? (members.data?.find((m) => m.userId === ctx.userId)?.role ?? 'view')
@@ -69,17 +128,21 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
     }
   }
 
-  const invite = () =>
+  const invite = (address: string, as: 'edit' | 'view') =>
     act(
       async () => {
-        const address = email.trim()
         if (address.toLowerCase() === ctx.email.toLowerCase()) throw new Error(t('people.self'))
-        const id = sharedId ?? (await ctx.shared.share(note.id))
-        await ctx.shared.invite(id, address, role)
+        const id = sharedId ?? (await calls.share())
+        await calls.invite(id, address, as)
         setEmail('')
       },
-      t('people.invited', { email: email.trim() }),
+      target.kind === 'folder'
+        ? t('people.invitedFolder', { email: address })
+        : t('people.invited', { email: address }),
     )
+
+  const status = (m: SharedMember) =>
+    m.accepted ? null : ctx.shared.isExpired(m) ? t('people.expired') : t('people.pending')
 
   return (
     <section className="space-y-3">
@@ -88,15 +151,24 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
           <Users className="size-4 text-muted-foreground" />
           {t('people.title')}
         </h3>
-        <p className="text-sm text-muted-foreground">{t('people.body')}</p>
+        <p className="text-sm text-muted-foreground">
+          {target.kind === 'folder' ? t('people.folderBody') : t('people.body')}
+        </p>
       </div>
+
+      {viaFolder ? (
+        <p className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+          <FolderOpen className="mt-0.5 size-4 shrink-0 text-brand" />
+          <span>{t('people.inFolder', { name: viaFolder.name })}</span>
+        </p>
+      ) : null}
 
       {owner ? (
         <form
           className="flex flex-wrap gap-2"
           onSubmit={(e) => {
             e.preventDefault()
-            if (email.includes('@') && !busy) void invite()
+            if (email.includes('@') && !busy) void invite(email.trim(), role)
           }}
         >
           <Input
@@ -127,15 +199,28 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
         <ul className="divide-y rounded-lg border">
           {members.data.map((m) => (
             <li key={m.userId} className="flex items-center gap-2 px-3 py-2 text-sm">
-              <span className="min-w-0 flex-1 truncate">
-                {m.email}
-                {m.userId === ctx.userId ? (
-                  <span className="text-muted-foreground"> · {t('people.you')}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">
+                  {m.email}
+                  {m.userId === ctx.userId ? (
+                    <span className="text-muted-foreground"> · {t('people.you')}</span>
+                  ) : null}
+                </span>
+                {status(m) ? (
+                  <span className="block text-xs text-muted-foreground">{status(m)}</span>
                 ) : null}
-                {m.accepted ? null : (
-                  <span className="text-muted-foreground"> · {t('people.pending')}</span>
-                )}
               </span>
+              {owner && sharedId && m.role !== 'owner' && ctx.shared.isExpired(m) ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  disabled={busy}
+                  onClick={() => void invite(m.email, m.role === 'view' ? 'view' : 'edit')}
+                >
+                  {t('people.inviteAgain')}
+                </Button>
+              ) : null}
               {m.role === 'owner' ? (
                 <span className="text-muted-foreground">{t('people.owner')}</span>
               ) : owner && sharedId ? (
@@ -143,7 +228,7 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
                   <Select
                     value={m.role}
                     onValueChange={(v) =>
-                      void act(() => ctx.shared.setRole(sharedId, m.userId, v as 'edit' | 'view'))
+                      void act(() => calls.setRole(sharedId, m.userId, v as 'edit' | 'view'))
                     }
                   >
                     <SelectTrigger className="h-8 w-auto" aria-label={t('people.role')}>
@@ -159,7 +244,7 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
                     size="icon-xs"
                     aria-label={t('people.remove', { email: m.email })}
                     disabled={busy}
-                    onClick={() => void act(() => ctx.shared.removeMember(sharedId, m.userId))}
+                    onClick={() => void act(() => calls.remove(sharedId, m.userId))}
                   >
                     <X />
                   </Button>
@@ -174,14 +259,19 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
         </ul>
       ) : null}
 
-      {sharedId ? (
+      {sharedId && members.data?.length ? (
         <div className="flex justify-end">
           {owner ? (
             <Button
               variant="ghost"
               size="sm"
               disabled={busy}
-              onClick={() => void act(() => ctx.shared.unshare(sharedId), t('people.unshared'))}
+              onClick={() =>
+                void act(
+                  () => calls.unshare(sharedId),
+                  target.kind === 'folder' ? t('people.unsharedFolder') : t('people.unshared'),
+                )
+              }
             >
               {t('people.unshare')}
             </Button>
@@ -191,13 +281,14 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
               size="sm"
               disabled={busy}
               onClick={async () => {
-                if (await act(() => ctx.shared.leave(sharedId), t('people.left'))) {
+                const done = target.kind === 'folder' ? t('people.leftFolder') : t('people.left')
+                if (await act(() => calls.leave(sharedId), done)) {
                   onDone()
                   useUi.getState().navigate({ kind: 'home' })
                 }
               }}
             >
-              {t('people.leave')}
+              {target.kind === 'folder' ? t('people.leaveFolder') : t('people.leave')}
             </Button>
           )}
         </div>

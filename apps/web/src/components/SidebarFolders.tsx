@@ -22,10 +22,15 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  Users,
 } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { useUi } from '../app/store'
-import { useFolderMutations, useFolders } from '../lib/queries'
+import { requestSync, sharedContext, useAccount } from '../lib/account/account'
+import { errorMessage } from '../lib/errors'
+import { useFolderMutations, useFolders, useInvalidateNotes } from '../lib/queries'
+import { FolderShareDialog } from './FolderShareDialog'
 
 function NameInput({
   initial = '',
@@ -88,6 +93,12 @@ export function SidebarFolders() {
   }
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [confirm, setConfirm] = useState<Folder | null>(null)
+  const [sharing, setSharing] = useState<Folder | null>(null)
+  // Sharing needs the account (keys and server).
+  const canShare = useAccount((s) => s.phase === 'ready')
+  const invalidate = useInvalidateNotes()
+  // Someone else's folder: deleting it means leaving it.
+  const leaving = confirm?.shared === 'edit' || confirm?.shared === 'view'
 
   // A folder counts the notes of its subfolders too, as its list shows them.
   const totals = useMemo(() => subtreeCounts(folders), [folders])
@@ -146,6 +157,12 @@ export function SidebarFolders() {
                     >
                       <FolderIcon className="size-4 shrink-0 opacity-70" />
                       <span className="truncate">{f.name}</span>
+                      {f.shared ? (
+                        <Users
+                          className="size-3.5 shrink-0 text-muted-foreground"
+                          aria-label={t('people.sharedFolder')}
+                        />
+                      ) : null}
                     </button>
                     {kids ? (
                       <button
@@ -183,6 +200,12 @@ export function SidebarFolders() {
                           <Pencil />
                           {t('common.rename')}
                         </DropdownMenuItem>
+                        {canShare ? (
+                          <DropdownMenuItem onSelect={() => setSharing(f)}>
+                            <Users />
+                            {t('people.shareFolder')}
+                          </DropdownMenuItem>
+                        ) : null}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
                           <Trash2 />
@@ -201,6 +224,12 @@ export function SidebarFolders() {
                     <Pencil />
                     {t('common.rename')}
                   </ContextMenuItem>
+                  {canShare ? (
+                    <ContextMenuItem onSelect={() => setSharing(f)}>
+                      <Users />
+                      {t('people.shareFolder')}
+                    </ContextMenuItem>
+                  ) : null}
                   <ContextMenuSeparator />
                   <ContextMenuItem destructive onSelect={() => setConfirm(f)}>
                     <Trash2 />
@@ -266,19 +295,51 @@ export function SidebarFolders() {
       <ConfirmDialog
         open={confirm !== null}
         onOpenChange={(open) => !open && setConfirm(null)}
-        title={t('sidebar.deleteFolderTitle', { name: confirm?.name ?? '' })}
-        description={t('sidebar.deleteFolderBody')}
-        confirmLabel={t('common.delete')}
+        title={
+          leaving
+            ? t('people.leaveFolderTitle', { name: confirm?.name ?? '' })
+            : t('sidebar.deleteFolderTitle', { name: confirm?.name ?? '' })
+        }
+        description={
+          leaving
+            ? t('people.leaveFolderBody')
+            : confirm?.shared === 'owner'
+              ? `${t('sidebar.deleteFolderBody')} ${t('people.deleteSharedFolder')}`
+              : t('sidebar.deleteFolderBody')
+        }
+        confirmLabel={leaving ? t('people.leaveFolder') : t('common.delete')}
         cancelLabel={t('common.cancel')}
         destructive
-        onConfirm={() => {
-          if (!confirm) return
+        onConfirm={async () => {
+          const folder = confirm
+          if (!folder) return
+          setConfirm(null)
           if (route.kind === 'folder')
             navigate({ kind: 'home', filter: 'inbox' }, { replace: true })
-          remove.mutate(confirm.id)
-          setConfirm(null)
+          const ctx = folder.shared ? sharedContext() : null
+          const shared = ctx ? await ctx.shared.folder(folder.id) : null
+          if (!ctx || !shared) {
+            remove.mutate(folder.id)
+            return
+          }
+          // A shared folder: its owner stops sharing it first (the others lose it, the owner's
+          // notes go to Inbox as usual); anyone else leaves, and their copy goes away.
+          try {
+            if (shared.owner) {
+              await ctx.shared.unshareFolder(shared.sharedId)
+              remove.mutate(folder.id)
+            } else {
+              await ctx.shared.leaveFolder(shared.sharedId)
+              toast(t('people.leftFolder'))
+            }
+            await invalidate()
+            requestSync()
+          } catch (err) {
+            toast.error(t('people.failed', { error: errorMessage(err) }))
+          }
         }}
       />
+      <FolderShareDialog folder={sharing} onOpenChange={(open) => !open && setSharing(null)} />
     </div>
   )
 }

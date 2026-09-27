@@ -442,6 +442,7 @@ export async function runSync() {
         sharedReport.added.length ||
           sharedReport.removed.length ||
           sharedReport.roles.length ||
+          sharedReport.folders ||
           sharedReport.pulled ||
           invitesChanged,
       )

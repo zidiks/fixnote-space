@@ -423,7 +423,7 @@ export async function runImport(
       const id: string = found?.id ?? (await repo.createFolder(name, parent)).id
       if (!found) {
         createdFolders.push(id)
-        folders.push({ id, parentId: parent, name, sort: 0, noteCount: 0 })
+        folders.push({ id, parentId: parent, name, sort: 0, noteCount: 0, shared: null })
       }
       folderIds.set(key, id)
       parent = id

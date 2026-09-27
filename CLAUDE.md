@@ -71,8 +71,12 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   with `?dev-backend`). A shared note is a normal `notes` row with `shared_id` (Markdown for search,
   cards, AI) plus `shared_docs` (Yjs state; `projected` detects edits made outside the editor). Shared
   notes never go through the personal sync. Markdown ⇄ Yjs via `lib/shared/projector.ts`.
-  Invitations must be accepted (`accepted` column, the bell in `Notifications.tsx`); role changes
-  reach an open note through `onSharedSync`. Others' carets: `LiveCarets` (overlay) + `RemoteFade`.
+  Invitations must be accepted (`accepted` column, the bell in `Notifications.tsx`) and expire after
+  `INVITE_DAYS`; role changes reach an open note through `onSharedSync`. Others' carets: `LiveCarets`
+  (overlay) + `RemoteFade`. Shared folders (`*_shared_folders.sql`): a folder key seals the name and
+  each note's key; a member's copy is a local folder with `folders.shared_id` (kept out of the
+  personal sync). `MemorySharedServer` in core mirrors the SQL rules for tests and `?dev-backend`:
+  change both together.
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).

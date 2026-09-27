@@ -1,3 +1,4 @@
+import type { SharedInvite } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -9,7 +10,7 @@ import {
   TooltipTrigger,
 } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bell, Users } from 'lucide-react'
+import { Bell, Folder as FolderIcon, Users } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
@@ -19,8 +20,9 @@ import { errorMessage } from '../lib/errors'
 const INVITES = 'shared-invites'
 
 /**
- * The bell in the title bar: invitations to shared notes. A shared note joins this account's
- * notes only when accepted here, so nobody can fill someone's notes without asking.
+ * The bell in the title bar: invitations to shared notes and folders. They join this account's
+ * notes only when accepted here, so nobody can fill someone's notes without asking. Invitations
+ * not answered in 30 days expire and are not shown.
  */
 export function NotificationsButton() {
   const { t } = useTranslation()
@@ -36,18 +38,23 @@ export function NotificationsButton() {
   })
   const list = pending.length ? (invites.data ?? []) : []
 
-  const answer = async (sharedId: string, accept: boolean) => {
+  const answer = async (invite: SharedInvite, accept: boolean) => {
     if (!ctx) return
+    const { sharedId } = invite
     setBusy(sharedId)
     try {
-      const noteId = accept ? await ctx.shared.accept(sharedId) : null
-      if (!accept) await ctx.shared.decline(sharedId)
+      const folder = invite.kind === 'folder'
+      if (accept) {
+        const id = folder
+          ? await ctx.shared.acceptFolder(sharedId)
+          : await ctx.shared.accept(sharedId)
+        setOpen(false)
+        useUi.getState().navigate(folder ? { kind: 'folder', id } : { kind: 'note', id })
+      } else if (folder) await ctx.shared.declineFolder(sharedId)
+      else await ctx.shared.decline(sharedId)
       useAccount.setState((s) => ({ invites: s.invites.filter((id) => id !== sharedId) }))
       await qc.invalidateQueries()
-      if (noteId) {
-        setOpen(false)
-        useUi.getState().navigate({ kind: 'note', id: noteId })
-      } else toast(t('notifications.declined'))
+      if (!accept) toast(t('notifications.declined'))
     } catch (err) {
       toast.error(t('people.failed', { error: errorMessage(err) }))
     } finally {
@@ -86,15 +93,23 @@ export function NotificationsButton() {
             {list.map((inv) => (
               <li key={inv.sharedId} className="flex gap-2.5 rounded-md px-2.5 py-2">
                 <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-brand/15 text-brand">
-                  <Users className="size-3.5" />
+                  {inv.kind === 'folder' ? (
+                    <FolderIcon className="size-3.5" />
+                  ) : (
+                    <Users className="size-3.5" />
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm leading-snug">
                     {t(
-                      inv.role === 'view' ? 'notifications.inviteView' : 'notifications.inviteEdit',
-                      {
-                        from: inv.from,
-                      },
+                      inv.kind === 'folder'
+                        ? inv.role === 'view'
+                          ? 'notifications.folderView'
+                          : 'notifications.folderEdit'
+                        : inv.role === 'view'
+                          ? 'notifications.inviteView'
+                          : 'notifications.inviteEdit',
+                      { from: inv.from },
                     )}
                   </p>
                   {inv.title ? <p className="truncate text-sm font-medium">{inv.title}</p> : null}
@@ -102,7 +117,7 @@ export function NotificationsButton() {
                     <Button
                       size="sm"
                       disabled={busy !== null}
-                      onClick={() => void answer(inv.sharedId, true)}
+                      onClick={() => void answer(inv, true)}
                     >
                       {t('notifications.accept')}
                     </Button>
@@ -110,7 +125,7 @@ export function NotificationsButton() {
                       size="sm"
                       variant="ghost"
                       disabled={busy !== null}
-                      onClick={() => void answer(inv.sharedId, false)}
+                      onClick={() => void answer(inv, false)}
                     >
                       {t('notifications.decline')}
                     </Button>

@@ -447,9 +447,11 @@ export class NotesRepo {
       name: string
       sort: number
       note_count: number
+      shared_role: string | null
     }>(
       `SELECT f.id, f.parent_id, f.name, f.sort,
-              (SELECT count(*) FROM notes n WHERE n.folder_id = f.id AND n.deleted_at IS NULL) AS note_count
+              (SELECT count(*) FROM notes n WHERE n.folder_id = f.id AND n.deleted_at IS NULL) AS note_count,
+              (SELECT s.role FROM shared_folders s WHERE s.folder_id = f.id) AS shared_role
          FROM folders f WHERE f.deleted_at IS NULL
         ORDER BY f.sort, f.name COLLATE NOCASE`,
     )
@@ -459,6 +461,7 @@ export class NotesRepo {
       name: r.name,
       sort: Number(r.sort),
       noteCount: Number(r.note_count),
+      shared: (r.shared_role as Folder['shared']) ?? null,
     }))
   }
 
@@ -476,7 +479,7 @@ export class NotesRepo {
       'INSERT INTO folders (id, parent_id, name, sort, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
       [id, parentId, clean, sort, ts, ts],
     )
-    return { id, parentId, name: clean, sort, noteCount: 0 }
+    return { id, parentId, name: clean, sort, noteCount: 0, shared: null }
   }
 
   async renameFolder(id: string, name: string): Promise<void> {

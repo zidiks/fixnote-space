@@ -376,7 +376,10 @@ export class SyncEngine {
   // ── Push ─────────────────────────────────────────────────────────────────
 
   private async pushFolders(report: SyncReport) {
-    const rows = await this.db.query<LocalFolder>('SELECT * FROM folders WHERE dirty = 1')
+    // Someone else's shared folder (its copy here) is theirs, not part of this account's folders.
+    const rows = await this.db.query<LocalFolder>(
+      'SELECT * FROM folders WHERE dirty = 1 AND shared_id IS NULL',
+    )
     for (const row of rows) {
       let local: LocalFolder | undefined = row
       for (let attempt = 0; local && attempt < MAX_PUSH_ATTEMPTS; attempt++) {
@@ -462,7 +465,7 @@ export class SyncEngine {
   async pendingCount(): Promise<number> {
     const [row] = await this.db.query<{ n: number }>(
       `SELECT (SELECT count(*) FROM notes WHERE dirty = 1 AND shared_id IS NULL)
-            + (SELECT count(*) FROM folders WHERE dirty = 1) AS n`,
+            + (SELECT count(*) FROM folders WHERE dirty = 1 AND shared_id IS NULL) AS n`,
     )
     return Number(row?.n ?? 0)
   }
