@@ -1,4 +1,4 @@
-import { folderTree } from '@fixnote/core'
+import { folderTree, type Note, ReadOnlyError } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -149,35 +149,40 @@ export function NoteView({ id }: { id: string }) {
               : t('note.edited', { time: formatRelative(n.updatedAt, i18n.resolvedLanguage) })}
           </span>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => void toggleVoice('note')}
-                aria-label={t('voice.dictate')}
-                aria-pressed={voice === 'recording'}
-                className={cn(voice === 'recording' && 'text-destructive')}
-              >
-                <Mic />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
-          </Tooltip>
+          {/* View only: nothing that would change the note. */}
+          {n.readOnly ? null : (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => void toggleVoice('note')}
+                    aria-label={t('voice.dictate')}
+                    aria-pressed={voice === 'recording'}
+                    className={cn(voice === 'recording' && 'text-destructive')}
+                  >
+                    <Mic />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
+              </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => editor.current?.openAi('note')}
-                aria-label={t('ai.title')}
-              >
-                <Sparkles />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('ai.title')}</TooltipContent>
-          </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => editor.current?.openAi('note')}
+                    aria-label={t('ai.title')}
+                  >
+                    <Sparkles />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('ai.title')}</TooltipContent>
+              </Tooltip>
+            </>
+          )}
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -195,45 +200,49 @@ export function NoteView({ id }: { id: string }) {
             <TooltipContent>{pinned ? t('pin.unpin') : t('pin.pin')}</TooltipContent>
           </Tooltip>
 
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-xs" aria-label={t('note.moveTo')}>
-                    <FolderInput />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>{t('note.moveTo')}</TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
-              <DropdownMenuLabel>{t('note.moveTo')}</DropdownMenuLabel>
-              <DropdownMenuItem
-                // After the menu has closed, so the dialog gets focus.
-                onSelect={() => setTimeout(() => setNewFolder(true), 0)}
-              >
-                <FolderPlus />
-                {t('menu.moveToNewFolder')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => move.mutate({ id: n.id, folderId: null })}>
-                <Inbox />
-                <span className="flex-1">{t('common.noFolder')}</span>
-                <Check className={cn(n.folderId !== null && 'invisible')} />
-              </DropdownMenuItem>
-              {folderTree(folders).map(({ folder: f, depth }) => (
+          {n.readOnly ? null : (
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-xs" aria-label={t('note.moveTo')}>
+                      <FolderInput />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>{t('note.moveTo')}</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
+                <DropdownMenuLabel>{t('note.moveTo')}</DropdownMenuLabel>
                 <DropdownMenuItem
-                  key={f.id}
-                  onSelect={() => move.mutate({ id: n.id, folderId: f.id })}
-                  style={{ paddingInlineStart: `${0.5 + depth}rem` }}
+                  // After the menu has closed, so the dialog gets focus.
+                  onSelect={() => setTimeout(() => setNewFolder(true), 0)}
                 >
-                  <Folder />
-                  <span className="flex-1">{f.name}</span>
-                  <Check className={cn(n.folderId !== f.id && 'invisible')} />
+                  <FolderPlus />
+                  {t('menu.moveToNewFolder')}
                 </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => move.mutate({ id: n.id, folderId: null })}>
+                  <Inbox />
+                  <span className="flex-1">{t('common.noFolder')}</span>
+                  <Check className={cn(n.folderId !== null && 'invisible')} />
+                </DropdownMenuItem>
+                {folderTree(folders.filter((f) => f.shared !== 'view')).map(
+                  ({ folder: f, depth }) => (
+                    <DropdownMenuItem
+                      key={f.id}
+                      onSelect={() => move.mutate({ id: n.id, folderId: f.id })}
+                      style={{ paddingInlineStart: `${0.5 + depth}rem` }}
+                    >
+                      <Folder />
+                      <span className="flex-1">{f.name}</span>
+                      <Check className={cn(n.folderId !== f.id && 'invisible')} />
+                    </DropdownMenuItem>
+                  ),
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {canShare ? (
             <Tooltip>
@@ -251,19 +260,21 @@ export function NoteView({ id }: { id: string }) {
             </Tooltip>
           ) : null}
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => void onDelete()}
-                aria-label={t('note.delete')}
-              >
-                <Trash2 />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('note.delete')}</TooltipContent>
-          </Tooltip>
+          {n.readOnly ? null : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => void onDelete()}
+                  aria-label={t('note.delete')}
+                >
+                  <Trash2 />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('note.delete')}</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </header>
       {canShare ? <ShareDialog note={n} open={sharing} onOpenChange={setSharing} /> : null}
@@ -313,7 +324,16 @@ export function NoteView({ id }: { id: string }) {
               if (changed.length) void invalidate()
             }}
             onSave={async (markdown, base) => {
-              const saved = await repo.updateContent(n.id, markdown, { base })
+              // View only: what shows here are the others' edits; sync writes them to the note.
+              if (n.readOnly) return n
+              let saved: Note
+              try {
+                saved = await repo.updateContent(n.id, markdown, { base })
+              } catch (err) {
+                // Made view only while open (the last save of the editor being closed).
+                if (err instanceof ReadOnlyError) return n
+                throw err
+              }
               // A shared note: its document goes to the others (the Markdown is this device's copy).
               await shared.live?.persist(saved.content)
               qc.setQueryData(keys.note(n.id), saved)

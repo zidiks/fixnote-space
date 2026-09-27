@@ -186,6 +186,19 @@ async function deleteShared(repo: NotesRepo, id: string): Promise<'done' | 'dele
   return 'done'
 }
 
+/**
+ * Where a note made while `folderId` is open goes: that folder, or Inbox when it is someone's
+ * folder shared with this account to view only (so a drop or dictation is not lost).
+ */
+export async function writableFolder(repo: NotesRepo, folderId: string | null) {
+  try {
+    await repo.assertWritableFolder(folderId)
+    return folderId
+  } catch {
+    return null
+  }
+}
+
 export function useMoveNote() {
   const repo = useRepo()
   const invalidate = useInvalidateNotes()

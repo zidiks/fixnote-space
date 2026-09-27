@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Folder as FolderIcon,
   FolderPlus,
+  LogOut,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -152,7 +153,7 @@ export function SidebarFolders() {
                     <button
                       type="button"
                       onClick={() => navigate({ kind: 'folder', id: f.id })}
-                      onDoubleClick={() => setRenaming(f.id)}
+                      onDoubleClick={() => f.shared !== 'view' && setRenaming(f.id)}
                       className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left"
                     >
                       <FolderIcon className="size-4 shrink-0 opacity-70" />
@@ -192,14 +193,18 @@ export function SidebarFolders() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" onCloseAutoFocus={keepFocus}>
-                        <DropdownMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
-                          <FolderPlus />
-                          {t('sidebar.newSubfolder')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
-                          <Pencil />
-                          {t('common.rename')}
-                        </DropdownMenuItem>
+                        {f.shared === 'view' ? null : (
+                          <>
+                            <DropdownMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
+                              <FolderPlus />
+                              {t('sidebar.newSubfolder')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
+                              <Pencil />
+                              {t('common.rename')}
+                            </DropdownMenuItem>
+                          </>
+                        )}
                         {canShare ? (
                           <DropdownMenuItem onSelect={() => setSharing(f)}>
                             <Users />
@@ -208,22 +213,28 @@ export function SidebarFolders() {
                         ) : null}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
-                          <Trash2 />
-                          {t('common.delete')}
+                          {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
+                          {f.shared === 'edit' || f.shared === 'view'
+                            ? t('people.leaveFolder')
+                            : t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent onCloseAutoFocus={keepFocus}>
-                  <ContextMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
-                    <FolderPlus />
-                    {t('sidebar.newSubfolder')}
-                  </ContextMenuItem>
-                  <ContextMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
-                    <Pencil />
-                    {t('common.rename')}
-                  </ContextMenuItem>
+                  {f.shared === 'view' ? null : (
+                    <>
+                      <ContextMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
+                        <FolderPlus />
+                        {t('sidebar.newSubfolder')}
+                      </ContextMenuItem>
+                      <ContextMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
+                        <Pencil />
+                        {t('common.rename')}
+                      </ContextMenuItem>
+                    </>
+                  )}
                   {canShare ? (
                     <ContextMenuItem onSelect={() => setSharing(f)}>
                       <Users />
@@ -232,8 +243,10 @@ export function SidebarFolders() {
                   ) : null}
                   <ContextMenuSeparator />
                   <ContextMenuItem destructive onSelect={() => setConfirm(f)}>
-                    <Trash2 />
-                    {t('common.delete')}
+                    {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
+                    {f.shared === 'edit' || f.shared === 'view'
+                      ? t('people.leaveFolder')
+                      : t('common.delete')}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>

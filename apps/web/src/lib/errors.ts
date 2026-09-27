@@ -1,3 +1,4 @@
+import { i18n } from '@fixnote/i18n'
 /** A database or RPC error from Supabase; they arrive as plain objects, not Error instances. */
 export class ServerError extends Error {
   constructor(
@@ -19,7 +20,11 @@ export function toError(err: unknown): Error {
   return new Error(String(err))
 }
 
-export const errorMessage = (err: unknown) => toError(err).message
+export const errorMessage = (err: unknown) =>
+  // Something shared with this account to view only (the repo refused the change).
+  err instanceof Error && err.name === 'ReadOnlyError'
+    ? i18n.t('people.viewOnly')
+    : toError(err).message
 
 /** The server lacks a table or function this build uses: its migrations were not applied. */
 export function isServerOutdated(err: unknown): boolean {

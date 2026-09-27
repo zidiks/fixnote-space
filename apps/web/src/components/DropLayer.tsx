@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useDb, useRepo } from '../lib/db'
 import { droppedMarkdown, dropSink, isExternalDrag } from '../lib/drop'
-import { useInvalidateNotes } from '../lib/queries'
+import { useInvalidateNotes, writableFolder } from '../lib/queries'
 
 const isTextField = (el: EventTarget | null) =>
   el instanceof HTMLElement && el.closest('input, textarea') !== null
@@ -77,7 +77,7 @@ export function DropLayer() {
         const route = useUi.getState().route
         const note = await notes.createNote({
           content: markdown,
-          folderId: route.kind === 'folder' ? route.id : null,
+          folderId: await writableFolder(notes, route.kind === 'folder' ? route.id : null),
         })
         await refresh()
         useUi.getState().navigate({ kind: 'note', id: note.id })

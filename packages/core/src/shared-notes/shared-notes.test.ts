@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
 import { cryptoReady, deriveKeys, newRecoverySecret, publicKeyB64 } from '../crypto'
 import { prepareDatabase } from '../db/migrate'
-import { NotesRepo } from '../notes/repo'
+import { NotesRepo, ReadOnlyError } from '../notes/repo'
 import type { SqlDriver } from '../platform'
 import { createMemoryDriver } from '../testing/memory-driver'
 import { type DocProjector, PersonNotFoundError, SharedNotes } from './index'
@@ -155,9 +155,10 @@ describe('SharedNotes', () => {
     const id = await ann.shared.share(note.id)
     await ann.shared.invite(id, 'cat@x.io', 'view')
     const catNote = await cat.shared.accept(id)
-    await cat.repo.updateContent(catNote, 'Read me, changed by the viewer')
+    await expect(
+      cat.repo.updateContent(catNote, 'Read me, changed by the viewer'),
+    ).rejects.toBeInstanceOf(ReadOnlyError)
     await cat.shared.sync()
-    // Not sent; the note goes back to the shared text.
     expect(await content(cat, catNote)).toBe('Read me')
     await typeInEditor(ann, id, (t) => t.insert(t.length, '!'))
     await ann.shared.sync()
@@ -238,8 +239,13 @@ describe('SharedNotes', () => {
     const report = await bob.shared.sync()
     expect(report.roles).toEqual([{ sharedId: id, role: 'view' }])
     expect(await content(bob, bobNote)).toBe('Agenda')
-    // A late save from an editor still open is ignored.
-    await typeInEditor(bob, id, (t) => t.insert(0, 'Late '))
+    // A late save from an editor still open is ignored, and the note itself is read-only now.
+    const late = new Y.Doc()
+    late.getText('t').insert(0, 'Late ')
+    await bob.shared.saveDoc(id, Y.encodeStateAsUpdate(late), 'Late Agenda')
+    await expect(bob.repo.updateContent(bobNote, 'Late Agenda')).rejects.toBeInstanceOf(
+      ReadOnlyError,
+    )
     await bob.shared.sync()
     expect(await content(bob, bobNote)).toBe('Agenda')
     await typeInEditor(ann, id, (t) => t.insert(t.length, ' v2'))
@@ -365,14 +371,34 @@ describe('shared folders', () => {
     expect((await ann.repo.getNote(hotel.id))?.sharedId).toBeNull()
   })
 
-  it('a viewer reads but adds nothing', async () => {
-    const { ann, cat, trip, id } = await setUp()
+  it('a viewer can change nothing in the folder, and still gets every change', async () => {
+    const { ann, cat, trip, plan, id } = await setUp()
     const catTrip = await cat.shared.acceptFolder(id)
     expect(await cat.shared.folderOf(catTrip)).toMatchObject({ role: 'view' })
-    await cat.repo.createNote({ content: 'From the viewer', folderId: catTrip })
-    await cat.shared.sync()
+    expect((await cat.repo.listFolders())[0]?.shared).toBe('view')
+    const catPlan = (await cat.repo.listNotes()).items.find((n) => n.title === 'Plan')
+    expect(catPlan?.readOnly).toBe(true)
+    const noteId = catPlan?.id as string
+    const denied = [
+      cat.repo.createNote({ content: 'From the viewer', folderId: catTrip }),
+      cat.repo.updateContent(noteId, 'Changed'),
+      cat.repo.moveNote(noteId, null),
+      cat.repo.deleteNote(noteId),
+      cat.repo.createFolder('Sub', catTrip),
+      cat.repo.renameFolder(catTrip, 'Mine'),
+    ]
+    for (const attempt of denied) await expect(attempt).rejects.toBeInstanceOf(ReadOnlyError)
+    // Not an edit of the note: pinning it for oneself is fine.
+    await cat.repo.setPinned(noteId, true)
+    // Nor may a note be moved in from outside.
+    const own = await cat.repo.createNote({ content: 'Mine' })
+    await expect(cat.repo.moveNote(own.id, catTrip)).rejects.toBeInstanceOf(ReadOnlyError)
+
+    await ann.repo.updateContent(plan.id, 'Plan v3')
     await ann.shared.sync()
-    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma', 'Plan'])
+    await cat.shared.sync()
+    expect(await content(cat, noteId)).toBe('Plan v3')
+    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma', 'Plan v3'])
   })
 
   it('unsharing: members lose folder and notes, the owner keeps both', async () => {

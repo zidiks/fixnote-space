@@ -166,7 +166,7 @@ const es: LocaleResource = {
       'La carpeta y sus notas desaparecen de tus dispositivos. El propietario y los demás las conservan.',
     unsharedFolder: 'Ya no se comparte; conservas la carpeta y sus notas',
     deleteSharedFolder: 'Es compartida: los demás pierden el acceso.',
-    viewOnly: 'Las notas de esta carpeta solo se pueden ver',
+    viewOnly: 'Te lo compartieron solo para ver: no se puede cambiar desde aquí',
     lostFolder: 'Ya no tienes acceso a esta carpeta',
   },
   notifications: {

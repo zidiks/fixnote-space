@@ -161,7 +161,7 @@ const en = {
       'The folder and its notes go away from your devices. The owner and the others keep them.',
     unsharedFolder: 'No longer shared; you keep the folder and its notes',
     deleteSharedFolder: 'It is shared: the others lose access to it.',
-    viewOnly: 'You can only view the notes in this folder',
+    viewOnly: 'This was shared with you to view only: it cannot be changed from here',
     lostFolder: 'You no longer have access to this folder',
   },
   notifications: {

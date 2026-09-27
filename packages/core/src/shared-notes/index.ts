@@ -895,7 +895,13 @@ export class SharedNotes {
     const own = a.own ? await this.repo.getNote(a.originNoteId) : null
     const noteId =
       own?.id ??
-      (await this.repo.createNote({ content: '', folderId: folder?.folder_id ?? null })).id
+      (
+        await this.repo.createNote({
+          content: '',
+          folderId: folder?.folder_id ?? null,
+          fromSharing: true,
+        })
+      ).id
     await this.locked(async () => {
       await this.db.execute(
         `INSERT INTO shared_docs (shared_id, note_id, role, note_key, state, server_version, dirty,
@@ -935,7 +941,7 @@ export class SharedNotes {
           [doc.noteId],
         )
       } else {
-        await this.repo.deleteNote(doc.noteId)
+        await this.repo.deleteNote(doc.noteId, { fromSharing: true })
         // Never in the personal sync: nothing to tell the server about it.
         await this.db.execute('UPDATE notes SET shared_id = NULL, dirty = 0 WHERE id = ?', [
           doc.noteId,
@@ -994,7 +1000,8 @@ export class SharedNotes {
   private async writeNote(noteId: string, state: Uint8Array): Promise<string> {
     const markdown = this.projector.toMarkdown(state)
     const note = await this.repo.getNote(noteId)
-    if (note && note.content !== markdown) await this.repo.updateContent(noteId, markdown)
+    if (note && note.content !== markdown)
+      await this.repo.updateContent(noteId, markdown, { fromSharing: true })
     return markdown
   }
 

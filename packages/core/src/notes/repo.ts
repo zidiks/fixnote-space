@@ -53,8 +53,26 @@ interface NoteRow extends SqlRow {
   tags: string | null
   pinned_at: number | null
   shared_id: string | null
+  read_only: number | null
   created_at: number
   updated_at: number
+}
+
+/**
+ * Someone shared this note or folder with this account to view only: it cannot be changed, moved,
+ * deleted or added to from here (the app, the assistant, MCP and imports all write through the
+ * repo). The shared-notes sync itself writes what the server has with `fromSharing`.
+ */
+export class ReadOnlyError extends Error {
+  constructor() {
+    super('Shared with you to view only')
+    this.name = 'ReadOnlyError'
+  }
+}
+
+/** Writes made by the shared-notes sync (the server's text), allowed on view-only notes. */
+export interface SharingWrite {
+  fromSharing?: boolean
 }
 
 /** Enough of the note to compute excerpt, tags and task progress for cards. */
@@ -63,6 +81,7 @@ const TAG_SEP = '\u001f'
 
 const SUMMARY_COLUMNS = `
   n.id, n.folder_id, n.type, n.daily_date, n.title, n.pinned_at, n.shared_id, n.created_at, n.updated_at,
+  (SELECT d.role = 'view' FROM shared_docs d WHERE d.shared_id = n.shared_id) AS read_only,
   (SELECT group_concat(t.name, '${TAG_SEP}') FROM note_tags nt JOIN tags t ON t.id = nt.tag_id
      WHERE nt.note_id = n.id) AS tags`
 
@@ -80,6 +99,7 @@ function toSummary(row: NoteRow): NoteSummary {
     cover: body.match(/!\[[^\]]*\]\(((?:attachment:|https?:\/\/)[^)\s]+)/)?.[1] ?? null,
     pinnedAt: row.pinned_at === null ? null : Number(row.pinned_at),
     sharedId: row.shared_id ?? null,
+    readOnly: Number(row.read_only) === 1,
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
   }
@@ -141,15 +161,18 @@ export class NotesRepo {
 
   // ── Notes ──────────────────────────────────────────────────────────────────
 
-  async createNote(input: {
-    content: string
-    folderId?: string | null
-    type?: NoteType
-    dailyDate?: string | null
-    /** Keep the original dates (imports); defaults to now. */
-    createdAt?: number
-    updatedAt?: number
-  }): Promise<Note> {
+  async createNote(
+    input: {
+      content: string
+      folderId?: string | null
+      type?: NoteType
+      dailyDate?: string | null
+      /** Keep the original dates (imports); defaults to now. */
+      createdAt?: number
+      updatedAt?: number
+    } & SharingWrite,
+  ): Promise<Note> {
+    if (!input.fromSharing) await this.assertWritableFolder(input.folderId ?? null)
     const id = this.newId()
     const ts = this.now()
     const created = input.createdAt ?? input.updatedAt ?? ts
@@ -199,7 +222,12 @@ export class NotesRepo {
    * they touch the same lines, the edit being typed wins and the other version is kept as a
    * separate conflict copy, so nothing is lost.
    */
-  async updateContent(id: string, content: string, opts: { base?: string } = {}): Promise<Note> {
+  async updateContent(
+    id: string,
+    content: string,
+    opts: { base?: string } & SharingWrite = {},
+  ): Promise<Note> {
+    if (!opts.fromSharing) await this.assertWritableNote(id)
     await this.db.transaction(async (tx) => {
       const [row] = await tx.query<{ content: string; folder_id: string | null }>(
         'SELECT content, folder_id FROM notes WHERE id = ? AND deleted_at IS NULL',
@@ -236,6 +264,8 @@ export class NotesRepo {
   }
 
   async moveNote(id: string, folderId: string | null): Promise<void> {
+    await this.assertWritableNote(id)
+    await this.assertWritableFolder(folderId)
     await this.db.execute(
       `UPDATE notes SET folder_id = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1
         WHERE id = ? AND deleted_at IS NULL AND folder_id IS NOT ?`,
@@ -257,12 +287,36 @@ export class NotesRepo {
   }
 
   /** Soft delete: the row stays for sync and undo. */
-  async deleteNote(id: string): Promise<void> {
+  async deleteNote(id: string, opts: SharingWrite = {}): Promise<void> {
+    if (!opts.fromSharing) await this.assertWritableNote(id)
     const ts = this.now()
     await this.db.execute(
       `UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1 WHERE id = ? AND deleted_at IS NULL`,
       [ts, ts, id],
     )
+  }
+
+  /** Throws ReadOnlyError for a note shared with this account to view only. */
+  async assertWritableNote(id: string): Promise<void> {
+    const [row] = await this.db.query<{ ro: number }>(
+      `SELECT 1 AS ro FROM notes n JOIN shared_docs d ON d.shared_id = n.shared_id
+        WHERE n.id = ? AND d.role = 'view'`,
+      [id],
+    )
+    if (row) throw new ReadOnlyError()
+  }
+
+  /** Throws ReadOnlyError for a folder (or one inside it) shared with this account to view only. */
+  async assertWritableFolder(id: string | null): Promise<void> {
+    if (!id) return
+    const [row] = await this.db.query<{ ro: number }>(
+      `WITH RECURSIVE up(id, parent_id) AS (
+          SELECT id, parent_id FROM folders WHERE id = ?
+          UNION ALL SELECT f.id, f.parent_id FROM folders f JOIN up ON f.id = up.parent_id)
+        SELECT 1 AS ro FROM shared_folders s JOIN up ON s.folder_id = up.id WHERE s.role = 'view'`,
+      [id],
+    )
+    if (row) throw new ReadOnlyError()
   }
 
   async restoreNote(id: string): Promise<void> {
@@ -466,6 +520,7 @@ export class NotesRepo {
   }
 
   async createFolder(name: string, parentId: string | null = null): Promise<Folder> {
+    await this.assertWritableFolder(parentId)
     const clean = name.trim()
     if (!clean) throw new Error('Folder name is empty')
     const id = this.newId()
@@ -483,6 +538,7 @@ export class NotesRepo {
   }
 
   async renameFolder(id: string, name: string): Promise<void> {
+    await this.assertWritableFolder(id)
     const clean = name.trim()
     if (!clean) throw new Error('Folder name is empty')
     await this.db.execute(
