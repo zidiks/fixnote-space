@@ -76,7 +76,10 @@ export function NoteView({ id }: { id: string }) {
   const aiRequest = useUi((s) => s.aiRequest)
   const [sharing, setSharing] = useState(false)
   // A shared note is always edited live with the people it is shared with.
-  const shared = useSharedLive(note.data?.sharedId ?? null)
+  const shared = useSharedLive(note.data?.sharedId ?? null, () => {
+    toast(t('people.lost'))
+    navigate({ kind: 'home' })
+  })
   // Links live on the server: not in a build without one, and never in local-only mode.
   const hasServer = useAccount((s) => s.phase !== 'disabled')
   const localOnly = useLlm((s) => s.localOnly)

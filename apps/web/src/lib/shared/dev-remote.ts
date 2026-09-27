@@ -16,7 +16,10 @@ interface State {
       origin: string
       state: string | null
       version: number
-      members: Record<string, { role: SharedRole; wrappedKey: string; at: number }>
+      members: Record<
+        string,
+        { role: SharedRole; wrappedKey: string; at: number; accepted?: boolean }
+      >
     }
   >
 }
@@ -44,6 +47,12 @@ export function devSharedChanges(onChange: () => void): () => void {
 
 export function devSharedRemote(userId: string): SharedRemote {
   const role = (s: State, id: string) => s.notes[id]?.members[userId]?.role ?? null
+  // Members from before invitations (no flag) count as accepted.
+  const accepted = (m: { accepted?: boolean }) => m.accepted !== false
+  const active = (s: State, id: string) => {
+    const m = s.notes[id]?.members[userId]
+    return m && accepted(m) ? m.role : null
+  }
   const must = (ok: boolean, why: string) => {
     if (!ok) throw new Error(why)
   }
@@ -60,6 +69,7 @@ export function devSharedRemote(userId: string): SharedRemote {
                 wrappedKey: m.wrappedKey,
                 originNoteId: n.origin,
                 ownerId: n.owner,
+                accepted: accepted(m),
               },
             ]
           : []
@@ -85,9 +95,16 @@ export function devSharedRemote(userId: string): SharedRemote {
       save(s)
       return id
     },
+    accept: async (id) => {
+      const s = load()
+      const m = s.notes[id]?.members[userId]
+      must(Boolean(m), 'not invited')
+      if (m) m.accepted = true
+      save(s)
+    },
     saveState: async (id, state, base): Promise<SaveResult> => {
       const s = load()
-      must(role(s, id) === 'owner' || role(s, id) === 'edit', 'read only')
+      must(active(s, id) === 'owner' || active(s, id) === 'edit', 'read only')
       const n = s.notes[id]
       if (!n) throw new Error('no such note')
       if (n.version !== base) return { ok: false, version: n.version, state: n.state }
@@ -105,7 +122,13 @@ export function devSharedRemote(userId: string): SharedRemote {
       const s = load()
       must(role(s, id) === 'owner', 'not the owner')
       const n = s.notes[id]
-      if (n) n.members[user] = { role: r, wrappedKey, at: Date.now() }
+      if (n)
+        n.members[user] = {
+          role: r,
+          wrappedKey,
+          at: n.members[user]?.at ?? Date.now(),
+          accepted: n.members[user] ? accepted(n.members[user]) : false,
+        }
       save(s)
     },
     setRole: async (id, user, r) => {
@@ -133,7 +156,12 @@ export function devSharedRemote(userId: string): SharedRemote {
       if (!role(s, id)) return []
       return Object.entries(s.notes[id]?.members ?? {})
         .sort((a, b) => a[1].at - b[1].at)
-        .map(([u, m]) => ({ userId: u, email: s.users[u]?.email ?? '', role: m.role }))
+        .map(([u, m]) => ({
+          userId: u,
+          email: s.users[u]?.email ?? '',
+          role: m.role,
+          accepted: accepted(m),
+        }))
     },
   }
 }

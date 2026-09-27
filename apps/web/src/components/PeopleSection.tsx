@@ -132,6 +132,9 @@ export function PeopleSection({ note, onDone }: { note: Note; onDone: () => void
                 {m.userId === ctx.userId ? (
                   <span className="text-muted-foreground"> · {t('people.you')}</span>
                 ) : null}
+                {m.accepted ? null : (
+                  <span className="text-muted-foreground"> · {t('people.pending')}</span>
+                )}
               </span>
               {m.role === 'owner' ? (
                 <span className="text-muted-foreground">{t('people.owner')}</span>

@@ -5,12 +5,13 @@ interface Row {
   origin: string
   state: string | null
   version: number
-  members: Map<string, { role: SharedRole; wrappedKey: string }>
+  members: Map<string, { role: SharedRole; wrappedKey: string; accepted: boolean }>
 }
 
 /**
  * The shared-notes server in memory, with the rules of the real one
- * (supabase/migrations/*_shared_notes.sql): members read, owner manages, editors save.
+ * (supabase/migrations/*_shared_notes.sql, *_shared_invites.sql): members read, owner manages,
+ * editors save once they accepted.
  */
 export class MemorySharedServer {
   readonly users = new Map<string, { email: string; publicKey: string }>()
@@ -19,6 +20,10 @@ export class MemorySharedServer {
 
   remoteFor(userId: string): SharedRemote {
     const role = (id: string) => this.notes.get(id)?.members.get(userId)?.role ?? null
+    const active = (id: string) => {
+      const m = this.notes.get(id)?.members.get(userId)
+      return m?.accepted ? m.role : null
+    }
     const must = (ok: boolean, why: string) => {
       if (!ok) throw new Error(why)
     }
@@ -34,6 +39,7 @@ export class MemorySharedServer {
                   wrappedKey: m.wrappedKey,
                   originNoteId: n.origin,
                   ownerId: n.owner,
+                  accepted: m.accepted,
                 },
               ]
             : []
@@ -50,12 +56,17 @@ export class MemorySharedServer {
           origin,
           state: null,
           version: 0,
-          members: new Map([[userId, { role: 'owner', wrappedKey }]]),
+          members: new Map([[userId, { role: 'owner', wrappedKey, accepted: true }]]),
         })
         return id
       },
+      accept: async (id) => {
+        const m = this.notes.get(id)?.members.get(userId)
+        must(Boolean(m), 'not invited')
+        if (m) m.accepted = true
+      },
       saveState: async (id, state, base): Promise<SaveResult> => {
-        must(role(id) === 'owner' || role(id) === 'edit', 'read only')
+        must(active(id) === 'owner' || active(id) === 'edit', 'read only')
         const n = this.notes.get(id) as Row
         if (n.version !== base) return { ok: false, version: n.version, state: n.state }
         n.state = state
@@ -70,7 +81,12 @@ export class MemorySharedServer {
       },
       addMember: async (id, user, r, wrappedKey) => {
         must(role(id) === 'owner', 'not the owner')
-        this.notes.get(id)?.members.set(user, { role: r, wrappedKey })
+        const n = this.notes.get(id)
+        n?.members.set(user, {
+          role: r,
+          wrappedKey,
+          accepted: n.members.get(user)?.accepted ?? false,
+        })
       },
       setRole: async (id, user, r) => {
         must(role(id) === 'owner', 'not the owner')
@@ -92,6 +108,7 @@ export class MemorySharedServer {
               userId: u,
               email: this.users.get(u)?.email ?? '',
               role: m.role,
+              accepted: m.accepted,
             }))
           : [],
     }

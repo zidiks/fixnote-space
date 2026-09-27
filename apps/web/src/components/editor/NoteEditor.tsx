@@ -60,10 +60,12 @@ export interface NoteEditorHandle {
 }
 
 import { AiRangeExtension } from './ai-range'
+import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
 import { RepeatDialog } from './RepeatDialog'
 import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
+import { RemoteFade } from './remote-fade'
 import { noteSchema } from './schema'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
@@ -422,7 +424,19 @@ export function NoteEditor({
       ...(live
         ? [
             Collaboration.configure({ document: live.session.doc, field: LIVE_FIELD }),
-            CollaborationCaret.configure({ provider: live.session, user: live.user }),
+            CollaborationCaret.configure({
+              provider: live.session,
+              user: live.user,
+              // Drawn by LiveCarets over the text, so they can glide. The anchor stays in the
+              // line (a zero-width character) so the caret's place can still be measured.
+              render: () => {
+                const el = document.createElement('span')
+                el.className = 'live-caret-anchor'
+                el.textContent = '\u2060'
+                return el
+              },
+            }),
+            RemoteFade,
           ]
         : []),
       Extension.create({
@@ -661,7 +675,7 @@ export function NoteEditor({
     // mousedown and synchronously, so a key pressed right after the click is not lost.
     // biome-ignore lint/a11y/noStaticElementInteractions: pointer convenience; the editor itself stays keyboard accessible
     <div
-      className="min-h-[50vh] cursor-text pb-24"
+      className="relative min-h-[50vh] cursor-text pb-24"
       onMouseDown={(e) => {
         if (e.target !== e.currentTarget || !editor) return
         e.preventDefault()
@@ -711,6 +725,7 @@ export function NoteEditor({
           />
         ) : null}
       </ContextMenu>
+      {editor && live ? <LiveCarets editor={editor} awareness={live.session.awareness} /> : null}
       {editor && repeatTask && note.dailyDate ? (
         <RepeatDialog
           date={note.dailyDate}

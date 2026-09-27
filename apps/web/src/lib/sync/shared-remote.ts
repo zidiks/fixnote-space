@@ -2,7 +2,10 @@ import type { SaveResult, SharedMember, SharedRemote, SharedRole } from '@fixnot
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { toError } from '../errors'
 
-/** Shared notes on Supabase (supabase/migrations/*_shared_notes.sql): tables read, RPCs write. */
+/**
+ * Shared notes on Supabase (supabase/migrations/*_shared_notes.sql, *_shared_invites.sql): tables
+ * read, RPCs write.
+ */
 export function supabaseSharedRemote(client: SupabaseClient, userId: string): SharedRemote {
   const rpc = async <T>(name: string, args: Record<string, unknown>): Promise<T> => {
     const { data, error } = await client.rpc(name, args)
@@ -13,13 +16,16 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
     async memberships() {
       const { data, error } = await client
         .from('shared_note_members')
-        .select('note_id, role, wrapped_key, shared_notes!inner(origin_note_id, owner_id)')
+        .select(
+          'note_id, role, wrapped_key, accepted, shared_notes!inner(origin_note_id, owner_id)',
+        )
         .eq('user_id', userId)
       if (error) throw toError(error)
       type Row = {
         note_id: string
         role: SharedRole
         wrapped_key: string
+        accepted: boolean
         shared_notes: { origin_note_id: string; owner_id: string }
       }
       return ((data ?? []) as unknown as Row[]).map((r) => ({
@@ -28,6 +34,7 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
         wrappedKey: r.wrapped_key,
         originNoteId: r.shared_notes.origin_note_id,
         ownerId: r.shared_notes.owner_id,
+        accepted: r.accepted,
       }))
     },
     async state(id) {
@@ -41,6 +48,7 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
     },
     share: (origin, wrappedKey) =>
       rpc<string>('share_note', { p_origin: origin, p_wrapped_key: wrappedKey, p_state: null }),
+    accept: (id) => rpc('accept_shared_note', { p_note: id }),
     saveState: (id, state, base) =>
       rpc<SaveResult>('save_shared_state', { p_note: id, p_state: state, p_base_version: base }),
     async findUser(email) {
@@ -63,12 +71,18 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
     async members(id) {
       const { data, error } = await client
         .from('shared_note_members')
-        .select('user_id, email, role')
+        .select('user_id, email, role, accepted')
         .eq('note_id', id)
         .order('created_at')
       if (error) throw toError(error)
-      return ((data ?? []) as { user_id: string; email: string; role: SharedRole }[]).map(
-        (r): SharedMember => ({ userId: r.user_id, email: r.email, role: r.role }),
+      type Row = { user_id: string; email: string; role: SharedRole; accepted: boolean }
+      return ((data ?? []) as Row[]).map(
+        (r): SharedMember => ({
+          userId: r.user_id,
+          email: r.email,
+          role: r.role,
+          accepted: r.accepted,
+        }),
       )
     },
   }

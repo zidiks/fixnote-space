@@ -1,20 +1,47 @@
 import { useTranslation } from '@fixnote/i18n'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@fixnote/ui'
 import { Users } from 'lucide-react'
-import { useEffect, useReducer, useState } from 'react'
-import { useAccount } from '../lib/account/account'
+import { useEffect, useReducer, useRef, useState } from 'react'
+import { toast } from 'sonner'
+import { onSharedSync, useAccount } from '../lib/account/account'
 import { type LiveEditing, openShared } from '../lib/collab/live'
+import { initials, type LiveUser, othersIn } from '../lib/collab/people'
 
 /**
  * A shared note's live editing while it is open: the room is joined when the note opens (and the
  * account is unlocked) and left when it closes. `failed` when this device cannot open it (signed
- * out): the note is then edited as plain text and sync brings the edits in later.
+ * out): the note is then edited as plain text and sync brings the edits in later. When the owner
+ * changes this account's role, the room is joined again with the new one (which also makes the
+ * server check the channel access again); `onLost` when access is taken away.
  */
-export function useSharedLive(sharedId: string | null) {
+export function useSharedLive(sharedId: string | null, onLost?: () => void) {
+  const { t } = useTranslation()
   const phase = useAccount((s) => s.phase)
   const [live, setLive] = useState<LiveEditing | null>(null)
   const [opening, setOpening] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [generation, reopen] = useReducer((n: number) => n + 1, 0)
+  const lost = useRef(onLost)
+  lost.current = onLost
+  const current = useRef(live)
+  current.current = live
 
+  useEffect(() => {
+    if (!sharedId) return
+    return onSharedSync((report) => {
+      if (report.removed.some((r) => r.sharedId === sharedId && !r.kept)) {
+        lost.current?.()
+        return
+      }
+      const change = report.roles.find((r) => r.sharedId === sharedId)
+      if (change) {
+        toast(t(change.role === 'view' ? 'people.nowView' : 'people.nowEdit'))
+        reopen()
+      } else if (report.pulled) void current.current?.refresh()
+    })
+  }, [sharedId, t])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `generation` rejoins the room
   useEffect(() => {
     if (!sharedId || phase !== 'ready') {
       setFailed(Boolean(sharedId))
@@ -41,50 +68,78 @@ export function useSharedLive(sharedId: string | null) {
       opened?.session.destroy()
       setLive(null)
     }
-  }, [sharedId, phase])
+  }, [sharedId, phase, generation])
 
   return { live, opening, failed }
 }
 
-/** Under the note header of a shared note: who else is in it now, read-only, latency. */
+/** How many faces the stack shows before "+N". */
+const MAX_FACES = 4
+
+/** Under the note header of a shared note: that it is shared, and who else is in it now. */
 export function LiveBar({ live }: { live: LiveEditing }) {
   const { t } = useTranslation()
   const [, refresh] = useReducer((n: number) => n + 1, 0)
   useEffect(() => {
     live.session.awareness.on('change', refresh)
-    live.session.onRtt = refresh
-    return () => {
-      live.session.awareness.off('change', refresh)
-      live.session.onRtt = undefined
-    }
+    return () => live.session.awareness.off('change', refresh)
   }, [live])
 
-  const self = live.session.doc.clientID
-  const here = [
-    ...new Set(
-      [...live.session.awareness.getStates()]
-        .filter(([id]) => id !== self)
-        .map(([, state]) => (state as { user?: { name?: string } }).user?.name)
-        .filter((name): name is string => Boolean(name)),
-    ),
-  ]
-  const rtt = live.session.rtt
-  const parts = [
-    t('people.shared'),
-    live.readOnly ? t('people.readOnly') : '',
-    here.length ? t('people.here', { names: here.join(', ') }) : '',
-    here.length && rtt !== null ? t('people.latency', { ms: Math.round(rtt / 2) }) : '',
-  ].filter(Boolean)
+  const others = othersIn(live.session.awareness)
+  const shown = others.slice(0, MAX_FACES)
+  const rest = others.slice(MAX_FACES)
+  const roleLabel = (u: LiveUser) =>
+    u.role === 'owner'
+      ? t('people.owner')
+      : u.role === 'view'
+        ? t('people.roleView')
+        : t('people.roleEdit')
 
   return (
-    <div className="mt-3 flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2 text-sm">
+    <div className="mt-3 flex min-h-11 items-center gap-2.5 rounded-lg border bg-card px-3 py-1.5 text-sm">
       <Users className="size-4 shrink-0 text-brand" />
-      <span className="min-w-0 flex-1">{parts.join(' · ')}</span>
-      {here.length ? (
-        <span className="relative flex size-2 shrink-0">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
-          <span className="relative inline-flex size-2 rounded-full bg-success" />
-        </span>
+      <span className="min-w-0 flex-1 truncate">
+        {t('people.shared')}
+        {live.readOnly ? (
+          <span className="text-muted-foreground"> · {t('people.readOnly')}</span>
+        ) : null}
+      </span>
+      {others.length ? (
+        <div className="flex shrink-0 items-center -space-x-1.5">
+          {shown.map((u) => (
+            <HoverCard key={u.clientId}>
+              <HoverCardTrigger asChild>
+                <span
+                  className="flex size-7 cursor-default items-center justify-center rounded-full text-[11px] font-semibold text-white ring-2 ring-card"
+                  style={{ backgroundColor: u.color }}
+                >
+                  {initials(u.email || u.name)}
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent side="bottom" align="end">
+                <p className="font-medium">{u.email || u.name}</p>
+                <p className="text-xs text-muted-foreground">{roleLabel(u)}</p>
+              </HoverCardContent>
+            </HoverCard>
+          ))}
+          {rest.length ? (
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <span className="flex size-7 cursor-default items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground ring-2 ring-card">
+                  +{rest.length}
+                </span>
+              </HoverCardTrigger>
+              <HoverCardContent side="bottom" align="end" className="space-y-1.5">
+                {rest.map((u) => (
+                  <div key={u.clientId}>
+                    <p className="font-medium">{u.email || u.name}</p>
+                    <p className="text-xs text-muted-foreground">{roleLabel(u)}</p>
+                  </div>
+                ))}
+              </HoverCardContent>
+            </HoverCard>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )

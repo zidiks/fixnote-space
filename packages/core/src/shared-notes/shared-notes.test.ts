@@ -100,9 +100,16 @@ describe('SharedNotes', () => {
       PersonNotFoundError,
     )
     await ann.shared.invite(id, ' BOB@x.io', 'edit')
+    // An invitation first: nothing joins Bob's notes until he accepts.
     const report = await bob.shared.sync()
-    expect(report.added.map((a) => a.title)).toEqual(['Plan'])
-    const bobNote = report.added[0]?.noteId as string
+    expect(report.added).toEqual([])
+    expect(report.invites).toEqual([id])
+    expect((await bob.repo.listNotes()).items).toHaveLength(0)
+    expect(await bob.shared.invites()).toEqual([
+      { sharedId: id, from: 'ann@x.io', role: 'edit', title: 'Plan' },
+    ])
+    const bobNote = await bob.shared.accept(id)
+    expect((await bob.shared.sync()).invites).toEqual([])
     expect(await content(bob, bobNote)).toBe('Plan\nmeet on Monday')
 
     // Both edit at the same time, different places.
@@ -127,7 +134,7 @@ describe('SharedNotes', () => {
     const note = await ann.repo.createNote({ content: 'List\n- milk' })
     const id = await ann.shared.share(note.id)
     await ann.shared.invite(id, 'bob@x.io', 'edit')
-    const bobNote = (await bob.shared.sync()).added[0]?.noteId as string
+    const bobNote = await bob.shared.accept(id)
     // An MCP client appends a line to Bob's copy through the repo.
     await bob.repo.updateContent(bobNote, 'List\n- milk\n- bread')
     await bob.shared.sync()
@@ -141,7 +148,7 @@ describe('SharedNotes', () => {
     const note = await ann.repo.createNote({ content: 'Read me' })
     const id = await ann.shared.share(note.id)
     await ann.shared.invite(id, 'cat@x.io', 'view')
-    const catNote = (await cat.shared.sync()).added[0]?.noteId as string
+    const catNote = await cat.shared.accept(id)
     await cat.repo.updateContent(catNote, 'Read me, changed by the viewer')
     await cat.shared.sync()
     // Not sent; the note goes back to the shared text.
@@ -178,8 +185,8 @@ describe('SharedNotes', () => {
     const id = await ann.shared.share(note.id)
     await ann.shared.invite(id, 'bob@x.io', 'edit')
     await ann.shared.invite(id, 'cat@x.io', 'edit')
-    const bobNote = (await bob.shared.sync()).added[0]?.noteId as string
-    const catNote = (await cat.shared.sync()).added[0]?.noteId as string
+    const bobNote = await bob.shared.accept(id)
+    const catNote = await cat.shared.accept(id)
 
     await bob.shared.leave(id)
     expect(await bob.repo.getNote(bobNote)).toBeNull()
@@ -191,7 +198,48 @@ describe('SharedNotes', () => {
     await ann.shared.unshare(id)
     expect((await ann.repo.getNote(note.id))?.sharedId).toBeNull()
     expect(await content(ann, note.id)).toBe('Trip')
-    expect((await cat.shared.sync()).removed).toBe(1)
+    expect((await cat.shared.sync()).removed).toEqual([{ sharedId: id, kept: false }])
     expect(await cat.repo.getNote(catNote)).toBeNull()
+  })
+
+  it('declining an invitation removes it; an invited person cannot save before accepting', async () => {
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    const note = await ann.repo.createNote({ content: 'Not for Bob' })
+    const id = await ann.shared.share(note.id)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    await expect(server.remoteFor('bob').saveState(id, 'x', 1)).rejects.toThrow('read only')
+    expect((await ann.shared.members(id)).map((m) => [m.email, m.accepted])).toEqual([
+      ['ann@x.io', true],
+      ['bob@x.io', false],
+    ])
+    await bob.shared.decline(id)
+    expect(await bob.shared.invites()).toEqual([])
+    expect((await bob.shared.sync()).added).toEqual([])
+    expect((await ann.shared.members(id)).map((m) => m.email)).toEqual(['ann@x.io'])
+  })
+
+  it('an editor made a viewer: the role change is reported, unsaved edits are dropped', async () => {
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    const note = await ann.repo.createNote({ content: 'Agenda' })
+    const id = await ann.shared.share(note.id)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    const bobNote = await bob.shared.accept(id)
+    // Bob types, but Ann takes the right to edit away before his device sends it.
+    await typeInEditor(bob, id, (t) => t.insert(t.length, ' (Bob was here)'))
+    await ann.shared.setRole(id, 'bob', 'view')
+    const report = await bob.shared.sync()
+    expect(report.roles).toEqual([{ sharedId: id, role: 'view' }])
+    expect(await content(bob, bobNote)).toBe('Agenda')
+    // A late save from an editor still open is ignored.
+    await typeInEditor(bob, id, (t) => t.insert(0, 'Late '))
+    await bob.shared.sync()
+    expect(await content(bob, bobNote)).toBe('Agenda')
+    await typeInEditor(ann, id, (t) => t.insert(t.length, ' v2'))
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect(await content(bob, bobNote)).toBe('Agenda v2')
+    expect(await content(ann, note.id)).toBe('Agenda v2')
   })
 })

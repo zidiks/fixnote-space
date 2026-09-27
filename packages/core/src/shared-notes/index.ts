@@ -8,6 +8,7 @@ import {
   sealSharedState,
   sealToPublicKey,
 } from '../crypto'
+import { deriveTitle } from '../notes/markdown'
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver, SqlRow } from '../platform'
 
@@ -30,12 +31,25 @@ export interface SharedMembership {
   /** The owner's note it was shared from. */
   originNoteId: string
   ownerId: string
+  /** False while it is an invitation: the note joins this account's notes once accepted. */
+  accepted: boolean
 }
 
 export interface SharedMember {
   userId: string
   email: string
   role: SharedRole
+  /** False while invited and not yet accepted. */
+  accepted: boolean
+}
+
+/** A note someone invited this account to, not accepted yet. */
+export interface SharedInvite {
+  sharedId: string
+  /** Who invites (the note's owner). */
+  from: string
+  role: SharedRole
+  title: string
 }
 
 export type SaveResult =
@@ -48,6 +62,8 @@ export interface SharedRemote {
   state(sharedId: string): Promise<{ state: string | null; version: number } | null>
   /** Shares a note (or returns the id it already has); the caller is its owner. */
   share(originNoteId: string, wrappedKey: string): Promise<string>
+  /** The invited account accepts; declining is removeMember on oneself. */
+  accept(sharedId: string): Promise<void>
   saveState(sharedId: string, state: string, baseVersion: number): Promise<SaveResult>
   findUser(email: string): Promise<{ userId: string; publicKey: string } | null>
   addMember(sharedId: string, userId: string, role: SharedRole, wrappedKey: string): Promise<void>
@@ -75,10 +91,14 @@ export interface SharedDoc {
 }
 
 export interface SharedSyncReport {
-  /** Notes shared with this account since the last sync. */
+  /** Notes that joined this account's notes (accepted on another device, or its own shares). */
   added: { noteId: string; title: string }[]
-  /** Notes this account lost access to. */
-  removed: number
+  /** Shared notes no longer shared with this account; the owner keeps the note, others lose it. */
+  removed: { sharedId: string; kept: boolean }[]
+  /** Shared notes where this account's role changed. */
+  roles: { sharedId: string; role: SharedRole }[]
+  /** Invitations waiting for an answer. */
+  invites: string[]
   pulled: number
   pushed: number
 }
@@ -188,6 +208,52 @@ export class SharedNotes {
     return this.remote.members(sharedId)
   }
 
+  /** Invitations waiting for an answer, with who sent them and the note's title. */
+  async invites(): Promise<SharedInvite[]> {
+    const pending = (await this.remote.memberships()).filter((m) => !m.accepted)
+    return Promise.all(
+      pending.map(async (m): Promise<SharedInvite> => {
+        const [remote, members] = await Promise.all([
+          this.remote.state(m.sharedId),
+          this.remote.members(m.sharedId),
+        ])
+        let title = ''
+        try {
+          if (remote?.state) {
+            const key = openSealedBox(this.keys, m.wrappedKey)
+            title = deriveTitle(
+              this.projector.toMarkdown(openSharedState(key, m.sharedId, remote.state)),
+            )
+          }
+        } catch {
+          // A title that cannot be read is left out; the invitation still shows who sent it.
+        }
+        return {
+          sharedId: m.sharedId,
+          from: members.find((x) => x.role === 'owner')?.email ?? '',
+          role: m.role,
+          title,
+        }
+      }),
+    )
+  }
+
+  /** Accepts an invitation: the note joins this account's notes. Returns its local id. */
+  async accept(sharedId: string): Promise<string> {
+    await this.remote.accept(sharedId)
+    const m = (await this.remote.memberships()).find((x) => x.sharedId === sharedId)
+    if (!m) throw new Error('Not invited')
+    await this.link(m)
+    const doc = await this.doc(sharedId)
+    if (!doc) throw new Error('Not invited')
+    return doc.noteId
+  }
+
+  /** Declines an invitation. */
+  decline(sharedId: string): Promise<void> {
+    return this.remote.removeMember(sharedId, this.userId)
+  }
+
   setRole(sharedId: string, userId: string, role: 'edit' | 'view'): Promise<void> {
     return this.remote.setRole(sharedId, userId, role)
   }
@@ -239,11 +305,12 @@ export class SharedNotes {
   async saveDoc(sharedId: string, update: Uint8Array, markdown: string): Promise<void> {
     await this.locked(async () => {
       const doc = await this.doc(sharedId)
-      if (!doc) return
+      // A viewer's copy comes from the server only (sync pulls it). That also keeps out edits an
+      // editor made just before losing the right to edit, which were dropped then.
+      if (!doc || !canEdit(doc.role)) return
       await this.db.execute(
-        `UPDATE shared_docs SET state = ?, projected = ?, dirty = CASE WHEN ? THEN 1 ELSE dirty END
-          WHERE shared_id = ?`,
-        [merge(doc.state, update), markdown, canEdit(doc.role) ? 1 : 0, sharedId],
+        'UPDATE shared_docs SET state = ?, projected = ?, dirty = 1 WHERE shared_id = ?',
+        [merge(doc.state, update), markdown, sharedId],
       )
     })
   }
@@ -252,18 +319,31 @@ export class SharedNotes {
 
   /** Brings shared notes up to date both ways: new and lost access, others' edits, ours. */
   async sync(): Promise<SharedSyncReport> {
-    const report: SharedSyncReport = { added: [], removed: 0, pulled: 0, pushed: 0 }
-    const memberships = await this.remote.memberships()
+    const report: SharedSyncReport = {
+      added: [],
+      removed: [],
+      roles: [],
+      invites: [],
+      pulled: 0,
+      pushed: 0,
+    }
+    const all = await this.remote.memberships()
+    const memberships = all.filter((m) => m.accepted)
+    report.invites = all.filter((m) => !m.accepted).map((m) => m.sharedId)
     const ids = new Set(memberships.map((m) => m.sharedId))
     for (const m of memberships) {
+      const before = await this.doc(m.sharedId)
       const added = await this.link(m)
       if (added) report.added.push(added)
+      if (before && before.role !== m.role)
+        report.roles.push({ sharedId: m.sharedId, role: m.role })
     }
     for (const row of await this.db.query<DocRow>('SELECT shared_id, role FROM shared_docs')) {
       if (ids.has(row.shared_id)) continue
       // Unshared by the owner (or we were removed): the owner keeps the note, others lose it.
-      await this.drop(row.shared_id, row.role === 'owner' ? 'keep' : 'delete')
-      report.removed++
+      const kept = row.role === 'owner'
+      await this.drop(row.shared_id, kept ? 'keep' : 'delete')
+      report.removed.push({ sharedId: row.shared_id, kept })
     }
     for (const m of memberships) {
       if (await this.pull(m.sharedId)) report.pulled++
@@ -276,11 +356,21 @@ export class SharedNotes {
   private async link(m: SharedMembership): Promise<{ noteId: string; title: string } | null> {
     const existing = await this.doc(m.sharedId)
     if (existing) {
-      if (existing.role !== m.role)
-        await this.db.execute('UPDATE shared_docs SET role = ? WHERE shared_id = ?', [
-          m.role,
-          m.sharedId,
-        ])
+      if (existing.role === m.role) return null
+      await this.locked(() =>
+        // No longer allowed to edit: edits not saved yet are dropped, the server's text is the
+        // note's (the next pull fills the state back in from it).
+        canEdit(existing.role) && !canEdit(m.role)
+          ? this.db.execute(
+              `UPDATE shared_docs SET role = ?, state = NULL, server_version = 0, dirty = 0
+                WHERE shared_id = ?`,
+              [m.role, m.sharedId],
+            )
+          : this.db.execute('UPDATE shared_docs SET role = ? WHERE shared_id = ?', [
+              m.role,
+              m.sharedId,
+            ]),
+      )
       return null
     }
     const noteKey = openSealedBox(this.keys, m.wrappedKey)
