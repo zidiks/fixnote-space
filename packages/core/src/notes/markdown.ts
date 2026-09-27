@@ -19,16 +19,36 @@ function stripInline(line: string): string {
 const TABLE_ROW = /^\s*\|(.*)\|\s*$/
 const TABLE_RULE = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/
 
+const cells = (row: string) =>
+  row
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.trim())
+    .filter(Boolean)
+
+/**
+ * For card previews: each table becomes one line, "▦ " and its header, so a table does not fill
+ * the card with numbers.
+ */
+function tablesAsHeaders(markdown: string): string {
+  const lines = markdown.split('\n')
+  const out: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const row = (lines[i] as string).match(TABLE_ROW)
+    if (row && TABLE_RULE.test(lines[i + 1] ?? '')) {
+      out.push(`▦ ${cells(row[1] as string).join(' · ')}`)
+      i++
+      while (i + 1 < lines.length && TABLE_ROW.test(lines[i + 1] as string)) i++
+      continue
+    }
+    out.push(lines[i] as string)
+  }
+  return out.join('\n')
+}
+
 function stripBlock(line: string, tasks: boolean): string {
   // Table rows read as "a · b"; the assistant (`tasks`) keeps the pipes, they show the columns.
   const row = tasks ? null : line.match(TABLE_ROW)
-  if (row) {
-    return (row[1] as string)
-      .split(/(?<!\\)\|/)
-      .map((cell) => cell.trim())
-      .filter(Boolean)
-      .join(' · ')
-  }
+  if (row) return cells(row[1] as string).join(' · ')
   return line
     .replace(/^\s{0,3}#{1,6}\s+/, '') // headings
     .replace(/^\s*>\s?/, '') // quotes
@@ -63,7 +83,7 @@ export function deriveTitle(markdown: string, max = 120): string {
 
 /** Plain text after the title line, whitespace collapsed. */
 export function deriveExcerpt(markdown: string, max = 240): string {
-  const text = plainLines(markdown).slice(1).join(' ').replace(/\s+/g, ' ').trim()
+  const text = plainLines(tablesAsHeaders(markdown)).slice(1).join(' ').replace(/\s+/g, ' ').trim()
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text
 }
 
