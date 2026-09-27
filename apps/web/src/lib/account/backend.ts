@@ -330,17 +330,20 @@ export function supabaseBackend(
           { event: '*', schema: 'public', table: 'device_pairings' },
           onChange,
         )
-        // Shared notes: someone shared one, changed a role, or saved (members only, by RLS).
+        // Shared notes and folders: someone shared one, changed a role, renamed a folder, added a
+        // note to one, or saved (members only, by RLS).
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'shared_note_members' },
           onChange,
         )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'shared_notes' }, onChange)
         .on(
           'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'shared_notes' },
+          { event: '*', schema: 'public', table: 'shared_folder_members' },
           onChange,
         )
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'shared_folders' }, onChange)
         .subscribe()
       return () => void client.removeChannel(channel)
     },

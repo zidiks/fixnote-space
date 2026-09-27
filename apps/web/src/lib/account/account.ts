@@ -16,6 +16,7 @@ import {
   phraseToSecret,
   publicKeyB64,
   SharedNotes,
+  type SharedSyncReport,
   type SqlDriver,
   SyncEngine,
   sealSecretForDevice,
@@ -51,6 +52,8 @@ interface AccountState {
   pairing: { code: string; status: 'waiting' | 'expired' } | null
   /** Other devices asking this one to let them in. */
   pairingRequests: (PairingRequest & { code: string })[]
+  /** Shared notes this account is invited to and has not answered yet. */
+  invites: string[]
 }
 
 export const useAccount = create<AccountState>()(() => ({
@@ -61,6 +64,7 @@ export const useAccount = create<AccountState>()(() => ({
   sync: { status: 'idle', lastSyncedAt: null, error: null, pending: 0 },
   pairing: null,
   pairingRequests: [],
+  invites: [],
 }))
 
 const set = useAccount.setState
@@ -83,8 +87,14 @@ interface Deps {
   onRemoteChange: () => void
   /** Sync kept a second version of notes changed in the same place on two devices. */
   onConflicts?: (count: number) => void
-  /** Someone shared notes with this account. */
-  onShared?: (notes: { noteId: string; title: string }[]) => void
+}
+
+const sharedListeners = new Set<(report: SharedSyncReport) => void>()
+
+/** Calls back after each sync of shared notes (roles changed, access lost, …). */
+export function onSharedSync(listener: (report: SharedSyncReport) => void): () => void {
+  sharedListeners.add(listener)
+  return () => sharedListeners.delete(listener)
 }
 
 let deps: Deps | null = null
@@ -384,6 +394,7 @@ export async function signOut() {
     email: '',
     pendingSecret: null,
     sync: { status: 'idle', lastSyncedAt: null, error: null, pending: 0 },
+    invites: [],
   })
 }
 
@@ -421,10 +432,21 @@ export async function runSync() {
     const report = await e.sync()
     // Notes shared with other people: their own channel, merged as Yjs documents.
     const sharedReport = shared ? await shared.sync() : null
-    if (sharedReport?.added.length) need().onShared?.(sharedReport.added)
-    const sharedChanged = Boolean(
-      sharedReport && (sharedReport.added.length || sharedReport.removed || sharedReport.pulled),
-    )
+    let sharedChanged = false
+    if (sharedReport) {
+      const invites = sharedReport.invites
+      const invitesChanged = invites.join() !== useAccount.getState().invites.join()
+      if (invitesChanged) set({ invites })
+      for (const listener of sharedListeners) listener(sharedReport)
+      sharedChanged = Boolean(
+        sharedReport.added.length ||
+          sharedReport.removed.length ||
+          sharedReport.roles.length ||
+          sharedReport.folders ||
+          sharedReport.pulled ||
+          invitesChanged,
+      )
+    }
     await refreshPairingRequests().catch(() => undefined)
     // Images go after the notes that use them; another device fetches them when shown.
     const sync = attachmentSync()

@@ -7,7 +7,7 @@ import { useUi } from '../app/store'
 import { appendToToday, captureToDaily } from '../lib/daily'
 import { useDb, useRepo } from '../lib/db'
 import { usePlatform } from '../lib/platform'
-import { useInvalidateNotes } from '../lib/queries'
+import { useInvalidateNotes, writableFolder } from '../lib/queries'
 import { cancelVoice, setVoiceDeps, stopVoice, useVoice } from '../lib/voice/voice'
 
 export const VOICE_KEYS = `${isApple ? '⌘' : 'Ctrl'}+Shift+Space`
@@ -63,7 +63,7 @@ export function VoiceBar() {
         const route = useUi.getState().route
         const note = await repo.createNote({
           content: text,
-          folderId: route.kind === 'folder' ? route.id : null,
+          folderId: await writableFolder(repo, route.kind === 'folder' ? route.id : null),
         })
         await invalidate()
         useUi.getState().navigate({ kind: 'note', id: note.id })

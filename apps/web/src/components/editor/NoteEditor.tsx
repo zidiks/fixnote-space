@@ -60,10 +60,12 @@ export interface NoteEditorHandle {
 }
 
 import { AiRangeExtension } from './ai-range'
+import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
 import { RepeatDialog } from './RepeatDialog'
 import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
+import { RemoteFade } from './remote-fade'
 import { noteSchema } from './schema'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
@@ -108,8 +110,11 @@ function EditorMenu({
   onInsertImage,
   onRepeat,
   onRemove,
+  readOnly,
 }: {
   editor: Editor
+  /** View only: the menu offers copying and selecting, nothing that changes the note. */
+  readOnly: boolean
   onAskAi: () => void
   onInsertImage: () => void
   /** Set when the menu was opened on a task of a daily note. */
@@ -250,9 +255,14 @@ function EditorMenu({
       active: state.taskList,
     },
   ]
-  if (onRepeat)
-    items.unshift({ icon: Repeat, label: t('repeat.menu'), hint: '', run: onRepeat }, 'sep')
-  if (onRemove) items.unshift({ icon: Trash2, hint: '', ...onRemove }, 'sep')
+  if (readOnly) {
+    const keep = new Set<string>([t('menu.copy'), t('menu.selectAll')])
+    items.splice(0, items.length, ...items.filter((it) => it !== 'sep' && keep.has(it.label)))
+  } else {
+    if (onRepeat)
+      items.unshift({ icon: Repeat, label: t('repeat.menu'), hint: '', run: onRepeat }, 'sep')
+    if (onRemove) items.unshift({ icon: Trash2, hint: '', ...onRemove }, 'sep')
+  }
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
@@ -347,6 +357,10 @@ export function NoteEditor({
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
   const liveRef = useRef(live)
+  // Shared with this account to view only: nothing here may change the note.
+  const readOnly = Boolean(live?.readOnly || note.readOnly)
+  const readOnlyRef = useRef(readOnly)
+  readOnlyRef.current = readOnly
   const noteRef = useRef(note)
   noteRef.current = note
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
@@ -422,7 +436,19 @@ export function NoteEditor({
       ...(live
         ? [
             Collaboration.configure({ document: live.session.doc, field: LIVE_FIELD }),
-            CollaborationCaret.configure({ provider: live.session, user: live.user }),
+            CollaborationCaret.configure({
+              provider: live.session,
+              user: live.user,
+              // Drawn by LiveCarets over the text, so they can glide. The anchor stays in the
+              // line (a zero-width character) so the caret's place can still be measured.
+              render: () => {
+                const el = document.createElement('span')
+                el.className = 'live-caret-anchor'
+                el.textContent = '\u2060'
+                return el
+              },
+            }),
+            RemoteFade,
           ]
         : []),
       Extension.create({
@@ -436,7 +462,7 @@ export function NoteEditor({
       }),
     ],
     ...(live ? {} : { content: note.content, contentType: 'markdown' as const }),
-    editable: !live?.readOnly,
+    editable: !readOnly,
     onCreate: ({ editor: e }) => {
       // URLs stored as plain text stay text when the user types next to them.
       e.state.doc.descendants((node) => {
@@ -556,7 +582,10 @@ export function NoteEditor({
       [audit, t],
     ),
   )
-  openAi.current = ai.open
+  openAi.current = (target, action) => {
+    if (readOnlyRef.current) toast(i18n.t('people.viewOnly'))
+    else ai.open(target, action)
+  }
   useImperativeHandle(
     ref,
     () => ({
@@ -564,6 +593,10 @@ export function NoteEditor({
       insertDropped: (markdown, at) => {
         const e = editorRef.current
         if (!e || e.isDestroyed || !markdown.trim()) return
+        if (readOnlyRef.current) {
+          toast(i18n.t('people.viewOnly'))
+          return
+        }
         const { doc } = e.state
         // After the top-level block under the pointer, so text is never split mid-line.
         const hit = at ? e.view.posAtCoords({ left: at.x, top: at.y }) : null
@@ -588,6 +621,10 @@ export function NoteEditor({
       insertText: (text) => {
         const e = editorRef.current
         if (!e || e.isDestroyed) return
+        if (readOnlyRef.current) {
+          toast(i18n.t('people.viewOnly'))
+          return
+        }
         const { doc, selection } = e.state
         if (e.isFocused) {
           const before = selection.$from.parent.textBetween(0, selection.$from.parentOffset)
@@ -661,7 +698,7 @@ export function NoteEditor({
     // mousedown and synchronously, so a key pressed right after the click is not lost.
     // biome-ignore lint/a11y/noStaticElementInteractions: pointer convenience; the editor itself stays keyboard accessible
     <div
-      className="min-h-[50vh] cursor-text pb-24"
+      className="relative min-h-[50vh] cursor-text pb-24"
       onMouseDown={(e) => {
         if (e.target !== e.currentTarget || !editor) return
         e.preventDefault()
@@ -682,6 +719,7 @@ export function NoteEditor({
         {editor ? (
           <EditorMenu
             editor={editor}
+            readOnly={readOnly}
             onAskAi={() => ai.open('selection')}
             onInsertImage={() => fileInput.current?.click()}
             onRemove={
@@ -711,6 +749,7 @@ export function NoteEditor({
           />
         ) : null}
       </ContextMenu>
+      {editor && live ? <LiveCarets editor={editor} awareness={live.session.awareness} /> : null}
       {editor && repeatTask && note.dailyDate ? (
         <RepeatDialog
           date={note.dailyDate}

@@ -4,7 +4,7 @@ import { getPosts, postInfo } from '../../lib/blog'
 import BlogPost from '../../views/BlogPost.astro'
 
 export const getStaticPaths = (async () =>
-  (await getPosts('ru')).map((post) => ({
+  (await getPosts('en')).map((post) => ({
     params: { slug: postInfo(post).slug },
     props: { post },
   }))) satisfies GetStaticPaths

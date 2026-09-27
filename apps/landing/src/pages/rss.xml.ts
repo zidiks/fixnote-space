@@ -1,4 +1,4 @@
 import type { APIContext } from 'astro'
 import { blogFeed } from '../lib/rss'
 
-export const GET = (context: APIContext) => blogFeed('ru', context)
+export const GET = (context: APIContext) => blogFeed('en', context)

@@ -69,7 +69,8 @@ export function ListView({ route }: { route: ListRoute }) {
         }
         pinnedFirst={route.kind === 'folder'}
         onNew={
-          route.kind === 'folder'
+          // View only: nothing is added to someone else's folder from here.
+          route.kind === 'folder' && folder?.shared !== 'view'
             ? () =>
                 createNote.mutate(
                   { content: '', folderId: route.id },

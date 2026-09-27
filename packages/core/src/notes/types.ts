@@ -17,6 +17,8 @@ export interface NoteSummary {
   pinnedAt: number | null
   /** Shared with other people (see `SharedNotes`): synced as a shared note, not a personal one. */
   sharedId: string | null
+  /** Shared with this account to view only: nothing may change it (see ReadOnlyError). */
+  readOnly: boolean
   createdAt: number
   updatedAt: number
 }
@@ -64,6 +66,8 @@ export interface Folder {
   name: string
   sort: number
   noteCount: number
+  /** Shared with other people: this account's role in it (the owner's too). */
+  shared: 'owner' | 'edit' | 'view' | null
 }
 
 export interface TagCount {

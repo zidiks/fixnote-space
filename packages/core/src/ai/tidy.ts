@@ -138,6 +138,10 @@ export interface TidyLabels {
  * duplicates. Nothing changes until a suggestion is accepted; every accepted one is recorded in
  * the audit log and can be undone there.
  */
+/** Notes shared with this account to view only are never suggested for changes. */
+const WRITABLE = `NOT EXISTS (SELECT 1 FROM shared_docs d
+  WHERE d.shared_id = notes.shared_id AND d.role = 'view')`
+
 export class Tidy {
   constructor(
     private readonly db: SqlDriver,
@@ -155,13 +159,13 @@ export class Tidy {
     const rows = opts.noteIds?.length
       ? await this.db.query<NoteRow & Record<string, string | number | null>>(
           `SELECT id, title, content, folder_id, updated_at FROM notes
-            WHERE deleted_at IS NULL AND type = 'text'
+            WHERE deleted_at IS NULL AND type = 'text' AND ${WRITABLE}
               AND id IN (${opts.noteIds.map(() => '?').join(',')})`,
           opts.noteIds,
         )
       : await this.db.query<NoteRow & Record<string, string | number | null>>(
           `SELECT id, title, content, folder_id, updated_at FROM notes
-            WHERE deleted_at IS NULL AND type = 'text' AND length(trim(content)) > 0
+            WHERE deleted_at IS NULL AND type = 'text' AND length(trim(content)) > 0 AND ${WRITABLE}
             ORDER BY (folder_id IS NULL) DESC, updated_at DESC LIMIT ?`,
           [limit * 3],
         )
@@ -185,11 +189,14 @@ export class Tidy {
       .filter((n) => opts.noteIds || n.noFolder || !n.tags.length || n.needsTitle)
       .slice(0, limit)
       .map((n, i) => ({ ...n, ref: i + 1 }))
-    const folders = (await this.repo.listFolders()).map((f, i) => ({
-      ref: i + 1,
-      id: f.id,
-      name: f.name,
-    }))
+    // Someone else's folder shared to view only takes no notes.
+    const folders = (await this.repo.listFolders())
+      .filter((f) => f.shared !== 'view')
+      .map((f, i) => ({
+        ref: i + 1,
+        id: f.id,
+        name: f.name,
+      }))
     const tags = (await this.repo.listTags()).map((t) => t.name).slice(0, 80)
     return { notes, folders, tags }
   }

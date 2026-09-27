@@ -5,9 +5,9 @@ import type { Part, Tone } from './types'
 
 export type { Part, Tone }
 
-export const LANGS = ['ru', 'en', 'es'] as const
+export const LANGS = ['en', 'ru', 'es'] as const
 export type Lang = (typeof LANGS)[number]
-export const DEFAULT_LANG: Lang = 'ru'
+export const DEFAULT_LANG: Lang = 'en'
 
 /** Names in their own language, for the language switcher. */
 export const LANG_NAMES: Record<Lang, string> = { ru: 'Русский', en: 'English', es: 'Español' }
@@ -46,7 +46,7 @@ const DICTS: Record<Lang, Dict> = { ru, en, es }
 
 export const t = (lang: Lang): Dict => DICTS[lang]
 
-/** A site path in the given language: Russian at the root, the others under /en/ and /es/. */
+/** A site path in the given language: English at the root, the others under /ru/ and /es/. */
 export function localePath(lang: Lang, path = '/'): string {
   const clean = path.startsWith('/') ? path : `/${path}`
   return lang === DEFAULT_LANG ? clean : `/${lang}${clean}`
@@ -54,7 +54,7 @@ export function localePath(lang: Lang, path = '/'): string {
 
 /** The language of a URL path and the path without its language prefix. */
 export function splitPath(pathname: string): { lang: Lang; path: string } {
-  const match = pathname.match(/^\/(en|es)(\/.*)?$/)
+  const match = pathname.match(/^\/(ru|es)(\/.*)?$/)
   if (match) return { lang: match[1] as Lang, path: match[2] || '/' }
   return { lang: DEFAULT_LANG, path: pathname || '/' }
 }

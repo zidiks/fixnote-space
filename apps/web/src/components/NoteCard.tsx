@@ -142,35 +142,42 @@ export function NoteCard({ note, inFolder }: { note: NoteSummary; inFolder?: str
           {pinned ? <PinOff /> : <Pin />}
           {pinned ? t('pin.unpin') : t('pin.pin')}
         </ContextMenuItem>
-        <ContextMenuSub>
-          <ContextMenuSubTrigger>
-            <FolderInput />
-            {t('menu.moveTo')}
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent>
-            <ContextMenuItem onSelect={() => move.mutate({ id: note.id, folderId: null })}>
-              <Inbox />
-              <span className="flex-1">{t('common.noFolder')}</span>
-              <Check className={cn(note.folderId !== null && 'invisible')} />
+        {/* View only: no moving or deleting it from here. */}
+        {note.readOnly ? null : (
+          <>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                <FolderInput />
+                {t('menu.moveTo')}
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuItem onSelect={() => move.mutate({ id: note.id, folderId: null })}>
+                  <Inbox />
+                  <span className="flex-1">{t('common.noFolder')}</span>
+                  <Check className={cn(note.folderId !== null && 'invisible')} />
+                </ContextMenuItem>
+                {folderTree(folders.filter((f) => f.shared !== 'view')).map(
+                  ({ folder: f, depth }) => (
+                    <ContextMenuItem
+                      key={f.id}
+                      onSelect={() => move.mutate({ id: note.id, folderId: f.id })}
+                      style={{ paddingInlineStart: `${0.5 + depth}rem` }}
+                    >
+                      <Folder />
+                      <span className="flex-1">{f.name}</span>
+                      <Check className={cn(note.folderId !== f.id && 'invisible')} />
+                    </ContextMenuItem>
+                  ),
+                )}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+            <ContextMenuSeparator />
+            <ContextMenuItem destructive onSelect={() => void deleteWithUndo(note.id)}>
+              <Trash2 />
+              {t('note.delete')}
             </ContextMenuItem>
-            {folderTree(folders).map(({ folder: f, depth }) => (
-              <ContextMenuItem
-                key={f.id}
-                onSelect={() => move.mutate({ id: note.id, folderId: f.id })}
-                style={{ paddingInlineStart: `${0.5 + depth}rem` }}
-              >
-                <Folder />
-                <span className="flex-1">{f.name}</span>
-                <Check className={cn(note.folderId !== f.id && 'invisible')} />
-              </ContextMenuItem>
-            ))}
-          </ContextMenuSubContent>
-        </ContextMenuSub>
-        <ContextMenuSeparator />
-        <ContextMenuItem destructive onSelect={() => void deleteWithUndo(note.id)}>
-          <Trash2 />
-          {t('note.delete')}
-        </ContextMenuItem>
+          </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   )

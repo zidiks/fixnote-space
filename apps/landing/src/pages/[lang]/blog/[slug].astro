@@ -4,7 +4,7 @@ import { getPosts, postInfo } from '../../../lib/blog'
 import BlogPost from '../../../views/BlogPost.astro'
 
 export const getStaticPaths = (async () => {
-  const posts = [...(await getPosts('en')), ...(await getPosts('es'))]
+  const posts = [...(await getPosts('ru')), ...(await getPosts('es'))]
   return posts.map((post) => {
     const { lang, slug } = postInfo(post)
     return { params: { lang, slug }, props: { post } }

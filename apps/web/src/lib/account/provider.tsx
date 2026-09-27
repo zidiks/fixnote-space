@@ -7,7 +7,7 @@ import { notifyNotesChanged } from '../assistant/assistant'
 import { appendToToday, captureToDaily } from '../daily'
 import { useDb } from '../db'
 import { platform } from '../platform'
-import { initAccount } from './account'
+import { initAccount, onSharedSync } from './account'
 import { pickBackend } from './pick'
 
 /** Starts the account (session, keys, sync) once the local database is open. */
@@ -15,6 +15,17 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const { driver, attachments, repo } = useDb()
   const qc = useQueryClient()
 
+  // Someone's shared folder went away while it was open here (removed, or no longer shared).
+  useEffect(
+    () =>
+      onSharedSync(({ removedFolders }) => {
+        const { route, navigate } = useUi.getState()
+        if (route.kind !== 'folder' || !removedFolders.includes(route.id)) return
+        navigate({ kind: 'home' }, { replace: true })
+        toast(i18n.t('people.lostFolder'))
+      }),
+    [],
+  )
   useEffect(() => {
     let cancelled = false
     void pickBackend().then((backend) => {
@@ -35,23 +46,6 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           void qc.invalidateQueries()
           notifyNotesChanged()
         },
-        onShared: (notes) =>
-          toast(
-            notes.length === 1
-              ? i18n.t('people.sharedWithYou', {
-                  title: notes[0]?.title || i18n.t('common.untitled'),
-                })
-              : i18n.t('people.sharedWithYouMany', { count: notes.length }),
-            {
-              action: {
-                label: i18n.t('menu.open'),
-                onClick: () => {
-                  const first = notes[0]
-                  if (first) useUi.getState().navigate({ kind: 'note', id: first.noteId })
-                },
-              },
-            },
-          ),
         onConflicts: (count) =>
           toast(i18n.t('sync.conflictsFound', { count }), {
             duration: 15_000,

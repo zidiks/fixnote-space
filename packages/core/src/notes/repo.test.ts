@@ -241,7 +241,7 @@ describe('folders', () => {
     await repo.createNote({ content: 'Story', folderId: f.id })
     await repo.renameFolder(f.id, 'Reading')
     expect(await repo.listFolders()).toEqual([
-      { id: f.id, parentId: null, name: 'Reading', sort: 1, noteCount: 1 },
+      { id: f.id, parentId: null, name: 'Reading', sort: 1, noteCount: 1, shared: null },
     ])
   })
 

@@ -1,29 +1,27 @@
 import { CollabSession, noteKeyBytes } from '@fixnote/core'
 import * as Y from 'yjs'
 import { requestSync, sharedContext } from '../account/account'
+import { colorFor, type LiveUser } from './people'
 
 /** A shared note open in the editor: its live room, and how this person shows up to the others. */
 export interface LiveEditing {
   session: CollabSession
-  user: { name: string; color: string }
+  user: LiveUser
   sharedId: string
   /** A viewer: sees others' edits, cannot edit. */
   readOnly: boolean
   /** Stores the document (with the Markdown the editor wrote for it) and asks sync to send it. */
   persist(markdown: string): Promise<void>
+  /**
+   * Takes in the stored document after sync brought the server's copy. A viewer cannot ask the
+   * room for what it missed (it may not send), so this is how it catches up; for editors it is a
+   * harmless merge.
+   */
+  refresh(): Promise<void>
 }
 
 /** The Yjs field the editor content lives in. */
 export const LIVE_FIELD = 'default'
-
-/** Caret colours, readable on light and dark backgrounds. */
-const COLORS = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599', '#e03131']
-
-const colorFor = (id: string) => {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
-  return COLORS[h % COLORS.length] as string
-}
 
 /**
  * Opens a shared note for editing: its document as stored on this device, joined to the note's
@@ -45,7 +43,12 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     doc,
     listenOnly: readOnly,
   })
-  const user = { name: ctx.email.split('@')[0] || ctx.email, color: colorFor(ctx.userId) }
+  const user: LiveUser = {
+    name: ctx.email.split('@')[0] || ctx.email,
+    email: ctx.email,
+    color: colorFor(ctx.userId),
+    role: stored.role,
+  }
   session.awareness.setLocalStateField('user', user)
   if (!readOnly) await session.whenSynced(1200)
   return {
@@ -56,6 +59,10 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     persist: async (markdown) => {
       await ctx.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(doc), markdown)
       requestSync()
+    },
+    refresh: async () => {
+      const now = await ctx.shared.doc(sharedId)
+      if (now?.state) Y.applyUpdate(doc, now.state, 'stored')
     },
   }
 }

@@ -75,7 +75,7 @@ export function ShareDialog({
         <DialogDescription className="sr-only">{t('share.title')}</DialogDescription>
 
         {phase === 'ready' ? (
-          <PeopleSection note={note} onDone={() => onOpenChange(false)} />
+          <PeopleSection target={{ kind: 'note', note }} onDone={() => onOpenChange(false)} />
         ) : null}
 
         <h3 className="flex items-center gap-2 border-t pt-4 text-sm font-semibold">

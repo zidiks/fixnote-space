@@ -24,7 +24,6 @@ import {
   MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
   SquarePen,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -32,6 +31,7 @@ import { type Route, useUi } from '../app/store'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote, useRecents } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
+import { NotificationsButton } from './Notifications'
 import { WindowControls } from './WindowControls'
 
 function Tip({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
@@ -192,16 +192,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         </div>
         <PlaceMenu />
         <div {...drag} className="flex items-center justify-end gap-1">
-          <Tip label={t('sidebar.search')} hint={shortcutLabel('K')}>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => ui.setSpotlightOpen(true)}
-              aria-label={t('sidebar.search')}
-            >
-              <Search />
-            </Button>
-          </Tip>
+          <NotificationsButton />
           <Tip label={ui.chatOpen ? t('chat.close') : t('chat.open')} hint={shortcutLabel('J')}>
             <Button
               variant="ghost"
