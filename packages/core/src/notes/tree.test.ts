@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { folderTree } from './tree'
+import { folderTree, subtreeCounts } from './tree'
 
 describe('folderTree', () => {
   it('lists folders parent first, children indented, in the given order', () => {
@@ -17,5 +17,17 @@ describe('folderTree', () => {
       '0:x',
       '1:y',
     ])
+  })
+})
+
+describe('subtreeCounts', () => {
+  it('adds subfolder notes to every folder above them', () => {
+    const counts = subtreeCounts([
+      { id: 'a', parentId: null, noteCount: 1 },
+      { id: 'b', parentId: 'a', noteCount: 2 },
+      { id: 'c', parentId: 'b', noteCount: 4 },
+      { id: 'd', parentId: null, noteCount: 0 },
+    ])
+    expect(Object.fromEntries(counts)).toEqual({ a: 7, b: 6, c: 4, d: 0 })
   })
 })

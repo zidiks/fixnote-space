@@ -94,7 +94,12 @@ function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } 
   const params: SqlValue[] = []
   if (filter.scope === 'inbox') where.push('n.folder_id IS NULL')
   if (filter.folderId) {
-    where.push('n.folder_id = ?')
+    // A folder shows what is in its subfolders too, at any depth (like #tag and #tag/child).
+    where.push(`n.folder_id IN (
+      WITH RECURSIVE sub(id) AS (
+        SELECT ? UNION SELECT f.id FROM folders f JOIN sub ON f.parent_id = sub.id
+          WHERE f.deleted_at IS NULL)
+      SELECT id FROM sub)`)
     params.push(filter.folderId)
   }
   if (filter.type) {

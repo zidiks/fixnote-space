@@ -1,4 +1,4 @@
-import type { NoteFilter } from '@fixnote/core'
+import { type NoteFilter, subtreeCounts } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Folder, Hash } from 'lucide-react'
 import { useMemo } from 'react'
@@ -35,7 +35,7 @@ export function ListView({ route }: { route: ListRoute }) {
     folder: {
       icon: Folder,
       title: folder?.name ?? '',
-      count: folder?.noteCount,
+      count: folder && folders ? subtreeCounts(folders).get(folder.id) : undefined,
       empty: t('list.emptyFolder'),
     },
     tag: {

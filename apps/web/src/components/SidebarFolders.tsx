@@ -1,4 +1,4 @@
-import type { Folder } from '@fixnote/core'
+import { type Folder, subtreeCounts } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -89,6 +89,8 @@ export function SidebarFolders() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [confirm, setConfirm] = useState<Folder | null>(null)
 
+  // A folder counts the notes of its subfolders too, as its list shows them.
+  const totals = useMemo(() => subtreeCounts(folders), [folders])
   const children = useMemo(() => {
     const map = new Map<string | null, Folder[]>()
     for (const f of folders) {
@@ -159,7 +161,7 @@ export function SidebarFolders() {
                       </button>
                     ) : null}
                     <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden">
-                      {f.noteCount || ''}
+                      {totals.get(f.id) || ''}
                     </span>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

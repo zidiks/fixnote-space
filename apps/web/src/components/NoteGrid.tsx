@@ -115,7 +115,7 @@ export function NoteGrid({
             {newIn === 'pinned' ? newCard : null}
             {pinned.map((n) => (
               <li key={n.id}>
-                <NoteCard note={n} />
+                <NoteCard note={n} inFolder={filter.folderId} />
               </li>
             ))}
           </ul>
@@ -130,7 +130,7 @@ export function NoteGrid({
             {newIn === section.key ? newCard : null}
             {section.notes.map((n) => (
               <li key={n.id}>
-                <NoteCard note={n} />
+                <NoteCard note={n} inFolder={filter.folderId} />
               </li>
             ))}
           </ul>
