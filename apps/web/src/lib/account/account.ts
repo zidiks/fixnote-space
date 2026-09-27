@@ -255,8 +255,8 @@ const PAIRING_POLL = 2000
 const PAIRING_TTL = 10 * 60_000
 let pairingRun = 0
 
-/** A short name for this device in the other device's prompt. */
-function deviceLabel(): string {
+/** A short name for this device (the other device's prompt, a live-editing cursor). */
+export function deviceLabel(): string {
   const ua = navigator.userAgent
   const os = /Windows/.test(ua)
     ? 'Windows'
@@ -460,6 +460,13 @@ export function shareContext() {
   const b = deps?.backend
   if (!b || !keys || !session || !engine) return null
   return { backend: b, keys, attachments: deps?.attachments as Attachments }
+}
+
+/** Backend and keys for live editing on the account's devices, when signed in and unlocked. */
+export function collabContext() {
+  const b = deps?.backend
+  if (!b || !keys || !session || !engine) return null
+  return { backend: b, keys }
 }
 
 /** Reads a page for a link card through the server, or null when signed out. */

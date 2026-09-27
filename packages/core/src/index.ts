@@ -1,6 +1,7 @@
 export * from './ai'
 export * from './attachments'
 export * from './capture'
+export * from './collab'
 export * from './crypto'
 export * from './db/driver'
 export * from './db/migrate'

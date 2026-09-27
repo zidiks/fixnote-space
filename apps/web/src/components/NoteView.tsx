@@ -27,6 +27,7 @@ import {
   PinOff,
   Sparkles,
   Trash2,
+  Users,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useUi } from '../app/store'
@@ -50,6 +51,7 @@ import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { ConflictBanner } from './ConflictBanner'
 import { DailyBar } from './DailyBar'
 import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
+import { LiveBar, useLiveNote } from './LiveBar'
 import { NewFolderDialog } from './NewFolderDialog'
 import { ShareDialog } from './ShareDialog'
 import { VOICE_KEYS } from './VoiceBar'
@@ -73,6 +75,7 @@ export function NoteView({ id }: { id: string }) {
   const voice = useVoice((s) => s.status)
   const aiRequest = useUi((s) => s.aiRequest)
   const [sharing, setSharing] = useState(false)
+  const liveNote = useLiveNote(id)
   // Links live on the server: not in a build without one, and never in local-only mode.
   const hasServer = useAccount((s) => s.phase !== 'disabled')
   const localOnly = useLlm((s) => s.localOnly)
@@ -233,6 +236,24 @@ export function NoteView({ id }: { id: string }) {
                 <Button
                   variant="ghost"
                   size="icon-xs"
+                  aria-pressed={liveNote.live !== null}
+                  disabled={liveNote.joining}
+                  className={cn(liveNote.live && 'text-brand')}
+                  onClick={() => (liveNote.live ? liveNote.stop() : void liveNote.start())}
+                  aria-label={t('live.start')}
+                >
+                  <Users />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('live.start')}</TooltipContent>
+            </Tooltip>
+          ) : null}
+          {canShare ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => setSharing(true)}
                   aria-label={t('share.button')}
                 >
@@ -285,12 +306,15 @@ export function NoteView({ id }: { id: string }) {
 
       {n.type === 'daily' && n.dailyDate ? <DailyBar note={n} /> : null}
       <ConflictBanner note={n} />
+      <LiveBar live={liveNote.live} joining={liveNote.joining} onLeave={liveNote.stop} />
 
       <div className="mt-6">
         <NoteEditor
-          key={n.id}
+          // Switching live editing on or off builds the editor anew (its content source changes).
+          key={`${n.id}:${liveNote.live ? 'live' : 'solo'}`}
           ref={editor}
           note={n}
+          live={liveNote.live ?? undefined}
           onStateChange={setSaveState}
           onRepeat={async (task, rule) => {
             // The days after this one that exist already follow the new rule too.

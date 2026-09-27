@@ -20,6 +20,8 @@
     "@scure/bip39": "^2.4.0",
     "fflate": "^0.8.3",
     "libsodium-wrappers": "^0.8.4",
-    "node-diff3": "^3.2.1"
+    "node-diff3": "^3.2.1",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.33"
   }
 }

@@ -9,6 +9,7 @@ import {
   type SyncRemote,
   sealToPublicKey,
 } from '@fixnote/core'
+import { broadcastChannelTransport } from '../collab/transport'
 import type {
   AccountBackend,
   CaptureLink,
@@ -429,6 +430,7 @@ export const devBackend: AccountBackend = {
     const row = loadShares().find((r) => r.id === id)
     return row ? { payload: row.payload, updatedAt: row.updatedAt } : null
   },
+  collab: (roomId) => broadcastChannelTransport(roomId),
   subscribe: (_userId, onChange) => {
     const listener = () => onChange()
     channel.addEventListener('message', listener)

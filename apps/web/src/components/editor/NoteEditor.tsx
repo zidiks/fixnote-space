@@ -10,6 +10,8 @@ import {
   MenuShortcut,
 } from '@fixnote/ui'
 import { Extension, getMarkRange } from '@tiptap/core'
+import Collaboration from '@tiptap/extension-collaboration'
+import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { Placeholder } from '@tiptap/extensions'
@@ -44,6 +46,7 @@ import {
   saveAttachment,
   storeImage,
 } from '../../lib/attachments'
+import { LIVE_FIELD, type LiveEditing, seedLive } from '../../lib/collab/live'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
@@ -322,9 +325,15 @@ export function NoteEditor({
   onStateChange,
   onLeave,
   onRepeat,
+  live,
   ref,
 }: {
   note: Note
+  /**
+   * Edited live with the account's other devices: the content comes from the room, not from
+   * `note.content`. Fixed for the editor's lifetime (NoteView remounts it to switch).
+   */
+  live?: LiveEditing
   /** A task of this daily note got a new repeat rule (null: stopped repeating). */
   onRepeat?: (task: string, rule: Recurrence | null) => void
   /** Lets the note header open the AI popover for the whole note. */
@@ -342,6 +351,9 @@ export function NoteEditor({
   /** The stored text the current edit started from. */
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
+  const liveRef = useRef(live)
+  /** Saves on a timer or blur; live, only the leading device writes (the others' edits reach it). */
+  const mayAutosave = () => !liveRef.current || liveRef.current.session.isLeader()
   const noteRef = useRef(note)
   noteRef.current = note
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
@@ -393,13 +405,17 @@ export function NoteEditor({
     const saved = await callbacks.current.onSave(markdown, base.current)
     base.current = saved.content
     // The save merged in a change from another device: show it, unless the user kept typing.
-    if (pending.current === null && saved.content !== markdown) replaceContent(saved.content)
+    // (Live, the room is what the editor shows; the database follows it.)
+    if (!liveRef.current && pending.current === null && saved.content !== markdown)
+      replaceContent(saved.content)
     if (pending.current === null) callbacks.current.onStateChange?.('saved')
   }).current
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        // Live, undo is Yjs's own (only this device's changes are undone).
+        ...(live ? { undoRedo: false as const } : {}),
         paragraph: false,
         heading: { levels: [1, 2, 3] },
         link: {
@@ -427,6 +443,12 @@ export function NoteEditor({
         load: (url) => links.current.load(url),
         open: (url) => links.current.open(url),
       }),
+      ...(live
+        ? [
+            Collaboration.configure({ document: live.session.doc, field: LIVE_FIELD }),
+            CollaborationCaret.configure({ provider: live.session, user: live.user }),
+          ]
+        : []),
       Extension.create({
         name: 'aiShortcut',
         addKeyboardShortcuts: () => ({
@@ -437,9 +459,10 @@ export function NoteEditor({
         }),
       }),
     ],
-    content: note.content,
-    contentType: 'markdown',
+    ...(live ? {} : { content: note.content, contentType: 'markdown' as const }),
     onCreate: ({ editor: e }) => {
+      // A room nobody has filled yet starts from the note as stored.
+      if (live) seedLive(e, note.content, live.session.doc)
       // URLs stored as plain text stay text when the user types next to them.
       e.state.doc.descendants((node) => {
         if (!node.isText || node.marks.some((m) => m.type.name === 'link')) return
@@ -509,9 +532,13 @@ export function NoteEditor({
       latest.current = markdown
       pending.current = markdown
       clearTimeout(timer.current)
-      timer.current = setTimeout(() => void flush(), SAVE_DELAY)
+      timer.current = setTimeout(() => {
+        if (mayAutosave()) void flush()
+      }, SAVE_DELAY)
     },
-    onBlur: () => void flush(),
+    onBlur: () => {
+      if (mayAutosave()) void flush()
+    },
   })
   editorRef.current = editor
 
@@ -623,8 +650,13 @@ export function NoteEditor({
     if (accountPhase === 'ready' && editor && !editor.isDestroyed) retryLinkCards(editor.view)
   }, [accountPhase, editor])
 
-  // Sync brought a newer version of this note: show it if there is no unsaved typing.
+  // Sync brought a newer version of this note: show it if there is no unsaved typing. (Live, the
+  // room is the source: the stored text is what the leading device wrote from it.)
   useEffect(() => {
+    if (liveRef.current) {
+      base.current = note.content
+      return
+    }
     if (pending.current !== null || note.content === base.current) return
     base.current = note.content
     replaceContent(note.content)

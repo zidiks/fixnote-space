@@ -22,6 +22,8 @@ export interface AccountKeys {
   readonly checkKey: Uint8Array
   /** Derives each shared link's key, so any device of the account can show or update the link. */
   readonly shareKey: Uint8Array
+  /** Derives each live-editing room's id and key (own devices editing one note together). */
+  readonly collabKey: Uint8Array
   readonly box: { publicKey: Uint8Array; privateKey: Uint8Array }
 }
 
@@ -95,6 +97,7 @@ export function deriveKeys(secret: Uint8Array): AccountKeys {
     folderKey: sub(2, 'fn_fold_'),
     checkKey: sub(3, 'fn_check'),
     shareKey: sub(5, 'fn_share'),
+    collabKey: sub(6, 'fn_colab'),
     box: { publicKey: box.publicKey, privateKey: box.privateKey },
   }
 }
@@ -302,4 +305,52 @@ export function openShare(linkKey: string, shareId: string, sealed: string): str
   }
   if (key.length !== 32) throw new DecryptionError('shared note')
   return sodium.to_string(open(key, sealed, `share:${shareId}`, 'shared note'))
+}
+
+// ── Live editing ─────────────────────────────────────────────────────────────
+// A room is one note edited live. Its id is opaque to the server (a hash, not the note id) and its
+// key never leaves the account's devices; every message on the wire is sealed with it.
+
+/** The room id and key for editing `noteId` live on the account's own devices. */
+export function collabRoom(keys: AccountKeys, noteId: string): { id: string; key: Uint8Array } {
+  const derive = (what: string, size: number) =>
+    sodium.crypto_generichash(size, sodium.from_string(`collab:${what}:${noteId}`), keys.collabKey)
+  return { id: b64(derive('room', 16)), key: derive('key', 32) }
+}
+
+/** One message for a room: nonce and ciphertext, bound to the room id. */
+export function sealRoomMessage(key: Uint8Array, roomId: string, data: Uint8Array): Uint8Array {
+  const nonce = sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES)
+  const ct = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
+    data,
+    `room:${roomId}`,
+    null,
+    nonce,
+    key,
+  )
+  const out = new Uint8Array(nonce.length + ct.length)
+  out.set(nonce)
+  out.set(ct, nonce.length)
+  return out
+}
+
+/** The message, or null when it was not sealed with this room's key (or was tampered with). */
+export function openRoomMessage(
+  key: Uint8Array,
+  roomId: string,
+  sealed: Uint8Array,
+): Uint8Array | null {
+  const n = sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+  if (sealed.length <= n) return null
+  try {
+    return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+      null,
+      sealed.subarray(n),
+      `room:${roomId}`,
+      sealed.subarray(0, n),
+      key,
+    )
+  } catch {
+    return null
+  }
 }

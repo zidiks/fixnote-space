@@ -118,6 +118,16 @@ const en = {
     chipMonthly: 'monthly, day {{day}}',
     chipInterval: 'every {{n}} days',
   },
+  live: {
+    start: 'Edit live on your devices (preview)',
+    connecting: 'Connecting…',
+    devices: 'Editing live · devices: {{count}}',
+    latency: 'latency ~{{ms}} ms',
+    alone:
+      'Open this note on another of your devices and turn on live editing there too: edits will show as you type.',
+    leave: 'Leave',
+    unavailable: 'Live editing works when you are signed in and sync is on.',
+  },
   spotlight: {
     placeholder: 'Search notes or type a command…',
     recents: 'Recent',

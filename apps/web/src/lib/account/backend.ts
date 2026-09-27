@@ -1,5 +1,12 @@
-import type { AttachmentRemote, FetchedPage, InboxRemote, SyncRemote } from '@fixnote/core'
+import type {
+  AttachmentRemote,
+  CollabTransport,
+  FetchedPage,
+  InboxRemote,
+  SyncRemote,
+} from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { realtimeTransport } from '../collab/transport'
 import { toError } from '../errors'
 import { supabaseRemote } from '../sync/supabase-remote'
 
@@ -87,6 +94,8 @@ export interface AccountBackend {
   getShare(id: string): Promise<{ payload: string; updatedAt: string } | null>
   /** Calls back when another device changed something. Returns an unsubscribe. */
   subscribe(userId: string, onChange: () => void): () => void
+  /** The channel of a live-editing room (sealed messages only). */
+  collab(roomId: string): CollabTransport
 }
 
 export function supabaseBackend(
@@ -300,6 +309,7 @@ export function supabaseBackend(
       const row = (data as { payload: string; updated_at: string }[] | null)?.[0]
       return row ? { payload: row.payload, updatedAt: row.updated_at } : null
     },
+    collab: (roomId) => realtimeTransport(client, roomId),
     subscribe(userId, onChange) {
       const channel = client
         .channel(`sync:${userId}`)

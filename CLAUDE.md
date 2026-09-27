@@ -64,6 +64,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Repeating tasks live in the task line (`- [ ] Call mom 🔁 weekly:mon`, rules in
   `packages/core/src/notes/recurrence.ts`); a new daily note gets the tasks due that day
   (`getOrCreateDaily`), and a changed rule reaches existing later days via `applyRecurrence`.
+- Live editing (prototype, own devices): `packages/core/src/collab` (`CollabSession`: Yjs, batched sealed
+  messages, sync handshake, awareness, ping) over `backend.collab(roomId)` (Supabase Realtime
+  broadcast; BroadcastChannel with `?dev-backend`); editor wiring in `lib/collab/live.ts`
+  (`seedLive` must stay deterministic). Personal notes stay Markdown; Yjs lives only in a session.
 - Import (`packages/core/src/import`) plans first and writes only in `runImport`; keep it
   idempotent (notes with the same text are skipped).
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the

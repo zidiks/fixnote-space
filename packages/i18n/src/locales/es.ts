@@ -122,6 +122,16 @@ const es: LocaleResource = {
     chipMonthly: 'cada mes, día {{day}}',
     chipInterval: 'cada {{n}} días',
   },
+  live: {
+    start: 'Editar en vivo en tus dispositivos (prueba)',
+    connecting: 'Conectando…',
+    devices: 'Edición en vivo · dispositivos: {{count}}',
+    latency: 'retraso ~{{ms}} ms',
+    alone:
+      'Abre esta nota en otro de tus dispositivos y activa ahí también la edición en vivo: los cambios se verán al escribir.',
+    leave: 'Salir',
+    unavailable: 'La edición en vivo funciona con la sesión iniciada y la sincronización activada.',
+  },
   spotlight: {
     placeholder: 'Busca notas o escribe un comando…',
     recents: 'Recientes',
