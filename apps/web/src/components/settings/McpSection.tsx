@@ -35,7 +35,7 @@ export function McpSection() {
     await kv.set(MCP_ACCESS_KEY, value)
     await qc.invalidateQueries({ queryKey: KEY })
   }
-  const connect = async (client: 'claude' | 'cursor') => {
+  const connect = async (client: 'claude' | 'cursor' | 'codex') => {
     try {
       const path = (await mcp?.connect(client)) ?? ''
       toast(t('mcp.connected', { path }))
@@ -115,6 +115,15 @@ export function McpSection() {
               >
                 <Plug />
                 {t('mcp.cursor')}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={access === 'off'}
+                onClick={() => void connect('codex')}
+              >
+                <Plug />
+                {t('mcp.codex')}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => void copy()}>
                 <Copy />

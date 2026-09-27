@@ -60,3 +60,11 @@ describe('toPlainText', () => {
     )
   })
 })
+
+describe('tables in plain text', () => {
+  it('reads rows as cells, drops the rule, and keeps pipes for the assistant', () => {
+    const md = '| Item | Price |\n| --- | :-: |\n| **Milk** | 2 |'
+    expect(toPlainText(md)).toBe('Item · Price\nMilk · 2')
+    expect(toPlainText(md, { tasks: true })).toBe('| Item | Price |\n| Milk | 2 |')
+  })
+})

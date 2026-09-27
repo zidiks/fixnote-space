@@ -1,4 +1,4 @@
-import type { NoteFilter, NoteType } from '@fixnote/core'
+import { folderTree, type NoteFilter, type NoteType } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -36,7 +36,8 @@ function FilterMenu<T extends string>({
 }: {
   label: string
   value: T
-  options: { value: T; label: string }[]
+  /** `depth` indents an option under the one above it (folders inside folders). */
+  options: { value: T; label: string; depth?: number }[]
   onChange: (v: T) => void
 }) {
   const active = options[0]?.value !== value
@@ -59,7 +60,11 @@ function FilterMenu<T extends string>({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
         {options.map((o) => (
-          <DropdownMenuItem key={o.value} onSelect={() => onChange(o.value)}>
+          <DropdownMenuItem
+            key={o.value}
+            onSelect={() => onChange(o.value)}
+            style={o.depth ? { paddingInlineStart: `${0.5 + o.depth}rem` } : undefined}
+          >
             <Check className={cn('size-4', o.value !== value && 'invisible')} />
             {o.label}
           </DropdownMenuItem>
@@ -167,7 +172,11 @@ export function Home() {
           onChange={setFolderId}
           options={[
             { value: '', label: t('home.filters.allFolders') },
-            ...folders.map((f) => ({ value: f.id, label: f.name })),
+            ...folderTree(folders).map(({ folder: f, depth }) => ({
+              value: f.id,
+              label: f.name,
+              depth,
+            })),
           ]}
         />
         <FilterMenu

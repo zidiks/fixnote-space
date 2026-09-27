@@ -2,8 +2,8 @@ import type { NoteFilter } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Folder, Hash } from 'lucide-react'
 import { useMemo } from 'react'
-import type { Route } from '../app/store'
-import { useFolders } from '../lib/queries'
+import { type Route, useUi } from '../app/store'
+import { useCreateNote, useFolders } from '../lib/queries'
 import { EmptyState, NoteGrid } from './NoteGrid'
 
 type ListRoute = Extract<Route, { kind: 'folder' | 'tag' }>
@@ -11,6 +11,8 @@ type ListRoute = Extract<Route, { kind: 'folder' | 'tag' }>
 export function ListView({ route }: { route: ListRoute }) {
   const { t } = useTranslation()
   const folders = useFolders().data
+  const createNote = useCreateNote()
+  const navigate = useUi((s) => s.navigate)
 
   const filter = useMemo<NoteFilter>(() => {
     switch (route.kind) {
@@ -57,8 +59,24 @@ export function ListView({ route }: { route: ListRoute }) {
       </header>
       <NoteGrid
         filter={filter}
-        empty={<EmptyState body={empty} />}
+        empty={
+          route.kind === 'folder' ? (
+            // Under the "New note" card: a hint, not a second empty box.
+            <p className="mt-3 text-sm text-muted-foreground">{empty}</p>
+          ) : (
+            <EmptyState body={empty} />
+          )
+        }
         pinnedFirst={route.kind === 'folder'}
+        onNew={
+          route.kind === 'folder'
+            ? () =>
+                createNote.mutate(
+                  { content: '', folderId: route.id },
+                  { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) },
+                )
+            : undefined
+        }
       />
     </div>
   )

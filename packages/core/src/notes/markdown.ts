@@ -16,7 +16,19 @@ function stripInline(line: string): string {
     .replace(/\\([\\`*_{}[\]()#+\-.!>~=|/:])/g, '$1')
 }
 
+const TABLE_ROW = /^\s*\|(.*)\|\s*$/
+const TABLE_RULE = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/
+
 function stripBlock(line: string, tasks: boolean): string {
+  // Table rows read as "a · b"; the assistant (`tasks`) keeps the pipes, they show the columns.
+  const row = tasks ? null : line.match(TABLE_ROW)
+  if (row) {
+    return (row[1] as string)
+      .split(/(?<!\\)\|/)
+      .map((cell) => cell.trim())
+      .filter(Boolean)
+      .join(' · ')
+  }
   return line
     .replace(/^\s{0,3}#{1,6}\s+/, '') // headings
     .replace(/^\s*>\s?/, '') // quotes
@@ -31,6 +43,7 @@ function plainLines(markdown: string, tasks = false): string[] {
   return markdown
     .replace(FENCE, '')
     .split('\n')
+    .filter((l) => !TABLE_RULE.test(l))
     .map((l) => stripInline(stripBlock(l, tasks)))
     .filter((l) => l.length > 0 && !/^([-*_]\s*){3,}$/.test(l))
 }

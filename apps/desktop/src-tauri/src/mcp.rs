@@ -1,5 +1,5 @@
 //! The local MCP server (apps/mcp) ships next to the app binary. These commands tell the UI where
-//! it is and add it to the configuration of MCP clients (Claude Desktop, Cursor) on request.
+//! it is and add it to the configuration of MCP clients (Claude Desktop, Cursor, Codex) on request.
 
 use std::path::PathBuf;
 
@@ -58,6 +58,13 @@ fn config_path(client: &str) -> Result<PathBuf, String> {
             Ok(base.join("Claude").join("claude_desktop_config.json"))
         }
         "cursor" => Ok(home()?.join(".cursor").join("mcp.json")),
+        "codex" => {
+            let base = match std::env::var_os("CODEX_HOME") {
+                Some(dir) => PathBuf::from(dir),
+                None => home()?.join(".codex"),
+            };
+            Ok(base.join("config.toml"))
+        }
         _ => Err(format!("unknown MCP client {client}")),
     }
 }
@@ -83,8 +90,12 @@ pub fn mcp_connect(client: String) -> Result<String, String> {
     }
     let path = config_path(&client)?;
     let existing = std::fs::read_to_string(&path).unwrap_or_default();
-    let text =
-        with_fixnote(&existing, &info.command).map_err(|e| format!("{}: {e}", path.display()))?;
+    let text = if client == "codex" {
+        with_fixnote_toml(&existing, &info.command)
+    } else {
+        with_fixnote(&existing, &info.command)
+    }
+    .map_err(|e| format!("{}: {e}", path.display()))?;
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     }
@@ -110,9 +121,57 @@ fn with_fixnote(existing: &str, command: &str) -> Result<String, String> {
     Ok(format!("{text}\n"))
 }
 
+/// Codex's config.toml with `[mcp_servers.fixnote]` set to `command`, everything else untouched.
+fn with_fixnote_toml(existing: &str, command: &str) -> Result<String, String> {
+    let mut doc: toml_edit::DocumentMut = existing
+        .parse()
+        .map_err(|e: toml_edit::TomlError| e.to_string())?;
+    let servers = doc
+        .entry("mcp_servers")
+        .or_insert_with(|| {
+            let mut table = toml_edit::Table::new();
+            // Only [mcp_servers.fixnote] is written, not an empty [mcp_servers] header.
+            table.set_implicit(true);
+            toml_edit::Item::Table(table)
+        })
+        .as_table_mut()
+        .ok_or("mcp_servers is not a table")?;
+    let mut server = toml_edit::Table::new();
+    server.insert("command", toml_edit::value(command));
+    server.insert("args", toml_edit::value(toml_edit::Array::new()));
+    servers.insert("fixnote", toml_edit::Item::Table(server));
+    Ok(doc.to_string())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::with_fixnote;
+    use super::{with_fixnote, with_fixnote_toml};
+
+    #[test]
+    fn adds_the_server_to_codex_and_keeps_the_rest() {
+        let before = "# my settings\nmodel = \"o3\"\n\n[mcp_servers.other]\ncommand = \"x\"\n";
+        let after = with_fixnote_toml(before, "C:\\FixNote\\fixnote-mcp.exe").unwrap();
+        assert!(after.starts_with("# my settings\nmodel = \"o3\""));
+        let doc: toml_edit::DocumentMut = after.parse().unwrap();
+        assert_eq!(doc["mcp_servers"]["other"]["command"].as_str(), Some("x"));
+        assert_eq!(
+            doc["mcp_servers"]["fixnote"]["command"].as_str(),
+            Some("C:\\FixNote\\fixnote-mcp.exe")
+        );
+        let fresh = with_fixnote_toml("", "/app/fixnote-mcp").unwrap();
+        assert_eq!(
+            fresh,
+            "[mcp_servers.fixnote]\ncommand = \"/app/fixnote-mcp\"\nargs = []\n"
+        );
+        // Connecting again replaces the entry instead of adding a second one.
+        assert_eq!(
+            with_fixnote_toml(&fresh, "/app/fixnote-mcp").unwrap(),
+            fresh
+        );
+        assert!(with_fixnote_toml("mcp_servers = 1", "x").is_err());
+        assert!(with_fixnote_toml("not toml [", "x").is_err());
+    }
+
     use serde_json::Value;
 
     #[test]

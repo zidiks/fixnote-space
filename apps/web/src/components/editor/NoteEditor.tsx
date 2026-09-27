@@ -11,6 +11,7 @@ import {
 } from '@fixnote/ui'
 import { Extension, getMarkRange } from '@tiptap/core'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
+import { TableKit } from '@tiptap/extension-table'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown } from '@tiptap/markdown'
 import { type Editor, EditorContent, useEditor, useEditorState } from '@tiptap/react'
@@ -85,6 +86,9 @@ function looksLikeDump(text: string) {
   if (text.length < 500) return false
   return !/^\s*(#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s|```)/m.test(text)
 }
+
+/** A GFM table: a `| a | b |` row followed by its `| --- | --- |` rule. */
+const MD_TABLE = /^\s*\|.*\|\s*\r?\n\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/m
 
 const SAVE_DELAY = 400
 
@@ -410,6 +414,8 @@ export function NoteEditor({
       ImageAwareParagraph,
       TaskList,
       TaskItem.configure({ nested: true }),
+      // Markdown (GFM) tables, read and written as `| a | b |`.
+      TableKit.configure({ table: { resizable: false } }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       Markdown,
       AiRangeExtension,
@@ -478,6 +484,11 @@ export function NoteEditor({
         const e = editorRef.current
         if (url && e && !e.isActive('code') && !e.isActive('codeBlock')) {
           setLinkPaste(pasteUrl(e, url))
+          return true
+        }
+        // A Markdown table copied as plain text (from a chat, a README) becomes a table.
+        if (e && !event.clipboardData?.getData('text/html') && MD_TABLE.test(text)) {
+          e.chain().focus().insertContent(text, { contentType: 'markdown' }).run()
           return true
         }
         if (looksLikeDump(text)) {
