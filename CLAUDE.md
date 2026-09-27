@@ -26,6 +26,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   Editor saves pass the text the edit started from (`updateContent(id, text, { base })`) so a change
   that sync applied meanwhile is merged, not overwritten. Server schema changes = new file in
   `supabase/migrations/`; test RLS and RPCs on a local Postgres before pushing.
+- Sync conflicts: an edit in the same lines on two devices keeps the server version and makes a copy;
+  the copy is recorded in the local `sync_conflicts` table and settled with `repo.settleConflict`
+  (banner and compare dialog: `ConflictBanner`). Two daily notes for one date are merged
+  (`mergeDailyNotes`, deterministic so devices converge), the one with the larger id is deleted.
 - Try sync UI without Supabase: `pnpm dev` + `?dev-backend` (code 123456).
 - Assistant: retrieval in `packages/core/src/ai`, LLM client/prompt/citations in `packages/ai`,
   app wiring in `apps/web/src/lib/assistant`. Query expansion (`expandQuery`) only adds FTS keywords;

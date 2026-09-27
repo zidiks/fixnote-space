@@ -30,9 +30,6 @@ async function device(name: string): Promise<Device> {
   }
 }
 
-const titles = async (d: Device) =>
-  (await d.repo.listNotes({ limit: 100 })).items.map((n) => n.title).sort()
-
 beforeAll(async () => {
   await cryptoReady()
   keys = deriveKeys(newRecoverySecret())
@@ -78,7 +75,13 @@ describe('SyncEngine', () => {
     const a = await device('a')
     await a.repo.createNote({ content: 'x' })
     await a.engine.sync()
-    expect(await a.engine.sync()).toEqual({ pulled: 0, pushed: 0, merged: 0, conflictCopies: 0 })
+    expect(await a.engine.sync()).toEqual({
+      pulled: 0,
+      pushed: 0,
+      merged: 0,
+      conflictCopies: 0,
+      dailiesMerged: 0,
+    })
     expect(await a.engine.pendingCount()).toBe(0)
   })
 
@@ -122,6 +125,46 @@ describe('SyncEngine', () => {
         'CONFLICT\n\nPlan\n\nmeet on Friday',
       )
     }
+  })
+
+  it('remembers the conflict where it happened and settles it the way the user picks', async () => {
+    const a = await device('a')
+    const b = await device('b')
+    const n = await a.repo.createNote({ content: 'Plan\n\nmeet on Monday' })
+    await a.engine.sync()
+    await b.engine.sync()
+    const clash = async () => {
+      const cur = (await a.repo.getNote(n.id))?.content ?? ''
+      await a.repo.updateContent(n.id, `${cur}\nA`)
+      await b.repo.updateContent(n.id, `${(await b.repo.getNote(n.id))?.content}\nB`)
+      await a.engine.sync()
+      await b.engine.sync()
+      await a.engine.sync()
+      const [conflict] = await b.repo.conflicts()
+      if (!conflict) throw new Error('no conflict')
+      return conflict
+    }
+
+    const first = await clash()
+    expect(first.noteId).toBe(n.id)
+    // Only the device that made the copy has it to settle; the other just sees a note.
+    expect(await a.repo.conflicts()).toEqual([])
+    expect(await b.repo.conflicts(first.copyId)).toEqual([first])
+    await b.repo.settleConflict(first.copyId, 'copy')
+    expect((await b.repo.getNote(n.id))?.content).toBe('Plan\n\nmeet on Monday\nB')
+    expect(await b.repo.getNote(first.copyId)).toBeNull()
+    expect(await b.repo.conflicts()).toEqual([])
+    await b.engine.sync()
+    await a.engine.sync()
+
+    const second = await clash()
+    await b.repo.settleConflict(second.copyId, 'combined')
+    expect((await b.repo.getNote(n.id))?.content).toBe('Plan\n\nmeet on Monday\nB\nA\nB')
+
+    const third = await clash()
+    await b.repo.settleConflict(third.copyId, 'both')
+    expect(await b.repo.getNote(third.copyId)).not.toBeNull()
+    expect(await b.repo.conflicts()).toEqual([])
   })
 
   it('resolves move versus delete by the later change', async () => {
@@ -179,20 +222,25 @@ describe('SyncEngine', () => {
     for (const d of [a, b]) expect((await d.repo.listFolders())[0]?.name).toBe('From B')
   })
 
-  it('converges when two devices created a daily note for the same date offline', async () => {
+  it('joins two daily notes made for one date offline into one, on both devices', async () => {
     const a = await device('a')
     const b = await device('b')
-    await a.repo.getOrCreateDaily('2026-09-25', () => '# Friday (A)')
-    await b.repo.getOrCreateDaily('2026-09-25', () => '# Friday (B)')
+    const template = '# Friday\n\n- [ ] '
+    const na = await a.repo.getOrCreateDaily('2026-09-25', () => template)
+    await a.repo.updateContent(na.id, '# Friday\n\n- [ ] Buy milk\n- [ ] Call mom')
+    const nb = await b.repo.getOrCreateDaily('2026-09-25', () => template)
+    await b.repo.updateContent(nb.id, '# Friday\n\n- [x] Call mom\n- [ ] Gym')
+    await a.engine.sync()
+    expect(await b.engine.sync()).toMatchObject({ dailiesMerged: 1 })
     await a.engine.sync()
     await b.engine.sync()
-    await a.engine.sync()
+    const expected = '# Friday\n\n- [ ] Buy milk\n- [x] Call mom\n- [ ] Gym'
     for (const d of [a, b]) {
-      const daily = (await d.repo.listNotes({ filter: { type: 'daily' } })).items
-      expect(daily.filter((n) => n.dailyDate === '2026-09-25').map((n) => n.title)).toEqual([
-        '# Friday (A)'.slice(2),
-      ])
-      expect(await titles(d)).toEqual(['Friday (A)', 'Friday (B)'])
+      const notes = (await d.repo.listNotes()).items
+      // One note left: the one with the smaller id keeps the date and has both texts.
+      expect(notes.map((n) => [n.id, n.dailyDate])).toEqual([[na.id, '2026-09-25']])
+      expect((await d.repo.getNote(na.id))?.content).toBe(expected)
+      expect(await d.engine.pendingCount()).toBe(0)
     }
   })
 

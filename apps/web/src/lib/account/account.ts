@@ -79,6 +79,8 @@ interface Deps {
   onCaptured: (count: number) => void
   /** Refresh UI queries after remote changes arrived. */
   onRemoteChange: () => void
+  /** Sync kept a second version of notes changed in the same place on two devices. */
+  onConflicts?: (count: number) => void
 }
 
 let deps: Deps | null = null
@@ -429,7 +431,9 @@ export async function runSync() {
       error: null,
       pending: (await e.pendingCount()) + (await need().attachments.pendingCount()),
     })
-    if (report.pulled || report.merged || report.conflictCopies) need().onRemoteChange()
+    if (report.pulled || report.merged || report.conflictCopies || report.dailiesMerged)
+      need().onRemoteChange()
+    if (report.conflictCopies) need().onConflicts?.(report.conflictCopies)
   } catch (err) {
     setSync({
       status: isOffline(err) ? 'offline' : 'error',

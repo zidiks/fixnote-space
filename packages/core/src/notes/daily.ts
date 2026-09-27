@@ -1,3 +1,5 @@
+import { unionLines } from '../sync/merge'
+
 /** Task list items as the editor writes them: `- [ ] text` / `- [x] text`, any indentation. */
 const TASK = /^\s*[-*+] \[( |x|X)\](?:\s+(.*\S))?\s*$/
 
@@ -53,4 +55,36 @@ export function addTasks(markdown: string, tasks: readonly string[]): string {
 /** Text appended to a daily note, e.g. from Telegram or dictation: stamped with the time. */
 export function appendToDaily(markdown: string, text: string, time: string): string {
   return `${markdown.trimEnd()}\n\n${time} — ${text.trim()}\n`
+}
+
+/**
+ * Two daily notes for the same date (made offline on two devices) as one: both texts, shared lines
+ * once, each task once (done if it was done in either), no leftover empty checkbox when there are
+ * real tasks. `first` is the note that keeps the date; the result depends only on the two texts.
+ */
+export function mergeDailyNotes(first: string, second: string): string {
+  const lines = unionLines(first, second).split('\n')
+  const tasks = lines.map((l) => l.match(TASK))
+  const done = new Set(tasks.filter((m) => m?.[1] !== ' ' && m?.[2]).map((m) => m?.[2]))
+  const hasTasks = tasks.some((m) => m?.[2])
+  const seen = new Set<string>()
+  const out: string[] = []
+  lines.forEach((line, i) => {
+    const m = tasks[i]
+    if (!m) {
+      // A blank line only once in a row.
+      if (!line.trim() && !out.at(-1)?.trim() && out.length) return
+      out.push(line)
+      return
+    }
+    const text = m[2]
+    if (!text) {
+      if (!hasTasks) out.push(line)
+      return
+    }
+    if (seen.has(text)) return
+    seen.add(text)
+    out.push(done.has(text) ? line.replace(/\[ \]/, '[x]') : line)
+  })
+  return out.join('\n')
 }

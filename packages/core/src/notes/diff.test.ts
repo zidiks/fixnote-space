@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diffWords } from './diff'
+import { diffLines, diffWords } from './diff'
 
 describe('diffWords', () => {
   it('marks changed words and keeps the rest', () => {
@@ -32,5 +32,15 @@ describe('diffWords', () => {
   it('handles empty sides', () => {
     expect(diffWords('', 'new')).toEqual([{ kind: 'add', text: 'new' }])
     expect(diffWords('old', '')).toEqual([{ kind: 'del', text: 'old' }])
+  })
+})
+
+describe('diffLines', () => {
+  it('shows changed lines whole', () => {
+    expect(diffLines('Plan\n\nmeet on Tuesday', 'Plan\n\nmeet on Friday')).toEqual([
+      { kind: 'same', text: 'Plan\n\n' },
+      { kind: 'del', text: 'meet on Tuesday\n' },
+      { kind: 'add', text: 'meet on Friday\n' },
+    ])
   })
 })

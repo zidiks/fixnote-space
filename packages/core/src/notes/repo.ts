@@ -1,10 +1,11 @@
 import type { SqlDriver, SqlRow, SqlValue } from '../platform'
-import { merge3 } from '../sync/merge'
+import { merge3, unionLines } from '../sync/merge'
 import { addTasks } from './daily'
 import { deriveExcerpt, deriveTitle, extractTags, taskProgress, toPlainText } from './markdown'
 import { applyTaskRule, dueRecurringTasks, type Recurrence } from './recurrence'
 import { buildFtsQuery } from './search'
 import {
+  type ConflictChoice,
   type Counts,
   type Folder,
   MARK_END,
@@ -16,6 +17,7 @@ import {
   type NoteSummary,
   type NoteType,
   type SearchHit,
+  type SyncConflict,
   type TagCount,
 } from './types'
 
@@ -79,6 +81,12 @@ function toSummary(row: NoteRow): NoteSummary {
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
   }
+}
+
+/** A conflict copy's text without the "Conflict copy · date" line sync put on top. */
+export function conflictCopyBody(content: string): string {
+  const cut = content.indexOf('\n\n')
+  return cut >= 0 ? content.slice(cut + 2) : ''
 }
 
 function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } {
@@ -480,6 +488,43 @@ export class NotesRepo {
         WHERE id = ? AND deleted_at IS NOT NULL`,
       [this.now(), id],
     )
+  }
+
+  /** Unsettled sync conflicts (optionally those of one note or copy), newest first. */
+  async conflicts(noteId?: string): Promise<SyncConflict[]> {
+    const rows = await this.db.query<{ copy_id: string; note_id: string; created_at: number }>(
+      `SELECT c.copy_id, c.note_id, c.created_at FROM sync_conflicts c
+         JOIN notes n ON n.id = c.note_id AND n.deleted_at IS NULL
+         JOIN notes k ON k.id = c.copy_id AND k.deleted_at IS NULL
+        ${noteId ? 'WHERE c.note_id = ? OR c.copy_id = ?' : ''}
+        ORDER BY c.created_at DESC`,
+      noteId ? [noteId, noteId] : [],
+    )
+    return rows.map((r) => ({
+      noteId: r.note_id,
+      copyId: r.copy_id,
+      createdAt: Number(r.created_at),
+    }))
+  }
+
+  /**
+   * Settles a conflict: the note keeps its text, takes the copy's, or gets both combined (shared
+   * lines once); the copy is then deleted (to the trash, like any note). `both` keeps the two notes.
+   */
+  async settleConflict(copyId: string, choice: ConflictChoice): Promise<void> {
+    const [row] = await this.db.query<{ note_id: string }>(
+      'SELECT note_id FROM sync_conflicts WHERE copy_id = ?',
+      [copyId],
+    )
+    if (!row) return
+    const [note, copy] = await Promise.all([this.getNote(row.note_id), this.getNote(copyId)])
+    if (note && copy && (choice === 'copy' || choice === 'combined')) {
+      const theirs = conflictCopyBody(copy.content)
+      const next = choice === 'copy' ? theirs : unionLines(note.content, theirs)
+      await this.updateContent(note.id, next, { base: note.content })
+    }
+    if (copy && choice !== 'both') await this.deleteNote(copyId)
+    await this.db.execute('DELETE FROM sync_conflicts WHERE copy_id = ?', [copyId])
   }
 
   /** The folder and all folders inside it, at any depth. */

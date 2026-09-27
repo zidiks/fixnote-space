@@ -47,6 +47,7 @@ import {
 } from '../lib/queries'
 import { formatRelative } from '../lib/time'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
+import { ConflictBanner } from './ConflictBanner'
 import { DailyBar } from './DailyBar'
 import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
 import { NewFolderDialog } from './NewFolderDialog'
@@ -268,6 +269,7 @@ export function NoteView({ id }: { id: string }) {
       ) : null}
 
       {n.type === 'daily' && n.dailyDate ? <DailyBar note={n} /> : null}
+      <ConflictBanner note={n} />
 
       <div className="mt-6">
         <NoteEditor

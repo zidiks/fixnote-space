@@ -2,6 +2,7 @@ import { i18n } from '@fixnote/i18n'
 import { useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useEffect } from 'react'
 import { toast } from 'sonner'
+import { useUi } from '../../app/store'
 import { notifyNotesChanged } from '../assistant/assistant'
 import { appendToToday, captureToDaily } from '../daily'
 import { useDb } from '../db'
@@ -34,6 +35,17 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           void qc.invalidateQueries()
           notifyNotesChanged()
         },
+        onConflicts: (count) =>
+          toast(i18n.t('sync.conflictsFound', { count }), {
+            duration: 15_000,
+            action: {
+              label: i18n.t('sync.review'),
+              onClick: () =>
+                void repo.conflicts().then(([first]) => {
+                  if (first) useUi.getState().navigate({ kind: 'note', id: first.noteId })
+                }),
+            },
+          }),
       })
     })
     return () => {
