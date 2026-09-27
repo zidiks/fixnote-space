@@ -243,9 +243,15 @@ function DiffSpan({ part }: { part: DiffPart }) {
   return <ins className="rounded-sm bg-success/15 text-success no-underline">{part.text}</ins>
 }
 
-function DiffView({ parts }: { parts: DiffPart[] }) {
+/** A word diff: deleted text struck out in red, added text in green. */
+export function DiffView({ parts, className }: { parts: DiffPart[]; className?: string }) {
   return (
-    <div className="max-h-72 overflow-y-auto whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed">
+    <div
+      className={cn(
+        'max-h-72 overflow-y-auto whitespace-pre-wrap break-words px-3 py-2.5 text-sm leading-relaxed',
+        className,
+      )}
+    >
       {parts.map((p, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: diff parts have no identity and never reorder
         <DiffSpan key={i} part={p} />

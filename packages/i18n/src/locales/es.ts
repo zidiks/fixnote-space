@@ -572,6 +572,20 @@ const es: LocaleResource = {
   },
   sync: {
     conflictCopy: 'Copia en conflicto · {{date}}',
+    conflictsFound:
+      'Notas cambiadas en el mismo sitio en dos dispositivos: {{count}}. Las otras versiones se guardan al lado.',
+    review: 'Comparar',
+    banner:
+      'Esta nota se cambió en el mismo sitio en dos dispositivos. La otra versión se guarda como nota aparte.',
+    bannerCopy: 'Esta es la otra versión de una nota, guardada por la sincronización.',
+    compareTitle: 'Dos versiones de la nota',
+    compareBody:
+      'En rojo, lo que solo está en la nota; en verde, lo que solo está en la otra versión.',
+    keepNote: 'Quedarme con la actual',
+    keepCopy: 'Usar la otra',
+    combine: 'Combinar',
+    keepBoth: 'Conservar ambas',
+    settled: 'Versiones resueltas',
   },
   storage: {
     locked: 'FixNote está abierto en otra pestaña. Los cambios en esta pestaña no se guardarán.',

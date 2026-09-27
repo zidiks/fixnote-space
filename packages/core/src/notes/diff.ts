@@ -30,3 +30,22 @@ export function diffWords(before: string, after: string): DiffPart[] {
   }
   return parts
 }
+
+/**
+ * A line diff: whole lines kept, removed or added (each with its line break). Clearer than a word
+ * diff when two versions of a note changed the same lines differently.
+ */
+export function diffLines(before: string, after: string): DiffPart[] {
+  const out: DiffPart[] = []
+  const push = (kind: DiffPart['kind'], lines: string[]) => {
+    if (lines.length) out.push({ kind, text: `${lines.join('\n')}\n` })
+  }
+  for (const part of diffComm(before.split('\n'), after.split('\n'))) {
+    if (part.common) push('same', part.common)
+    else {
+      push('del', part.buffer1 ?? [])
+      push('add', part.buffer2 ?? [])
+    }
+  }
+  return out
+}

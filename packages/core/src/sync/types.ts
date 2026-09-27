@@ -53,4 +53,6 @@ export interface SyncReport {
   pushed: number
   merged: number
   conflictCopies: number
+  /** Two daily notes for one date (made offline on two devices) joined into one. */
+  dailiesMerged: number
 }

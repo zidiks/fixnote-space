@@ -563,6 +563,19 @@ const en = {
   },
   sync: {
     conflictCopy: 'Conflict copy · {{date}}',
+    conflictsFound:
+      'Notes changed in the same place on two devices: {{count}}. The other versions are kept next to them.',
+    review: 'Compare',
+    banner:
+      'This note was changed in the same place on two devices. The other version is kept as a separate note.',
+    bannerCopy: 'This is the other version of a note, kept by sync.',
+    compareTitle: 'Two versions of the note',
+    compareBody: 'Red is only in the note, green only in the other version.',
+    keepNote: 'Keep current',
+    keepCopy: 'Take the other',
+    combine: 'Combine',
+    keepBoth: 'Keep both',
+    settled: 'Versions settled',
   },
   storage: {
     locked: 'FixNote is open in another tab. Changes in this tab will not be saved.',

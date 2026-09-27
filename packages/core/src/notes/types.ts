@@ -45,6 +45,16 @@ export interface NotePage {
   nextCursor: NoteCursor | null
 }
 
+/** A note edited in the same place on two devices: sync kept one version, the other is a copy. */
+export interface SyncConflict {
+  noteId: string
+  copyId: string
+  createdAt: number
+}
+
+/** How a conflict is settled: which text the note keeps; the copy goes away except with `both`. */
+export type ConflictChoice = 'note' | 'copy' | 'combined' | 'both'
+
 export interface Folder {
   id: string
   parentId: string | null

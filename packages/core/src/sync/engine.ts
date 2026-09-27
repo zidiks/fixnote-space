@@ -5,6 +5,7 @@ import {
   encryptFolderName,
   encryptNote,
 } from '../crypto'
+import { mergeDailyNotes } from '../notes/daily'
 import { deriveTitle, toPlainText } from '../notes/markdown'
 import { syncNoteTags } from '../notes/repo'
 import type { NoteType } from '../notes/types'
@@ -109,7 +110,13 @@ export class SyncEngine {
   }
 
   private async syncOnce(): Promise<SyncReport> {
-    const report: SyncReport = { pulled: 0, pushed: 0, merged: 0, conflictCopies: 0 }
+    const report: SyncReport = {
+      pulled: 0,
+      pushed: 0,
+      merged: 0,
+      conflictCopies: 0,
+      dailiesMerged: 0,
+    }
     await this.pullFolders(report)
     await this.pullNotes(report)
     await this.pushFolders(report)
@@ -187,7 +194,15 @@ export class SyncEngine {
     const folderId = await this.existingFolder(tx, r.folderId)
 
     if (!local) {
-      const dailyDate = await this.claimDailyDate(tx, r.id, r.deletedAt ? null : r.dailyDate)
+      const daily = await this.claimDailyDate(
+        tx,
+        r.id,
+        r.deletedAt ? null : r.dailyDate,
+        theirs,
+        report,
+      )
+      const content = daily.content
+      const deletedAt = daily.lost ? this.now() : r.deletedAt
       await tx.execute(
         `INSERT INTO notes (id, folder_id, type, daily_date, title, content, search_text,
                             created_at, updated_at, deleted_at, pinned_at, pin_updated_at,
@@ -197,21 +212,22 @@ export class SyncEngine {
           r.id,
           folderId,
           r.type,
-          dailyDate,
-          deriveTitle(theirs),
-          theirs,
-          toPlainText(theirs),
+          daily.date,
+          deriveTitle(content),
+          content,
+          toPlainText(content),
           r.createdAt,
-          r.updatedAt,
-          r.deletedAt,
+          daily.lost ? (deletedAt as number) : r.updatedAt,
+          deletedAt,
           r.pinnedAt ?? null,
           r.pinUpdatedAt ?? null,
           r.version,
-          dailyDate === r.dailyDate || r.deletedAt ? 0 : 1,
+          // Changed here (merged with, or into, another daily note): push it back.
+          content !== theirs || daily.lost ? 1 : 0,
           theirs,
         ],
       )
-      await syncNoteTags(tx, r.id, theirs)
+      await syncNoteTags(tx, r.id, content)
       return
     }
 
@@ -243,8 +259,23 @@ export class SyncEngine {
       }
     }
 
-    const dailyDate = await this.claimDailyDate(tx, r.id, meta.deletedAt ? null : r.dailyDate)
-    if (dailyDate !== r.dailyDate && !meta.deletedAt) dirty = 1
+    const daily = await this.claimDailyDate(
+      tx,
+      r.id,
+      meta.deletedAt ? null : r.dailyDate,
+      content,
+      report,
+    )
+    const dailyDate = daily.date
+    if (daily.content !== content) {
+      content = daily.content
+      dirty = 1
+    }
+    if (daily.lost) {
+      meta.deletedAt = this.now()
+      meta.updatedAt = meta.deletedAt
+      dirty = 1
+    }
 
     await tx.execute(
       `UPDATE notes SET folder_id = ?, type = ?, daily_date = ?, title = ?, content = ?, search_text = ?,
@@ -279,29 +310,56 @@ export class SyncEngine {
   }
 
   /**
-   * One daily note per date. Two devices can each create one offline; the note with the smaller id
-   * keeps the date everywhere, the other becomes a regular dated note. Deterministic, so all devices
-   * converge without talking to each other.
+   * One daily note per date. Two devices can each create one offline: the note with the smaller id
+   * keeps the date and gets the other's text (each task once), the other one is deleted.
+   * Deterministic (the same two texts give the same result), so devices converge without talking.
+   * For the incoming note `id` with `content`: the date it keeps, its text, and whether it lost.
    */
-  private async claimDailyDate(tx: Tx, id: string, date: string | null): Promise<string | null> {
-    if (!date) return null
-    const [holder] = await tx.query<{ id: string }>(
-      'SELECT id FROM notes WHERE daily_date = ? AND deleted_at IS NULL AND id != ?',
+  private async claimDailyDate(
+    tx: Tx,
+    id: string,
+    date: string | null,
+    content: string,
+    report: SyncReport,
+  ): Promise<{ date: string | null; content: string; lost: boolean }> {
+    if (!date) return { date: null, content, lost: false }
+    const [holder] = await tx.query<{ id: string; content: string }>(
+      'SELECT id, content FROM notes WHERE daily_date = ? AND deleted_at IS NULL AND id != ?',
       [date, id],
     )
-    if (!holder) return date
-    if (holder.id < id) return null
+    if (!holder) return { date, content, lost: false }
+    report.dailiesMerged++
+    const ts = this.now()
+    if (holder.id < id) {
+      // The note already here keeps the date and takes in the incoming one.
+      const merged = mergeDailyNotes(holder.content, content)
+      await tx.execute(
+        `UPDATE notes SET content = ?, title = ?, search_text = ?, updated_at = ?, dirty = 1,
+                local_rev = local_rev + 1
+          WHERE id = ?`,
+        [merged, deriveTitle(merged), toPlainText(merged), ts, holder.id],
+      )
+      await syncNoteTags(tx, holder.id, merged)
+      return { date: null, content, lost: true }
+    }
     await tx.execute(
-      `UPDATE notes SET daily_date = NULL, dirty = 1, local_rev = local_rev + 1 WHERE id = ?`,
-      [holder.id],
+      `UPDATE notes SET daily_date = NULL, deleted_at = ?, updated_at = ?, dirty = 1,
+              local_rev = local_rev + 1
+        WHERE id = ?`,
+      [ts, ts, holder.id],
     )
-    return date
+    return { date, content: mergeDailyNotes(content, holder.content), lost: false }
   }
 
   private async writeConflictCopy(tx: Tx, local: LocalNote) {
     const id = this.newId()
     const ts = this.now()
     const content = `${this.conflictHeading(ts)}\n\n${local.content}`
+    // Remembered here, so the app can offer to compare the two versions.
+    await tx.execute(
+      'INSERT OR REPLACE INTO sync_conflicts (copy_id, note_id, created_at) VALUES (?, ?, ?)',
+      [id, local.id, ts],
+    )
     await tx.execute(
       `INSERT INTO notes (id, folder_id, type, daily_date, title, content, search_text,
                           created_at, updated_at, deleted_at, sync_version, dirty, local_rev)

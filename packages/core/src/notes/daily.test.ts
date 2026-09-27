@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { prepareDatabase } from '../db/migrate'
 import type { SqlDriver } from '../platform'
 import { createMemoryDriver } from '../testing/memory-driver'
-import { addTasks, appendToDaily, openTasks, withoutTasks } from './daily'
+import { addTasks, appendToDaily, mergeDailyNotes, openTasks, withoutTasks } from './daily'
 import { NotesRepo } from './repo'
 
 const yesterday = `# Thursday
@@ -75,5 +75,23 @@ describe('adjacentDaily', () => {
       dailyDate: '2026-09-24',
     })
     expect(await repo.adjacentDaily('2026-09-24', 'after')).toBeNull()
+  })
+})
+
+describe('mergeDailyNotes', () => {
+  const template = '# Sat, 26 Sep\n\n## Tasks\n\n- [ ] \n\n## Notes\n\n'
+  it('joins two notes of one day: shared lines once, each task once, done wins', () => {
+    const a = template.replace('- [ ] ', '- [ ] Buy milk\n- [ ] Call mom').concat('Met Anna.')
+    const b = template.replace('- [ ] ', '- [x] Call mom\n- [ ] Gym').concat('Rain all day.')
+    expect(mergeDailyNotes(a, b)).toBe(
+      '# Sat, 26 Sep\n\n## Tasks\n\n- [ ] Buy milk\n- [x] Call mom\n- [ ] Gym\n\n## Notes\n\nMet Anna.\nRain all day.',
+    )
+  })
+  it('keeps the empty checkbox only when there are no tasks, and is idempotent', () => {
+    expect(mergeDailyNotes(template, template)).toBe(template.replace(/\n\n$/, '\n'))
+    const a = template.replace('- [ ] ', '- [ ] One')
+    const merged = mergeDailyNotes(a, template)
+    expect(merged).not.toContain('- [ ] \n')
+    expect(mergeDailyNotes(merged, template)).toBe(merged)
   })
 })

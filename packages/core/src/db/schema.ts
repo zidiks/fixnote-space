@@ -162,6 +162,14 @@ export const MIGRATIONS: readonly string[] = [
      JSON like `changes`, so they can be undone too. */ `
   ALTER TABLE ai_actions ADD COLUMN folder_changes TEXT;
   `,
+  /* 9: sync conflicts this device saw: a note edited in the same place on two devices keeps one
+     version, the other becomes a copy. Local only; the UI offers to compare and settle them. */ `
+  CREATE TABLE sync_conflicts (
+    copy_id     TEXT PRIMARY KEY,
+    note_id     TEXT NOT NULL,
+    created_at  INTEGER NOT NULL
+  );
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */
