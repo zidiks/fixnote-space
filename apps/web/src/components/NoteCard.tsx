@@ -1,5 +1,5 @@
 import type { NoteSummary } from '@fixnote/core'
-import { attachmentIdFromUrl } from '@fixnote/core'
+import { attachmentIdFromUrl, folderTree } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -77,7 +77,7 @@ export function NoteCard({ note }: { note: NoteSummary }) {
         <button
           type="button"
           onClick={open}
-          className="group flex h-full max-h-60 min-h-32 w-full flex-col overflow-hidden rounded-xl border bg-card p-4 text-left shadow-xs transition-shadow outline-none hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
+          className="group flex h-full min-h-32 w-full flex-col overflow-hidden rounded-xl border bg-card p-4 text-left shadow-xs transition-shadow outline-none hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
         >
           {note.cover ? <Cover src={note.cover} /> : null}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -93,14 +93,14 @@ export function NoteCard({ note }: { note: NoteSummary }) {
           </div>
           <p
             className={cn(
-              'mt-2 line-clamp-2 font-medium leading-snug',
+              'mt-2 line-clamp-2 font-medium leading-snug [overflow-wrap:anywhere]',
               !note.title && 'text-muted-foreground',
             )}
           >
             {note.title || t('common.untitled')}
           </p>
           {note.excerpt ? (
-            <p className="mt-1.5 line-clamp-4 text-[13px] leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 line-clamp-7 text-[13px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
               {note.excerpt}
             </p>
           ) : null}
@@ -138,10 +138,11 @@ export function NoteCard({ note }: { note: NoteSummary }) {
               <span className="flex-1">{t('common.noFolder')}</span>
               <Check className={cn(note.folderId !== null && 'invisible')} />
             </ContextMenuItem>
-            {folders.map((f) => (
+            {folderTree(folders).map(({ folder: f, depth }) => (
               <ContextMenuItem
                 key={f.id}
                 onSelect={() => move.mutate({ id: note.id, folderId: f.id })}
+                style={{ paddingInlineStart: `${0.5 + depth}rem` }}
               >
                 <Folder />
                 <span className="flex-1">{f.name}</span>

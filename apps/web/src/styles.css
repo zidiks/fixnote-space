@@ -63,6 +63,8 @@
   line-height: 1.75;
   color: var(--color-foreground);
   caret-color: var(--color-brand);
+  /* Long links and words without spaces wrap instead of running past the edge. */
+  overflow-wrap: break-word;
 }
 .fixnote-editor > * + * {
   margin-top: 0.6em;
@@ -394,4 +396,33 @@
   white-space: nowrap;
   user-select: none;
   vertical-align: 1px;
+}
+
+/* Tables (GFM): scroll sideways when wider than the note. */
+.fixnote-editor table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+.fixnote-editor th,
+.fixnote-editor td {
+  min-width: 4rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-border);
+  vertical-align: top;
+  text-align: left;
+}
+.fixnote-editor th {
+  background: var(--color-muted);
+  font-weight: 600;
+}
+.fixnote-editor td > p,
+.fixnote-editor th > p {
+  margin: 0;
+}
+.fixnote-editor .selectedCell {
+  background: color-mix(in oklch, var(--color-brand) 12%, transparent);
 }

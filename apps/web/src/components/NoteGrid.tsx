@@ -1,6 +1,6 @@
 import type { NoteFilter, NoteSummary } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Pin } from 'lucide-react'
+import { Pin, Plus } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { useNotesInfinite, usePinnedNotes } from '../lib/queries'
 import { type DateGroup, dateGroup, dateGroupKey } from '../lib/time'
@@ -47,10 +47,13 @@ export function NoteGrid({
   filter,
   empty,
   pinnedFirst = false,
+  onNew,
 }: {
   filter: NoteFilter
   empty: React.ReactNode
   pinnedFirst?: boolean
+  /** Shows a "New note" card first in the grid (in a folder: a note in that folder). */
+  onNew?: () => void
 }) {
   const { t } = useTranslation()
   const listFilter = useMemo(
@@ -82,7 +85,23 @@ export function NoteGrid({
   if (query.isPending) {
     return <p className="mt-6 text-sm text-muted-foreground">{t('common.loading')}</p>
   }
-  if (!notes.length && !(pinnedFirst && pinned.length)) return <>{empty}</>
+  const newCard = onNew ? (
+    <li>
+      <NewNoteCard onClick={onNew} />
+    </li>
+  ) : null
+  if (!notes.length && !(pinnedFirst && pinned.length)) {
+    return (
+      <>
+        {newCard ? (
+          <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{newCard}</ul>
+        ) : null}
+        {empty}
+      </>
+    )
+  }
+  // The card goes into the first grid on the page.
+  const newIn = pinnedFirst && pinned.length ? 'pinned' : groups[0]?.key
 
   return (
     <>
@@ -93,6 +112,7 @@ export function NoteGrid({
             {t('pin.section')}
           </h2>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {newIn === 'pinned' ? newCard : null}
             {pinned.map((n) => (
               <li key={n.id}>
                 <NoteCard note={n} />
@@ -107,6 +127,7 @@ export function NoteGrid({
             {label(section.group)}
           </h2>
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {newIn === section.key ? newCard : null}
             {section.notes.map((n) => (
               <li key={n.id}>
                 <NoteCard note={n} />
@@ -120,6 +141,20 @@ export function NoteGrid({
         <p className="mt-4 text-center text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : null}
     </>
+  )
+}
+
+function NewNoteCard({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-full min-h-32 w-full flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed text-sm text-muted-foreground transition-colors outline-none hover:border-foreground/30 hover:bg-card hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+    >
+      <Plus className="size-5" />
+      {t('sidebar.newNote')}
+    </button>
   )
 }
 

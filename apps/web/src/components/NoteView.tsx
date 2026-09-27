@@ -1,3 +1,4 @@
+import { folderTree } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -6,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Tooltip,
   TooltipContent,
@@ -17,6 +19,7 @@ import {
   ChevronRight,
   Folder,
   FolderInput,
+  FolderPlus,
   Inbox,
   Link2,
   Mic,
@@ -35,6 +38,7 @@ import { registerDropSink } from '../lib/drop'
 import {
   keys,
   useDeleteWithUndo,
+  useFolderMutations,
   useFolders,
   useInvalidateNotes,
   useMoveNote,
@@ -45,6 +49,7 @@ import { formatRelative } from '../lib/time'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { DailyBar } from './DailyBar'
 import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
+import { NewFolderDialog } from './NewFolderDialog'
 import { ShareDialog } from './ShareDialog'
 import { VOICE_KEYS } from './VoiceBar'
 
@@ -58,6 +63,8 @@ export function NoteView({ id }: { id: string }) {
   const note = useNote(id, { fresh: true })
   const folders = useFolders().data ?? []
   const move = useMoveNote()
+  const { create: createFolder } = useFolderMutations()
+  const [newFolder, setNewFolder] = useState(false)
   const deleteWithUndo = useDeleteWithUndo()
   const setPinned = useSetPinned()
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -183,15 +190,24 @@ export function NoteView({ id }: { id: string }) {
           </Tooltip>
           <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
             <DropdownMenuLabel>{t('note.moveTo')}</DropdownMenuLabel>
+            <DropdownMenuItem
+              // After the menu has closed, so the dialog gets focus.
+              onSelect={() => setTimeout(() => setNewFolder(true), 0)}
+            >
+              <FolderPlus />
+              {t('menu.moveToNewFolder')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => move.mutate({ id: n.id, folderId: null })}>
               <Inbox />
               <span className="flex-1">{t('common.noFolder')}</span>
               <Check className={cn(n.folderId !== null && 'invisible')} />
             </DropdownMenuItem>
-            {folders.map((f) => (
+            {folderTree(folders).map(({ folder: f, depth }) => (
               <DropdownMenuItem
                 key={f.id}
                 onSelect={() => move.mutate({ id: n.id, folderId: f.id })}
+                style={{ paddingInlineStart: `${0.5 + depth}rem` }}
               >
                 <Folder />
                 <span className="flex-1">{f.name}</span>
@@ -227,6 +243,14 @@ export function NoteView({ id }: { id: string }) {
         </Tooltip>
       </header>
       {canShare ? <ShareDialog note={n} open={sharing} onOpenChange={setSharing} /> : null}
+      <NewFolderDialog
+        open={newFolder}
+        onOpenChange={setNewFolder}
+        onCreate={async (name) => {
+          const folder = await createFolder.mutateAsync({ name })
+          move.mutate({ id: n.id, folderId: folder.id })
+        }}
+      />
 
       {n.tags.length ? (
         <div className="mt-3 flex flex-wrap gap-1.5">

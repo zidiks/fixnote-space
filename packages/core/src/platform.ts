@@ -155,7 +155,7 @@ export interface Platform {
   readonly mcp?: {
     info(): Promise<{ command: string; built: boolean }>
     /** Adds FixNote to the client's config; resolves with the config file path. */
-    connect(client: 'claude' | 'cursor'): Promise<string>
+    connect(client: 'claude' | 'cursor' | 'codex'): Promise<string>
   }
   /**
    * Updates of the desktop app from signed releases. Absent on the web (it is always current) and

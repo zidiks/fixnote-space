@@ -28,6 +28,8 @@ reqwest = { version = "0.13", default-features = false, features = ["native-tls"
 # Streaming LLM requests for the webview (see src/http.rs).
 tokio = { version = "1", features = ["sync", "macros"] }
 base64 = "0.22"
+# Codex keeps its MCP servers in TOML; edited in place, comments and layout kept.
+toml_edit = "0.25"
 
 [profile.release]
 codegen-units = 1
