@@ -23,6 +23,53 @@
   a {
     -webkit-user-drag: none;
   }
+
+  /*
+   * Checkboxes drawn by hand: with `accent-color` the browser picks a black check on the lighter
+   * dark-theme orange. Here the check is always `brand-foreground` (white) on `brand`.
+   */
+  input[type="checkbox"] {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    border: 1.5px solid color-mix(in oklch, var(--color-muted-foreground) 60%, transparent);
+    border-radius: 0.3rem;
+    background: var(--color-background);
+    cursor: pointer;
+    transition:
+      background-color 120ms,
+      border-color 120ms;
+  }
+  input[type="checkbox"]::before {
+    content: "";
+    width: 0.7em;
+    height: 0.7em;
+    background: var(--color-brand-foreground);
+    mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3.2L13 5' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    transform: scale(0);
+    transition: transform 120ms;
+  }
+  input[type="checkbox"]:checked {
+    border-color: var(--color-brand);
+    background: var(--color-brand);
+  }
+  input[type="checkbox"]:checked::before {
+    transform: scale(1);
+  }
+  input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+  input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 /*
@@ -127,8 +174,6 @@
   margin: 0;
   width: 1.05em;
   height: 1.05em;
-  accent-color: var(--color-brand);
-  cursor: pointer;
 }
 .fixnote-editor ul[data-type="taskList"] li[data-checked="true"] > div {
   color: var(--color-muted-foreground);
@@ -429,4 +474,28 @@
 }
 .fixnote-editor .selectedCell {
   background: color-mix(in oklch, var(--color-brand) 12%, transparent);
+}
+
+/* Live editing: the other devices' carets, with their name on top. */
+.collaboration-carets__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  word-break: normal;
+  pointer-events: none;
+}
+.collaboration-carets__label {
+  position: absolute;
+  top: -1.35em;
+  left: -1px;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px 4px 4px 0;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  user-select: none;
 }

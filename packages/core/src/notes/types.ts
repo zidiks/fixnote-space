@@ -15,6 +15,8 @@ export interface NoteSummary {
   cover: string | null
   /** When the note was pinned; pinned notes stay on top of Home and their folder. */
   pinnedAt: number | null
+  /** Shared with other people (see `SharedNotes`): synced as a shared note, not a personal one. */
+  sharedId: string | null
   createdAt: number
   updatedAt: number
 }

@@ -1,6 +1,15 @@
-import type { AttachmentRemote, FetchedPage, InboxRemote, SyncRemote } from '@fixnote/core'
+import type {
+  AttachmentRemote,
+  CollabTransport,
+  FetchedPage,
+  InboxRemote,
+  SharedRemote,
+  SyncRemote,
+} from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { realtimeTransport } from '../collab/transport'
 import { toError } from '../errors'
+import { supabaseSharedRemote } from '../sync/shared-remote'
 import { supabaseRemote } from '../sync/supabase-remote'
 
 export interface Session {
@@ -87,6 +96,10 @@ export interface AccountBackend {
   getShare(id: string): Promise<{ payload: string; updatedAt: string } | null>
   /** Calls back when another device changed something. Returns an unsubscribe. */
   subscribe(userId: string, onChange: () => void): () => void
+  /** A shared note's live-editing channel (sealed messages only; members only). */
+  collab(sharedId: string): CollabTransport
+  /** Notes shared with other people, as this user. */
+  shared(userId: string): SharedRemote
 }
 
 export function supabaseBackend(
@@ -300,6 +313,8 @@ export function supabaseBackend(
       const row = (data as { payload: string; updated_at: string }[] | null)?.[0]
       return row ? { payload: row.payload, updatedAt: row.updated_at } : null
     },
+    collab: (sharedId) => realtimeTransport(client, sharedId),
+    shared: (userId) => supabaseSharedRemote(client, userId),
     subscribe(userId, onChange) {
       const channel = client
         .channel(`sync:${userId}`)
@@ -313,6 +328,17 @@ export function supabaseBackend(
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'device_pairings' },
+          onChange,
+        )
+        // Shared notes: someone shared one, changed a role, or saved (members only, by RLS).
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'shared_note_members' },
+          onChange,
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'shared_notes' },
           onChange,
         )
         .subscribe()

@@ -64,8 +64,13 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Repeating tasks live in the task line (`- [ ] Call mom 🔁 weekly:mon`, rules in
   `packages/core/src/notes/recurrence.ts`); a new daily note gets the tasks due that day
   (`getOrCreateDaily`), and a changed rule reaches existing later days via `applyRecurrence`.
-- Import (`packages/core/src/import`) plans first and writes only in `runImport`; keep it
-  idempotent (notes with the same text are skipped).
+- Shared notes (people by email, roles edit/view): server tables and RPCs in
+  `supabase/migrations/*_shared_notes.sql`, logic in `packages/core/src/shared-notes` (`SharedNotes`:
+  share, invite, save with version + CRDT merge, sync), live editing in `packages/core/src/collab`
+  (`CollabSession`) over private Realtime channels `shared:<id>` (`backend.collab`; BroadcastChannel
+  with `?dev-backend`). A shared note is a normal `notes` row with `shared_id` (Markdown for search,
+  cards, AI) plus `shared_docs` (Yjs state; `projected` detects edits made outside the editor). Shared
+  notes never go through the personal sync. Markdown ⇄ Yjs via `lib/shared/projector.ts`.
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).

@@ -29,8 +29,9 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { useUi } from '../app/store'
-import { useAccount } from '../lib/account/account'
+import { sharedContext, useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { suggestForNewNote } from '../lib/assistant/tidy'
 import { useDb, useRepo } from '../lib/db'
@@ -50,6 +51,7 @@ import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { ConflictBanner } from './ConflictBanner'
 import { DailyBar } from './DailyBar'
 import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
+import { LiveBar, useSharedLive } from './LiveBar'
 import { NewFolderDialog } from './NewFolderDialog'
 import { ShareDialog } from './ShareDialog'
 import { VOICE_KEYS } from './VoiceBar'
@@ -73,6 +75,8 @@ export function NoteView({ id }: { id: string }) {
   const voice = useVoice((s) => s.status)
   const aiRequest = useUi((s) => s.aiRequest)
   const [sharing, setSharing] = useState(false)
+  // A shared note is always edited live with the people it is shared with.
+  const shared = useSharedLive(note.data?.sharedId ?? null)
   // Links live on the server: not in a build without one, and never in local-only mode.
   const hasServer = useAccount((s) => s.phase !== 'disabled')
   const localOnly = useLlm((s) => s.localOnly)
@@ -103,145 +107,177 @@ export function NoteView({ id }: { id: string }) {
   const n = note.data
   const folder = folders.find((f) => f.id === n.folderId)
 
-  const onDelete = () => void deleteWithUndo(n.id)
+  const onDelete = async () => {
+    const sharedId = n.sharedId
+    const ctx = sharedId ? sharedContext() : null
+    if (sharedId && ctx) {
+      // A shared note: its owner stops sharing it (then deletes their copy as usual); anyone
+      // else leaves it, and it goes away from their devices.
+      const doc = await ctx.shared.doc(sharedId)
+      if (doc?.role !== 'owner') {
+        await ctx.shared.leave(sharedId)
+        await invalidate()
+        navigate({ kind: 'home' })
+        toast(t('people.left'))
+        return
+      }
+      await ctx.shared.unshare(sharedId)
+    }
+    void deleteWithUndo(n.id)
+  }
   const pinned = n.pinnedAt !== null
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 pt-2 pb-32 sm:px-10">
-      <header className="flex h-10 items-center gap-2 text-[13px] text-muted-foreground">
-        <button
-          type="button"
-          className="flex max-w-[40%] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 py-1 hover:bg-accent hover:text-foreground"
-          onClick={() =>
-            navigate(folder ? { kind: 'folder', id: folder.id } : { kind: 'home', filter: 'inbox' })
-          }
-        >
-          {folder ? (
-            <Folder className="size-3.5 shrink-0" />
-          ) : (
-            <Inbox className="size-3.5 shrink-0" />
-          )}
-          <span className="truncate">{folder?.name ?? t('common.noFolder')}</span>
-        </button>
-        <ChevronRight className="size-3.5 shrink-0 opacity-50" />
-        <span className="min-w-0 truncate text-foreground">{n.title || t('common.untitled')}</span>
+      <header className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1 py-1 text-[13px] text-muted-foreground">
+        {/* The path shrinks (the title truncates) before the actions wrap to a new line. */}
+        <div className="flex min-w-0 flex-1 basis-40 items-center gap-2">
+          <button
+            type="button"
+            className="flex max-w-[40%] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 py-1 hover:bg-accent hover:text-foreground"
+            onClick={() =>
+              navigate(
+                folder ? { kind: 'folder', id: folder.id } : { kind: 'home', filter: 'inbox' },
+              )
+            }
+          >
+            {folder ? (
+              <Folder className="size-3.5 shrink-0" />
+            ) : (
+              <Inbox className="size-3.5 shrink-0" />
+            )}
+            <span className="truncate">{folder?.name ?? t('common.noFolder')}</span>
+          </button>
+          <ChevronRight className="size-3.5 shrink-0 opacity-50" />
+          <span className="min-w-0 truncate text-foreground">
+            {n.title || t('common.untitled')}
+          </span>
+        </div>
 
-        <span className="ml-auto shrink-0 tabular-nums" aria-live="polite">
-          {saveState === 'saving'
-            ? t('note.saving')
-            : t('note.edited', { time: formatRelative(n.updatedAt, i18n.resolvedLanguage) })}
-        </span>
+        {/* Status and actions: one group, which wraps below the path in a narrow window. */}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <span className="shrink-0 tabular-nums" aria-live="polite">
+            {saveState === 'saving'
+              ? t('note.saving')
+              : t('note.edited', { time: formatRelative(n.updatedAt, i18n.resolvedLanguage) })}
+          </span>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => void toggleVoice('note')}
-              aria-label={t('voice.dictate')}
-              aria-pressed={voice === 'recording'}
-              className={cn(voice === 'recording' && 'text-destructive')}
-            >
-              <Mic />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => editor.current?.openAi('note')}
-              aria-label={t('ai.title')}
-            >
-              <Sparkles />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('ai.title')}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={() => setPinned.mutate({ id: n.id, pinned: !pinned })}
-              aria-label={pinned ? t('pin.unpin') : t('pin.pin')}
-              aria-pressed={pinned}
-              className={cn(pinned && 'text-brand')}
-            >
-              {pinned ? <PinOff /> : <Pin />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{pinned ? t('pin.unpin') : t('pin.pin')}</TooltipContent>
-        </Tooltip>
-
-        <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon-xs" aria-label={t('note.moveTo')}>
-                  <FolderInput />
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>{t('note.moveTo')}</TooltipContent>
-          </Tooltip>
-          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
-            <DropdownMenuLabel>{t('note.moveTo')}</DropdownMenuLabel>
-            <DropdownMenuItem
-              // After the menu has closed, so the dialog gets focus.
-              onSelect={() => setTimeout(() => setNewFolder(true), 0)}
-            >
-              <FolderPlus />
-              {t('menu.moveToNewFolder')}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => move.mutate({ id: n.id, folderId: null })}>
-              <Inbox />
-              <span className="flex-1">{t('common.noFolder')}</span>
-              <Check className={cn(n.folderId !== null && 'invisible')} />
-            </DropdownMenuItem>
-            {folderTree(folders).map(({ folder: f, depth }) => (
-              <DropdownMenuItem
-                key={f.id}
-                onSelect={() => move.mutate({ id: n.id, folderId: f.id })}
-                style={{ paddingInlineStart: `${0.5 + depth}rem` }}
-              >
-                <Folder />
-                <span className="flex-1">{f.name}</span>
-                <Check className={cn(n.folderId !== f.id && 'invisible')} />
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {canShare ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon-xs"
-                onClick={() => setSharing(true)}
-                aria-label={t('share.button')}
+                onClick={() => void toggleVoice('note')}
+                aria-label={t('voice.dictate')}
+                aria-pressed={voice === 'recording'}
+                className={cn(voice === 'recording' && 'text-destructive')}
               >
-                <Link2 />
+                <Mic />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t('share.button')}</TooltipContent>
+            <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
           </Tooltip>
-        ) : null}
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-xs" onClick={onDelete} aria-label={t('note.delete')}>
-              <Trash2 />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('note.delete')}</TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => editor.current?.openAi('note')}
+                aria-label={t('ai.title')}
+              >
+                <Sparkles />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('ai.title')}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => setPinned.mutate({ id: n.id, pinned: !pinned })}
+                aria-label={pinned ? t('pin.unpin') : t('pin.pin')}
+                aria-pressed={pinned}
+                className={cn(pinned && 'text-brand')}
+              >
+                {pinned ? <PinOff /> : <Pin />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{pinned ? t('pin.unpin') : t('pin.pin')}</TooltipContent>
+          </Tooltip>
+
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon-xs" aria-label={t('note.moveTo')}>
+                    <FolderInput />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>{t('note.moveTo')}</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
+              <DropdownMenuLabel>{t('note.moveTo')}</DropdownMenuLabel>
+              <DropdownMenuItem
+                // After the menu has closed, so the dialog gets focus.
+                onSelect={() => setTimeout(() => setNewFolder(true), 0)}
+              >
+                <FolderPlus />
+                {t('menu.moveToNewFolder')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => move.mutate({ id: n.id, folderId: null })}>
+                <Inbox />
+                <span className="flex-1">{t('common.noFolder')}</span>
+                <Check className={cn(n.folderId !== null && 'invisible')} />
+              </DropdownMenuItem>
+              {folderTree(folders).map(({ folder: f, depth }) => (
+                <DropdownMenuItem
+                  key={f.id}
+                  onSelect={() => move.mutate({ id: n.id, folderId: f.id })}
+                  style={{ paddingInlineStart: `${0.5 + depth}rem` }}
+                >
+                  <Folder />
+                  <span className="flex-1">{f.name}</span>
+                  <Check className={cn(n.folderId !== f.id && 'invisible')} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {canShare ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => setSharing(true)}
+                  aria-label={t('share.button')}
+                >
+                  <Link2 />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('share.button')}</TooltipContent>
+            </Tooltip>
+          ) : null}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => void onDelete()}
+                aria-label={t('note.delete')}
+              >
+                <Trash2 />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('note.delete')}</TooltipContent>
+          </Tooltip>
+        </div>
       </header>
       {canShare ? <ShareDialog note={n} open={sharing} onOpenChange={setSharing} /> : null}
       <NewFolderDialog
@@ -270,45 +306,61 @@ export function NoteView({ id }: { id: string }) {
 
       {n.type === 'daily' && n.dailyDate ? <DailyBar note={n} /> : null}
       <ConflictBanner note={n} />
+      {shared.live ? <LiveBar live={shared.live} /> : null}
 
       <div className="mt-6">
-        <NoteEditor
-          key={n.id}
-          ref={editor}
-          note={n}
-          onStateChange={setSaveState}
-          onRepeat={async (task, rule) => {
-            // The days after this one that exist already follow the new rule too.
-            const changed = await repo.applyRecurrence(n.dailyDate as string, task, rule)
-            for (const c of changed) qc.setQueryData(keys.note(c.id), c)
-            if (changed.length) void invalidate()
-          }}
-          onSave={async (markdown, base) => {
-            const saved = await repo.updateContent(n.id, markdown, { base })
-            qc.setQueryData(keys.note(n.id), saved)
-            void invalidate()
-            return saved
-          }}
-          onLeave={(markdown) => {
-            // A note left blank is not worth keeping: nothing to remember, nothing to tidy later.
-            if (n.type === 'text' && !markdown.trim()) {
-              void repo.deleteNote(n.id).then(invalidate)
-              return
-            }
-            // A fresh note without a folder: offer a folder, tags and a title for it.
-            const fresh = Date.now() - n.createdAt < 2 * 3600_000
-            if (n.type === 'text' && fresh && n.folderId === null && markdown.trim().length >= 80) {
-              void suggestForNewNote(n, {
-                tidy,
-                audit,
-                refresh: async () => {
-                  await Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['tidy'] })])
-                },
-                review: () => useUi.getState().navigate({ kind: 'tidy' }),
-              })
-            }
-          }}
-        />
+        {n.sharedId && !shared.live && !shared.failed ? (
+          <p className="text-sm text-muted-foreground">{t('people.connecting')}</p>
+        ) : (
+          <NoteEditor
+            // Opening a shared note's live document builds the editor anew (its content source changes).
+            key={`${n.id}:${shared.live ? 'live' : 'solo'}`}
+            ref={editor}
+            note={n}
+            live={shared.live ?? undefined}
+            onStateChange={setSaveState}
+            onRepeat={async (task, rule) => {
+              // The days after this one that exist already follow the new rule too.
+              const changed = await repo.applyRecurrence(n.dailyDate as string, task, rule)
+              for (const c of changed) qc.setQueryData(keys.note(c.id), c)
+              if (changed.length) void invalidate()
+            }}
+            onSave={async (markdown, base) => {
+              const saved = await repo.updateContent(n.id, markdown, { base })
+              // A shared note: its document goes to the others (the Markdown is this device's copy).
+              await shared.live?.persist(saved.content)
+              qc.setQueryData(keys.note(n.id), saved)
+              void invalidate()
+              return saved
+            }}
+            onLeave={(markdown) => {
+              // A shared note belongs to its people: never thrown away or tidied from here.
+              if (n.sharedId) return
+              // A note left blank is not worth keeping: nothing to remember, nothing to tidy later.
+              if (n.type === 'text' && !markdown.trim()) {
+                void repo.deleteNote(n.id).then(invalidate)
+                return
+              }
+              // A fresh note without a folder: offer a folder, tags and a title for it.
+              const fresh = Date.now() - n.createdAt < 2 * 3600_000
+              if (
+                n.type === 'text' &&
+                fresh &&
+                n.folderId === null &&
+                markdown.trim().length >= 80
+              ) {
+                void suggestForNewNote(n, {
+                  tidy,
+                  audit,
+                  refresh: async () => {
+                    await Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['tidy'] })])
+                  },
+                  review: () => useUi.getState().navigate({ kind: 'tidy' }),
+                })
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   )

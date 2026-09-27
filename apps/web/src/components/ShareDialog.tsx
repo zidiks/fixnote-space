@@ -9,6 +9,7 @@ import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import { errorMessage, isServerOutdated } from '../lib/errors'
 import { listShares, publishShare, revokeShare } from '../lib/share'
+import { PeopleSection } from './PeopleSection'
 
 export const SHARES_KEY = ['shares'] as const
 
@@ -69,14 +70,19 @@ export function ShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md space-y-4 p-6">
-        <DialogTitle className="flex items-center gap-2 font-semibold">
+      <DialogContent className="max-h-[90vh] max-w-lg space-y-4 overflow-y-auto p-6">
+        <DialogTitle className="font-semibold">{t('share.title')}</DialogTitle>
+        <DialogDescription className="sr-only">{t('share.title')}</DialogDescription>
+
+        {phase === 'ready' ? (
+          <PeopleSection note={note} onDone={() => onOpenChange(false)} />
+        ) : null}
+
+        <h3 className="flex items-center gap-2 border-t pt-4 text-sm font-semibold">
           <Link2 className="size-4 text-muted-foreground" />
-          {t('share.title')}
-        </DialogTitle>
-        <DialogDescription className="text-sm text-muted-foreground">
-          {t('share.body')}
-        </DialogDescription>
+          {t('share.linkTitle')}
+        </h3>
+        <p className="text-sm text-muted-foreground">{t('share.body')}</p>
 
         {phase !== 'ready' ? (
           <div className="space-y-3">

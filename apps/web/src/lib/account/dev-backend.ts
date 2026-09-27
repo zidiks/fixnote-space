@@ -9,6 +9,8 @@ import {
   type SyncRemote,
   sealToPublicKey,
 } from '@fixnote/core'
+import { broadcastChannelTransport } from '../collab/transport'
+import { devRegisterUser, devSharedChanges, devSharedRemote } from '../shared/dev-remote'
 import type {
   AccountBackend,
   CaptureLink,
@@ -285,13 +287,17 @@ export const devBackend: AccountBackend = {
   },
   getUserKeys: async () => {
     const s = load()
-    return s.session ? (s.keys[s.session.userId] ?? null) : null
+    const row = s.session ? (s.keys[s.session.userId] ?? null) : null
+    // Accounts made before shared notes existed become findable by email too.
+    if (s.session && row) devRegisterUser(s.session.userId, s.session.email, row.publicKey)
+    return row
   },
   createUserKeys: async (row) => {
     const s = load()
     if (!s.session) throw new Error('not authenticated')
     s.keys[s.session.userId] = row
     save(s)
+    devRegisterUser(s.session.userId, s.session.email, row.publicKey)
   },
   remote,
   // Encrypted files in localStorage (base64), shared by tabs like the rest of the fake server.
@@ -429,13 +435,17 @@ export const devBackend: AccountBackend = {
     const row = loadShares().find((r) => r.id === id)
     return row ? { payload: row.payload, updatedAt: row.updatedAt } : null
   },
+  collab: (sharedId) => broadcastChannelTransport(sharedId),
+  shared: (userId) => devSharedRemote(userId),
   subscribe: (_userId, onChange) => {
     const listener = () => onChange()
     channel.addEventListener('message', listener)
     localListeners.add(listener)
+    const stopShared = devSharedChanges(onChange)
     return () => {
       channel.removeEventListener('message', listener)
       localListeners.delete(listener)
+      stopShared()
     }
   },
 }

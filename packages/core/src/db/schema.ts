@@ -170,6 +170,23 @@ export const MIGRATIONS: readonly string[] = [
     created_at  INTEGER NOT NULL
   );
   `,
+  /* 10: notes shared with other people. notes.shared_id links a local note to its shared note; such
+     notes sync through shared_docs (a Yjs document per note), not through the personal sync.
+     note_key is the shared note's key (the local database is not encrypted anyway); projected is
+     the Markdown last written from the document, to notice edits made outside the editor (MCP, AI,
+     Telegram) and bring them into the document. */ `
+  ALTER TABLE notes ADD COLUMN shared_id TEXT;
+  CREATE TABLE shared_docs (
+    shared_id       TEXT PRIMARY KEY,
+    note_id         TEXT NOT NULL,
+    role            TEXT NOT NULL,
+    note_key        TEXT NOT NULL,
+    state           BLOB,
+    server_version  INTEGER NOT NULL DEFAULT 0,
+    dirty           INTEGER NOT NULL DEFAULT 0,
+    projected       TEXT
+  );
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

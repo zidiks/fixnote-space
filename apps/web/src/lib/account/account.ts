@@ -15,6 +15,7 @@ import {
   pairingCode,
   phraseToSecret,
   publicKeyB64,
+  SharedNotes,
   type SqlDriver,
   SyncEngine,
   sealSecretForDevice,
@@ -23,6 +24,7 @@ import {
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
 import { conflictHeading } from '../conflict'
+import { projector } from '../shared/projector'
 import type { AccountBackend, PairingRequest, Session } from './backend'
 
 export type Phase =
@@ -81,12 +83,15 @@ interface Deps {
   onRemoteChange: () => void
   /** Sync kept a second version of notes changed in the same place on two devices. */
   onConflicts?: (count: number) => void
+  /** Someone shared notes with this account. */
+  onShared?: (notes: { noteId: string; title: string }[]) => void
 }
 
 let deps: Deps | null = null
 let keys: AccountKeys | null = null
 let session: Session | null = null
 let engine: SyncEngine | null = null
+let shared: SharedNotes | null = null
 let stopWatching: (() => void) | null = null
 let debounce: ReturnType<typeof setTimeout> | undefined
 
@@ -185,6 +190,16 @@ async function becomeReady(k: AccountKeys) {
     await kvSet(OWNER_EMAIL, session.email)
   }
   engine = new SyncEngine(need().db, backend().remote, k, { conflictHeading })
+  shared = session
+    ? new SharedNotes({
+        db: need().db,
+        repo: need().repo,
+        keys: k,
+        remote: backend().shared(session.userId),
+        projector,
+        userId: session.userId,
+      })
+    : null
   set({ phase: 'ready', pendingSecret: null })
   startWatching()
   void runSync()
@@ -255,8 +270,8 @@ const PAIRING_POLL = 2000
 const PAIRING_TTL = 10 * 60_000
 let pairingRun = 0
 
-/** A short name for this device in the other device's prompt. */
-function deviceLabel(): string {
+/** A short name for this device (the other device's prompt, a live-editing cursor). */
+export function deviceLabel(): string {
   const ua = navigator.userAgent
   const os = /Windows/.test(ua)
     ? 'Windows'
@@ -357,6 +372,7 @@ export async function signOut() {
   stopWatching = null
   clearTimeout(debounce)
   engine = null
+  shared = null
   keys = null
   session = null
   await need()
@@ -403,6 +419,12 @@ export async function runSync() {
   setSync({ status: 'syncing' })
   try {
     const report = await e.sync()
+    // Notes shared with other people: their own channel, merged as Yjs documents.
+    const sharedReport = shared ? await shared.sync() : null
+    if (sharedReport?.added.length) need().onShared?.(sharedReport.added)
+    const sharedChanged = Boolean(
+      sharedReport && (sharedReport.added.length || sharedReport.removed || sharedReport.pulled),
+    )
     await refreshPairingRequests().catch(() => undefined)
     // Images go after the notes that use them; another device fetches them when shown.
     const sync = attachmentSync()
@@ -431,7 +453,13 @@ export async function runSync() {
       error: null,
       pending: (await e.pendingCount()) + (await need().attachments.pendingCount()),
     })
-    if (report.pulled || report.merged || report.conflictCopies || report.dailiesMerged)
+    if (
+      report.pulled ||
+      report.merged ||
+      report.conflictCopies ||
+      report.dailiesMerged ||
+      sharedChanged
+    )
       need().onRemoteChange()
     if (report.conflictCopies) need().onConflicts?.(report.conflictCopies)
   } catch (err) {
@@ -460,6 +488,13 @@ export function shareContext() {
   const b = deps?.backend
   if (!b || !keys || !session || !engine) return null
   return { backend: b, keys, attachments: deps?.attachments as Attachments }
+}
+
+/** Shared notes and the backend for their live editing, when signed in and unlocked. */
+export function sharedContext() {
+  const b = deps?.backend
+  if (!b || !keys || !session || !engine || !shared) return null
+  return { backend: b, shared, userId: session.userId, email: session.email }
 }
 
 /** Reads a page for a link card through the server, or null when signed out. */

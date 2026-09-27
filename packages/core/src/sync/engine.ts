@@ -35,6 +35,8 @@ interface LocalNote extends SqlRow {
   sync_version: number
   dirty: number
   local_rev: number
+  /** Set when the note is shared with other people: it syncs as a shared note instead. */
+  shared_id: string | null
 }
 
 interface LocalFolder extends SqlRow {
@@ -185,6 +187,8 @@ export class SyncEngine {
   private async applyNote(tx: Tx, r: RemoteNote, report: SyncReport) {
     const [local] = await tx.query<LocalNote>('SELECT * FROM notes WHERE id = ?', [r.id])
     if (local && r.version <= local.sync_version) return
+    // A note shared since: its text now lives in the shared note; the personal copy is left as is.
+    if (local?.shared_id) return
     const theirs = decryptNote(this.keys, r.id, {
       wrappedKey: r.wrappedKey,
       ciphertext: r.ciphertext,
@@ -410,7 +414,10 @@ export class SyncEngine {
   }
 
   private async pushNotes(report: SyncReport) {
-    const rows = await this.db.query<LocalNote>('SELECT * FROM notes WHERE dirty = 1')
+    // Shared notes sync as shared notes (SharedNotes), not as this account's personal ones.
+    const rows = await this.db.query<LocalNote>(
+      'SELECT * FROM notes WHERE dirty = 1 AND shared_id IS NULL',
+    )
     for (const row of rows) {
       let local: LocalNote | undefined = row
       for (let attempt = 0; local && attempt < MAX_PUSH_ATTEMPTS; attempt++) {
@@ -454,7 +461,8 @@ export class SyncEngine {
   /** Rows waiting to be pushed, for the sync status indicator. */
   async pendingCount(): Promise<number> {
     const [row] = await this.db.query<{ n: number }>(
-      'SELECT (SELECT count(*) FROM notes WHERE dirty = 1) + (SELECT count(*) FROM folders WHERE dirty = 1) AS n',
+      `SELECT (SELECT count(*) FROM notes WHERE dirty = 1 AND shared_id IS NULL)
+            + (SELECT count(*) FROM folders WHERE dirty = 1) AS n`,
     )
     return Number(row?.n ?? 0)
   }

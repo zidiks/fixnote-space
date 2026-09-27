@@ -10,12 +10,10 @@ import {
   MenuShortcut,
 } from '@fixnote/ui'
 import { Extension, getMarkRange } from '@tiptap/core'
-import { TaskItem, TaskList } from '@tiptap/extension-list'
-import { TableKit } from '@tiptap/extension-table'
+import Collaboration from '@tiptap/extension-collaboration'
+import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { Placeholder } from '@tiptap/extensions'
-import { Markdown } from '@tiptap/markdown'
 import { type Editor, EditorContent, useEditor, useEditorState } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import {
   Bold,
   Clipboard,
@@ -44,6 +42,7 @@ import {
   saveAttachment,
   storeImage,
 } from '../../lib/attachments'
+import { LIVE_FIELD, type LiveEditing } from '../../lib/collab/live'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
@@ -61,12 +60,11 @@ export interface NoteEditorHandle {
 }
 
 import { AiRangeExtension } from './ai-range'
-import { AttachmentImage } from './attachment-image'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
-import { ImageAwareParagraph } from './paragraph'
 import { RepeatDialog } from './RepeatDialog'
 import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
+import { noteSchema } from './schema'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -322,9 +320,15 @@ export function NoteEditor({
   onStateChange,
   onLeave,
   onRepeat,
+  live,
   ref,
 }: {
   note: Note
+  /**
+   * A shared note: the content comes from its Yjs document (and live room), not from
+   * `note.content`. Fixed for the editor's lifetime (NoteView remounts it to switch).
+   */
+  live?: LiveEditing
   /** A task of this daily note got a new repeat rule (null: stopped repeating). */
   onRepeat?: (task: string, rule: Recurrence | null) => void
   /** Lets the note header open the AI popover for the whole note. */
@@ -342,6 +346,7 @@ export function NoteEditor({
   /** The stored text the current edit started from. */
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
+  const liveRef = useRef(live)
   const noteRef = useRef(note)
   noteRef.current = note
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
@@ -393,40 +398,33 @@ export function NoteEditor({
     const saved = await callbacks.current.onSave(markdown, base.current)
     base.current = saved.content
     // The save merged in a change from another device: show it, unless the user kept typing.
-    if (pending.current === null && saved.content !== markdown) replaceContent(saved.content)
+    // (Live, the room is what the editor shows; the database follows it.)
+    if (!liveRef.current && pending.current === null && saved.content !== markdown)
+      replaceContent(saved.content)
     if (pending.current === null) callbacks.current.onStateChange?.('saved')
   }).current
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        paragraph: false,
-        heading: { levels: [1, 2, 3] },
-        link: {
-          openOnClick: false,
-          autolink: true,
-          linkOnPaste: true,
-          // Files dropped into a note are links to attachment:<id>.
-          protocols: ['attachment'],
-          shouldAutoLink: (url) => !plainUrls.current.has(url),
-        },
+      ...noteSchema({
+        // Live, undo is Yjs's own (only this device's changes are undone).
+        live: Boolean(live),
+        shouldAutoLink: (url) => !plainUrls.current.has(url),
+        resolveImage: (id) => attachmentObjectUrl(images.current, id),
       }),
-      ImageAwareParagraph,
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      // Markdown (GFM) tables, read and written as `| a | b |`.
-      TableKit.configure({ table: { resizable: false } }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
-      Markdown,
       AiRangeExtension,
       RecurringTasks,
-      AttachmentImage.configure({
-        resolve: (id) => attachmentObjectUrl(images.current, id),
-      }),
       LinkCards.configure({
         load: (url) => links.current.load(url),
         open: (url) => links.current.open(url),
       }),
+      ...(live
+        ? [
+            Collaboration.configure({ document: live.session.doc, field: LIVE_FIELD }),
+            CollaborationCaret.configure({ provider: live.session, user: live.user }),
+          ]
+        : []),
       Extension.create({
         name: 'aiShortcut',
         addKeyboardShortcuts: () => ({
@@ -437,8 +435,8 @@ export function NoteEditor({
         }),
       }),
     ],
-    content: note.content,
-    contentType: 'markdown',
+    ...(live ? {} : { content: note.content, contentType: 'markdown' as const }),
+    editable: !live?.readOnly,
     onCreate: ({ editor: e }) => {
       // URLs stored as plain text stay text when the user types next to them.
       e.state.doc.descendants((node) => {
@@ -623,8 +621,13 @@ export function NoteEditor({
     if (accountPhase === 'ready' && editor && !editor.isDestroyed) retryLinkCards(editor.view)
   }, [accountPhase, editor])
 
-  // Sync brought a newer version of this note: show it if there is no unsaved typing.
+  // Sync brought a newer version of this note: show it if there is no unsaved typing. (Live, the
+  // room is the source: the stored text is what the leading device wrote from it.)
   useEffect(() => {
+    if (liveRef.current) {
+      base.current = note.content
+      return
+    }
     if (pending.current !== null || note.content === base.current) return
     base.current = note.content
     replaceContent(note.content)

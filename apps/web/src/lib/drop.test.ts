@@ -23,3 +23,18 @@ describe('desktop window config', () => {
     }
   })
 })
+
+describe('desktop window size', () => {
+  // Half a 13" laptop screen is ~720pt: the window must fit it (macOS tiling and Split View), and
+  // the layout switches to overlay panels below 800px (App.tsx).
+  it('can be as narrow as half a small laptop screen on every platform', () => {
+    const files = readdirSync(TAURI).filter((f) => /^tauri(\.\w+)?\.conf\.json$/.test(f))
+    for (const file of files) {
+      const conf = JSON.parse(readFileSync(new URL(file, TAURI), 'utf8')) as {
+        app?: { windows?: { minWidth?: number }[] }
+      }
+      for (const window of conf.app?.windows ?? [])
+        expect({ file, fits: (window.minWidth ?? 0) <= 640 }).toEqual({ file, fits: true })
+    }
+  })
+})

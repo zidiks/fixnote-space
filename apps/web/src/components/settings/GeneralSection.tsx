@@ -29,7 +29,7 @@ export function GeneralSection() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-[160px_1fr] items-center gap-3">
+      <div className="grid grid-cols-[minmax(0,160px)_minmax(0,1fr)] items-center gap-3">
         <label htmlFor="settings-language" className="text-sm text-muted-foreground">
           {t('settings.language')}
         </label>

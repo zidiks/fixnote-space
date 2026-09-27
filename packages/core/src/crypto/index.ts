@@ -303,3 +303,67 @@ export function openShare(linkKey: string, shareId: string, sealed: string): str
   if (key.length !== 32) throw new DecryptionError('shared note')
   return sodium.to_string(open(key, sealed, `share:${shareId}`, 'shared note'))
 }
+
+// ── Live editing ─────────────────────────────────────────────────────────────
+// A room is one shared note edited live. Every message on the wire is sealed with the note's key,
+// which only its members hold, so the relay (Supabase Realtime) sees ciphertext only.
+
+/** One message for a room: nonce and ciphertext, bound to the room id. */
+export function sealRoomMessage(key: Uint8Array, roomId: string, data: Uint8Array): Uint8Array {
+  const nonce = sodium.randombytes_buf(sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES)
+  const ct = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
+    data,
+    `room:${roomId}`,
+    null,
+    nonce,
+    key,
+  )
+  const out = new Uint8Array(nonce.length + ct.length)
+  out.set(nonce)
+  out.set(ct, nonce.length)
+  return out
+}
+
+/** The message, or null when it was not sealed with this room's key (or was tampered with). */
+export function openRoomMessage(
+  key: Uint8Array,
+  roomId: string,
+  sealed: Uint8Array,
+): Uint8Array | null {
+  const n = sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
+  if (sealed.length <= n) return null
+  try {
+    return sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
+      null,
+      sealed.subarray(n),
+      `room:${roomId}`,
+      sealed.subarray(0, n),
+      key,
+    )
+  } catch {
+    return null
+  }
+}
+
+// ── Shared notes ─────────────────────────────────────────────────────────────
+// A shared note has its own random key. Each member gets it sealed to their public key (so only
+// they can open it); the note's Yjs state and its live-editing messages are sealed with it.
+
+/** A new shared note's key (base64url). */
+export function newNoteKey(): string {
+  return b64(sodium.randombytes_buf(32))
+}
+
+/** The raw bytes of a shared note's key, e.g. for its live-editing room. */
+export function noteKeyBytes(noteKey: string): Uint8Array {
+  return unb64(noteKey)
+}
+
+/** A shared note's Yjs state, sealed for the server, bound to the note's id. */
+export function sealSharedState(noteKey: string, sharedId: string, state: Uint8Array): string {
+  return seal(unb64(noteKey), state, `shared:${sharedId}`)
+}
+
+export function openSharedState(noteKey: string, sharedId: string, sealed: string): Uint8Array {
+  return open(unb64(noteKey), sealed, `shared:${sharedId}`, 'shared note')
+}
