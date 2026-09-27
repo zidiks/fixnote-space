@@ -52,6 +52,7 @@ interface NoteRow extends SqlRow {
   body: string
   tags: string | null
   pinned_at: number | null
+  shared_id: string | null
   created_at: number
   updated_at: number
 }
@@ -61,7 +62,7 @@ const PREVIEW_CHARS = 4000
 const TAG_SEP = '\u001f'
 
 const SUMMARY_COLUMNS = `
-  n.id, n.folder_id, n.type, n.daily_date, n.title, n.pinned_at, n.created_at, n.updated_at,
+  n.id, n.folder_id, n.type, n.daily_date, n.title, n.pinned_at, n.shared_id, n.created_at, n.updated_at,
   (SELECT group_concat(t.name, '${TAG_SEP}') FROM note_tags nt JOIN tags t ON t.id = nt.tag_id
      WHERE nt.note_id = n.id) AS tags`
 
@@ -78,6 +79,7 @@ function toSummary(row: NoteRow): NoteSummary {
     tasks: taskProgress(body),
     cover: body.match(/!\[[^\]]*\]\(((?:attachment:|https?:\/\/)[^)\s]+)/)?.[1] ?? null,
     pinnedAt: row.pinned_at === null ? null : Number(row.pinned_at),
+    sharedId: row.shared_id ?? null,
     createdAt: Number(row.created_at),
     updatedAt: Number(row.updated_at),
   }

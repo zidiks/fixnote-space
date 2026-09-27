@@ -1,49 +1,56 @@
 import { useTranslation } from '@fixnote/i18n'
-import { Button } from '@fixnote/ui'
 import { Users } from 'lucide-react'
-import { useCallback, useEffect, useReducer, useState } from 'react'
-import { toast } from 'sonner'
-import { joinLive, type LiveEditing } from '../lib/collab/live'
+import { useEffect, useReducer, useState } from 'react'
+import { useAccount } from '../lib/account/account'
+import { type LiveEditing, openShared } from '../lib/collab/live'
 
-/** Live editing of one note on the account's devices: join, leave, and the session while open. */
-export function useLiveNote(noteId: string) {
-  const { t } = useTranslation()
+/**
+ * A shared note's live editing while it is open: the room is joined when the note opens (and the
+ * account is unlocked) and left when it closes. `failed` when this device cannot open it (signed
+ * out): the note is then edited as plain text and sync brings the edits in later.
+ */
+export function useSharedLive(sharedId: string | null) {
+  const phase = useAccount((s) => s.phase)
   const [live, setLive] = useState<LiveEditing | null>(null)
-  const [joining, setJoining] = useState(false)
+  const [opening, setOpening] = useState(false)
+  const [failed, setFailed] = useState(false)
 
-  // Leaving the note (or the live mode) closes the room.
-  useEffect(() => () => live?.session.destroy(), [live])
-  // biome-ignore lint/correctness/useExhaustiveDependencies: another note means another room
-  useEffect(() => () => setLive(null), [noteId])
-
-  const start = useCallback(async () => {
-    setJoining(true)
-    try {
-      const joined = await joinLive(noteId)
-      if (joined) setLive(joined)
-      else toast.error(t('live.unavailable'))
-    } finally {
-      setJoining(false)
+  useEffect(() => {
+    if (!sharedId || phase !== 'ready') {
+      setFailed(Boolean(sharedId))
+      return
     }
-  }, [noteId, t])
-  const stop = useCallback(() => setLive(null), [])
-  return { live, joining, start, stop }
+    let alive = true
+    let opened: LiveEditing | null = null
+    setOpening(true)
+    setFailed(false)
+    void openShared(sharedId)
+      .then((l) => {
+        if (!alive) {
+          l?.session.destroy()
+          return
+        }
+        opened = l
+        setLive(l)
+        setFailed(!l)
+      })
+      .catch(() => alive && setFailed(true))
+      .finally(() => alive && setOpening(false))
+    return () => {
+      alive = false
+      opened?.session.destroy()
+      setLive(null)
+    }
+  }, [sharedId, phase])
+
+  return { live, opening, failed }
 }
 
-/** Under the note header while editing live: how many devices are in, the round trip, leave. */
-export function LiveBar({
-  live,
-  joining,
-  onLeave,
-}: {
-  live: LiveEditing | null
-  joining: boolean
-  onLeave: () => void
-}) {
+/** Under the note header of a shared note: who else is in it now, read-only, latency. */
+export function LiveBar({ live }: { live: LiveEditing }) {
   const { t } = useTranslation()
   const [, refresh] = useReducer((n: number) => n + 1, 0)
   useEffect(() => {
-    if (!live) return
     live.session.awareness.on('change', refresh)
     live.session.onRtt = refresh
     return () => {
@@ -51,35 +58,33 @@ export function LiveBar({
       live.session.onRtt = undefined
     }
   }, [live])
-  if (!live && !joining) return null
 
-  const devices = live?.session.devices() ?? 1
-  const rtt = live?.session.rtt
+  const self = live.session.doc.clientID
+  const here = [
+    ...new Set(
+      [...live.session.awareness.getStates()]
+        .filter(([id]) => id !== self)
+        .map(([, state]) => (state as { user?: { name?: string } }).user?.name)
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ]
+  const rtt = live.session.rtt
+  const parts = [
+    t('people.shared'),
+    live.readOnly ? t('people.readOnly') : '',
+    here.length ? t('people.here', { names: here.join(', ') }) : '',
+    here.length && rtt !== null ? t('people.latency', { ms: Math.round(rtt / 2) }) : '',
+  ].filter(Boolean)
+
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border bg-card px-3 py-2 text-sm">
-      <span className="relative flex size-2">
-        <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
-        <span className="relative inline-flex size-2 rounded-full bg-success" />
-      </span>
-      <span className="min-w-0 flex-1">
-        {joining
-          ? t('live.connecting')
-          : devices > 1
-            ? [
-                t('live.devices', { count: devices }),
-                rtt !== null && rtt !== undefined
-                  ? t('live.latency', { ms: Math.round(rtt / 2) })
-                  : '',
-              ]
-                .filter(Boolean)
-                .join(' · ')
-            : t('live.alone')}
-      </span>
-      {live ? (
-        <Button size="sm" variant="ghost" onClick={onLeave}>
-          <Users />
-          {t('live.leave')}
-        </Button>
+    <div className="mt-3 flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2 text-sm">
+      <Users className="size-4 shrink-0 text-brand" />
+      <span className="min-w-0 flex-1">{parts.join(' · ')}</span>
+      {here.length ? (
+        <span className="relative flex size-2 shrink-0">
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-success/60" />
+          <span className="relative inline-flex size-2 rounded-full bg-success" />
+        </span>
       ) : null}
     </div>
   )

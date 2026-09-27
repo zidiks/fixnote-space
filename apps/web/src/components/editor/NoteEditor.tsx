@@ -12,12 +12,8 @@ import {
 import { Extension, getMarkRange } from '@tiptap/core'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
-import { TaskItem, TaskList } from '@tiptap/extension-list'
-import { TableKit } from '@tiptap/extension-table'
 import { Placeholder } from '@tiptap/extensions'
-import { Markdown } from '@tiptap/markdown'
 import { type Editor, EditorContent, useEditor, useEditorState } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import {
   Bold,
   Clipboard,
@@ -46,7 +42,7 @@ import {
   saveAttachment,
   storeImage,
 } from '../../lib/attachments'
-import { LIVE_FIELD, type LiveEditing, seedLive } from '../../lib/collab/live'
+import { LIVE_FIELD, type LiveEditing } from '../../lib/collab/live'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
@@ -64,12 +60,11 @@ export interface NoteEditorHandle {
 }
 
 import { AiRangeExtension } from './ai-range'
-import { AttachmentImage } from './attachment-image'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
-import { ImageAwareParagraph } from './paragraph'
 import { RepeatDialog } from './RepeatDialog'
 import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
+import { noteSchema } from './schema'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -330,7 +325,7 @@ export function NoteEditor({
 }: {
   note: Note
   /**
-   * Edited live with the account's other devices: the content comes from the room, not from
+   * A shared note: the content comes from its Yjs document (and live room), not from
    * `note.content`. Fixed for the editor's lifetime (NoteView remounts it to switch).
    */
   live?: LiveEditing
@@ -352,8 +347,6 @@ export function NoteEditor({
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
   const liveRef = useRef(live)
-  /** Saves on a timer or blur; live, only the leading device writes (the others' edits reach it). */
-  const mayAutosave = () => !liveRef.current || liveRef.current.session.isLeader()
   const noteRef = useRef(note)
   noteRef.current = note
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
@@ -413,32 +406,15 @@ export function NoteEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
+      ...noteSchema({
         // Live, undo is Yjs's own (only this device's changes are undone).
-        ...(live ? { undoRedo: false as const } : {}),
-        paragraph: false,
-        heading: { levels: [1, 2, 3] },
-        link: {
-          openOnClick: false,
-          autolink: true,
-          linkOnPaste: true,
-          // Files dropped into a note are links to attachment:<id>.
-          protocols: ['attachment'],
-          shouldAutoLink: (url) => !plainUrls.current.has(url),
-        },
+        live: Boolean(live),
+        shouldAutoLink: (url) => !plainUrls.current.has(url),
+        resolveImage: (id) => attachmentObjectUrl(images.current, id),
       }),
-      ImageAwareParagraph,
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      // Markdown (GFM) tables, read and written as `| a | b |`.
-      TableKit.configure({ table: { resizable: false } }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
-      Markdown,
       AiRangeExtension,
       RecurringTasks,
-      AttachmentImage.configure({
-        resolve: (id) => attachmentObjectUrl(images.current, id),
-      }),
       LinkCards.configure({
         load: (url) => links.current.load(url),
         open: (url) => links.current.open(url),
@@ -460,9 +436,8 @@ export function NoteEditor({
       }),
     ],
     ...(live ? {} : { content: note.content, contentType: 'markdown' as const }),
+    editable: !live?.readOnly,
     onCreate: ({ editor: e }) => {
-      // A room nobody has filled yet starts from the note as stored.
-      if (live) seedLive(e, note.content, live.session.doc)
       // URLs stored as plain text stay text when the user types next to them.
       e.state.doc.descendants((node) => {
         if (!node.isText || node.marks.some((m) => m.type.name === 'link')) return
@@ -532,13 +507,9 @@ export function NoteEditor({
       latest.current = markdown
       pending.current = markdown
       clearTimeout(timer.current)
-      timer.current = setTimeout(() => {
-        if (mayAutosave()) void flush()
-      }, SAVE_DELAY)
+      timer.current = setTimeout(() => void flush(), SAVE_DELAY)
     },
-    onBlur: () => {
-      if (mayAutosave()) void flush()
-    },
+    onBlur: () => void flush(),
   })
   editorRef.current = editor
 

@@ -22,8 +22,6 @@ export interface AccountKeys {
   readonly checkKey: Uint8Array
   /** Derives each shared link's key, so any device of the account can show or update the link. */
   readonly shareKey: Uint8Array
-  /** Derives each live-editing room's id and key (own devices editing one note together). */
-  readonly collabKey: Uint8Array
   readonly box: { publicKey: Uint8Array; privateKey: Uint8Array }
 }
 
@@ -97,7 +95,6 @@ export function deriveKeys(secret: Uint8Array): AccountKeys {
     folderKey: sub(2, 'fn_fold_'),
     checkKey: sub(3, 'fn_check'),
     shareKey: sub(5, 'fn_share'),
-    collabKey: sub(6, 'fn_colab'),
     box: { publicKey: box.publicKey, privateKey: box.privateKey },
   }
 }
@@ -308,15 +305,8 @@ export function openShare(linkKey: string, shareId: string, sealed: string): str
 }
 
 // ── Live editing ─────────────────────────────────────────────────────────────
-// A room is one note edited live. Its id is opaque to the server (a hash, not the note id) and its
-// key never leaves the account's devices; every message on the wire is sealed with it.
-
-/** The room id and key for editing `noteId` live on the account's own devices. */
-export function collabRoom(keys: AccountKeys, noteId: string): { id: string; key: Uint8Array } {
-  const derive = (what: string, size: number) =>
-    sodium.crypto_generichash(size, sodium.from_string(`collab:${what}:${noteId}`), keys.collabKey)
-  return { id: b64(derive('room', 16)), key: derive('key', 32) }
-}
+// A room is one shared note edited live. Every message on the wire is sealed with the note's key,
+// which only its members hold, so the relay (Supabase Realtime) sees ciphertext only.
 
 /** One message for a room: nonce and ciphertext, bound to the room id. */
 export function sealRoomMessage(key: Uint8Array, roomId: string, data: Uint8Array): Uint8Array {
@@ -353,4 +343,27 @@ export function openRoomMessage(
   } catch {
     return null
   }
+}
+
+// ── Shared notes ─────────────────────────────────────────────────────────────
+// A shared note has its own random key. Each member gets it sealed to their public key (so only
+// they can open it); the note's Yjs state and its live-editing messages are sealed with it.
+
+/** A new shared note's key (base64url). */
+export function newNoteKey(): string {
+  return b64(sodium.randombytes_buf(32))
+}
+
+/** The raw bytes of a shared note's key, e.g. for its live-editing room. */
+export function noteKeyBytes(noteKey: string): Uint8Array {
+  return unb64(noteKey)
+}
+
+/** A shared note's Yjs state, sealed for the server, bound to the note's id. */
+export function sealSharedState(noteKey: string, sharedId: string, state: Uint8Array): string {
+  return seal(unb64(noteKey), state, `shared:${sharedId}`)
+}
+
+export function openSharedState(noteKey: string, sharedId: string, sealed: string): Uint8Array {
+  return open(unb64(noteKey), sealed, `shared:${sharedId}`, 'shared note')
 }

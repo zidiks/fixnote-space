@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import * as Y from 'yjs'
-import { collabRoom, cryptoReady, deriveKeys, newRecoverySecret } from '../crypto'
+import { cryptoReady, newNoteKey, noteKeyBytes } from '../crypto'
 import { CollabSession, type CollabTransport } from './session'
 
 /**
@@ -52,7 +52,7 @@ afterEach(() => {
 })
 
 describe('CollabSession', () => {
-  const room = () => collabRoom(deriveKeys(newRecoverySecret()), 'note-1')
+  const room = () => ({ id: 'note-1', key: noteKeyBytes(newNoteKey()) })
 
   it('converges when two devices type at once over a slow, reordering network', async () => {
     vi.useFakeTimers()

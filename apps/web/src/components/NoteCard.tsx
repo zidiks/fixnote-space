@@ -25,6 +25,7 @@ import {
   PinOff,
   SquareArrowOutUpRight,
   Trash2,
+  Users,
 } from 'lucide-react'
 import { useUi } from '../app/store'
 import { attachmentObjectUrl } from '../lib/attachments'
@@ -89,6 +90,9 @@ export function NoteCard({ note, inFolder }: { note: NoteSummary; inFolder?: str
             <Icon className="size-3.5" />
             <span>{formatCardDate(note.updatedAt, i18n.resolvedLanguage)}</span>
             {pinned ? <Pin className="size-3.5 text-brand" aria-label={t('pin.pinned')} /> : null}
+            {note.sharedId ? (
+              <Users className="size-3.5 text-brand" aria-label={t('people.badge')} />
+            ) : null}
             {subfolder ? (
               <span className="flex min-w-0 items-center gap-1">
                 <Folder className="size-3.5 shrink-0" />

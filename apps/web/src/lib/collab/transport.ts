@@ -10,15 +10,17 @@ const toB64 = (bytes: Uint8Array) => {
 const fromB64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
 
 /**
- * A live-editing room over Supabase Realtime broadcast. Messages are sealed before they get here;
- * the channel name is the room id, a hash that says nothing about the note. Sends made before the
- * channel is joined wait for it.
+ * A shared note's live-editing room over a private Supabase Realtime channel "shared:<id>": only
+ * its members may join, only owner and editors may send (policies on realtime.messages). Messages
+ * are sealed before they get here. Sends made before the channel is joined wait for it.
  */
-export function realtimeTransport(client: SupabaseClient, roomId: string): CollabTransport {
+export function realtimeTransport(client: SupabaseClient, sharedId: string): CollabTransport {
   let handler: ((m: Uint8Array) => void) | null = null
   let joined = false
   const waiting: string[] = []
-  const channel = client.channel(`collab:${roomId}`, { config: { broadcast: { self: false } } })
+  const channel = client.channel(`shared:${sharedId}`, {
+    config: { private: true, broadcast: { self: false } },
+  })
   const post = (d: string) => void channel.send({ type: 'broadcast', event: 'm', payload: { d } })
   channel.on('broadcast', { event: 'm' }, ({ payload }) => {
     const d = (payload as { d?: unknown } | undefined)?.d

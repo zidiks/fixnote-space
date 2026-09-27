@@ -35,6 +35,23 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           void qc.invalidateQueries()
           notifyNotesChanged()
         },
+        onShared: (notes) =>
+          toast(
+            notes.length === 1
+              ? i18n.t('people.sharedWithYou', {
+                  title: notes[0]?.title || i18n.t('common.untitled'),
+                })
+              : i18n.t('people.sharedWithYouMany', { count: notes.length }),
+            {
+              action: {
+                label: i18n.t('menu.open'),
+                onClick: () => {
+                  const first = notes[0]
+                  if (first) useUi.getState().navigate({ kind: 'note', id: first.noteId })
+                },
+              },
+            },
+          ),
         onConflicts: (count) =>
           toast(i18n.t('sync.conflictsFound', { count }), {
             duration: 15_000,

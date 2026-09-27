@@ -77,6 +77,7 @@ export class CollabSession {
   private destroyed = false
   private answered = false
   private onAnswered: (() => void)[] = []
+  private readonly listenOnly: boolean
 
   constructor(opts: {
     key: Uint8Array
@@ -87,6 +88,8 @@ export class CollabSession {
     awarenessMs?: number
     pingMs?: number
     now?: () => number
+    /** Only receives (a viewer: the server does not let it send anyway). */
+    listenOnly?: boolean
   }) {
     this.doc = opts.doc ?? new Y.Doc()
     this.awareness = new Awareness(this.doc)
@@ -96,12 +99,13 @@ export class CollabSession {
     this.batchMs = opts.batchMs ?? 50
     this.awarenessMs = opts.awarenessMs ?? 100
     this.now = opts.now ?? (() => performance.now())
+    this.listenOnly = opts.listenOnly ?? false
     this.doc.on('update', this.onDocUpdate)
     this.awareness.on('update', this.onAwarenessUpdate)
     this.stopListening = this.transport.onMessage((m) => this.receive(m))
     this.send(HELLO, Y.encodeStateVector(this.doc))
     const pingMs = opts.pingMs ?? 3000
-    if (pingMs > 0) this.pingTimer = setInterval(() => this.ping(), pingMs)
+    if (pingMs > 0 && !this.listenOnly) this.pingTimer = setInterval(() => this.ping(), pingMs)
   }
 
   /**
@@ -122,14 +126,6 @@ export class CollabSession {
   /** Devices in the room, this one included (by their cursors' presence). */
   devices(): number {
     return Math.max(1, this.awareness.getStates().size)
-  }
-
-  /**
-   * One device writes the note to the database while several edit it (the one with the lowest
-   * client id), so sync does not see the same edit arrive from every device.
-   */
-  isLeader(): boolean {
-    return Math.min(...this.awareness.getStates().keys(), this.doc.clientID) === this.doc.clientID
   }
 
   /** Sends what is waiting now (normally done every `batchMs`). */
@@ -192,7 +188,7 @@ export class CollabSession {
   }
 
   private send(type: number, body: Uint8Array) {
-    if (this.destroyed) return
+    if (this.destroyed || this.listenOnly) return
     const sealed = sealRoomMessage(this.key, this.roomId, frame(type, body))
     this.stats.sent++
     this.stats.bytesSent += sealed.length

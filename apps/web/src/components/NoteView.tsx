@@ -27,11 +27,11 @@ import {
   PinOff,
   Sparkles,
   Trash2,
-  Users,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { useUi } from '../app/store'
-import { useAccount } from '../lib/account/account'
+import { sharedContext, useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { suggestForNewNote } from '../lib/assistant/tidy'
 import { useDb, useRepo } from '../lib/db'
@@ -51,7 +51,7 @@ import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { ConflictBanner } from './ConflictBanner'
 import { DailyBar } from './DailyBar'
 import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/NoteEditor'
-import { LiveBar, useLiveNote } from './LiveBar'
+import { LiveBar, useSharedLive } from './LiveBar'
 import { NewFolderDialog } from './NewFolderDialog'
 import { ShareDialog } from './ShareDialog'
 import { VOICE_KEYS } from './VoiceBar'
@@ -75,7 +75,8 @@ export function NoteView({ id }: { id: string }) {
   const voice = useVoice((s) => s.status)
   const aiRequest = useUi((s) => s.aiRequest)
   const [sharing, setSharing] = useState(false)
-  const liveNote = useLiveNote(id)
+  // A shared note is always edited live with the people it is shared with.
+  const shared = useSharedLive(note.data?.sharedId ?? null)
   // Links live on the server: not in a build without one, and never in local-only mode.
   const hasServer = useAccount((s) => s.phase !== 'disabled')
   const localOnly = useLlm((s) => s.localOnly)
@@ -106,7 +107,24 @@ export function NoteView({ id }: { id: string }) {
   const n = note.data
   const folder = folders.find((f) => f.id === n.folderId)
 
-  const onDelete = () => void deleteWithUndo(n.id)
+  const onDelete = async () => {
+    const sharedId = n.sharedId
+    const ctx = sharedId ? sharedContext() : null
+    if (sharedId && ctx) {
+      // A shared note: its owner stops sharing it (then deletes their copy as usual); anyone
+      // else leaves it, and it goes away from their devices.
+      const doc = await ctx.shared.doc(sharedId)
+      if (doc?.role !== 'owner') {
+        await ctx.shared.leave(sharedId)
+        await invalidate()
+        navigate({ kind: 'home' })
+        toast(t('people.left'))
+        return
+      }
+      await ctx.shared.unshare(sharedId)
+    }
+    void deleteWithUndo(n.id)
+  }
   const pinned = n.pinnedAt !== null
 
   return (
@@ -236,24 +254,6 @@ export function NoteView({ id }: { id: string }) {
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  aria-pressed={liveNote.live !== null}
-                  disabled={liveNote.joining}
-                  className={cn(liveNote.live && 'text-brand')}
-                  onClick={() => (liveNote.live ? liveNote.stop() : void liveNote.start())}
-                  aria-label={t('live.start')}
-                >
-                  <Users />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('live.start')}</TooltipContent>
-            </Tooltip>
-          ) : null}
-          {canShare ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
                   onClick={() => setSharing(true)}
                   aria-label={t('share.button')}
                 >
@@ -269,7 +269,7 @@ export function NoteView({ id }: { id: string }) {
               <Button
                 variant="ghost"
                 size="icon-xs"
-                onClick={onDelete}
+                onClick={() => void onDelete()}
                 aria-label={t('note.delete')}
               >
                 <Trash2 />
@@ -306,48 +306,61 @@ export function NoteView({ id }: { id: string }) {
 
       {n.type === 'daily' && n.dailyDate ? <DailyBar note={n} /> : null}
       <ConflictBanner note={n} />
-      <LiveBar live={liveNote.live} joining={liveNote.joining} onLeave={liveNote.stop} />
+      {shared.live ? <LiveBar live={shared.live} /> : null}
 
       <div className="mt-6">
-        <NoteEditor
-          // Switching live editing on or off builds the editor anew (its content source changes).
-          key={`${n.id}:${liveNote.live ? 'live' : 'solo'}`}
-          ref={editor}
-          note={n}
-          live={liveNote.live ?? undefined}
-          onStateChange={setSaveState}
-          onRepeat={async (task, rule) => {
-            // The days after this one that exist already follow the new rule too.
-            const changed = await repo.applyRecurrence(n.dailyDate as string, task, rule)
-            for (const c of changed) qc.setQueryData(keys.note(c.id), c)
-            if (changed.length) void invalidate()
-          }}
-          onSave={async (markdown, base) => {
-            const saved = await repo.updateContent(n.id, markdown, { base })
-            qc.setQueryData(keys.note(n.id), saved)
-            void invalidate()
-            return saved
-          }}
-          onLeave={(markdown) => {
-            // A note left blank is not worth keeping: nothing to remember, nothing to tidy later.
-            if (n.type === 'text' && !markdown.trim()) {
-              void repo.deleteNote(n.id).then(invalidate)
-              return
-            }
-            // A fresh note without a folder: offer a folder, tags and a title for it.
-            const fresh = Date.now() - n.createdAt < 2 * 3600_000
-            if (n.type === 'text' && fresh && n.folderId === null && markdown.trim().length >= 80) {
-              void suggestForNewNote(n, {
-                tidy,
-                audit,
-                refresh: async () => {
-                  await Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['tidy'] })])
-                },
-                review: () => useUi.getState().navigate({ kind: 'tidy' }),
-              })
-            }
-          }}
-        />
+        {n.sharedId && !shared.live && !shared.failed ? (
+          <p className="text-sm text-muted-foreground">{t('people.connecting')}</p>
+        ) : (
+          <NoteEditor
+            // Opening a shared note's live document builds the editor anew (its content source changes).
+            key={`${n.id}:${shared.live ? 'live' : 'solo'}`}
+            ref={editor}
+            note={n}
+            live={shared.live ?? undefined}
+            onStateChange={setSaveState}
+            onRepeat={async (task, rule) => {
+              // The days after this one that exist already follow the new rule too.
+              const changed = await repo.applyRecurrence(n.dailyDate as string, task, rule)
+              for (const c of changed) qc.setQueryData(keys.note(c.id), c)
+              if (changed.length) void invalidate()
+            }}
+            onSave={async (markdown, base) => {
+              const saved = await repo.updateContent(n.id, markdown, { base })
+              // A shared note: its document goes to the others (the Markdown is this device's copy).
+              await shared.live?.persist(saved.content)
+              qc.setQueryData(keys.note(n.id), saved)
+              void invalidate()
+              return saved
+            }}
+            onLeave={(markdown) => {
+              // A shared note belongs to its people: never thrown away or tidied from here.
+              if (n.sharedId) return
+              // A note left blank is not worth keeping: nothing to remember, nothing to tidy later.
+              if (n.type === 'text' && !markdown.trim()) {
+                void repo.deleteNote(n.id).then(invalidate)
+                return
+              }
+              // A fresh note without a folder: offer a folder, tags and a title for it.
+              const fresh = Date.now() - n.createdAt < 2 * 3600_000
+              if (
+                n.type === 'text' &&
+                fresh &&
+                n.folderId === null &&
+                markdown.trim().length >= 80
+              ) {
+                void suggestForNewNote(n, {
+                  tidy,
+                  audit,
+                  refresh: async () => {
+                    await Promise.all([invalidate(), qc.invalidateQueries({ queryKey: ['tidy'] })])
+                  },
+                  review: () => useUi.getState().navigate({ kind: 'tidy' }),
+                })
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   )
