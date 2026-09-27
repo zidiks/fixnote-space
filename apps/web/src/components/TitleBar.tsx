@@ -117,6 +117,9 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
   const platform = usePlatform()
   const ui = useUi()
   const drag = platform.kind === 'desktop' ? { 'data-tauri-drag-region': true } : {}
+  // Docked beside the content, or (narrow window) opened over it.
+  const docked = ui.sidebarOpen && !ui.narrow
+  const shown = ui.narrow ? ui.drawerOpen : ui.sidebarOpen
 
   return (
     <header {...drag} className="flex h-11 shrink-0 select-none items-stretch">
@@ -124,11 +127,11 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         {...drag}
         className={cn(
           'flex shrink-0 items-center gap-0.5 pr-2 pl-3',
-          ui.sidebarOpen && 'w-64 border-r border-sidebar-border bg-sidebar',
+          docked && 'w-64 border-r border-sidebar-border bg-sidebar',
           platform.chrome === 'mac-overlay' && 'pl-[78px]',
         )}
       >
-        {ui.sidebarOpen ? (
+        {docked ? (
           <button
             type="button"
             onClick={() => ui.navigate({ kind: 'home' })}
@@ -150,17 +153,14 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
             <SquarePen />
           </Button>
         </Tip>
-        <Tip
-          label={ui.sidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')}
-          hint={shortcutLabel('\\')}
-        >
+        <Tip label={shown ? t('sidebar.collapse') : t('sidebar.expand')} hint={shortcutLabel('\\')}>
           <Button
             variant="ghost"
             size="icon-xs"
             onClick={ui.toggleSidebar}
-            aria-label={ui.sidebarOpen ? t('sidebar.collapse') : t('sidebar.expand')}
+            aria-label={shown ? t('sidebar.collapse') : t('sidebar.expand')}
           >
-            {ui.sidebarOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
+            {shown ? <PanelLeftClose /> : <PanelLeftOpen />}
           </Button>
         </Tip>
       </div>

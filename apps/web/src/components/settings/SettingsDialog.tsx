@@ -25,7 +25,7 @@ export function SettingsDialog() {
         aria-describedby={undefined}
         className="top-[12%] flex h-[min(560px,76vh)] max-w-3xl"
       >
-        <nav className="flex w-60 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2">
+        <nav className="flex w-44 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2 sm:w-60">
           <DialogTitle className="px-2.5 pt-1.5 pb-3 text-sm font-semibold">
             {t('settings.title')}
           </DialogTitle>
@@ -40,12 +40,12 @@ export function SettingsDialog() {
                 section === id && 'bg-sidebar-accent font-medium text-foreground',
               )}
             >
-              <Icon className="size-4 opacity-70" />
+              <Icon className="size-4 shrink-0 opacity-70" />
               {t(`settings.${id}`)}
             </button>
           ))}
         </nav>
-        <div className="relative min-w-0 flex-1 overflow-y-auto p-6">
+        <div className="relative min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
           <Button
             variant="ghost"
             size="icon-xs"

@@ -71,12 +71,20 @@ function Content() {
 }
 
 function AppShell() {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const platform = usePlatform()
   const ui = useUi()
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
-  const { sidebarOpen, chatOpen, theme } = ui
+  const { sidebarOpen, chatOpen, theme, narrow, drawerOpen } = ui
+  // Half a laptop screen or less: panels open over the content instead of squeezing it.
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 799px)')
+    const update = () => useUi.getState().setNarrow(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   const newNote = () => {
     const route = useUi.getState().route
@@ -134,12 +142,25 @@ function AppShell() {
   }, [i18n.resolvedLanguage])
 
   return (
-    <div className="flex h-full">
+    <div className="relative flex h-full">
       <div className="flex min-w-0 flex-1 flex-col">
         <TitleBar onNewNote={newNote} />
         <StorageBanner />
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          {sidebarOpen ? <Sidebar /> : null}
+        <div className="relative flex min-h-0 flex-1 overflow-hidden">
+          {sidebarOpen && !narrow ? <Sidebar /> : null}
+          {narrow && drawerOpen ? (
+            <>
+              <button
+                type="button"
+                aria-label={t('sidebar.collapse')}
+                className="absolute inset-0 z-30 bg-black/30"
+                onClick={ui.toggleSidebar}
+              />
+              <div className="absolute inset-y-0 left-0 z-40 shadow-xl">
+                <Sidebar />
+              </div>
+            </>
+          ) : null}
           <main className="relative flex min-w-0 flex-1 flex-col">
             <div className="flex-1 overflow-y-auto">
               <Content />
@@ -148,7 +169,21 @@ function AppShell() {
         </div>
       </div>
       {/* Full window height, beside the title bar: its buttons end next to the panel. */}
-      {chatOpen ? <ChatPanel /> : null}
+      {chatOpen && narrow ? (
+        <>
+          <button
+            type="button"
+            aria-label={t('chat.close')}
+            className="absolute inset-0 z-30 bg-black/30"
+            onClick={() => ui.setChatOpen(false)}
+          />
+          <div className="absolute inset-y-0 right-0 z-40 flex max-w-full">
+            <ChatPanel />
+          </div>
+        </>
+      ) : chatOpen ? (
+        <ChatPanel />
+      ) : null}
       <Spotlight />
       <SettingsDialog />
       <VoiceBar />

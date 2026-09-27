@@ -25,6 +25,11 @@ export const sameRoute = (a: Route, b: Route) => JSON.stringify(a) === JSON.stri
 
 interface UiState {
   sidebarOpen: boolean
+  /** A narrow window (half a laptop screen): the sidebar and the assistant open over the content. */
+  narrow: boolean
+  /** The sidebar opened over the content in a narrow window; closes on navigation. */
+  drawerOpen: boolean
+  setNarrow: (narrow: boolean) => void
   chatOpen: boolean
   spotlightOpen: boolean
   settings: SettingsSection | null
@@ -53,6 +58,9 @@ export const useUi = create<UiState>()(
   persist(
     (set) => ({
       sidebarOpen: true,
+      narrow: false,
+      drawerOpen: false,
+      setNarrow: (narrow) => set({ narrow, drawerOpen: false }),
       chatOpen: false,
       spotlightOpen: false,
       settings: null,
@@ -62,7 +70,8 @@ export const useUi = create<UiState>()(
       route: { kind: 'home' },
       back: [],
       forward: [],
-      toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+      toggleSidebar: () =>
+        set((s) => (s.narrow ? { drawerOpen: !s.drawerOpen } : { sidebarOpen: !s.sidebarOpen })),
       setChatOpen: (chatOpen) => set({ chatOpen }),
       toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
       setSpotlightOpen: (spotlightOpen) => set({ spotlightOpen }),
@@ -72,9 +81,14 @@ export const useUi = create<UiState>()(
       requestAi: (aiRequest) => set({ aiRequest }),
       navigate: (route, opts) =>
         set((s) => {
-          if (sameRoute(route, s.route)) return {}
-          if (opts?.replace) return { route }
-          return { route, back: [...s.back, s.route].slice(-HISTORY_LIMIT), forward: [] }
+          if (sameRoute(route, s.route)) return { drawerOpen: false }
+          if (opts?.replace) return { route, drawerOpen: false }
+          return {
+            route,
+            back: [...s.back, s.route].slice(-HISTORY_LIMIT),
+            forward: [],
+            drawerOpen: false,
+          }
         }),
       goBack: () =>
         set((s) => {
