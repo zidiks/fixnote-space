@@ -3,7 +3,7 @@ import { isLang } from '../../i18n'
 import { blogFeed } from '../../lib/rss'
 
 export const getStaticPaths = (() => [
-  { params: { lang: 'en' } },
+  { params: { lang: 'ru' } },
   { params: { lang: 'es' } },
 ]) satisfies GetStaticPaths
 
