@@ -26,6 +26,7 @@ export interface Note extends NoteSummary {
 export interface NoteFilter {
   /** `inbox` = notes without a folder. */
   scope?: 'all' | 'inbox'
+  /** The folder and its subfolders, at any depth. */
   folderId?: string
   tag?: string
   type?: NoteType

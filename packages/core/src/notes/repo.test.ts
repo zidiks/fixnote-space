@@ -128,6 +128,11 @@ describe('listNotes', () => {
     expect(await titles({ tag: 'work/fixnote' })).toEqual(['filed #work/fixnote'])
     expect(await titles({ updatedSince: t })).toEqual(['Daily', 'filed #work/fixnote'])
     expect(await repo.counts()).toEqual({ all: 3, inbox: 2, daily: 1 })
+    // A folder also lists the notes of its subfolders.
+    const sub = await repo.createFolder('Sub', folder.id)
+    await repo.createNote({ content: 'deeper', folderId: sub.id })
+    expect(await titles({ folderId: folder.id })).toEqual(['deeper', 'filed #work/fixnote'])
+    expect(await titles({ folderId: sub.id })).toEqual(['deeper'])
   })
 })
 

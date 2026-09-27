@@ -3,6 +3,23 @@
  * which folder sits inside which. Siblings keep the order they come in; a folder whose parent is
  * missing is shown at the top level.
  */
+/** Notes in each folder counting its subfolders, at any depth (from each folder's own count). */
+export function subtreeCounts(
+  folders: readonly { id: string; parentId: string | null; noteCount: number }[],
+): Map<string, number> {
+  const parent = new Map(folders.map((f) => [f.id, f.parentId]))
+  const total = new Map(folders.map((f) => [f.id, 0]))
+  for (const f of folders) {
+    // Add the folder's own notes to it and every folder above it (a cycle stops the climb).
+    const seen = new Set<string>()
+    for (let at: string | null | undefined = f.id; at && !seen.has(at); at = parent.get(at)) {
+      seen.add(at)
+      total.set(at, (total.get(at) ?? 0) + f.noteCount)
+    }
+  }
+  return total
+}
+
 export function folderTree<F extends { id: string; parentId: string | null }>(
   folders: readonly F[],
 ): { folder: F; depth: number }[] {

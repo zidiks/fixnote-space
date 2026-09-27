@@ -52,7 +52,7 @@ function Cover({ src }: { src: string }) {
       loading="lazy"
       referrerPolicy="no-referrer"
       draggable={false}
-      className="-mx-4 -mt-4 mb-3 h-28 w-[calc(100%+2rem)] max-w-none object-cover"
+      className="-mx-2.5 -mt-2.5 mb-3 h-28 w-[calc(100%+1.25rem)] max-w-none rounded-lg object-cover"
       onError={(e) => {
         e.currentTarget.style.display = 'none'
       }}
@@ -60,7 +60,7 @@ function Cover({ src }: { src: string }) {
   )
 }
 
-export function NoteCard({ note }: { note: NoteSummary }) {
+export function NoteCard({ note, inFolder }: { note: NoteSummary; inFolder?: string }) {
   const { t, i18n } = useTranslation()
   const navigate = useUi((s) => s.navigate)
   const folders = useFolders().data ?? []
@@ -69,6 +69,11 @@ export function NoteCard({ note }: { note: NoteSummary }) {
   const setPinned = useSetPinned()
   const pinned = note.pinnedAt !== null
   const Icon = note.type === 'daily' ? CalendarDays : FileText
+  // Listed in a parent folder: say which subfolder the note is in.
+  const subfolder =
+    inFolder && note.folderId && note.folderId !== inFolder
+      ? folders.find((f) => f.id === note.folderId)?.name
+      : undefined
   const open = () => navigate({ kind: 'note', id: note.id })
 
   return (
@@ -84,6 +89,12 @@ export function NoteCard({ note }: { note: NoteSummary }) {
             <Icon className="size-3.5" />
             <span>{formatCardDate(note.updatedAt, i18n.resolvedLanguage)}</span>
             {pinned ? <Pin className="size-3.5 text-brand" aria-label={t('pin.pinned')} /> : null}
+            {subfolder ? (
+              <span className="flex min-w-0 items-center gap-1">
+                <Folder className="size-3.5 shrink-0" />
+                <span className="truncate">{subfolder}</span>
+              </span>
+            ) : null}
             {note.tasks ? (
               <span className="ml-auto flex items-center gap-1 tabular-nums">
                 <CheckSquare className="size-3.5" />
