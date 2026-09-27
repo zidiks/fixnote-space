@@ -113,14 +113,18 @@
   gap: 0.55em;
 }
 .fixnote-editor ul[data-type="taskList"] li > label {
+  /* As tall as the first line of text, so the box sits centered on it. */
+  display: flex;
   flex: none;
-  margin-top: 0.32em;
+  align-items: center;
+  height: 1.75em;
   user-select: none;
 }
 .fixnote-editor ul[data-type="taskList"] li > div {
   flex: 1;
 }
 .fixnote-editor ul[data-type="taskList"] input[type="checkbox"] {
+  margin: 0;
   width: 1.05em;
   height: 1.05em;
   accent-color: var(--color-brand);

@@ -100,8 +100,8 @@ export function NoteGrid({
       </>
     )
   }
-  // The card goes into the first grid on the page.
-  const newIn = pinnedFirst && pinned.length ? 'pinned' : groups[0]?.key
+  // The card goes with the newest notes (Today), among the pinned ones only when there is nothing else.
+  const newIn = groups[0]?.key ?? 'pinned'
 
   return (
     <>

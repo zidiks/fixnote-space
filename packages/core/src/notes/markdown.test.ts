@@ -67,4 +67,10 @@ describe('tables in plain text', () => {
     expect(toPlainText(md)).toBe('Item · Price\nMilk · 2')
     expect(toPlainText(md, { tasks: true })).toBe('| Item | Price |\n| Milk | 2 |')
   })
+
+  it('shows a table in a card preview as one line with its header', () => {
+    const md =
+      '# Budget\n\n| Item | Price |\n| --- | --- |\n| Milk | 2 |\n| Bread | 3 |\n\nPaid in cash.'
+    expect(deriveExcerpt(md)).toBe('▦ Item · Price Paid in cash.')
+  })
 })

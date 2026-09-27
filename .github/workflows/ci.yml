@@ -21,19 +21,31 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Supabase config (repo variables, else .env.example)
+      - name: Build config (repo variables over .env.example)
         shell: bash
         env:
           URL: ${{ vars.VITE_SUPABASE_URL }}
           KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           BOT: ${{ vars.VITE_TELEGRAM_BOT }}
           WEB: ${{ vars.VITE_WEB_URL }}
+        # .env.example has the public defaults; each repository variable that is set replaces its
+        # line (before, the bot name was dropped whenever the Supabase pair was not set).
         run: |
+          cp .env.example .env
+          put() {
+            [ -n "$2" ] || return 0
+            grep -v "^$1=" .env > .env.next || true
+            printf '%s=%s\n' "$1" "$2" >> .env.next
+            mv .env.next .env
+          }
+          # The project URL and key only as a pair, so they never point at two different projects.
           if [ -n "$URL" ] && [ -n "$KEY" ]; then
-            printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\nVITE_TELEGRAM_BOT=%s\nVITE_WEB_URL=%s\n' "$URL" "$KEY" "$BOT" "$WEB" > .env
-          else
-            cp .env.example .env
+            put VITE_SUPABASE_URL "$URL"
+            put VITE_SUPABASE_ANON_KEY "$KEY"
           fi
+          put VITE_TELEGRAM_BOT "$BOT"
+          put VITE_WEB_URL "$WEB"
+          grep -o '^VITE_[A-Z_]*=' .env | tr '\n' ' '
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
