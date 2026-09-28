@@ -497,7 +497,7 @@ const ru: LocaleResource = {
     title: 'Тариф',
     free: 'Free',
     pro: 'Pro',
-    statusBeta: 'Бета: всё из Pro бесплатно до {{date}}.',
+    beta: 'Бета',
     statusTrial: 'Пробный Pro до {{date}}. Потом Free, заметки останутся с вами.',
     statusActive: 'Продлится {{date}}.',
     statusCanceled: 'Pro до {{date}}, потом Free.',

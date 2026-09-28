@@ -9,9 +9,9 @@ import { create } from 'zustand'
  */
 export interface PlanInfo {
   plan: 'free' | 'pro'
-  /** 'beta': everyone has Pro for now. */
-  status: 'beta' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'free'
-  betaUntil: number | null
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'free'
+  /** Only a label ("Beta"): plans work the same either way. */
+  beta: boolean
   trialEndsAt: number | null
   periodEnd: number | null
   /** Paid at least once: its files are never removed from the server. */
@@ -87,7 +87,7 @@ export function toPlanInfo(raw: Record<string, unknown>): PlanInfo {
   return {
     plan: raw.plan === 'pro' ? 'pro' : 'free',
     status: (raw.status as PlanInfo['status']) ?? 'free',
-    betaUntil: time(raw.beta_until),
+    beta: raw.beta === true,
     trialEndsAt: time(raw.trial_ends_at),
     periodEnd: time(raw.current_period_end),
     paidBefore: raw.paid_before === true,

@@ -492,7 +492,7 @@ const en = {
     title: 'Plan',
     free: 'Free',
     pro: 'Pro',
-    statusBeta: 'Beta: everything in Pro is free until {{date}}.',
+    beta: 'Beta',
     statusTrial: 'Pro trial until {{date}}. After that, Free: your notes stay with you.',
     statusActive: 'Renews {{date}}.',
     statusCanceled: 'Pro until {{date}}, then Free.',

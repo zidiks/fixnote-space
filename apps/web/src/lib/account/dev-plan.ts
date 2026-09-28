@@ -4,7 +4,7 @@
  * localStorage like the rest of the fake server.
  */
 
-export type DevPlanMode = 'beta' | 'trial' | 'pro' | 'free'
+export type DevPlanMode = 'trial' | 'pro' | 'free'
 
 interface DevPlanState {
   mode: DevPlanMode
@@ -46,6 +46,8 @@ function load(): DevPlanState {
     const s = { ...fresh, ...(JSON.parse(localStorage.getItem(KEY) ?? '{}') as DevPlanState) }
     if (s.month !== thisMonth()) Object.assign(s, { month: thisMonth(), tokens: 0 })
     if (s.day !== today()) Object.assign(s, { day: today(), requests: 0 })
+    // Saved before the beta became only a label.
+    if ((s.mode as string) === 'beta') s.mode = 'trial'
     return s
   } catch {
     return fresh
@@ -122,15 +124,8 @@ export function devMyPlan(storageUsed: number, notes: number): Record<string, un
       : null
   return {
     plan: s.mode === 'free' ? 'free' : 'pro',
-    status:
-      s.mode === 'beta'
-        ? 'beta'
-        : s.mode === 'trial'
-          ? 'trialing'
-          : s.mode === 'pro'
-            ? 'active'
-            : 'free',
-    beta_until: s.mode === 'beta' ? '2027-01-01T00:00:00Z' : null,
+    status: s.mode === 'trial' ? 'trialing' : s.mode === 'pro' ? 'active' : 'free',
+    beta: true,
     trial_ends_at: new Date(s.trialEndsAt).toISOString(),
     current_period_end: s.mode === 'pro' ? new Date(Date.now() + 30 * DAY).toISOString() : null,
     paid_before: s.subscribed,

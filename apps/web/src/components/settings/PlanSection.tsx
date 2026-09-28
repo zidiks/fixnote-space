@@ -99,24 +99,22 @@ export function PlanSection() {
   }
 
   const status =
-    info.status === 'beta'
-      ? t('plan.statusBeta', { date: date(info.betaUntil) })
-      : info.status === 'trialing'
-        ? t('plan.statusTrial', { date: date(info.trialEndsAt) })
-        : info.status === 'canceled'
-          ? t('plan.statusCanceled', { date: date(info.periodEnd) })
-          : info.status === 'past_due'
-            ? t('plan.statusPastDue')
-            : info.status === 'active'
-              ? t('plan.statusActive', { date: date(info.periodEnd) })
-              : t('plan.statusFree')
+    info.status === 'trialing'
+      ? t('plan.statusTrial', { date: date(info.trialEndsAt) })
+      : info.status === 'canceled'
+        ? t('plan.statusCanceled', { date: date(info.periodEnd) })
+        : info.status === 'past_due'
+          ? t('plan.statusPastDue')
+          : info.status === 'active'
+            ? t('plan.statusActive', { date: date(info.periodEnd) })
+            : t('plan.statusFree')
   const pro = info.plan === 'pro'
   const paying =
     info.status === 'active' || info.status === 'past_due' || info.status === 'canceled'
 
   return (
     <div className="space-y-6">
-      <PlanHeading name={pro ? t('plan.pro') : t('plan.free')} body={status} />
+      <PlanHeading name={pro ? t('plan.pro') : t('plan.free')} body={status} beta={info.beta} />
       {pro ? (
         <div className="space-y-5">
           <Bar
@@ -154,7 +152,7 @@ export function PlanSection() {
           })}
         </p>
       ) : null}
-      {info.status === 'beta' ? null : paying ? (
+      {paying ? (
         <Button variant="outline" onClick={() => void platform.openExternal(SUBY_PORTAL)}>
           {t('plan.manage')}
           <ArrowUpRight />
@@ -214,13 +212,19 @@ function Upgrade() {
   )
 }
 
-function PlanHeading({ name, body }: { name: string; body: string }) {
+function PlanHeading({ name, body, beta }: { name: string; body: string; beta?: boolean }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
         <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-sm font-semibold text-brand">
           {name}
         </span>
+        {beta ? (
+          <span className="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            {t('plan.beta')}
+          </span>
+        ) : null}
       </div>
       <p className="max-w-md text-sm text-muted-foreground">{body}</p>
     </div>
@@ -240,7 +244,7 @@ function DevPlanSwitch() {
     <div className="space-y-2 rounded-lg border border-dashed p-3">
       <p className="text-xs font-medium text-muted-foreground">{t('plan.devTitle')}</p>
       <div className="flex flex-wrap gap-2">
-        {(['beta', 'trial', 'pro', 'free'] as const).map((m) => (
+        {(['trial', 'pro', 'free'] as const).map((m) => (
           <Button
             key={m}
             size="sm"

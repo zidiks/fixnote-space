@@ -106,7 +106,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `lib/account/dev-plan.ts` mirror the rules: change them together with the SQL. Payments: Suby
   (`functions/billing` opens the checkout, `functions/suby-webhook` sets `subscriptions` from the
   subscription Suby reports; `_shared/suby.ts`). The Suby key never leaves the edge functions.
-  The trial is given at sign-up without a card (`*_open_trial.sql`: after the beta, none for
+  The beta is only a label (`my_plan().beta`); nothing depends on it (`*_beta_label.sql`).
+  The trial is given at sign-up without a card (`*_open_trial.sql`: none for
   `disposable_domains`, 1 GB of files). Files of accounts that never paid leave the server
   `free_files_days` after Pro ended (`functions/storage-cleanup`, pg_cron); before that the app
   keeps a local copy (`Attachments.keepLocal`). Never delete anything of an account that paid.

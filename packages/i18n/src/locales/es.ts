@@ -498,7 +498,7 @@ const es: LocaleResource = {
     title: 'Plan',
     free: 'Free',
     pro: 'Pro',
-    statusBeta: 'Beta: todo lo de Pro es gratis hasta el {{date}}.',
+    beta: 'Beta',
     statusTrial: 'Prueba de Pro hasta el {{date}}. Después, Free: tus notas se quedan contigo.',
     statusActive: 'Se renueva el {{date}}.',
     statusCanceled: 'Pro hasta el {{date}}, luego Free.',
