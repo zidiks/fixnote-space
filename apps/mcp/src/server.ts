@@ -1,24 +1,29 @@
-import type { SqlDriver } from '@fixnote/core'
+import type { BlobStore, SqlDriver } from '@fixnote/core'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
-import { NotesTools } from './tools'
+import { NotesTools, type ToolContent } from './tools'
 
 export const VERSION = '0.1.2'
 
-/** The FixNote MCP server over an open notes database. */
-export function createServer(db: SqlDriver): McpServer {
+/** The FixNote MCP server over an open notes database and, when given, the app's files. */
+export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
   const server = new McpServer(
     { name: 'fixnote', version: VERSION },
     {
       instructions:
-        "FixNote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Create, change, move or delete notes and folders only when the user asks; every change is shown to the user in FixNote and can be undone there. The user decides in FixNote what this app may do and which folders and notes it can see.",
+        "FixNote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Notes can hold images and files: get_note lists them, get_attachment opens one, attach_file adds one. Create, change, move or delete notes and folders only when the user asks; every change is shown to the user in FixNote and can be undone there. The user decides in FixNote what this app may do and which folders and notes it can see.",
     },
   )
-  const tools = new NotesTools(db, () => server.server.getClientVersion()?.name ?? 'MCP client')
+  const tools = new NotesTools(
+    db,
+    () => server.server.getClientVersion()?.name ?? 'MCP client',
+    blobs,
+  )
 
-  const run = async (fn: () => Promise<string>) => {
+  const run = async (fn: () => Promise<string | ToolContent[]>) => {
     try {
-      return { content: [{ type: 'text' as const, text: await fn() }] }
+      const out = await fn()
+      return { content: typeof out === 'string' ? [{ type: 'text' as const, text: out }] : out }
     } catch (err) {
       return {
         content: [
@@ -47,7 +52,8 @@ export function createServer(db: SqlDriver): McpServer {
     'get_note',
     {
       title: 'Get a note',
-      description: 'The full Markdown of a note with its folder and dates.',
+      description:
+        'The full Markdown of a note with its folder, dates and a list of its images and files (ids for get_attachment).',
       inputSchema: { id: z.string().min(1) },
       annotations: { readOnlyHint: true },
     },
@@ -104,6 +110,33 @@ export function createServer(db: SqlDriver): McpServer {
       inputSchema: { id: z.string().min(1), content: z.string().min(1) },
     },
     ({ id, content }) => run(() => tools.update(id, content)),
+  )
+  server.registerTool(
+    'get_attachment',
+    {
+      title: 'Open an image or file',
+      description:
+        'An image or file from a note, by the id get_note lists: images come back to look at, text files as text, other files (PDF, documents) as a file.',
+      inputSchema: { id: z.string().min(1).describe('Attachment id from get_note') },
+      annotations: { readOnlyHint: true },
+    },
+    ({ id }) => run(() => tools.getAttachment(id)),
+  )
+  server.registerTool(
+    'attach_file',
+    {
+      title: 'Attach a file to a note',
+      description:
+        'Adds an image or file to the end of a note: images show in the note, other files become a link. Give `path` (a file on this computer) or `data` (base64) with a `name`. Up to 20 MB.',
+      inputSchema: {
+        note: z.string().min(1).describe('Note id'),
+        path: z.string().optional().describe('Full path of a file on this computer'),
+        data: z.string().optional().describe('The file as base64, instead of `path`'),
+        name: z.string().optional().describe('File name with extension; needed with `data`'),
+        mime: z.string().optional().describe('MIME type, when the extension does not tell'),
+      },
+    },
+    ({ note, path, data, name, mime }) => run(() => tools.attach(note, { path, data, name, mime })),
   )
   server.registerTool(
     'move_note',

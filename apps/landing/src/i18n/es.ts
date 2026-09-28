@@ -149,7 +149,7 @@ export const es: Dict = {
       },
       mcp: {
         title: 'Claude y Cursor',
-        text: 'Servidor MCP integrado: Claude Desktop y Cursor buscan en tus notas y las amplían si lo permites.',
+        text: 'Servidor MCP integrado: Claude Desktop y Cursor buscan en tus notas, ven sus imágenes y archivos y las amplían si lo permites.',
       },
     },
   },
@@ -336,7 +336,7 @@ export const es: Dict = {
       {
         id: 'mcp',
         title: 'Claude, Cursor y otros clientes MCP',
-        text: 'La app de escritorio incluye un servidor MCP local. Conéctalo a Claude Desktop o Cursor con un clic y podrán buscar y leer tus notas, y con tu permiso crear notas nuevas.',
+        text: 'La app de escritorio incluye un servidor MCP local. Conéctalo a Claude Desktop o Cursor con un clic y podrán buscar y leer tus notas, ver sus imágenes y archivos, y con tu permiso crear notas nuevas y adjuntar archivos.',
         points: [
           'Solo lectura por defecto',
           'Trabaja sobre la base local',

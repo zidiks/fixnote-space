@@ -184,7 +184,9 @@ Without it the desktop app still builds (a placeholder is used) and MCP shows as
 
 Tools: `search_notes`, `get_note`, `list_recent`, `list_folders`, `daily_note`, `create_note`,
 `append_to_note`, `update_note`, `move_note`, `delete_note`, `create_folder`, `rename_folder`,
-`delete_folder`. Settings → AI → Connected apps sets the access level (off, read, read and write,
+`delete_folder`, `get_attachment` (an image to look at, a text file as text, other files as an
+embedded file) and `attach_file` (a file on this computer or base64 data, up to 20 MB; it lands in
+the app's `blobs/` folder and the app uploads it on the next sync). Settings → AI → Connected apps sets the access level (off, read, read and write,
 full with deletion) and what apps can see: every note, or chosen folders (with their subfolders) and
 single notes. Every change is in the AI activity log and can be undone, deletions included.
 

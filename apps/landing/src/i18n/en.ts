@@ -147,7 +147,7 @@ export const en: Dict = {
       },
       mcp: {
         title: 'Claude and Cursor',
-        text: 'A built-in MCP server: Claude Desktop and Cursor can search your notes and add to them if you allow it.',
+        text: 'A built-in MCP server: Claude Desktop and Cursor can search your notes, look at their images and files, and add to them if you allow it.',
       },
     },
   },
@@ -322,7 +322,7 @@ export const en: Dict = {
       {
         id: 'mcp',
         title: 'Claude, Cursor and other MCP clients',
-        text: 'The desktop app includes a local MCP server. Connect it to Claude Desktop or Cursor in one click and they can search and read your notes, and with your permission create new ones.',
+        text: 'The desktop app includes a local MCP server. Connect it to Claude Desktop or Cursor in one click and they can search and read your notes, look at the images and files in them, and with your permission create new ones and attach files.',
         points: ['Read-only by default', 'Works on the local database', 'One-click setup'],
       },
       {

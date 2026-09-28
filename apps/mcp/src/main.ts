@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { MIGRATIONS } from '@fixnote/core'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { blobsDirFor, fileBlobStore } from './blobs'
 import { defaultDatabasePath } from './paths'
 import { createServer } from './server'
 import { openNodeSqlite } from './sqlite'
@@ -28,7 +29,7 @@ async function main() {
     process.exit(1)
   }
 
-  await createServer(db).connect(new StdioServerTransport())
+  await createServer(db, fileBlobStore(blobsDirFor(path))).connect(new StdioServerTransport())
 }
 
 main().catch((err) => {
