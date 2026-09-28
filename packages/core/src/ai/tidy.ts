@@ -191,7 +191,7 @@ export class Tidy {
       .map((n, i) => ({ ...n, ref: i + 1 }))
     // Someone else's folder shared to view only takes no notes.
     const folders = (await this.repo.listFolders())
-      .filter((f) => f.shared !== 'view')
+      .filter((f) => f.access !== 'view')
       .map((f, i) => ({
         ref: i + 1,
         id: f.id,

@@ -1,6 +1,6 @@
 import { type ImportFile, type ImportPlan, planImport, runImport } from '@fixnote/core'
 import { i18n, useTranslation } from '@fixnote/i18n'
-import { Button } from '@fixnote/ui'
+import { Button, Spinner } from '@fixnote/ui'
 import { FileUp, FolderUp } from 'lucide-react'
 import { type ChangeEvent, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -127,10 +127,14 @@ export function ImportSection() {
         {...{ webkitdirectory: '' }}
       />
       {state.phase === 'reading' ? (
-        <p className="text-sm text-muted-foreground">{t('data.reading')}</p>
+        <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+          <Spinner />
+          {t('data.reading')}
+        </p>
       ) : null}
       {state.phase === 'running' ? (
-        <p className="text-sm text-muted-foreground" role="status">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+          <Spinner />
           {t('data.importing', { done: state.done, total: state.total })}
         </p>
       ) : null}

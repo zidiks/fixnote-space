@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { FolderOpen, UserPlus, Users, X } from 'lucide-react'
+import { FolderOpen, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
@@ -97,7 +97,8 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
   })
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<'edit' | 'view'>('edit')
-  const [busy, setBusy] = useState(false)
+  // The action running now (its button shows a spinner; the others wait).
+  const [busy, setBusy] = useState<string | null>(null)
   if (!ctx || !info.data) return null
   const calls = actions(ctx.shared, target)
   const viaFolder = folders.find((f) => f.id === info.data?.viaFolder)
@@ -107,8 +108,8 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
     : 'owner'
   const owner = myRole === 'owner'
 
-  const act = async (task: () => Promise<unknown>, done?: string) => {
-    setBusy(true)
+  const act = async (key: string, task: () => Promise<unknown>, done?: string) => {
+    setBusy(key)
     try {
       await task()
       await qc.invalidateQueries({ queryKey: [MEMBERS] })
@@ -124,12 +125,13 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
       )
       return false
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
-  const invite = (address: string, as: 'edit' | 'view') =>
+  const invite = (address: string, as: 'edit' | 'view', key = 'invite') =>
     act(
+      key,
       async () => {
         if (address.toLowerCase() === ctx.email.toLowerCase()) throw new Error(t('people.self'))
         const id = sharedId ?? (await calls.share())
@@ -146,16 +148,6 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
 
   return (
     <section className="space-y-3">
-      <div className="space-y-1">
-        <h3 className="flex items-center gap-2 text-sm font-semibold">
-          <Users className="size-4 text-muted-foreground" />
-          {t('people.title')}
-        </h3>
-        <p className="text-sm text-muted-foreground">
-          {target.kind === 'folder' ? t('people.folderBody') : t('people.body')}
-        </p>
-      </div>
-
       {viaFolder ? (
         <p className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
           <FolderOpen className="mt-0.5 size-4 shrink-0 text-brand" />
@@ -188,7 +180,11 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
               <SelectItem value="view">{t('people.roleView')}</SelectItem>
             </SelectContent>
           </Select>
-          <Button type="submit" disabled={busy || !email.includes('@')}>
+          <Button
+            type="submit"
+            loading={busy === 'invite'}
+            disabled={busy !== null || !email.includes('@')}
+          >
             <UserPlus />
             {t('people.invite')}
           </Button>
@@ -215,8 +211,11 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
                   variant="outline"
                   size="sm"
                   className="h-8"
-                  disabled={busy}
-                  onClick={() => void invite(m.email, m.role === 'view' ? 'view' : 'edit')}
+                  disabled={busy !== null}
+                  loading={busy === `again:${m.userId}`}
+                  onClick={() =>
+                    void invite(m.email, m.role === 'view' ? 'view' : 'edit', `again:${m.userId}`)
+                  }
                 >
                   {t('people.inviteAgain')}
                 </Button>
@@ -227,8 +226,11 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
                 <>
                   <Select
                     value={m.role}
+                    disabled={busy !== null}
                     onValueChange={(v) =>
-                      void act(() => calls.setRole(sharedId, m.userId, v as 'edit' | 'view'))
+                      void act(`role:${m.userId}`, () =>
+                        calls.setRole(sharedId, m.userId, v as 'edit' | 'view'),
+                      )
                     }
                   >
                     <SelectTrigger className="h-8 w-auto" aria-label={t('people.role')}>
@@ -243,8 +245,11 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
                     variant="ghost"
                     size="icon-xs"
                     aria-label={t('people.remove', { email: m.email })}
-                    disabled={busy}
-                    onClick={() => void act(() => calls.remove(sharedId, m.userId))}
+                    disabled={busy !== null}
+                    loading={busy === `remove:${m.userId}` || busy === `role:${m.userId}`}
+                    onClick={() =>
+                      void act(`remove:${m.userId}`, () => calls.remove(sharedId, m.userId))
+                    }
                   >
                     <X />
                   </Button>
@@ -265,9 +270,11 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
             <Button
               variant="ghost"
               size="sm"
-              disabled={busy}
+              disabled={busy !== null}
+              loading={busy === 'unshare'}
               onClick={() =>
                 void act(
+                  'unshare',
                   () => calls.unshare(sharedId),
                   target.kind === 'folder' ? t('people.unsharedFolder') : t('people.unshared'),
                 )
@@ -279,10 +286,11 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
             <Button
               variant="ghost"
               size="sm"
-              disabled={busy}
+              disabled={busy !== null}
+              loading={busy === 'leave'}
               onClick={async () => {
                 const done = target.kind === 'folder' ? t('people.leftFolder') : t('people.left')
-                if (await act(() => calls.leave(sharedId), done)) {
+                if (await act('leave', () => calls.leave(sharedId), done)) {
                   onDone()
                   useUi.getState().navigate({ kind: 'home' })
                 }

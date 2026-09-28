@@ -46,22 +46,23 @@ export function TidyView() {
   const running = useTidy((s) => s.running)
   const error = useTidy((s) => s.error)
   const accept = useAcceptSuggestions()
-  const [busy, setBusy] = useState(false)
+  // The action running now: its button shows a spinner.
+  const [busy, setBusy] = useState<string | null>(null)
   const pending = useTidy((s) => s.pending)
   // Keyed by the count, so a background run shows up without a manual refresh.
   const list =
     useQuery({ queryKey: [...TIDY_KEY, pending], queryFn: () => tidy.pending() }).data ?? []
 
-  const act = async (fn: () => Promise<void>) => {
-    setBusy(true)
+  const act = async (key: string, fn: () => Promise<void>) => {
+    setBusy(key)
     try {
       await fn()
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
   const reject = (s: TidySuggestion) =>
-    act(async () => {
+    act(`reject:${s.id}`, async () => {
       await tidy.reject(s.id)
       await qc.invalidateQueries({ queryKey: TIDY_KEY })
       await refreshTidyCount(tidy)
@@ -94,7 +95,11 @@ export function TidyView() {
           {running ? t('tidy.finding') : t('tidy.find')}
         </Button>
         {list.length > 1 ? (
-          <Button disabled={busy} onClick={() => void act(() => accept(list))}>
+          <Button
+            disabled={busy !== null}
+            loading={busy === 'all'}
+            onClick={() => void act('all', () => accept(list))}
+          >
             <Check />
             {t('tidy.acceptAll')}
           </Button>
@@ -133,7 +138,8 @@ export function TidyView() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={busy}
+                    disabled={busy !== null}
+                    loading={busy === `reject:${s.id}`}
                     onClick={() => void reject(s)}
                     aria-label={t('tidy.reject')}
                   >
@@ -142,8 +148,9 @@ export function TidyView() {
                   <Button
                     size="sm"
                     variant="outline"
-                    disabled={busy}
-                    onClick={() => void act(() => accept([s]))}
+                    disabled={busy !== null}
+                    loading={busy === `accept:${s.id}`}
+                    onClick={() => void act(`accept:${s.id}`, () => accept([s]))}
                   >
                     <Check />
                     {t('tidy.accept')}

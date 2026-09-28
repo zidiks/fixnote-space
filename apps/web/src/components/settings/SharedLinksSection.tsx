@@ -2,6 +2,7 @@ import { useTranslation } from '@fixnote/i18n'
 import { Button } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Link2, Link2Off } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../../app/store'
 import { useRepo } from '../../lib/db'
@@ -13,6 +14,7 @@ export function SharedLinksSection() {
   const { t } = useTranslation()
   const repo = useRepo()
   const qc = useQueryClient()
+  const [stopping, setStopping] = useState<string | null>(null)
   const shares = useShares()
   const list = shares.data ?? []
   const titles = useQuery({
@@ -71,13 +73,18 @@ export function SharedLinksSection() {
                 variant="ghost"
                 size="icon-xs"
                 aria-label={t('share.stop')}
+                loading={stopping === share.id}
+                disabled={stopping !== null}
                 onClick={async () => {
+                  setStopping(share.id)
                   try {
                     await revokeShare(share.id)
                     await qc.invalidateQueries({ queryKey: SHARES_KEY })
                     toast(t('share.stopped'))
                   } catch (err) {
                     toast(shareError(err))
+                  } finally {
+                    setStopping(null)
                   }
                 }}
               >

@@ -153,7 +153,7 @@ export function SidebarFolders() {
                     <button
                       type="button"
                       onClick={() => navigate({ kind: 'folder', id: f.id })}
-                      onDoubleClick={() => f.shared !== 'view' && setRenaming(f.id)}
+                      onDoubleClick={() => f.access !== 'view' && setRenaming(f.id)}
                       className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left"
                     >
                       <FolderIcon className="size-4 shrink-0 opacity-70" />
@@ -193,7 +193,7 @@ export function SidebarFolders() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" onCloseAutoFocus={keepFocus}>
-                        {f.shared === 'view' ? null : (
+                        {f.access === 'view' ? null : (
                           <>
                             <DropdownMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
                               <FolderPlus />
@@ -205,25 +205,28 @@ export function SidebarFolders() {
                             </DropdownMenuItem>
                           </>
                         )}
-                        {canShare ? (
+                        {/* A subfolder of a shared folder goes with it, not on its own. */}
+                        {canShare && (f.shared || !f.access) ? (
                           <DropdownMenuItem onSelect={() => setSharing(f)}>
                             <Users />
                             {t('people.shareFolder')}
                           </DropdownMenuItem>
                         ) : null}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
-                          {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
-                          {f.shared === 'edit' || f.shared === 'view'
-                            ? t('people.leaveFolder')
-                            : t('common.delete')}
-                        </DropdownMenuItem>
+                        {f.access === 'view' && !f.shared ? null : (
+                          <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
+                            {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
+                            {f.shared === 'edit' || f.shared === 'view'
+                              ? t('people.leaveFolder')
+                              : t('common.delete')}
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent onCloseAutoFocus={keepFocus}>
-                  {f.shared === 'view' ? null : (
+                  {f.access === 'view' ? null : (
                     <>
                       <ContextMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
                         <FolderPlus />
@@ -235,19 +238,22 @@ export function SidebarFolders() {
                       </ContextMenuItem>
                     </>
                   )}
-                  {canShare ? (
+                  {/* A subfolder of a shared folder goes with it, not on its own. */}
+                  {canShare && (f.shared || !f.access) ? (
                     <ContextMenuItem onSelect={() => setSharing(f)}>
                       <Users />
                       {t('people.shareFolder')}
                     </ContextMenuItem>
                   ) : null}
                   <ContextMenuSeparator />
-                  <ContextMenuItem destructive onSelect={() => setConfirm(f)}>
-                    {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
-                    {f.shared === 'edit' || f.shared === 'view'
-                      ? t('people.leaveFolder')
-                      : t('common.delete')}
-                  </ContextMenuItem>
+                  {f.access === 'view' && !f.shared ? null : (
+                    <ContextMenuItem destructive onSelect={() => setConfirm(f)}>
+                      {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
+                      {f.shared === 'edit' || f.shared === 'view'
+                        ? t('people.leaveFolder')
+                        : t('common.delete')}
+                    </ContextMenuItem>
+                  )}
                 </ContextMenuContent>
               </ContextMenu>
             )}

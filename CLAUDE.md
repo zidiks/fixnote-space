@@ -15,6 +15,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   the locale test fails on missing keys or placeholders.
 - UI components: shadcn style in `packages/ui`, Tailwind 4 tokens in `packages/ui/src/styles.css`.
   Use semantic color tokens (`bg-card`, `text-muted-foreground`), not raw palette colors.
+- A button that waits for something (the server, a long task) gets `loading` (spinner, same size,
+  no second click); with several actions in one place, only the clicked one spins. Waiting that is
+  not a button shows `Spinner` next to its text. Nothing may look frozen.
 - Hotkeys: Mod = Ctrl on Windows/Linux, ⌘ on macOS. Windows is the primary desktop target. Match
   letters by physical key (`e.code`, see `hotkeys.ts`), never only by `e.key`: users type in RU/ES layouts.
 - Local DB: schema and all SQL live in `packages/core` (`db/schema.ts`, `notes/repo.ts`). Append
@@ -26,6 +29,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   Editor saves pass the text the edit started from (`updateContent(id, text, { base })`) so a change
   that sync applied meanwhile is merged, not overwritten. Server schema changes = new file in
   `supabase/migrations/`; test RLS and RPCs on a local Postgres before pushing.
+- A note's time (`updatedAt` in the app, `edited_at` in SQL) moves only when its text changes;
+  `updated_at` moves with any change and settles moves and deletes in sync. Triggers keep `edited_at`.
 - Sync conflicts: an edit in the same lines on two devices keeps the server version and makes a copy;
   the copy is recorded in the local `sync_conflicts` table and settled with `repo.settleConflict`
   (banner and compare dialog: `ConflictBanner`). Two daily notes for one date are merged
@@ -75,7 +80,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `INVITE_DAYS`; role changes reach an open note through `onSharedSync`. Others' carets: `LiveCarets`
   (overlay) + `RemoteFade`. Shared folders (`*_shared_folders.sql`): a folder key seals the name and
   each note's key; a member's copy is a local folder with `folders.shared_id` (kept out of the
-  personal sync). `MemorySharedServer` in core mirrors the SQL rules for tests and `?dev-backend`:
+  personal sync, subfolders too); its subfolders and each note's place are a Yjs layout document
+  (`shared-notes/layout.ts`, `*_shared_folder_layout.sql`). `MemorySharedServer` in core mirrors
+  the SQL rules for tests and `?dev-backend`:
   change both together.
   View only means nothing may change: `NotesRepo` throws `ReadOnlyError` for such notes and folders
   (every writer goes through it); only the shared sync writes, with `fromSharing`. The UI hides what

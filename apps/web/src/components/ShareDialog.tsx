@@ -45,10 +45,15 @@ export function ShareDialog({
   const phase = useAccount((s) => s.phase)
   const shares = useShares(open)
   const share = shares.data?.find((s) => s.noteId === note.id)
-  const [busy, setBusy] = useState(false)
+  // The action running now: its button shows a spinner.
+  const [busy, setBusy] = useState<'create' | 'update' | 'stop' | null>(null)
 
-  const run = async (task: () => Promise<unknown>, done?: string) => {
-    setBusy(true)
+  const run = async (
+    key: 'create' | 'update' | 'stop',
+    task: () => Promise<unknown>,
+    done?: string,
+  ) => {
+    setBusy(key)
     try {
       await task()
       await qc.invalidateQueries({ queryKey: SHARES_KEY })
@@ -56,7 +61,7 @@ export function ShareDialog({
     } catch (err) {
       toast(shareError(err))
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
@@ -126,9 +131,14 @@ export function ShareDialog({
               <Button
                 variant="outline"
                 size="sm"
-                disabled={busy}
+                disabled={busy !== null}
+                loading={busy === 'update'}
                 onClick={() =>
-                  void run(() => publishShare(note.id, snapshot, share.id), t('share.updated'))
+                  void run(
+                    'update',
+                    () => publishShare(note.id, snapshot, share.id),
+                    t('share.updated'),
+                  )
                 }
               >
                 {t('share.update')}
@@ -137,8 +147,9 @@ export function ShareDialog({
                 variant="ghost"
                 size="sm"
                 className="text-destructive"
-                disabled={busy}
-                onClick={() => void run(() => revokeShare(share.id), t('share.stopped'))}
+                disabled={busy !== null}
+                loading={busy === 'stop'}
+                onClick={() => void run('stop', () => revokeShare(share.id), t('share.stopped'))}
               >
                 {t('share.stop')}
               </Button>
@@ -146,16 +157,16 @@ export function ShareDialog({
           </div>
         ) : (
           <Button
-            disabled={busy}
+            loading={busy === 'create'}
             onClick={() =>
-              void run(async () => {
+              void run('create', async () => {
                 const url = await publishShare(note.id, snapshot)
                 await copy(url).catch(() => undefined)
               })
             }
           >
             <Link2 />
-            {busy ? t('share.working') : t('share.create')}
+            {t('share.create')}
           </Button>
         )}
       </DialogContent>

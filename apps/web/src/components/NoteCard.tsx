@@ -156,7 +156,7 @@ export function NoteCard({ note, inFolder }: { note: NoteSummary; inFolder?: str
                   <span className="flex-1">{t('common.noFolder')}</span>
                   <Check className={cn(note.folderId !== null && 'invisible')} />
                 </ContextMenuItem>
-                {folderTree(folders.filter((f) => f.shared !== 'view')).map(
+                {folderTree(folders.filter((f) => f.access !== 'view')).map(
                   ({ folder: f, depth }) => (
                     <ContextMenuItem
                       key={f.id}

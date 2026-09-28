@@ -5,6 +5,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -41,7 +42,7 @@ export function NotificationsButton() {
   const answer = async (invite: SharedInvite, accept: boolean) => {
     if (!ctx) return
     const { sharedId } = invite
-    setBusy(sharedId)
+    setBusy(`${sharedId}:${accept ? 'accept' : 'decline'}`)
     try {
       const folder = invite.kind === 'folder'
       if (accept) {
@@ -117,6 +118,7 @@ export function NotificationsButton() {
                     <Button
                       size="sm"
                       disabled={busy !== null}
+                      loading={busy === `${inv.sharedId}:accept`}
                       onClick={() => void answer(inv, true)}
                     >
                       {t('notifications.accept')}
@@ -125,6 +127,7 @@ export function NotificationsButton() {
                       size="sm"
                       variant="ghost"
                       disabled={busy !== null}
+                      loading={busy === `${inv.sharedId}:decline`}
                       onClick={() => void answer(inv, false)}
                     >
                       {t('notifications.decline')}
@@ -135,8 +138,15 @@ export function NotificationsButton() {
             ))}
           </ul>
         ) : (
-          <p className="px-2.5 pt-1 pb-3 text-sm text-muted-foreground">
-            {pending.length && invites.isLoading ? '…' : t('notifications.empty')}
+          <p className="flex items-center gap-2 px-2.5 pt-1 pb-3 text-sm text-muted-foreground">
+            {pending.length && invites.isLoading ? (
+              <>
+                <Spinner />
+                {t('common.loading')}
+              </>
+            ) : (
+              t('notifications.empty')
+            )}
           </p>
         )}
       </PopoverContent>

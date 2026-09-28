@@ -64,7 +64,7 @@ export async function buildExport(
     'SELECT id, parent_id, name FROM folders WHERE deleted_at IS NULL',
   )
   const notes = await db.query<Row>(
-    `SELECT id, folder_id, type, daily_date, title, content, created_at, updated_at
+    `SELECT id, folder_id, type, daily_date, title, content, created_at, edited_at AS updated_at
        FROM notes WHERE deleted_at IS NULL ORDER BY created_at, id`,
   )
 

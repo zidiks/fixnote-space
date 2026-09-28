@@ -2,7 +2,7 @@ import { streamChat } from '@fixnote/ai'
 import { useTranslation } from '@fixnote/i18n'
 import { Button, cn, Input } from '@fixnote/ui'
 import { useQuery } from '@tanstack/react-query'
-import { KeyRound, LoaderCircle, RefreshCw } from 'lucide-react'
+import { KeyRound, RefreshCw } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { unavailableText } from '../../lib/assistant/assistant'
 import {
@@ -70,6 +70,7 @@ export function ProviderSection() {
   const hasKey = useLlm((s) => s.hasKey)
   const [key, setKey] = useState('')
   const [editingKey, setEditingKey] = useState(false)
+  const [savingKey, setSavingKey] = useState(false)
   const [test, setTest] = useState<{ state: 'idle' | 'running' | 'ok' | 'fail'; text?: string }>({
     state: 'idle',
   })
@@ -196,10 +197,13 @@ export function ProviderSection() {
                 className="flex gap-2"
                 onSubmit={(e) => {
                   e.preventDefault()
-                  void saveApiKey(key).then(() => {
-                    setKey('')
-                    setEditingKey(false)
-                  })
+                  setSavingKey(true)
+                  void saveApiKey(key)
+                    .then(() => {
+                      setKey('')
+                      setEditingKey(false)
+                    })
+                    .finally(() => setSavingKey(false))
                 }}
               >
                 <Input
@@ -210,7 +214,7 @@ export function ProviderSection() {
                   onChange={(e) => setKey(e.target.value)}
                   aria-label={t('aiProvider.key')}
                 />
-                <Button type="submit" size="sm" disabled={!key.trim()}>
+                <Button type="submit" size="sm" disabled={!key.trim()} loading={savingKey}>
                   {t('aiProvider.saveKey')}
                 </Button>
               </form>
@@ -267,11 +271,10 @@ export function ProviderSection() {
           <Button
             size="sm"
             variant="outline"
-            disabled={test.state === 'running'}
+            loading={test.state === 'running'}
             onClick={() => void check()}
           >
-            {test.state === 'running' ? <LoaderCircle className="animate-spin" /> : null}
-            {test.state === 'running' ? t('aiProvider.testing') : t('aiProvider.test')}
+            {t('aiProvider.test')}
           </Button>
           {test.text ? (
             <span

@@ -241,7 +241,15 @@ describe('folders', () => {
     await repo.createNote({ content: 'Story', folderId: f.id })
     await repo.renameFolder(f.id, 'Reading')
     expect(await repo.listFolders()).toEqual([
-      { id: f.id, parentId: null, name: 'Reading', sort: 1, noteCount: 1, shared: null },
+      {
+        id: f.id,
+        parentId: null,
+        name: 'Reading',
+        sort: 1,
+        noteCount: 1,
+        shared: null,
+        access: null,
+      },
     ])
   })
 
@@ -313,5 +321,28 @@ describe('driver', () => {
     ).rejects.toThrow('boom')
     expect(await db.query("SELECT id FROM folders WHERE id = 'f'")).toEqual([])
     expect(await repo.listFolders()).toEqual([])
+  })
+})
+
+describe('note time', () => {
+  it('changes only when the text changes', async () => {
+    let clock = 1000
+    const r = new NotesRepo(db, { now: () => clock })
+    const folder = await r.createFolder('Box')
+    const note = await r.createNote({ content: 'Text' })
+    expect(note.updatedAt).toBe(1000)
+    clock = 2000
+    await r.moveNote(note.id, folder.id)
+    await r.setPinned(note.id, true)
+    expect((await r.getNote(note.id))?.updatedAt).toBe(1000)
+    clock = 3000
+    await r.updateContent(note.id, 'Text!')
+    expect((await r.getNote(note.id))?.updatedAt).toBe(3000)
+    // Sorted by it too: a move does not bring a note to the top.
+    clock = 3500
+    const other = await r.createNote({ content: 'Other' })
+    clock = 4000
+    await r.moveNote(note.id, null)
+    expect((await r.listNotes()).items.map((n) => n.id)).toEqual([other.id, note.id])
   })
 })

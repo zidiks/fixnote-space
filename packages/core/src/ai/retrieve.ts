@@ -162,7 +162,7 @@ export async function retrieve(
     const missing = ids.filter((id) => !notes.has(id))
     if (!missing.length) return
     const rows = await db.query<NoteRow & { [k: string]: string | number }>(
-      `SELECT id, title, content, updated_at FROM notes
+      `SELECT id, title, content, edited_at AS updated_at FROM notes
         WHERE deleted_at IS NULL AND id IN (${missing.map(() => '?').join(',')})`,
       missing,
     )

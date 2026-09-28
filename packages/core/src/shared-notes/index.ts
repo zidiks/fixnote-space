@@ -15,6 +15,14 @@ import {
 import { deriveTitle } from '../notes/markdown'
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver, SqlRow } from '../platform'
+import {
+  applyLayout,
+  EMPTY_LAYOUT,
+  type Layout,
+  readLayout,
+  readReality,
+  recordLocalChanges,
+} from './layout'
 
 /**
  * Notes and folders shared with other people. A shared note is a Yjs document; the server keeps it
@@ -63,6 +71,9 @@ export interface SharedFolderMembership {
   invitedAt: number
   /** The folder's name, sealed with the folder key. */
   name: string
+  /** Its subfolders and where each note is: a Yjs document sealed with the folder key. */
+  layout: string | null
+  layoutVersion: number
 }
 
 /** A note in a shared folder, as the server lists it. */
@@ -141,6 +152,8 @@ export interface SharedRemote {
   shareInFolder(folderId: string, originNoteId: string, folderKey: string): Promise<string>
   /** The owner of both: a note already shared on its own joins the folder. */
   attachToFolder(sharedId: string, folderId: string, folderKey: string): Promise<void>
+  /** Owner and editors: stores the folder's layout if nobody saved since `baseVersion`. */
+  saveFolderLayout(folderId: string, layout: string, baseVersion: number): Promise<SaveResult>
   /** The folder's owner: a note leaves the folder. */
   removeFromFolder(sharedId: string): Promise<void>
   /** Owner and editors: a note of the folder is deleted for everyone. */
@@ -219,6 +232,10 @@ interface FolderRow extends SqlRow {
   folder_key: string
   owner_id: string
   name: string | null
+  layout: Uint8Array | null
+  layout_version: number
+  layout_dirty: number
+  layout_projected: string | null
 }
 
 /** A shared note this account has now, directly or through a folder. */
@@ -646,13 +663,85 @@ export class SharedNotes {
     }
     // Then what changed in the folders here (after linking what the server has, so a note another
     // device already put in a folder is linked, not put in again).
-    for (const f of settled) await this.sendFolderChanges(f)
+    for (const f of settled) {
+      await this.sendFolderChanges(f)
+      await this.syncLayout(f, report)
+    }
 
     for (const { shared_id } of await this.db.query<DocRow>('SELECT shared_id FROM shared_docs')) {
       if (await this.pull(shared_id)) report.pulled++
       if (await this.push(shared_id)) report.pushed++
     }
     return report
+  }
+
+  /**
+   * Brings a shared folder's subfolders up to date both ways: what changed here goes into its
+   * layout (owner and editors), the merged layout is applied here, and saved if it changed here.
+   */
+  private async syncLayout(f: SharedFolderMembership, report: SharedSyncReport) {
+    const own = f.ownerId === this.userId
+    const id = `layout:${f.folderId}`
+    let server =
+      f.layoutVersion > 0 && f.layout ? { state: f.layout, version: f.layoutVersion } : null
+    for (let attempt = 0; attempt < MAX_SAVE_ATTEMPTS; attempt++) {
+      const [row] = await this.db.query<FolderRow>(
+        'SELECT * FROM shared_folders WHERE shared_id = ?',
+        [f.folderId],
+      )
+      if (!row) return
+      const doc = new Y.Doc()
+      if (row.layout) Y.applyUpdate(doc, new Uint8Array(row.layout))
+      let version = Number(row.layout_version)
+      if (server && server.version > version) {
+        Y.applyUpdate(doc, openSharedState(row.folder_key, id, server.state))
+        version = server.version
+      }
+      const projected: Layout | null = row.layout_projected
+        ? JSON.parse(row.layout_projected)
+        : null
+      let dirty = Number(row.layout_dirty) === 1
+      // The owner's first time: the folder as it is becomes the layout.
+      if (canEdit(f.role) && (projected || own)) {
+        const real = await readReality(this.db, row.folder_id, f.folderId)
+        if (recordLocalChanges(doc, real, projected ?? EMPTY_LAYOUT)) dirty = true
+      }
+      const applied = await applyLayout(this.db, readLayout(doc), {
+        rootId: row.folder_id,
+        folderSharedId: f.folderId,
+        member: !own,
+        now: this.now(),
+      })
+      if (applied) report.folders++
+      const state = Y.encodeStateAsUpdate(doc)
+      const after = (await readReality(this.db, row.folder_id, f.folderId)).layout
+      await this.db.execute(
+        `UPDATE shared_folders SET layout = ?, layout_version = ?, layout_dirty = ?,
+                layout_projected = ?
+          WHERE shared_id = ?`,
+        [state, version, dirty ? 1 : 0, JSON.stringify(after), f.folderId],
+      )
+      if (!dirty || !canEdit(f.role)) return
+      const res = await this.remote.saveFolderLayout(
+        f.folderId,
+        sealSharedState(row.folder_key, id, state),
+        version,
+      )
+      if (res.ok) {
+        await this.db.execute(
+          'UPDATE shared_folders SET layout_version = ?, layout_dirty = 0 WHERE shared_id = ?',
+          [res.version, f.folderId],
+        )
+        return
+      }
+      // Someone saved first: take in theirs and go again.
+      server = res.state ? { state: res.state, version: res.version } : null
+      if (!server)
+        await this.db.execute('UPDATE shared_folders SET layout_version = ? WHERE shared_id = ?', [
+          res.version,
+          f.folderId,
+        ])
+    }
   }
 
   private folderName(f: SharedFolderMembership): string | null {
@@ -707,6 +796,10 @@ export class SharedNotes {
         folder_key: folderKey,
         owner_id: f.ownerId,
         name: serverName,
+        layout: null,
+        layout_version: 0,
+        layout_dirty: 0,
+        layout_projected: null,
       }
     } else if (row.role !== f.role) {
       await this.db.execute('UPDATE shared_folders SET role = ? WHERE shared_id = ?', [

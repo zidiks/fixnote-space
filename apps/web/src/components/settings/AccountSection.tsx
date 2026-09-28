@@ -1,6 +1,6 @@
 import { secretToPhrase } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button, ConfirmDialog, cn, Input } from '@fixnote/ui'
+import { Button, ConfirmDialog, cn, Input, Spinner } from '@fixnote/ui'
 import { Copy, Eye, EyeOff, LogOut, MonitorSmartphone, RefreshCw } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import {
@@ -20,7 +20,6 @@ import {
 } from '../../lib/account/account'
 import { formatRelative } from '../../lib/time'
 import { SharedLinksSection } from './SharedLinksSection'
-import { TelegramSection } from './TelegramSection'
 
 function Heading({ title, body }: { title: string; body?: string }) {
   return (
@@ -97,7 +96,7 @@ function SignIn() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <Button type="submit" disabled={busy}>
+        <Button type="submit" loading={busy}>
           {t('account.sendCode')}
         </Button>
       </div>
@@ -112,6 +111,7 @@ function EnterCode() {
   const [code, setCode] = useState('')
   const [cooldown, setCooldown] = useState(30)
   const { busy, error, run } = useBusy()
+  const resend = useBusy()
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -145,19 +145,20 @@ function EnterCode() {
           }}
           className="max-w-40 font-mono text-lg tracking-[0.3em]"
         />
-        <Button type="submit" disabled={busy || code.length < 6}>
+        <Button type="submit" loading={busy} disabled={code.length < 6}>
           {t('account.verify')}
         </Button>
       </div>
-      <ErrorText>{error}</ErrorText>
+      <ErrorText>{error ?? resend.error}</ErrorText>
       <div className="flex gap-3 text-sm">
         <Button
           type="button"
           variant="link"
           className="h-auto p-0"
           disabled={cooldown > 0 || busy}
+          loading={resend.busy}
           onClick={() =>
-            void run(
+            void resend.run(
               async () => {
                 await sendCode(email)
                 setCooldown(30)
@@ -250,7 +251,7 @@ function ConfirmPhrase() {
         <Button type="button" variant="ghost" onClick={backToPhrase}>
           {t('nav.back')}
         </Button>
-        <Button type="submit" disabled={busy || answers.some((a) => !a.trim())}>
+        <Button type="submit" loading={busy} disabled={answers.some((a) => !a.trim())}>
           {t('account.confirm')}
         </Button>
       </div>
@@ -263,17 +264,19 @@ function PairWithDevice() {
   const { t } = useTranslation()
   const pairing = useAccount((s) => s.pairing)
   const [error, setError] = useState<string | null>(null)
+  const [asking, setAsking] = useState(false)
   const ask = () => {
     setError(null)
-    startPairing().catch((err: unknown) =>
-      setError(err instanceof Error ? err.message : String(err)),
-    )
+    setAsking(true)
+    startPairing()
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setAsking(false))
   }
   if (!pairing) {
     return (
       <div className="space-y-2 border-t pt-4">
         <p className="max-w-md text-sm text-muted-foreground">{t('pairing.useDeviceBody')}</p>
-        <Button type="button" variant="outline" onClick={ask}>
+        <Button type="button" variant="outline" onClick={ask} loading={asking}>
           <MonitorSmartphone />
           {t('pairing.useDevice')}
         </Button>
@@ -286,11 +289,15 @@ function PairWithDevice() {
       {pairing.status === 'waiting' ? (
         <>
           <Heading title={t('pairing.waitingTitle')} body={t('pairing.waitingBody')} />
-          <p
-            data-testid="pairing-code"
-            className="font-mono text-3xl font-semibold tracking-widest tabular-nums"
-          >
-            {pairing.code}
+          <p className="flex items-center gap-3">
+            <span
+              data-testid="pairing-code"
+              className="font-mono text-3xl font-semibold tracking-widest tabular-nums"
+            >
+              {pairing.code}
+            </span>
+            {/* Waiting for the other device. */}
+            <Spinner className="size-5 text-muted-foreground" />
           </p>
         </>
       ) : (
@@ -300,7 +307,7 @@ function PairWithDevice() {
       )}
       <div className="flex gap-2">
         {pairing.status === 'expired' ? (
-          <Button type="button" variant="outline" onClick={ask}>
+          <Button type="button" variant="outline" onClick={ask} loading={asking}>
             {t('pairing.retry')}
           </Button>
         ) : null}
@@ -345,7 +352,7 @@ function Unlock() {
       />
       <ErrorText>{error}</ErrorText>
       <div className="flex gap-2">
-        <Button type="submit" disabled={busy || !phrase.trim()}>
+        <Button type="submit" loading={busy} disabled={!phrase.trim()}>
           {t('account.unlock')}
         </Button>
         <Button type="button" variant="ghost" onClick={() => void signOut()}>
@@ -414,7 +421,6 @@ function Ready() {
         </Button>
         {showPhrase && secret ? <PhraseGrid phrase={secretToPhrase(secret)} /> : null}
       </div>
-      <TelegramSection />
       <SharedLinksSection />
       <Button variant="outline" onClick={() => setConfirmOut(true)}>
         <LogOut />

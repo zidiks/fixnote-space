@@ -155,4 +155,25 @@ describe('CollabSession', () => {
     expect(b.awareness.getStates().has(a.doc.clientID)).toBe(false)
     b.destroy()
   })
+
+  it('sends the caret in the same batch as the text typed before it', async () => {
+    vi.useFakeTimers()
+    const { id, key } = room()
+    const net = relay({ minMs: 30, maxMs: 30 })
+    const a = new CollabSession({ key, roomId: id, transport: net.connect(), pingMs: 0 })
+    const b = new CollabSession({ key, roomId: id, transport: net.connect(), pingMs: 0 })
+    await vi.advanceTimersByTimeAsync(100)
+    const sentBefore = a.stats.sent
+    // Typing: the text changes, then the caret moves after it.
+    a.doc.getText('t').insert(0, 'hi')
+    a.awareness.setLocalStateField('cursor', { at: 2 })
+    await vi.advanceTimersByTimeAsync(50)
+    // One batch: the text and, right behind it, the caret (not the caret on its own timer later).
+    expect(a.stats.sent - sentBefore).toBe(2)
+    await vi.advanceTimersByTimeAsync(30)
+    expect(text(b)).toBe('hi')
+    expect(b.awareness.getStates().get(a.doc.clientID)).toMatchObject({ cursor: { at: 2 } })
+    a.destroy()
+    b.destroy()
+  })
 })

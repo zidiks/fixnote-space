@@ -109,7 +109,7 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
       const { data, error } = await client
         .from('shared_folder_members')
         .select(
-          'folder_id, role, wrapped_key, accepted, invited_at, shared_folders!inner(origin_folder_id, owner_id, name)',
+          'folder_id, role, wrapped_key, accepted, invited_at, shared_folders!inner(origin_folder_id, owner_id, name, layout, layout_version)',
         )
         .eq('user_id', userId)
       if (error) throw toError(error)
@@ -119,7 +119,13 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
         wrapped_key: string
         accepted: boolean
         invited_at: string
-        shared_folders: { origin_folder_id: string; owner_id: string; name: string }
+        shared_folders: {
+          origin_folder_id: string
+          owner_id: string
+          name: string
+          layout: string | null
+          layout_version: number
+        }
       }
       return ((data ?? []) as unknown as Row[]).map(
         (r): SharedFolderMembership => ({
@@ -131,6 +137,8 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
           accepted: r.accepted,
           invitedAt: Date.parse(r.invited_at),
           name: r.shared_folders.name,
+          layout: r.shared_folders.layout,
+          layoutVersion: Number(r.shared_folders.layout_version),
         }),
       )
     },
@@ -163,6 +171,12 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
     shareFolder: (origin, wrappedKey, name) =>
       rpc<string>('share_folder', { p_origin: origin, p_wrapped_key: wrappedKey, p_name: name }),
     renameFolder: (id, name) => rpc('rename_shared_folder', { p_folder: id, p_name: name }),
+    saveFolderLayout: (id, layout, base) =>
+      rpc<SaveResult>('save_folder_layout', {
+        p_folder: id,
+        p_layout: layout,
+        p_base_version: base,
+      }),
     acceptFolder: (id) => rpc('accept_shared_folder', { p_folder: id }),
     addFolderMember: (id, user, role, wrappedKey) =>
       rpc('add_folder_member', {
