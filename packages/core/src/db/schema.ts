@@ -203,6 +203,32 @@ export const MIGRATIONS: readonly string[] = [
   ALTER TABLE shared_docs ADD COLUMN folder_shared_id TEXT;
   ALTER TABLE shared_docs ADD COLUMN created_by TEXT;
   `,
+  // 12: when the text last changed. \`updated_at\` moves with any change (a move, a delete) because
+  // sync settles those by it; what the app shows and sorts by is \`edited_at\`, which only a change
+  // of the text moves. Kept by triggers, so every writer (repo, sync, shared notes) gets it right.
+  `
+  ALTER TABLE notes ADD COLUMN edited_at INTEGER;
+  UPDATE notes SET edited_at = updated_at;
+  CREATE INDEX notes_edited ON notes(edited_at DESC, id DESC) WHERE deleted_at IS NULL;
+  CREATE TRIGGER notes_edited_insert AFTER INSERT ON notes WHEN NEW.edited_at IS NULL
+  BEGIN
+    UPDATE notes SET edited_at = NEW.updated_at WHERE id = NEW.id;
+  END;
+  CREATE TRIGGER notes_edited_content AFTER UPDATE OF content ON notes
+    WHEN NEW.content IS NOT OLD.content
+  BEGIN
+    UPDATE notes SET edited_at = NEW.updated_at WHERE id = NEW.id;
+  END;
+  `,
+  // 13: a shared folder's layout (its subfolders and where each note is), a Yjs document like a
+  // shared note's; \`layout_projected\` is the layout as last applied here, so changes made here
+  // (a new subfolder, a note moved) can be told from the others'.
+  `
+  ALTER TABLE shared_folders ADD COLUMN layout BLOB;
+  ALTER TABLE shared_folders ADD COLUMN layout_version INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE shared_folders ADD COLUMN layout_dirty INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE shared_folders ADD COLUMN layout_projected TEXT;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

@@ -227,7 +227,7 @@ export function NoteView({ id }: { id: string }) {
                   <span className="flex-1">{t('common.noFolder')}</span>
                   <Check className={cn(n.folderId !== null && 'invisible')} />
                 </DropdownMenuItem>
-                {folderTree(folders.filter((f) => f.shared !== 'view')).map(
+                {folderTree(folders.filter((f) => f.access !== 'view')).map(
                   ({ folder: f, depth }) => (
                     <DropdownMenuItem
                       key={f.id}

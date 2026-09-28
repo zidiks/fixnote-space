@@ -97,7 +97,7 @@ export class CollabSession {
     this.roomId = opts.roomId
     this.transport = opts.transport
     this.batchMs = opts.batchMs ?? 50
-    this.awarenessMs = opts.awarenessMs ?? 100
+    this.awarenessMs = opts.awarenessMs ?? 50
     this.now = opts.now ?? (() => performance.now())
     this.listenOnly = opts.listenOnly ?? false
     this.doc.on('update', this.onDocUpdate)
@@ -136,6 +136,9 @@ export class CollabSession {
     const update = this.pending.length === 1 ? this.pending[0] : Y.mergeUpdates(this.pending)
     this.pending = []
     if (update) this.send(UPDATE, update)
+    // The caret moved with the text: send it right behind, so the others see both at once (and
+    // not the text first and the caret a moment later).
+    this.flushAwareness()
   }
 
   destroy(): void {
@@ -167,6 +170,8 @@ export class CollabSession {
     if (origin === REMOTE || this.destroyed) return
     for (const id of [...change.added, ...change.updated, ...change.removed])
       this.awarenessChanged.add(id)
+    // Typing: the next batch of text carries it.
+    if (this.flushTimer) return
     this.awarenessTimer ??= setTimeout(() => this.flushAwareness(), this.awarenessMs)
   }
 

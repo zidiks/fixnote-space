@@ -284,6 +284,24 @@ describe('shared folders', () => {
       )
     ).map((r) => r.content)
 
+  /** The folders of a device as paths, sorted. */
+  const tree = async (d: Device) => {
+    const folders = await d.repo.listFolders()
+    const path = (id: string | null): string => {
+      const f = folders.find((x) => x.id === id)
+      return f ? (f.parentId ? `${path(f.parentId)}/${f.name}` : f.name) : ''
+    }
+    return folders.map((f) => path(f.id)).sort()
+  }
+  /** Which folder (by name) each note is in. */
+  const where = async (d: Device) => {
+    const folders = await d.repo.listFolders()
+    const out: Record<string, string> = {}
+    for (const n of (await d.repo.listNotes()).items)
+      out[n.title] = folders.find((f) => f.id === n.folderId)?.name ?? ''
+    return out
+  }
+
   async function setUp() {
     const ann = await (await account('ann', 'ann@x.io')).device()
     const bob = await (await account('bob', 'bob@x.io')).device()
@@ -312,8 +330,10 @@ describe('shared folders', () => {
       { kind: 'folder', sharedId: id, from: 'ann@x.io', role: 'edit', title: 'Trip' },
     ])
     const bobTrip = await bob.shared.acceptFolder(id)
-    expect((await bob.repo.listFolders()).map((f) => f.name)).toEqual(['Trip'])
+    // The same tree: Hotels inside Trip, each note where Ann has it.
+    expect(await tree(bob)).toEqual(['Trip', 'Trip/Hotels'])
     expect(await inFolder(bob, bobTrip)).toEqual(['Hotel Roma', 'Plan'])
+    expect(await where(bob)).toEqual({ 'Hotel Roma': 'Hotels', Plan: 'Trip' })
     // Ann's folder, not Bob's: it stays out of his personal sync.
     const [row] = await bob.db.query<{ shared_id: string | null; dirty: number }>(
       'SELECT shared_id, dirty FROM folders WHERE id = ?',
@@ -341,7 +361,7 @@ describe('shared folders', () => {
     await ann.repo.renameFolder(trip.id, 'Rome trip')
     await ann.shared.sync()
     await bob.shared.sync()
-    expect((await bob.repo.listFolders()).map((f) => f.name)).toEqual(['Rome trip'])
+    expect(await tree(bob)).toEqual(['Rome trip', 'Rome trip/Hotels'])
   })
 
   it('a note deleted in the folder is deleted for everyone once its undo has run out', async () => {
@@ -375,7 +395,7 @@ describe('shared folders', () => {
     const { ann, cat, trip, plan, id } = await setUp()
     const catTrip = await cat.shared.acceptFolder(id)
     expect(await cat.shared.folderOf(catTrip)).toMatchObject({ role: 'view' })
-    expect((await cat.repo.listFolders())[0]?.shared).toBe('view')
+    expect((await cat.repo.listFolders()).find((f) => f.id === catTrip)?.shared).toBe('view')
     const catPlan = (await cat.repo.listNotes()).items.find((n) => n.title === 'Plan')
     expect(catPlan?.readOnly).toBe(true)
     const noteId = catPlan?.id as string
@@ -442,5 +462,62 @@ describe('shared folders', () => {
     expect((await pc.repo.listFolders()).map((f) => f.name)).toEqual(['Work'])
     expect((await pc.repo.listNotes()).items).toHaveLength(1)
     expect((await pc.repo.getNote(note.id))?.sharedId).not.toBeNull()
+  })
+
+  it('editors reorganize the subfolders; everyone gets the same tree', async () => {
+    const { ann, bob, cat, trip, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    await cat.shared.acceptFolder(id)
+    // Bob makes a subfolder and moves the plan into it.
+    const ideas = await bob.repo.createFolder('Ideas', bobTrip)
+    const plan = (await bob.repo.listNotes()).items.find((n) => n.title === 'Plan')
+    await bob.repo.moveNote(plan?.id as string, ideas.id)
+    await bob.shared.sync()
+    await ann.shared.sync()
+    await cat.shared.sync()
+    for (const d of [ann, cat]) {
+      expect(await tree(d)).toEqual(['Trip', 'Trip/Hotels', 'Trip/Ideas'])
+      expect(await where(d)).toMatchObject({ Plan: 'Ideas', 'Hotel Roma': 'Hotels' })
+    }
+    // Bob's subfolder stays out of his own folders (it is Ann's folder).
+    const [row] = await bob.db.query<{ shared_id: string | null }>(
+      'SELECT shared_id FROM folders WHERE id = ?',
+      [ideas.id],
+    )
+    expect(row?.shared_id).toBe(id)
+    // Ann's copy is her own folder: it goes to her other devices with her personal sync.
+    const [annRow] = await ann.db.query<{ shared_id: string | null }>(
+      'SELECT shared_id FROM folders WHERE id = ?',
+      [ideas.id],
+    )
+    expect(annRow?.shared_id).toBeNull()
+
+    // Bob deletes Hotels: its note goes up to Trip for everyone.
+    const hotels = (await bob.repo.listFolders()).find((f) => f.name === 'Hotels')
+    await bob.repo.deleteFolder(hotels?.id as string)
+    await bob.shared.sync()
+    await ann.shared.sync()
+    await cat.shared.sync()
+    for (const d of [ann, bob, cat]) {
+      expect(await tree(d)).toEqual(['Trip', 'Trip/Ideas'])
+      expect(await where(d)).toMatchObject({ 'Hotel Roma': 'Trip' })
+    }
+    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma', 'Plan'])
+
+    // A viewer cannot make subfolders there.
+    const catTrip = (await cat.repo.listFolders()).find((f) => f.name === 'Trip')
+    await expect(cat.repo.createFolder('Mine', catTrip?.id)).rejects.toBeInstanceOf(ReadOnlyError)
+  })
+
+  it('two people reorganizing at once both keep their changes', async () => {
+    const { ann, bob, trip, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    await ann.repo.createFolder('Food', trip.id)
+    await bob.repo.createFolder('Museums', bobTrip)
+    await ann.shared.sync()
+    await bob.shared.sync() // Bob saves after Ann: merges hers and saves again
+    await ann.shared.sync()
+    for (const d of [ann, bob])
+      expect(await tree(d)).toEqual(['Trip', 'Trip/Food', 'Trip/Hotels', 'Trip/Museums'])
   })
 })

@@ -68,6 +68,8 @@ export interface Folder {
   noteCount: number
   /** Shared with other people: this account's role in it (the owner's too). */
   shared: 'owner' | 'edit' | 'view' | null
+  /** The role of the shared folder it is in (itself or a parent), for its subfolders too. */
+  access: 'owner' | 'edit' | 'view' | null
 }
 
 export interface TagCount {

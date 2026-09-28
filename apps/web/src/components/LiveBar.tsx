@@ -76,7 +76,7 @@ export function useSharedLive(sharedId: string | null, onLost?: () => void) {
 /** How many faces the stack shows before "+N". */
 const MAX_FACES = 4
 
-/** Under the note header of a shared note: that it is shared, and who else is in it now. */
+/** Under the note header of a shared note: that it is shared, and who is in it now (you too). */
 export function LiveBar({ live }: { live: LiveEditing }) {
   const { t } = useTranslation()
   const [, refresh] = useReducer((n: number) => n + 1, 0)
@@ -85,9 +85,15 @@ export function LiveBar({ live }: { live: LiveEditing }) {
     return () => live.session.awareness.off('change', refresh)
   }, [live])
 
-  const others = othersIn(live.session.awareness)
-  const shown = others.slice(0, MAX_FACES)
-  const rest = others.slice(MAX_FACES)
+  // Everyone in the note now, this person last (as the others see them).
+  const people: (LiveUser & { clientId: number; self?: boolean })[] = [
+    ...othersIn(live.session.awareness),
+    { ...live.user, clientId: live.session.doc.clientID, self: true },
+  ]
+  const shown = people.slice(-MAX_FACES)
+  const rest = people.slice(0, -MAX_FACES)
+  const who = (u: LiveUser & { self?: boolean }) =>
+    `${u.email || u.name}${u.self ? ` · ${t('people.you')}` : ''}`
   const roleLabel = (u: LiveUser) =>
     u.role === 'owner'
       ? t('people.owner')
@@ -104,43 +110,41 @@ export function LiveBar({ live }: { live: LiveEditing }) {
           <span className="text-muted-foreground"> · {t('people.readOnly')}</span>
         ) : null}
       </span>
-      {others.length ? (
-        <div className="flex shrink-0 items-center -space-x-1.5">
-          {shown.map((u) => (
-            <HoverCard key={u.clientId}>
-              <HoverCardTrigger asChild>
-                <span
-                  className="flex size-7 cursor-default items-center justify-center rounded-full text-[11px] font-semibold text-white ring-2 ring-card"
-                  style={{ backgroundColor: u.color }}
-                >
-                  {initials(u.email || u.name)}
-                </span>
-              </HoverCardTrigger>
-              <HoverCardContent side="bottom" align="end">
-                <p className="font-medium">{u.email || u.name}</p>
-                <p className="text-xs text-muted-foreground">{roleLabel(u)}</p>
-              </HoverCardContent>
-            </HoverCard>
-          ))}
-          {rest.length ? (
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <span className="flex size-7 cursor-default items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground ring-2 ring-card">
-                  +{rest.length}
-                </span>
-              </HoverCardTrigger>
-              <HoverCardContent side="bottom" align="end" className="space-y-1.5">
-                {rest.map((u) => (
-                  <div key={u.clientId}>
-                    <p className="font-medium">{u.email || u.name}</p>
-                    <p className="text-xs text-muted-foreground">{roleLabel(u)}</p>
-                  </div>
-                ))}
-              </HoverCardContent>
-            </HoverCard>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="flex shrink-0 items-center -space-x-1.5">
+        {rest.length ? (
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <span className="flex size-7 cursor-default items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground ring-2 ring-card">
+                +{rest.length}
+              </span>
+            </HoverCardTrigger>
+            <HoverCardContent side="bottom" align="end" className="space-y-1.5">
+              {rest.map((u) => (
+                <div key={u.clientId}>
+                  <p className="font-medium">{who(u)}</p>
+                  <p className="text-xs text-muted-foreground">{roleLabel(u)}</p>
+                </div>
+              ))}
+            </HoverCardContent>
+          </HoverCard>
+        ) : null}
+        {shown.map((u) => (
+          <HoverCard key={u.clientId}>
+            <HoverCardTrigger asChild>
+              <span
+                className="flex size-7 cursor-default items-center justify-center rounded-full text-[11px] font-semibold text-white ring-2 ring-card"
+                style={{ backgroundColor: u.color }}
+              >
+                {initials(u.email || u.name)}
+              </span>
+            </HoverCardTrigger>
+            <HoverCardContent side="bottom" align="end">
+              <p className="font-medium">{who(u)}</p>
+              <p className="text-xs text-muted-foreground">{roleLabel(u)}</p>
+            </HoverCardContent>
+          </HoverCard>
+        ))}
+      </div>
     </div>
   )
 }

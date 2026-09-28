@@ -32,6 +32,8 @@ interface FolderRow {
   origin: string
   name: string
   members: Map<string, Member>
+  layout?: string | null
+  layoutVersion?: number
 }
 
 const RANK: Record<SharedRole, number> = { owner: 0, edit: 1, view: 2 }
@@ -218,6 +220,8 @@ export class MemorySharedServer {
                   accepted: m.accepted,
                   invitedAt: m.invitedAt,
                   name: f.name,
+                  layout: f.layout ?? null,
+                  layoutVersion: f.layoutVersion ?? 0,
                 },
               ]
             : []
@@ -249,6 +253,16 @@ export class MemorySharedServer {
           ]),
         })
         return id
+      },
+      saveFolderLayout: async (id, layout, base): Promise<SaveResult> => {
+        const r = folderRole(id)
+        must(r === 'owner' || r === 'edit', 'read only')
+        const f = this.folders.get(id) as FolderRow
+        const version = f.layoutVersion ?? 0
+        if (version !== base) return { ok: false, version, state: f.layout ?? null }
+        f.layout = layout
+        f.layoutVersion = version + 1
+        return { ok: true, version: f.layoutVersion }
       },
       renameFolder: async (id, name) => {
         must(folderRole(id, false) === 'owner', 'not the owner')

@@ -80,7 +80,8 @@ const PREVIEW_CHARS = 4000
 const TAG_SEP = '\u001f'
 
 const SUMMARY_COLUMNS = `
-  n.id, n.folder_id, n.type, n.daily_date, n.title, n.pinned_at, n.shared_id, n.created_at, n.updated_at,
+  n.id, n.folder_id, n.type, n.daily_date, n.title, n.pinned_at, n.shared_id, n.created_at,
+  n.edited_at AS updated_at,
   (SELECT d.role = 'view' FROM shared_docs d WHERE d.shared_id = n.shared_id) AS read_only,
   (SELECT group_concat(t.name, '${TAG_SEP}') FROM note_tags nt JOIN tags t ON t.id = nt.tag_id
      WHERE nt.note_id = n.id) AS tags`
@@ -132,7 +133,7 @@ function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } 
     where.push(filter.pinned ? 'n.pinned_at IS NOT NULL' : 'n.pinned_at IS NULL')
   }
   if (filter.updatedSince !== undefined) {
-    where.push('n.updated_at >= ?')
+    where.push('n.edited_at >= ?')
     params.push(filter.updatedSince)
   }
   if (filter.tag) {
@@ -334,13 +335,13 @@ export class NotesRepo {
     const limit = Math.min(Math.max(opts.limit ?? 30, 1), 200)
     const { where, params } = filterSql(opts.filter ?? {})
     if (opts.cursor) {
-      where.push('(n.updated_at < ? OR (n.updated_at = ? AND n.id < ?))')
+      where.push('(n.edited_at < ? OR (n.edited_at = ? AND n.id < ?))')
       params.push(opts.cursor.updatedAt, opts.cursor.updatedAt, opts.cursor.id)
     }
     const rows = await this.db.query<NoteRow>(
       `SELECT ${SUMMARY_COLUMNS}, substr(n.content, 1, ${PREVIEW_CHARS}) AS body
          FROM notes n WHERE ${where.join(' AND ')}
-        ORDER BY n.updated_at DESC, n.id DESC LIMIT ?`,
+        ORDER BY n.edited_at DESC, n.id DESC LIMIT ?`,
       [...params, limit + 1],
     )
     const items = rows.slice(0, limit).map(toSummary)
@@ -363,7 +364,7 @@ export class NotesRepo {
               snippet(notes_fts, 1, '${MARK_START}', '${MARK_END}', '…', 12) AS snip
          FROM notes_fts JOIN notes n ON n.rowid = notes_fts.rowid
         WHERE notes_fts MATCH ? AND ${where.join(' AND ')}
-        ORDER BY bm25(notes_fts, 4.0, 1.0), n.updated_at DESC
+        ORDER BY bm25(notes_fts, 4.0, 1.0), n.edited_at DESC
         LIMIT ?`,
       [match, ...params, opts.limit ?? 20],
     )
@@ -509,6 +510,16 @@ export class NotesRepo {
          FROM folders f WHERE f.deleted_at IS NULL
         ORDER BY f.sort, f.name COLLATE NOCASE`,
     )
+    const byId = new Map(rows.map((r) => [r.id, r]))
+    // The nearest shared folder above (or itself) decides what may be done in a subfolder.
+    const access = (id: string): Folder['access'] => {
+      const seen = new Set<string>()
+      for (let at = byId.get(id); at && !seen.has(at.id); at = byId.get(at.parent_id ?? '')) {
+        seen.add(at.id)
+        if (at.shared_role) return at.shared_role as Folder['access']
+      }
+      return null
+    }
     return rows.map((r) => ({
       id: r.id,
       parentId: r.parent_id,
@@ -516,6 +527,7 @@ export class NotesRepo {
       sort: Number(r.sort),
       noteCount: Number(r.note_count),
       shared: (r.shared_role as Folder['shared']) ?? null,
+      access: access(r.id),
     }))
   }
 
@@ -530,11 +542,19 @@ export class NotesRepo {
       [parentId],
     )
     const sort = Number(max?.m ?? 0) + 1
+    // Inside someone else's shared folder: part of their folder, not of this account's own.
+    const [parent] = parentId
+      ? await this.db.query<{ shared_id: string | null }>(
+          'SELECT shared_id FROM folders WHERE id = ?',
+          [parentId],
+        )
+      : []
     await this.db.execute(
-      'INSERT INTO folders (id, parent_id, name, sort, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, parentId, clean, sort, ts, ts],
+      `INSERT INTO folders (id, parent_id, name, sort, created_at, updated_at, shared_id, dirty)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, parentId, clean, sort, ts, ts, parent?.shared_id ?? null, parent?.shared_id ? 0 : 1],
     )
-    return { id, parentId, name: clean, sort, noteCount: 0, shared: null }
+    return { id, parentId, name: clean, sort, noteCount: 0, shared: null, access: null }
   }
 
   async renameFolder(id: string, name: string): Promise<void> {
