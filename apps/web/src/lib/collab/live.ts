@@ -1,7 +1,7 @@
 import { CollabSession, noteKeyBytes } from '@fixnote/core'
 import * as Y from 'yjs'
 import { requestSync, sharedContext } from '../account/account'
-import { colorFor, type LiveUser } from './people'
+import { assignColors, colorFor, type LiveUser } from './people'
 
 /** A shared note open in the editor: its live room, and how this person shows up to the others. */
 export interface LiveEditing {
@@ -46,10 +46,23 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
   const user: LiveUser = {
     name: ctx.email.split('@')[0] || ctx.email,
     email: ctx.email,
+    id: ctx.userId,
     color: colorFor(ctx.userId),
     role: stored.role,
   }
   session.awareness.setLocalStateField('user', user)
+  // No two people in the note share a colour: when someone comes or goes, everyone recomputes the
+  // same assignment and takes their own colour from it (carets and avatars follow).
+  const recolor = () => {
+    const ids = [...session.awareness.getStates().values()]
+      .map((s) => (s as { user?: Partial<LiveUser> }).user?.id)
+      .filter((id): id is string => Boolean(id))
+    const color = assignColors(ids).get(user.id) ?? user.color
+    if (color === user.color) return
+    user.color = color
+    session.awareness.setLocalStateField('user', { ...user })
+  }
+  session.awareness.on('change', recolor)
   if (!readOnly) await session.whenSynced(1200)
   return {
     session,
