@@ -229,6 +229,12 @@ export const MIGRATIONS: readonly string[] = [
   ALTER TABLE shared_folders ADD COLUMN layout_dirty INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE shared_folders ADD COLUMN layout_projected TEXT;
   `,
+  // 14: no tags any more (#words in a note are plain text); tidy stops suggesting them.
+  `
+  DROP TABLE note_tags;
+  DROP TABLE tags;
+  DELETE FROM tidy_suggestions WHERE kind = 'tag';
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

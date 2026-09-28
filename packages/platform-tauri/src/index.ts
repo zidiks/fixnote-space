@@ -17,6 +17,7 @@ export interface AppInfo {
   os: string
   arch: string
   updates: boolean
+  store: boolean
 }
 
 /** Round-trip to the Rust side; proves the bridge works. */

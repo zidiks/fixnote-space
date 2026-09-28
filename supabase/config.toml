@@ -105,3 +105,18 @@ verify_jwt = true
 [functions.telegram-bot]
 enabled = true
 verify_jwt = false
+
+# Payments (Suby). billing opens a checkout for the signed-in account; suby-webhook takes Suby's
+# signed events (no user JWT; checked with the endpoint secret). Secrets: `pnpm sb secrets set
+# SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_...`.
+[functions.billing]
+enabled = true
+verify_jwt = true
+
+[functions.suby-webhook]
+enabled = true
+verify_jwt = false
+
+[functions.storage-cleanup]
+enabled = true
+verify_jwt = false

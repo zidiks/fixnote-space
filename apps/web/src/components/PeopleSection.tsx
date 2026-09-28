@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync, sharedContext } from '../lib/account/account'
 import { errorMessage } from '../lib/errors'
+import { isFree, showProPrompt } from '../lib/plan'
 import { useFolders, useInvalidateNotes } from '../lib/queries'
 
 const MEMBERS = 'shared-members'
@@ -129,8 +130,13 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
     }
   }
 
-  const invite = (address: string, as: 'edit' | 'view', key = 'invite') =>
-    act(
+  const invite = (address: string, as: 'edit' | 'view', key = 'invite') => {
+    // Inviting someone new is part of Pro; asking again someone already invited is not.
+    if (key === 'invite' && isFree()) {
+      showProPrompt('share')
+      return Promise.resolve()
+    }
+    return act(
       key,
       async () => {
         if (address.toLowerCase() === ctx.email.toLowerCase()) throw new Error(t('people.self'))
@@ -142,6 +148,7 @@ export function PeopleSection({ target, onDone }: { target: PeopleTarget; onDone
         ? t('people.invitedFolder', { email: address })
         : t('people.invited', { email: address }),
     )
+  }
 
   const status = (m: SharedMember) =>
     m.accepted ? null : ctx.shared.isExpired(m) ? t('people.expired') : t('people.pending')

@@ -1,5 +1,6 @@
 //! The local MCP server (apps/mcp) ships next to the app binary. These commands tell the UI where
 //! it is and add it to the configuration of MCP clients (Claude Desktop, Cursor, Codex) on request.
+//! The Store build hands out its `fixnote-mcp` alias instead (see store.rs).
 
 use std::path::PathBuf;
 
@@ -31,8 +32,14 @@ pub fn mcp_info() -> Result<McpInfo, String> {
     let built = std::fs::metadata(&path)
         .map(|m| m.len() > 1_000_000)
         .unwrap_or(false);
+    // The Store build's folder changes with every update: clients start it through the alias.
+    let command = if crate::store::packaged() {
+        crate::store::mcp_alias().ok_or("no LOCALAPPDATA")?
+    } else {
+        path
+    };
     Ok(McpInfo {
-        command: path.to_string_lossy().into_owned(),
+        command: command.to_string_lossy().into_owned(),
         built,
     })
 }

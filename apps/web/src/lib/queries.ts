@@ -21,7 +21,6 @@ export const keys = {
   similar: (q: string) => ['notes', 'similar', q] as const,
   counts: ['counts'] as const,
   folders: ['folders'] as const,
-  tags: ['tags'] as const,
 }
 
 const PAGE = 30
@@ -70,11 +69,6 @@ export function useFolders() {
   return useQuery({ queryKey: keys.folders, queryFn: () => repo.listFolders() })
 }
 
-export function useTags() {
-  const repo = useRepo()
-  return useQuery({ queryKey: keys.tags, queryFn: () => repo.listTags() })
-}
-
 export function useSearch(q: string) {
   const repo = useRepo()
   const query = q.trim()
@@ -115,7 +109,6 @@ export function useInvalidateNotes() {
     return Promise.all([
       qc.invalidateQueries({ queryKey: keys.notes }),
       qc.invalidateQueries({ queryKey: keys.counts }),
-      qc.invalidateQueries({ queryKey: keys.tags }),
       qc.invalidateQueries({ queryKey: keys.folders }),
     ])
   }

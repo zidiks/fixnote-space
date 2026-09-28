@@ -2,12 +2,13 @@ import { useTranslation } from '@fixnote/i18n'
 import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo } from 'react'
-import { Toaster } from 'sonner'
+import { Toaster, toast } from 'sonner'
 import { ChatPanel } from '../components/ChatPanel'
 import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
 import { ListView } from '../components/ListView'
 import { PairingRequestDialog } from '../components/PairingRequestDialog'
+import { ProDialog, TrialEndedDialog } from '../components/ProCard'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
@@ -15,6 +16,7 @@ import { SettingsDialog } from '../components/settings/SettingsDialog'
 import { TidyView } from '../components/TidyView'
 import { TitleBar } from '../components/TitleBar'
 import { VoiceBar } from '../components/VoiceBar'
+import { paymentReturned } from '../lib/account/account'
 import { AccountProvider } from '../lib/account/provider'
 import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider } from '../lib/db'
@@ -77,6 +79,19 @@ function AppShell() {
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const { sidebarOpen, chatOpen, theme, narrow, drawerOpen } = ui
+  // Back from Suby's payment page (supabase/functions/billing): thank, then look for Pro.
+  useEffect(() => {
+    const url = new URL(location.href)
+    const billing = url.searchParams.get('billing')
+    if (!billing) return
+    url.searchParams.delete('billing')
+    history.replaceState(null, '', url)
+    if (billing === 'success') {
+      toast.success(t('plan.thanks'))
+      paymentReturned()
+    }
+  }, [t])
+
   // Half a laptop screen or less: panels open over the content instead of squeezing it.
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 799px)')
@@ -186,6 +201,8 @@ function AppShell() {
       ) : null}
       <Spotlight />
       <SettingsDialog />
+      <ProDialog />
+      <TrialEndedDialog />
       <VoiceBar />
       <DropLayer />
       <PairingRequestDialog />

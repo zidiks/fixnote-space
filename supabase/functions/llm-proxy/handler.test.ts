@@ -1,5 +1,5 @@
 import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1'
-import { handle, type ProxyEnv } from './handler.ts'
+import { type Allowance, handle, type Meter, type ProxyEnv } from './handler.ts'
 
 const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '')
 const token = (claims: object) => `${b64({ alg: 'HS256' })}.${b64(claims)}.sig`
@@ -19,6 +19,9 @@ const upstream = Deno.serve({ port: 0, onListen() {} }, async (req) => {
   const stream = new ReadableStream({
     start(c) {
       c.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\n'))
+      // Split mid-line, as networks do: the usage line must still be read whole.
+      c.enqueue(new TextEncoder().encode('data: {"choices":[],"usage":{"prompt_tokens":40,'))
+      c.enqueue(new TextEncoder().encode('"completion_tokens":2,"total_tokens":42}}\n\n'))
       c.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
       c.close()
     },
@@ -89,6 +92,55 @@ Deno.test('maps provider errors without leaking their body', async () => {
   const text = await res.text()
   assertStringIncludes(text, 'quota exhausted')
   assertEquals(text.includes('secret text'), false)
+})
+
+function meter(allowance: Allowance) {
+  const charged: [string, number][] = []
+  const m: Meter = {
+    allowance: async () => allowance,
+    record: async (user, tokens) => {
+      charged.push([user, tokens])
+    },
+  }
+  return { m, charged }
+}
+
+Deno.test('charges the tokens the provider reports, once the answer is read', async () => {
+  const { m, charged } = meter({ ok: true })
+  const res = await handle(post(ok, auth('m1')), env(), Date.now(), m)
+  assertEquals(seen?.body.stream_options, { include_usage: true })
+  assertEquals(charged, [])
+  assertStringIncludes(await res.text(), '"total_tokens":42')
+  assertEquals(charged, [['m1', 42]])
+})
+
+Deno.test('charges an estimate when the reader stops early', async () => {
+  const { m, charged } = meter({ ok: true })
+  const res = await handle(post(ok, auth('m2')), env(), Date.now(), m)
+  await res.body?.cancel()
+  assertEquals(charged.length, 1)
+  assertEquals(charged[0]?.[0], 'm2')
+  assertEquals((charged[0]?.[1] ?? 0) > 0, true)
+})
+
+Deno.test('refuses when the allowance says no, with the reason and the renewal date', async () => {
+  const free = await handle(
+    post(ok, auth('m3')),
+    env(),
+    Date.now(),
+    meter({ ok: false, reason: 'pro_required' }).m,
+  )
+  assertEquals(free.status, 402)
+  assertEquals((await free.json()).error.code, 'pro_required')
+  const spent = meter({ ok: false, reason: 'month_limit', resets_at: '2026-10-01' })
+  const res = await handle(post(ok, auth('m4')), env(), Date.now(), spent.m)
+  assertEquals(res.status, 429)
+  assertEquals((await res.json()).error, {
+    message: 'This month’s AI allowance is used up',
+    code: 'month_limit',
+    resetsAt: '2026-10-01',
+  })
+  assertEquals(spent.charged, [])
 })
 
 Deno.test({

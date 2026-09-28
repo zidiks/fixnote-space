@@ -33,3 +33,4 @@ for (const name of readdirSync(icons)) {
 rmSync(full, { recursive: true })
 rmSync(mac, { recursive: true })
 console.log(`icons updated in ${icons}`)
+await import('./msix-assets.mjs')

@@ -50,7 +50,7 @@ describe('merge3', () => {
 })
 
 describe('SyncEngine', () => {
-  it('moves notes, folders and tags between devices, encrypted on the way', async () => {
+  it('moves notes and folders between devices, encrypted on the way', async () => {
     const a = await device('a')
     const b = await device('b')
     const folder = await a.repo.createFolder('Работа')
@@ -63,12 +63,25 @@ describe('SyncEngine', () => {
 
     expect(await b.engine.sync()).toMatchObject({ pulled: 3, pushed: 0 })
     const [note] = (await b.repo.listNotes()).items
-    expect(note).toMatchObject({ title: 'Секретный план #work', folderId: sub.id, tags: ['work'] })
+    expect(note).toMatchObject({ title: 'Секретный план #work', folderId: sub.id })
     expect((await b.repo.listFolders()).map((f) => [f.name, f.parentId])).toEqual([
       ['Проекты', folder.id],
       ['Работа', null],
     ])
     expect((await b.repo.search('план')).length).toBe(1)
+  })
+
+  it('only downloads when told not to push, and sends the waiting changes later', async () => {
+    const a = await device('a')
+    const b = await device('b')
+    await a.repo.createNote({ content: 'с первого устройства' })
+    await a.engine.sync()
+    await b.repo.createNote({ content: 'со второго, пока без синхронизации' })
+    expect(await b.engine.sync({ push: false })).toMatchObject({ pulled: 1, pushed: 0 })
+    expect(remote.notes.size).toBe(1)
+    expect(await b.engine.pendingCount()).toBe(1)
+    expect(await b.engine.sync()).toMatchObject({ pushed: 1 })
+    expect(remote.notes.size).toBe(2)
   })
 
   it('is idempotent', async () => {

@@ -1,7 +1,7 @@
 import type { SqlDriver, SqlRow, SqlValue } from '../platform'
 import { merge3, unionLines } from '../sync/merge'
 import { addTasks } from './daily'
-import { deriveExcerpt, deriveTitle, extractTags, taskProgress, toPlainText } from './markdown'
+import { deriveExcerpt, deriveTitle, taskProgress, toPlainText } from './markdown'
 import { applyTaskRule, dueRecurringTasks, type Recurrence } from './recurrence'
 import { buildFtsQuery } from './search'
 import {
@@ -18,23 +18,9 @@ import {
   type NoteType,
   type SearchHit,
   type SyncConflict,
-  type TagCount,
 } from './types'
 
 type Tx = Pick<SqlDriver, 'execute' | 'query'>
-
-/** Rebuilds a note's tag links from its content. Shared with sync, which writes notes directly. */
-export async function syncNoteTags(tx: Tx, noteId: string, content: string) {
-  const names = extractTags(content)
-  await tx.execute('DELETE FROM note_tags WHERE note_id = ?', [noteId])
-  for (const name of names) {
-    await tx.execute('INSERT INTO tags (name) VALUES (?) ON CONFLICT (name) DO NOTHING', [name])
-    await tx.execute(
-      'INSERT OR IGNORE INTO note_tags (note_id, tag_id) SELECT ?, id FROM tags WHERE name = ?',
-      [noteId, name],
-    )
-  }
-}
 
 export interface RepoOptions {
   now?: () => number
@@ -50,7 +36,6 @@ interface NoteRow extends SqlRow {
   daily_date: string | null
   title: string
   body: string
-  tags: string | null
   pinned_at: number | null
   shared_id: string | null
   read_only: number | null
@@ -75,16 +60,13 @@ export interface SharingWrite {
   fromSharing?: boolean
 }
 
-/** Enough of the note to compute excerpt, tags and task progress for cards. */
+/** Enough of the note to compute excerpt and task progress for cards. */
 const PREVIEW_CHARS = 4000
-const TAG_SEP = '\u001f'
 
 const SUMMARY_COLUMNS = `
   n.id, n.folder_id, n.type, n.daily_date, n.title, n.pinned_at, n.shared_id, n.created_at,
   n.edited_at AS updated_at,
-  (SELECT d.role = 'view' FROM shared_docs d WHERE d.shared_id = n.shared_id) AS read_only,
-  (SELECT group_concat(t.name, '${TAG_SEP}') FROM note_tags nt JOIN tags t ON t.id = nt.tag_id
-     WHERE nt.note_id = n.id) AS tags`
+  (SELECT d.role = 'view' FROM shared_docs d WHERE d.shared_id = n.shared_id) AS read_only`
 
 function toSummary(row: NoteRow): NoteSummary {
   const body = row.body ?? ''
@@ -95,7 +77,6 @@ function toSummary(row: NoteRow): NoteSummary {
     dailyDate: row.daily_date,
     title: row.title,
     excerpt: deriveExcerpt(body),
-    tags: row.tags ? row.tags.split(TAG_SEP) : [],
     tasks: taskProgress(body),
     cover: body.match(/!\[[^\]]*\]\(((?:attachment:|https?:\/\/)[^)\s]+)/)?.[1] ?? null,
     pinnedAt: row.pinned_at === null ? null : Number(row.pinned_at),
@@ -117,7 +98,7 @@ function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } 
   const params: SqlValue[] = []
   if (filter.scope === 'inbox') where.push('n.folder_id IS NULL')
   if (filter.folderId) {
-    // A folder shows what is in its subfolders too, at any depth (like #tag and #tag/child).
+    // A folder shows what is in its subfolders too, at any depth.
     where.push(`n.folder_id IN (
       WITH RECURSIVE sub(id) AS (
         SELECT ? UNION SELECT f.id FROM folders f JOIN sub ON f.parent_id = sub.id
@@ -135,12 +116,6 @@ function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } 
   if (filter.updatedSince !== undefined) {
     where.push('n.edited_at >= ?')
     params.push(filter.updatedSince)
-  }
-  if (filter.tag) {
-    // A parent tag also matches its children: #work matches #work/fixnote.
-    where.push(`EXISTS (SELECT 1 FROM note_tags nt JOIN tags t ON t.id = nt.tag_id
-      WHERE nt.note_id = n.id AND (t.name = ? COLLATE NOCASE OR t.name LIKE ? ESCAPE '\\'))`)
-    params.push(filter.tag, `${filter.tag.replace(/[\\%_]/g, '\\$&')}/%`)
   }
   return { where, params }
 }
@@ -195,7 +170,6 @@ export class NotesRepo {
           updated,
         ],
       )
-      await syncNoteTags(tx, id, input.content)
     })
     return this.getNoteOrThrow(id)
   }
@@ -247,7 +221,6 @@ export class NotesRepo {
           WHERE id = ?`,
         [next, deriveTitle(next), toPlainText(next), this.now(), id],
       )
-      await syncNoteTags(tx, id, next)
     })
     return this.getNoteOrThrow(id)
   }
@@ -261,7 +234,6 @@ export class NotesRepo {
        VALUES (?, ?, 'text', ?, ?, ?, ?, ?)`,
       [id, folderId, deriveTitle(text), text, toPlainText(text), ts, ts],
     )
-    await syncNoteTags(tx, id, text)
   }
 
   async moveNote(id: string, folderId: string | null): Promise<void> {
@@ -478,19 +450,6 @@ export class NotesRepo {
       inbox: Number(row?.inbox ?? 0),
       daily: Number(row?.daily ?? 0),
     }
-  }
-
-  // ── Tags ───────────────────────────────────────────────────────────────────
-
-  /** Tags on live notes, most used first. */
-  async listTags(): Promise<TagCount[]> {
-    const rows = await this.db.query<{ name: string; count: number }>(
-      `SELECT t.name, count(*) AS count
-         FROM tags t JOIN note_tags nt ON nt.tag_id = t.id
-         JOIN notes n ON n.id = nt.note_id AND n.deleted_at IS NULL
-        GROUP BY t.id ORDER BY count DESC, t.name COLLATE NOCASE`,
-    )
-    return rows.map((r) => ({ name: r.name, count: Number(r.count) }))
   }
 
   // ── Folders ────────────────────────────────────────────────────────────────

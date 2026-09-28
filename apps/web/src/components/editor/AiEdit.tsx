@@ -32,6 +32,7 @@ import { proposeEdit } from '../../lib/assistant/edit'
 import type { LlmUnavailable } from '../../lib/assistant/llm'
 import { useLlm } from '../../lib/assistant/llm'
 import { useRepo } from '../../lib/db'
+import { aiRefusalText } from '../../lib/plan'
 import { useInvalidateNotes } from '../../lib/queries'
 import {
   type AiRange,
@@ -151,7 +152,9 @@ export function useAiEdit(
         update({
           phase: {
             kind: 'error',
-            message: t('ai.error', { message: err instanceof Error ? err.message : String(err) }),
+            message:
+              aiRefusalText(err) ??
+              t('ai.error', { message: err instanceof Error ? err.message : String(err) }),
           },
         })
       } finally {

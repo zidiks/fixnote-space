@@ -66,6 +66,14 @@ export interface AccountBackend {
   getSession(): Promise<Session | null>
   sendCode(email: string, lang: string): Promise<void>
   verifyCode(email: string, code: string): Promise<Session>
+  /** A code to the signed-in account's email, to prove it is its owner (before showing the phrase). */
+  sendCheckCode(email: string, lang: string): Promise<void>
+  /** Whether the code from `sendCheckCode` is right; throws when the server cannot be reached. */
+  checkCode(email: string, code: string): Promise<boolean>
+  /** The signed-in account's plan (`my_plan()`), raw; see lib/plan.ts. */
+  plan(): Promise<Record<string, unknown>>
+  /** A payment page for Pro (supabase/functions/billing); null when there is none to open. */
+  checkout(plan: 'month' | 'year'): Promise<string | null>
   signOut(): Promise<void>
   getUserKeys(): Promise<UserKeysRow | null>
   createUserKeys(row: UserKeysRow): Promise<void>
@@ -125,6 +133,36 @@ export function supabaseBackend(
       const { data, error } = await client.auth.verifyOtp({ email, token: code, type: 'email' })
       if (error || !data.session) throw error ? toError(error) : new Error('No session')
       return session(data.session) as Session
+    },
+    async sendCheckCode(email, lang) {
+      const { error } = await client.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false, data: { lang } },
+      })
+      if (error) throw toError(error)
+    },
+    async checkCode(email, code) {
+      // A right code signs the same account in again, which leaves the session as it was.
+      const { data, error } = await client.auth.verifyOtp({ email, token: code, type: 'email' })
+      if (!error) return Boolean(data.session)
+      if (error.status && error.status < 500) return false
+      throw toError(error)
+    },
+    async checkout(plan) {
+      const { data, error } = await client.functions.invoke<{ url?: string }>('billing', {
+        body: { plan },
+      })
+      if (error) {
+        // 503: the payment keys are not on the server yet.
+        const status = (error as { context?: { status?: number } }).context?.status
+        throw status === 503 ? new Error('Payments are not set up yet') : toError(error)
+      }
+      return data?.url ?? null
+    },
+    async plan() {
+      const { data, error } = await client.rpc('my_plan')
+      if (error) throw toError(error)
+      return (data ?? {}) as Record<string, unknown>
     },
     async signOut() {
       await client.auth.signOut()

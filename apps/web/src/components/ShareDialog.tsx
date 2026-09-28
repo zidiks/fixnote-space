@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import { errorMessage, isServerOutdated } from '../lib/errors'
+import { withPro } from '../lib/plan'
 import { listShares, publishShare, revokeShare } from '../lib/share'
 import { PeopleSection } from './PeopleSection'
 
@@ -159,10 +160,14 @@ export function ShareDialog({
           <Button
             loading={busy === 'create'}
             onClick={() =>
-              void run('create', async () => {
-                const url = await publishShare(note.id, snapshot)
-                await copy(url).catch(() => undefined)
-              })
+              withPro(
+                'link',
+                () =>
+                  void run('create', async () => {
+                    const url = await publishShare(note.id, snapshot)
+                    await copy(url).catch(() => undefined)
+                  }),
+              )
             }
           >
             <Link2 />

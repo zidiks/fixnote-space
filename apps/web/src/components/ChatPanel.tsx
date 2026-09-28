@@ -109,6 +109,7 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
   const navigate = useUi((s) => s.navigate)
   const label = useScopeLabel()
   const error = useAssistant((s) => s.error)
+  const refused = useAssistant((s) => s.refused)
 
   if (m.kind === 'divider') {
     return (
@@ -166,7 +167,19 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
       {m.status === 'stopped' ? (
         <p className="mt-1 text-[11px] text-muted-foreground">{t('chat.stopped')}</p>
       ) : null}
-      {m.status === 'error' ? (
+      {m.status === 'error' && refused ? (
+        <div className="mt-1 space-y-1.5">
+          <p className="text-xs leading-relaxed text-muted-foreground">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7"
+            onClick={() => useUi.getState().openSettings('plan')}
+          >
+            {t('plan.seePlan')}
+          </Button>
+        </div>
+      ) : m.status === 'error' ? (
         <div className="mt-1 flex items-center gap-2">
           <p className="text-xs text-destructive">{t('chat.error', { message: error ?? '' })}</p>
           <Button variant="ghost" size="sm" className="h-7" onClick={onRetry}>

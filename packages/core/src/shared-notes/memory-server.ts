@@ -53,6 +53,11 @@ export class MemorySharedServer {
   private seq = 0
   /** The server's clock, for invitations that expire. */
   now = () => Date.now()
+  /**
+   * Whether an account has Pro (supabase/migrations/*_plans.sql): sharing a note on its own, a
+   * folder, and inviting someone new need it; the people invited join on any plan.
+   */
+  isPro: (userId: string) => boolean = () => true
 
   toJSON(): string {
     const members = (m: Map<string, Member>) => [...m.entries()]
@@ -108,8 +113,10 @@ export class MemorySharedServer {
     const must = (ok: boolean, why: string) => {
       if (!ok) throw new Error(why)
     }
+    const needPro = () => must(this.isPro(userId), 'pro_required')
     const invite = (members: Map<string, Member>, user: string, r: SharedRole, key: string) => {
       const was = members.get(user)
+      if (!was) needPro()
       members.set(user, {
         role: r,
         wrappedKey: key,
@@ -149,6 +156,7 @@ export class MemorySharedServer {
       },
       share: async (origin, wrappedKey) => {
         for (const [id, n] of this.notes) if (n.owner === userId && n.origin === origin) return id
+        needPro()
         const id = `shared-${++this.seq}`
         this.notes.set(id, {
           owner: userId,
@@ -243,6 +251,7 @@ export class MemorySharedServer {
         ),
       shareFolder: async (origin, wrappedKey, name) => {
         for (const [id, f] of this.folders) if (f.owner === userId && f.origin === origin) return id
+        needPro()
         const id = `folder-${++this.seq}`
         this.folders.set(id, {
           owner: userId,

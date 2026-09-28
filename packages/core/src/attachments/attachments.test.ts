@@ -83,6 +83,33 @@ describe('Attachments', () => {
     expect(await b.load('missing', { keys: keys(), remote })).toBeNull()
   })
 
+  it('keeps a local copy of every file before the server one goes', async () => {
+    const remote = memoryRemote()
+    let n = 0
+    const a = new Attachments(db, memoryBlobs(), { newId: () => `f${++n}` })
+    await a.add(new Blob(['one']), 'image/png')
+    await a.add(new Blob(['two']), 'text/plain')
+    await a.uploadPending(keys(), remote)
+
+    const otherDb = await createMemoryDriver()
+    await prepareDatabase(otherDb)
+    const b = new Attachments(otherDb, memoryBlobs())
+    await b.load('f1', { keys: keys(), remote })
+    const downloads: string[] = []
+    const counting: AttachmentRemote = {
+      upload: remote.upload,
+      download: async (id) => {
+        downloads.push(id)
+        return remote.download(id)
+      },
+    }
+    // f1 is here already, f2 is fetched, gone is no longer on the server.
+    expect(await b.keepLocal(['f1', 'f2', 'gone'], { keys: keys(), remote: counting })).toBe(1)
+    expect(downloads).toEqual(['f2', 'gone'])
+    remote.files.clear()
+    expect(await b.load('f2')).not.toBeNull()
+  })
+
   it('forgets rows whose bytes are gone instead of retrying forever', async () => {
     const blobs = memoryBlobs()
     const a = new Attachments(db, blobs, { newId: () => 'lost' })

@@ -108,6 +108,22 @@ export class Attachments {
     }
   }
 
+  /**
+   * Fetches every file in `ids` that is not on this device yet (before the server copy goes).
+   * Returns how many were fetched; files the server no longer has are skipped.
+   */
+  async keepLocal(
+    ids: string[],
+    sync: { keys: AccountKeys; remote: AttachmentRemote },
+  ): Promise<number> {
+    let fetched = 0
+    for (const id of ids) {
+      if ((await this.info(id)) && (await this.blobs.get(blobKey(id)))) continue
+      if (await this.load(id, sync)) fetched++
+    }
+    return fetched
+  }
+
   async pendingCount(): Promise<number> {
     const [row] = await this.db.query<{ n: number }>(
       'SELECT count(*) AS n FROM attachments WHERE uploaded = 0',

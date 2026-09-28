@@ -2,6 +2,7 @@ import {
   type AccountKeys,
   type AttachmentRemote,
   type Attachments,
+  attachmentIds,
   cryptoReady,
   deriveKeys,
   importInbox,
@@ -25,6 +26,7 @@ import {
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
 import { conflictHeading } from '../conflict'
+import { isProRequired, toPlanInfo, usePlan } from '../plan'
 import { projector } from '../shared/projector'
 import type { AccountBackend, PairingRequest, Session } from './backend'
 
@@ -39,7 +41,8 @@ export type Phase =
   | 'wrong-account' // local notes belong to another account
   | 'ready'
 
-export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error'
+/** 'free': signed in on Free, so this device only downloads (sync is part of Pro). */
+export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error' | 'free'
 
 interface AccountState {
   phase: Phase
@@ -212,7 +215,8 @@ async function becomeReady(k: AccountKeys) {
     : null
   set({ phase: 'ready', pendingSecret: null })
   startWatching()
-  void runSync()
+  // The plan first, so a Free account does not try to push.
+  void refreshPlan(true).then(runSync)
 }
 
 function startWatching() {
@@ -238,6 +242,15 @@ export async function sendCode(email: string) {
 export async function verifyCode(code: string) {
   const s = await backend().verifyCode(useAccount.getState().email, code.trim())
   await resolveSession(s)
+}
+
+/** Showing the recovery phrase: a code to the account's email first. */
+export async function sendPhraseCode() {
+  await backend().sendCheckCode(useAccount.getState().email, i18n.resolvedLanguage ?? 'en')
+}
+
+export async function checkPhraseCode(code: string): Promise<boolean> {
+  return backend().checkCode(useAccount.getState().email, code.trim())
 }
 
 export function backToEmail() {
@@ -389,6 +402,8 @@ export async function signOut() {
     .keyStore.clear()
     .catch(() => undefined)
   await backend().signOut()
+  usePlan.setState({ info: null })
+  planFetchedAt = 0
   set({
     phase: 'signed-out',
     email: '',
@@ -419,6 +434,76 @@ export function requestSync() {
   debounce = setTimeout(() => void runSync(), SYNC_DELAY)
 }
 
+const PLAN_EVERY = 5 * 60_000
+let planFetchedAt = 0
+
+/**
+ * Asks the server for the account's plan (at most every few minutes unless `force`). Offline the
+ * last known plan stays; signed out there is none.
+ */
+export async function refreshPlan(force = false) {
+  const b = deps?.backend
+  if (!b || !session) {
+    usePlan.setState({ info: null })
+    return
+  }
+  if (!force && Date.now() - planFetchedAt < PLAN_EVERY) return
+  planFetchedAt = Date.now()
+  try {
+    const info = toPlanInfo(await b.plan())
+    usePlan.setState({ info })
+    if (info.filesDeleteAt) void keepFilesHere()
+  } catch {
+    planFetchedAt = 0
+  }
+}
+
+let keptFilesFor: string | null = null
+
+/**
+ * The server copy of the files is going (Free, never paid): fetch the ones this device does not
+ * have, once per session, so every file the notes use stays on the device.
+ */
+async function keepFilesHere() {
+  const sync = attachmentSync()
+  const d = deps
+  if (!sync || !d || !session || keptFilesFor === session.userId) return
+  keptFilesFor = session.userId
+  try {
+    const ids = new Set((await d.repo.allContents()).flatMap(attachmentIds))
+    await d.attachments.keepLocal([...ids], sync)
+  } catch {
+    keptFilesFor = null
+  }
+}
+
+let paymentStartedAt = 0
+
+/**
+ * Opens the payment page for Pro. The plan is then read again whenever the app comes back to the
+ * front (for an hour), so Pro shows up as soon as Suby has told the server.
+ */
+export async function startCheckout(plan: 'month' | 'year', open: (url: string) => Promise<void>) {
+  const url = await backend().checkout(plan)
+  paymentStartedAt = Date.now()
+  if (url) await open(url)
+  await refreshPlan(true)
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', () => {
+    const waiting = Date.now() - paymentStartedAt < 3_600_000
+    if (waiting && usePlan.getState().info?.plan !== 'pro') void refreshPlan(true)
+    else if (waiting) paymentStartedAt = 0
+  })
+}
+
+/** Back from the payment page on the web (`?billing=success`): look for Pro a few times. */
+export function paymentReturned() {
+  paymentStartedAt = Date.now()
+  for (const delay of [1500, 5000, 15000]) setTimeout(() => void refreshPlan(true), delay)
+}
+
 export async function runSync() {
   const e = engine
   if (!e) return
@@ -428,8 +513,10 @@ export async function runSync() {
     return
   }
   setSync({ status: 'syncing' })
+  // On Free this device only downloads; the server would refuse its changes anyway.
+  const push = usePlan.getState().info?.plan !== 'free'
   try {
-    const report = await e.sync()
+    const report = await e.sync({ push })
     // Notes shared with other people: their own channel, merged as Yjs documents.
     const sharedReport = shared ? await shared.sync() : null
     let sharedChanged = false
@@ -467,10 +554,11 @@ export async function runSync() {
         d.onRemoteChange()
         requestSync()
       }
-      await d.attachments.uploadPending(sync.keys, sync.remote)
+      if (push) await d.attachments.uploadPending(sync.keys, sync.remote)
     }
+    void refreshPlan()
     setSync({
-      status: 'idle',
+      status: push ? 'idle' : 'free',
       lastSyncedAt: Date.now(),
       error: null,
       pending: (await e.pendingCount()) + (await need().attachments.pendingCount()),
@@ -485,6 +573,12 @@ export async function runSync() {
       need().onRemoteChange()
     if (report.conflictCopies) need().onConflicts?.(report.conflictCopies)
   } catch (err) {
+    if (isProRequired(err)) {
+      // Pro ended since the plan was last read: from now on this device only downloads.
+      await refreshPlan(true)
+      setSync({ status: 'free', error: null, pending: await e.pendingCount().catch(() => 0) })
+      return
+    }
     setSync({
       status: isOffline(err) ? 'offline' : 'error',
       error: err instanceof Error ? err.message : String(err),

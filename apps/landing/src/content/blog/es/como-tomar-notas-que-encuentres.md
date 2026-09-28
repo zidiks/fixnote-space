@@ -25,7 +25,7 @@ Piensa cómo vas a buscar esa nota. Si todos llaman al proyecto «Landing» y t�
 
 ## 5. Carpetas, las mínimas
 
-Un sistema de carpetas complicado desde el primer día es la forma más segura de dejar de tomar notas a las dos semanas. Bastan de tres a cinco carpetas amplias (Trabajo, Casa, Viajes) y etiquetas para los temas transversales. La búsqueda hace el resto.
+Un sistema de carpetas complicado desde el primer día es la forma más segura de dejar de tomar notas a las dos semanas. Bastan de tres a cinco carpetas amplias (Trabajo, Casa, Viajes). La búsqueda hace el resto.
 
 ## 6. Lleva una nota del día
 
@@ -37,6 +37,6 @@ En vez de intentar recordar en qué carpeta está una decisión, pregunta: «¿Q
 
 ## Cómo ayuda FixNote
 
-Estos hábitos funcionan en cualquier app, pero FixNote está hecho a su medida. Puedes apuntar escribiendo, por voz o enviando un mensaje a un bot de Telegram. La nota del día arrastra las tareas pendientes. La búsqueda entiende tres idiomas y la transliteración, y el asistente responde a partir de tus notas mostrando las fuentes. Cada pocos días, «Poner orden» sugiere títulos, carpetas y etiquetas, y nada cambia sin tu aprobación.
+Estos hábitos funcionan en cualquier app, pero FixNote está hecho a su medida. Puedes apuntar escribiendo, por voz o enviando un mensaje a un bot de Telegram. La nota del día arrastra las tareas pendientes. La búsqueda entiende tres idiomas y la transliteración, y el asistente responde a partir de tus notas mostrando las fuentes. Cada pocos días, «Poner orden» sugiere títulos y carpetas, y nada cambia sin tu aprobación.
 
 [Prueba FixNote](/es/download/): son un par de minutos.

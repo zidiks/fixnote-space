@@ -1,6 +1,13 @@
+import { readFileSync, statSync } from 'node:fs'
+import { basename, extname, isAbsolute } from 'node:path'
 import {
+  Attachments,
   AuditLog,
+  attachmentIds,
+  attachmentUrl,
+  type BlobStore,
   type Folder,
+  MAX_ATTACHMENT_BYTES,
   MCP_ACCESS_KEY,
   MCP_SCOPE_KEY,
   type McpAccess,
@@ -20,6 +27,72 @@ export const ACCESS_KEY = MCP_ACCESS_KEY
 export const SCOPE_KEY = MCP_SCOPE_KEY
 
 export class AccessError extends Error {}
+
+/** What a tool returns to the client: text, an image it can look at, or a file. */
+export type ToolContent =
+  | { type: 'text'; text: string }
+  | { type: 'image'; data: string; mimeType: string }
+  | { type: 'resource'; resource: { uri: string; mimeType: string; blob: string } }
+
+/** Images the client can look at (MCP image content); others come back as files. */
+const VIEWABLE = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp'])
+/** Bigger images than this come back as a file: clients refuse larger ones. */
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+/** Text files up to this size come back as text. */
+const MAX_TEXT_BYTES = 512 * 1024
+
+const MIME_BY_EXT: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.heic': 'image/heic',
+  '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain',
+  '.md': 'text/markdown',
+  '.csv': 'text/csv',
+  '.json': 'application/json',
+  '.html': 'text/html',
+  '.xml': 'application/xml',
+  '.zip': 'application/zip',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.mp4': 'video/mp4',
+  '.mov': 'video/quicktime',
+}
+
+const isText = (mime: string) =>
+  mime.startsWith('text/') || /^application\/(json|xml|x-yaml|yaml)$/.test(mime)
+
+/** "340 KB", "1.2 MB": the size a file link carries as its title, as the app writes it. */
+export function fileSize(bytes: number): string {
+  const [value, unit] =
+    bytes >= 1024 * 1024
+      ? [bytes / 1024 / 1024, 'MB']
+      : bytes >= 1024
+        ? [bytes / 1024, 'KB']
+        : [bytes, 'B']
+  return `${value.toFixed(value < 10 && unit !== 'B' ? 1 : 0)} ${unit}`
+}
+
+/** How a note names an attachment: the file link's text, or the image's alt text. */
+function attachmentName(markdown: string, id: string): { name: string; image: boolean } | null {
+  // `id` is checked to be [\w-] before it gets here.
+  const re = new RegExp(String.raw`(!?)\[((?:\\.|[^\]\\])*)\]\(attachment:${id}(?:\s+"[^"]*")?\)`)
+  const m = markdown.match(re)
+  if (!m) return null
+  return { name: (m[2] ?? '').replace(/\\(.)/g, '$1'), image: m[1] === '!' }
+}
 
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 16).replace('T', ' ')
 const localDate = (d = new Date()) =>
@@ -44,13 +117,17 @@ interface Reach {
 export class NotesTools {
   readonly repo: NotesRepo
   readonly audit: AuditLog
+  /** Files and images in notes; null when the app's attachment folder is not known. */
+  readonly attachments: Attachments | null
 
   constructor(
     private readonly db: SqlDriver,
     private readonly client: () => string,
+    blobs?: BlobStore,
   ) {
     this.repo = new NotesRepo(db)
     this.audit = new AuditLog(db, this.repo)
+    this.attachments = blobs ? new Attachments(db, blobs) : null
   }
 
   private async kv(key: string): Promise<string | null> {
@@ -148,12 +225,139 @@ export class NotesTools {
       `id: ${n.id}`,
       `folder: ${this.folderPath(reach, n.folderId)}`,
       n.pinnedAt ? 'pinned: yes' : '',
-      n.tags.length ? `tags: ${n.tags.map((t) => `#${t}`).join(' ')}` : '',
       `created: ${iso(n.createdAt)}, edited: ${iso(n.updatedAt)}`,
+      await this.attachmentList(n),
       '\n' + n.content,
     ]
       .filter(Boolean)
       .join('\n')
+  }
+
+  /** The note's images and files, for get_attachment. */
+  private async attachmentList(n: Note): Promise<string> {
+    const ids = attachmentIds(n.content)
+    if (!ids.length) return ''
+    const lines = ['attachments (read with get_attachment):']
+    for (const id of ids) {
+      const info = await this.attachments?.info(id)
+      const named = attachmentName(n.content, id)
+      const kind = named?.image ? 'image' : named?.name || 'file'
+      lines.push(
+        info
+          ? `- ${kind}, ${info.mime}, ${fileSize(info.size)} (id: ${id})`
+          : `- ${kind} (id: ${id}), not on this computer yet`,
+      )
+    }
+    return lines.join('\n')
+  }
+
+  /** An attachment of a note the client may see; the error does not reveal whether it exists. */
+  private async visibleAttachment(
+    reach: Reach,
+    id: string,
+  ): Promise<{ note: Note; name: string; image: boolean }> {
+    if (!/^[\w-]{1,64}$/.test(id)) throw new Error(`No attachment with id ${id}.`)
+    const rows = await this.db.query<{ id: string }>(
+      `SELECT id FROM notes WHERE deleted_at IS NULL AND instr(content, ?) > 0`,
+      [attachmentUrl(id)],
+    )
+    for (const row of rows) {
+      const note = await this.repo.getNote(row.id)
+      if (!note || !this.sees(reach, note)) continue
+      const named = attachmentName(note.content, id)
+      if (named) return { note, ...named }
+    }
+    throw new Error(`No attachment with id ${id}.`)
+  }
+
+  /** An image to look at, a text file as text, anything else as a file. */
+  async getAttachment(id: string): Promise<ToolContent[]> {
+    await this.need('read')
+    const { note, name, image } = await this.visibleAttachment(await this.reach(), id)
+    const info = await this.attachments?.info(id)
+    const blob = info ? await this.attachments?.load(id) : null
+    if (!info || !blob) {
+      throw new Error(
+        `This file is not on this computer yet. Open "${note.title || 'Untitled'}" in FixNote once and it downloads.`,
+      )
+    }
+    const bytes = new Uint8Array(await blob.arrayBuffer())
+    const label = `${image ? 'Image' : name || 'File'} from "${note.title || 'Untitled'}" (${info.mime}, ${fileSize(info.size)})`
+    const text = { type: 'text' as const, text: label }
+    if (VIEWABLE.has(info.mime) && bytes.length <= MAX_IMAGE_BYTES) {
+      return [
+        text,
+        { type: 'image', data: Buffer.from(bytes).toString('base64'), mimeType: info.mime },
+      ]
+    }
+    if (isText(info.mime) && bytes.length <= MAX_TEXT_BYTES) {
+      return [text, { type: 'text', text: new TextDecoder().decode(bytes) }]
+    }
+    return [
+      text,
+      {
+        type: 'resource',
+        resource: {
+          uri: `fixnote://attachment/${id}`,
+          mimeType: info.mime,
+          blob: Buffer.from(bytes).toString('base64'),
+        },
+      },
+    ]
+  }
+
+  /**
+   * Attaches a file to the end of a note: an image shows in it, any other file becomes a link. The
+   * file comes from a path on this computer or as base64 `data` with a `name`.
+   */
+  async attach(
+    id: string,
+    file: { path?: string; data?: string; name?: string; mime?: string },
+  ): Promise<string> {
+    await this.need('write')
+    if (!this.attachments) throw new Error('Files are not available: FixNote was not found here.')
+    const note = await this.visibleNote(await this.reach(), id)
+    let bytes: Uint8Array
+    let name = file.name?.trim() ?? ''
+    if (file.path) {
+      if (!isAbsolute(file.path)) throw new Error('Give the full path to the file.')
+      const stat = statSync(file.path, { throwIfNoEntry: false })
+      if (!stat?.isFile()) throw new Error(`No file at ${file.path}.`)
+      if (stat.size > MAX_ATTACHMENT_BYTES) throw new Error(tooBig(stat.size))
+      bytes = new Uint8Array(readFileSync(file.path))
+      name ||= basename(file.path)
+    } else if (file.data) {
+      bytes = new Uint8Array(Buffer.from(file.data, 'base64'))
+      if (!name) throw new Error('Give the file a `name` (like "plan.pdf").')
+    } else {
+      throw new Error('Pass `path` (a file on this computer) or `data` (base64) with a `name`.')
+    }
+    if (!bytes.length) throw new Error('The file is empty.')
+    if (bytes.length > MAX_ATTACHMENT_BYTES) throw new Error(tooBig(bytes.length))
+    const mime =
+      file.mime?.trim() || MIME_BY_EXT[extname(name).toLowerCase()] || 'application/octet-stream'
+    const attachments = this.attachments
+    const image = mime.startsWith('image/') && mime !== 'image/svg+xml'
+    await this.audit.track(
+      {
+        kind: 'mcp.append',
+        summary: `Attached ${name} to "${note.title || 'Untitled'}"`,
+        provider: this.provider(),
+      },
+      [id],
+      async () => {
+        const info = await attachments.add(new Blob([bytes as BlobPart], { type: mime }), mime)
+        const safe = name.replace(/[[\]\\]/g, '\\$&')
+        const md = image
+          ? `![${safe}](${attachmentUrl(info.id)})`
+          : `[${safe}](${attachmentUrl(info.id)} "${fileSize(bytes.length)}")`
+        await this.repo.updateContent(id, `${note.content.trimEnd()}\n\n${md}`, {
+          base: note.content,
+        })
+        return {}
+      },
+    )
+    return `Attached ${name} (${fileSize(bytes.length)}) to "${note.title || 'Untitled'}".`
   }
 
   async search(query: string, limit = 8): Promise<string> {
@@ -445,6 +649,9 @@ export class NotesTools {
     return row ? this.repo.getNote(row.id) : null
   }
 }
+
+const tooBig = (size: number) =>
+  `The file is ${fileSize(size)}; FixNote takes files up to ${fileSize(MAX_ATTACHMENT_BYTES)}.`
 
 const firstLine = (s: string) => {
   const line =

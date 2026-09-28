@@ -11,6 +11,7 @@ mod http;
 mod keys;
 mod links;
 mod mcp;
+mod store;
 mod webview;
 
 use std::sync::Mutex;
@@ -26,12 +27,15 @@ struct AppInfo {
     arch: &'static str,
     /// Built with an update key (release builds from CI), so it can install signed updates.
     updates: bool,
+    /// Installed from the Microsoft Store, which installs updates itself.
+    store: bool,
 }
 
 /// Round-trip used by the UI to confirm the Rust bridge works.
 #[tauri::command]
 fn app_info(app: tauri::AppHandle) -> AppInfo {
-    let updates = app
+    let from_store = store::packaged();
+    let has_key = app
         .config()
         .plugins
         .0
@@ -43,7 +47,8 @@ fn app_info(app: tauri::AppHandle) -> AppInfo {
         version: app.package_info().version.to_string(),
         os: std::env::consts::OS,
         arch: std::env::consts::ARCH,
-        updates,
+        updates: has_key && !from_store,
+        store: from_store,
     }
 }
 

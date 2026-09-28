@@ -93,6 +93,33 @@ beforeEach(() => {
 })
 
 describe('SharedNotes', () => {
+  it('sharing needs Pro from the owner; people invited join and edit on Free', async () => {
+    server.isPro = (user) => user === 'ann'
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    await (await account('cat', 'cat@x.io')).device()
+    const own = await bob.repo.createNote({ content: 'Bob on Free' })
+    await expect(bob.shared.share(own.id)).rejects.toThrow('pro_required')
+
+    const note = await ann.repo.createNote({ content: 'Plan' })
+    const id = await ann.shared.share(note.id)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    const bobNote = await bob.shared.accept(id)
+    await typeInEditor(bob, id, (t) => t.insert(t.length, ' from Bob'))
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect(await content(ann, note.id)).toBe('Plan from Bob')
+    expect(await content(bob, bobNote)).toBe('Plan from Bob')
+
+    // Ann's Pro ends: the note keeps working, new people cannot be invited.
+    server.isPro = () => false
+    await expect(ann.shared.invite(id, 'cat@x.io', 'view')).rejects.toThrow('pro_required')
+    await typeInEditor(ann, id, (t) => t.insert(0, 'Our '))
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect(await content(bob, bobNote)).toBe('Our Plan from Bob')
+  })
+
   it('shares a note with a person who then edits it; edits flow both ways and merge', async () => {
     const ann = await (await account('ann', 'ann@x.io')).device()
     const bob = await (await account('bob', 'bob@x.io')).device()

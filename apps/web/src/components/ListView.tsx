@@ -1,12 +1,12 @@
-import { type NoteFilter, subtreeCounts } from '@fixnote/core'
+import { subtreeCounts } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Folder, Hash } from 'lucide-react'
+import { Folder } from 'lucide-react'
 import { useMemo } from 'react'
 import { type Route, useUi } from '../app/store'
 import { useCreateNote, useFolders } from '../lib/queries'
 import { EmptyState, NoteGrid } from './NoteGrid'
 
-type ListRoute = Extract<Route, { kind: 'folder' | 'tag' }>
+type ListRoute = Extract<Route, { kind: 'folder' }>
 
 export function ListView({ route }: { route: ListRoute }) {
   const { t } = useTranslation()
@@ -14,43 +14,17 @@ export function ListView({ route }: { route: ListRoute }) {
   const createNote = useCreateNote()
   const navigate = useUi((s) => s.navigate)
 
-  const filter = useMemo<NoteFilter>(() => {
-    switch (route.kind) {
-      case 'folder':
-        return { folderId: route.id }
-      case 'tag':
-        return { tag: route.name }
-      default:
-        return {}
-    }
-  }, [route])
-
-  const folder = route.kind === 'folder' ? folders?.find((f) => f.id === route.id) : undefined
-  const {
-    icon: Icon,
-    title,
-    count,
-    empty,
-  } = {
-    folder: {
-      icon: Folder,
-      title: folder?.name ?? '',
-      count: folder && folders ? subtreeCounts(folders).get(folder.id) : undefined,
-      empty: t('list.emptyFolder'),
-    },
-    tag: {
-      icon: Hash,
-      title: route.kind === 'tag' ? route.name : '',
-      count: undefined,
-      empty: t('list.emptyTag'),
-    },
-  }[route.kind]
+  const filter = useMemo(() => ({ folderId: route.id }), [route.id])
+  const folder = folders?.find((f) => f.id === route.id)
+  const title = folder?.name ?? ''
+  const count = folder && folders ? subtreeCounts(folders).get(folder.id) : undefined
+  const empty = t('list.emptyFolder')
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 pt-6 pb-24">
       <header className="flex items-baseline gap-3">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          <Icon className="size-5 text-muted-foreground" />
+          <Folder className="size-5 text-muted-foreground" />
           {title}
         </h1>
         {count !== undefined ? (
@@ -67,10 +41,10 @@ export function ListView({ route }: { route: ListRoute }) {
             <EmptyState body={empty} />
           )
         }
-        pinnedFirst={route.kind === 'folder'}
+        pinnedFirst
         onNew={
           // View only: nothing is added to someone else's folder from here.
-          route.kind === 'folder' && folder?.access !== 'view'
+          folder?.access !== 'view'
             ? () =>
                 createNote.mutate(
                   { content: '', folderId: route.id },

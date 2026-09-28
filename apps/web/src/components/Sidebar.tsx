@@ -16,7 +16,6 @@ import {
   CloudCheck,
   CloudOff,
   HardDrive,
-  Hash,
   House,
   RefreshCw,
   Search,
@@ -28,7 +27,8 @@ import { useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { useTidy } from '../lib/assistant/tidy'
 import { usePlatform } from '../lib/platform'
-import { useCounts, useOpenDaily, useTags } from '../lib/queries'
+import { useCounts, useOpenDaily } from '../lib/queries'
+import { ProCard } from './ProCard'
 import { SidebarFolders } from './SidebarFolders'
 
 function NavItem({
@@ -58,36 +58,6 @@ function NavItem({
       <span className="flex-1 truncate text-left">{label}</span>
       {count ? <span className="text-xs text-muted-foreground tabular-nums">{count}</span> : null}
     </button>
-  )
-}
-
-function SidebarTags() {
-  const { t } = useTranslation()
-  const tags = useTags().data ?? []
-  const route = useUi((s) => s.route)
-  const navigate = useUi((s) => s.navigate)
-  return (
-    <div className="mt-5">
-      <div className="px-2.5 pb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-        {t('sidebar.tags')}
-      </div>
-      {tags.length ? (
-        tags.map((tag) => (
-          <NavItem
-            key={tag.name}
-            icon={Hash}
-            label={tag.name}
-            count={tag.count}
-            active={route.kind === 'tag' && route.name.toLowerCase() === tag.name.toLowerCase()}
-            onClick={() => navigate({ kind: 'tag', name: tag.name })}
-          />
-        ))
-      ) : (
-        <p className="px-2.5 text-xs leading-relaxed text-muted-foreground/80">
-          {t('sidebar.noTags')}
-        </p>
-      )}
-    </div>
   )
 }
 
@@ -136,9 +106,9 @@ export function Sidebar() {
           onClick={() => navigate({ kind: 'tidy' })}
         />
         <SidebarFolders />
-        <SidebarTags />
       </nav>
 
+      <ProCard />
       <SidebarFooter />
     </aside>
   )
@@ -172,6 +142,18 @@ function SyncIndicator() {
       >
         <CloudOff className="size-3.5" />
         {t('account.signInToSync')}
+      </button>
+    )
+  }
+  if (status === 'free') {
+    return (
+      <button
+        type="button"
+        onClick={() => openSettings('plan')}
+        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground"
+      >
+        <CloudOff className="size-3.5" />
+        {t('plan.syncInPro')}
       </button>
     )
   }

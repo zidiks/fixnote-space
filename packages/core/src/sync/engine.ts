@@ -7,7 +7,6 @@ import {
 } from '../crypto'
 import { mergeDailyNotes } from '../notes/daily'
 import { deriveTitle, toPlainText } from '../notes/markdown'
-import { syncNoteTags } from '../notes/repo'
 import type { NoteType } from '../notes/types'
 import type { SqlDriver, SqlRow } from '../platform'
 import { merge3 } from './merge'
@@ -97,12 +96,15 @@ export class SyncEngine {
       opts.conflictHeading ?? ((at) => `Conflict copy · ${new Date(at).toISOString().slice(0, 16)}`)
   }
 
-  /** Runs one full sync. Calls made while one is running join it and then run once more. */
-  sync(): Promise<SyncReport> {
+  /**
+   * Runs one full sync. Calls made while one is running join it and then run once more. With
+   * `push: false` it only downloads (an account without sync keeps getting what is on the server).
+   */
+  sync(opts: { push?: boolean } = {}): Promise<SyncReport> {
     const previous = this.running
     const next = (async () => {
       if (previous) await previous.catch(() => undefined)
-      return this.syncOnce()
+      return this.syncOnce(opts.push ?? true)
     })()
     this.running = next
     void next.finally(() => {
@@ -111,7 +113,7 @@ export class SyncEngine {
     return next
   }
 
-  private async syncOnce(): Promise<SyncReport> {
+  private async syncOnce(push: boolean): Promise<SyncReport> {
     const report: SyncReport = {
       pulled: 0,
       pushed: 0,
@@ -121,8 +123,10 @@ export class SyncEngine {
     }
     await this.pullFolders(report)
     await this.pullNotes(report)
-    await this.pushFolders(report)
-    await this.pushNotes(report)
+    if (push) {
+      await this.pushFolders(report)
+      await this.pushNotes(report)
+    }
     return report
   }
 
@@ -231,7 +235,6 @@ export class SyncEngine {
           theirs,
         ],
       )
-      await syncNoteTags(tx, r.id, content)
       return
     }
 
@@ -303,7 +306,6 @@ export class SyncEngine {
         r.id,
       ],
     )
-    if (content !== local.content) await syncNoteTags(tx, r.id, content)
   }
 
   /** A folder id if it exists locally; otherwise null (the note shows in Inbox until it arrives). */
@@ -343,7 +345,6 @@ export class SyncEngine {
           WHERE id = ?`,
         [merged, deriveTitle(merged), toPlainText(merged), ts, holder.id],
       )
-      await syncNoteTags(tx, holder.id, merged)
       return { date: null, content, lost: true }
     }
     await tx.execute(
@@ -370,7 +371,6 @@ export class SyncEngine {
        VALUES (?, ?, 'text', NULL, ?, ?, ?, ?, ?, NULL, 0, 1, 1)`,
       [id, local.folder_id, deriveTitle(content), content, toPlainText(content), ts, ts],
     )
-    await syncNoteTags(tx, id, content)
   }
 
   // ── Push ─────────────────────────────────────────────────────────────────

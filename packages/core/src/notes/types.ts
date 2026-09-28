@@ -9,7 +9,6 @@ export interface NoteSummary {
   /** Derived from the first line; empty for a blank note. */
   title: string
   excerpt: string
-  tags: string[]
   tasks: { done: number; total: number } | null
   /** First image of the note (attachment:<id> or a web URL), shown on its card. */
   cover: string | null
@@ -32,7 +31,6 @@ export interface NoteFilter {
   scope?: 'all' | 'inbox'
   /** The folder and its subfolders, at any depth. */
   folderId?: string
-  tag?: string
   type?: NoteType
   /** Only notes updated at or after this timestamp (ms). */
   updatedSince?: number
@@ -70,11 +68,6 @@ export interface Folder {
   shared: 'owner' | 'edit' | 'view' | null
   /** The role of the shared folder it is in (itself or a parent), for its subfolders too. */
   access: 'owner' | 'edit' | 'view' | null
-}
-
-export interface TagCount {
-  name: string
-  count: number
 }
 
 export interface Counts {

@@ -8,6 +8,7 @@ import { useUi } from '../../app/store'
 import { captureBackend, useAccount } from '../../lib/account/account'
 import { useLlm } from '../../lib/assistant/llm'
 import { env } from '../../lib/env'
+import { withPro } from '../../lib/plan'
 import { usePlatform } from '../../lib/platform'
 
 /**
@@ -116,7 +117,12 @@ function TelegramCard() {
       {t('capture.waiting')}
     </span>
   ) : (
-    <Button variant="outline" size="sm" loading={busy} onClick={() => void connect()}>
+    <Button
+      variant="outline"
+      size="sm"
+      loading={busy}
+      onClick={() => withPro('integrations', () => void connect())}
+    >
       {t('capture.connect')}
     </Button>
   )

@@ -30,7 +30,11 @@ export function UpdatesSection() {
       <h3 className="font-medium">{t('updates.title')}</h3>
       <p className="text-sm text-muted-foreground">
         {t('updates.version', { version: info.version })}
-        {info.enabled ? '' : ` · ${t('updates.devBuild')}`}
+        {info.store
+          ? ` · ${t('updates.store')}`
+          : info.enabled
+            ? ''
+            : ` · ${t('updates.devBuild')}`}
       </p>
       {info.enabled ? (
         <>

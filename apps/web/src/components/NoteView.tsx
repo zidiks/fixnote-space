@@ -297,21 +297,6 @@ export function NoteView({ id }: { id: string }) {
         }}
       />
 
-      {n.tags.length ? (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {n.tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => navigate({ kind: 'tag', name: tag })}
-              className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand hover:bg-brand/15"
-            >
-              #{tag}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
       {n.type === 'daily' && n.dailyDate ? <DailyBar note={n} /> : null}
       <ConflictBanner note={n} />
       {shared.live ? <LiveBar live={shared.live} /> : null}
@@ -358,7 +343,7 @@ export function NoteView({ id }: { id: string }) {
                 void repo.deleteNote(n.id).then(invalidate)
                 return
               }
-              // A fresh note without a folder: offer a folder, tags and a title for it.
+              // A fresh note without a folder: offer a folder and a title for it.
               const fresh = Date.now() - n.createdAt < 2 * 3600_000
               if (
                 n.type === 'text' &&

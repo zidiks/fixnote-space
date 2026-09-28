@@ -12,7 +12,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
 - Notes in Markdown with a Bear-like editor: headings, lists, checklists, quotes, code, links,
   images (paste or drop; large ones are scaled down).
 - Home shows every note with filters (no folder, folder, type, period) and infinite scroll;
-  folders with subfolders; `#tags` and nested `#area/project` tags from the text.
+  folders with subfolders.
 - Link cards: a URL alone on its line shows the page's title, description and image.
 - Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en that also tries
   the other alphabet ("телеграм" finds "Telegram"), notes similar in meaning once the assistant's
@@ -40,7 +40,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   the LLM for translations and synonyms of the question, so "розыгрыши" finds a note about a
   "giveaway". The avatar is
   [Bloub](https://github.com/jeremy-prt/bloub) (MIT).
-- Tidy up: the assistant suggests titles, folders, tags and merging duplicates, a batch every few
+- Tidy up: the assistant suggests titles, folders and merging duplicates, a batch every few
   days and one note right after you write it. Nothing changes until you accept a suggestion, and
   every accepted change can be undone.
 - AI history (Settings → AI): every change the assistant made to a note, with before and after,
@@ -53,7 +53,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   with permission create notes or append to them (Settings → AI → MCP; off / read / read and
   write). The server `fixnote-mcp` ships with the app and works on the local database.
 - Import (Settings → Data): a folder of Markdown files (Obsidian too), a Bear backup
-  (`.bear2bk`), a Notion export (`.zip`) or a FixNote export, with folders, tags, dates and images.
+  (`.bear2bk`), a Notion export (`.zip`) or a FixNote export, with folders, dates and images (front matter tags stay as `#words` at the end).
   Notes that are already there are skipped; Undo removes the whole import.
 - Share a note by link (signed in): the copy is sealed with a key that exists only in the link, so
   the server cannot read it. Update the link after edits or turn it off, from the note or from
@@ -184,7 +184,9 @@ Without it the desktop app still builds (a placeholder is used) and MCP shows as
 
 Tools: `search_notes`, `get_note`, `list_recent`, `list_folders`, `daily_note`, `create_note`,
 `append_to_note`, `update_note`, `move_note`, `delete_note`, `create_folder`, `rename_folder`,
-`delete_folder`. Settings → AI → Connected apps sets the access level (off, read, read and write,
+`delete_folder`, `get_attachment` (an image to look at, a text file as text, other files as an
+embedded file) and `attach_file` (a file on this computer or base64 data, up to 20 MB; it lands in
+the app's `blobs/` folder and the app uploads it on the next sync). Settings → AI → Connected apps sets the access level (off, read, read and write,
 full with deletion) and what apps can see: every note, or chosen folders (with their subfolders) and
 single notes. Every change is in the AI activity log and can be undone, deletions included.
 
@@ -247,6 +249,51 @@ builds.
 | `pnpm test` | Vitest across the workspace |
 | `pnpm check` | lint + typecheck + test |
 | `pnpm tg:webhook` | Point the Telegram bot at its edge function |
+
+## Plans (Free and Pro)
+
+Free is everything on the device; Pro is what goes through the server: personal sync, FixNote AI,
+sharing notes and folders (people invited join on Free), public links, capture from messengers and
+20 GB of files. The server decides (triggers and the storage policy in
+`supabase/migrations/*_plans.sql` and `*_open_trial.sql`); the app only explains (Settings → Plan,
+the sidebar card, "This is part of Pro", the note at the end of the trial).
+
+- Trial: 7 days of Pro from sign-up, no card; for accounts made during the beta it starts when the
+  beta ends. It is kept cheap so a new account is not worth making for it: 1 GB of files
+  (`trial_storage_bytes`) and a smaller AI allowance (`ai_trial_tokens`). Addresses at throwaway
+  mail services (`disposable_domains`, add more with an insert) get no trial and start on Free.
+  Two days before the end the sidebar reminds; after it, a note says what Pro did and that nothing
+  is lost.
+- Files of accounts that never paid leave the server `free_files_days` (90) after their Pro ended:
+  `storage-cleanup`, called every night by pg_cron (the migration schedules it on the hosted
+  project). A month before, Settings → Plan and the sidebar say when, and the app fetches every file
+  the notes use onto the device. Anyone who paid once keeps their files.
+- Beta: until `plan_config.beta_until` (2027-01-01 at first) everyone has Pro. To end it, run
+  `select end_beta();` in the SQL editor: the waiting trials start that day. Limits live in
+  `plan_config` (`ai_month_tokens`, `ai_trial_tokens`, `ai_day_requests`,
+  `ai_global_month_tokens`, `storage_bytes`, `trial_storage_bytes`, `trial_days`,
+  `free_files_days`).
+- `llm-proxy` charges each answer in tokens (`ai_usage`); past a limit it answers with a code and
+  the renewal date, which the app shows next to the offer to use your own key or a local model.
+- Payments go through [Suby](https://docs.suby.fi/v3-beta): Settings → Plan opens a Suby checkout
+  for the account's email (`supabase/functions/billing`), and Suby's signed webhooks set
+  `subscriptions` (`supabase/functions/suby-webhook`: reads the subscription back from Suby, Pro
+  until the paid period ends, taken away on a refund or chargeback). "Manage subscription" opens
+  Suby's customer portal (customer.suby.fi) for cancelling and changing the card. Set up once:
+  1. Suby dashboard → Products → Create: Recurring payments, "FixNote Pro, monthly" ($7 USD,
+     Monthly) and "FixNote Pro, yearly" ($60 USD, Yearly). Leave Access & delivery, the discount,
+     custom fields and the After payment URLs empty: the app sets where the buyer returns. Note
+     their ids (`pro_…`).
+  2. Dashboard → Settings: an API key (start with `sk_sandbox_…` to test, `sk_live_…` for real),
+     and a webhook endpoint `https://<project-ref>.supabase.co/functions/v1/suby-webhook` for the
+     `payment.*`, `subscription.*` and `dispute.*` events; keep its `whsec_…` secret.
+  3. `pnpm sb secrets set SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_...`
+     (optional `BILLING_RETURN_URL`, default `https://app.fixnote.space/`), then `pnpm sb:migrate`
+     and `pnpm sb:functions`.
+  Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds.
+- Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
+  (beta, trial, pro, free, "use up AI", "trial ends tomorrow", "never paid"); switching to free
+  ends the trial, and the fake checkout turns Pro on.
 
 ## Supabase
 
@@ -313,3 +360,38 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
   Release builds then carry the public key and the release gets `latest.json` plus signed update
   files; apps read it at `https://fixnote.space/download/latest.json`. Builds without the key
   (local ones too) work normally but do not update themselves.
+- Windows installers are code signed with Azure Artifact Signing (no "unknown publisher" or
+  SmartScreen warning once the signature has built reputation). Set it up once in the Azure portal:
+  1. A subscription, then register the resource provider `Microsoft.CodeSigning`.
+  2. Create an Artifact Signing account (note its region endpoint, e.g.
+     `https://weu.codesigning.azure.net`), give yourself the role *Artifact Signing Identity
+     Verifier* on it, run the identity validation (Public), then create a certificate profile
+     (Public Trust) from it.
+  3. Microsoft Entra ID → App registrations → a new app for CI with a client secret; on the signing
+     account give it the role *Artifact Signing Certificate Profile Signer*.
+  4. In GitHub add the secrets `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and the
+     variables `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT`, `AZURE_SIGNING_PROFILE`.
+
+  The Windows build then signs the app, the MCP server and both installers (Tauri's `signCommand`
+  with `artifact-signing-cli`) and fails if any of them is not validly signed. Without the settings
+  it builds unsigned, as before.
+- Microsoft Store: the Windows job also packs the app into an MSIX (`apps/desktop/msix`:
+  `AppxManifest.xml`, `build.ps1`, images from `pnpm --filter @fixnote/desktop icons`), installs it
+  on the runner and checks that the MCP server answers through its `fixnote-mcp` alias. The
+  `fixnote-microsoft-store` artifact has `FixNote-Store-x64.msix` (upload this one in Partner
+  Center; the Store signs it) and an unsigned test copy. Set up once:
+  1. Partner Center → Apps and games → New product → MSIX or PWA app, reserve the name FixNote.
+  2. Product management → Product identity: copy `Package/Identity/Name`,
+     `Package/Identity/Publisher` and `Package/Properties/PublisherDisplayName` into the GitHub
+     variables `MSSTORE_IDENTITY_NAME`, `MSSTORE_PUBLISHER`, `MSSTORE_PUBLISHER_DISPLAY_NAME`
+     (without them the package gets a test identity the Store does not accept).
+  3. In the submission, the privacy policy is `https://fixnote.space/privacy/`; the restricted
+     capabilities need a note for certification: `runFullTrust` (a desktop app: local database,
+     OS credential store, its own MCP server) and `unvirtualizedResources` (the app's data folders
+     are shared with its MCP server and the installer version, and connecting Claude Desktop edits
+     `%APPDATA%\Claude\claude_desktop_config.json`).
+
+  The Store version never updates itself (Settings shows "updates from the Microsoft Store"): each
+  release, run the release, then upload the new `.msix` in a new submission. To try the test copy
+  on Windows 11: `Add-AppxPackage FixNote-Store-x64-test.msix -AllowUnsigned` in PowerShell
+  (`Remove-AppxPackage` takes it off again).

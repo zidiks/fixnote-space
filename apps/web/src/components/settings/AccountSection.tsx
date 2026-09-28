@@ -7,11 +7,13 @@ import {
   backToEmail,
   backToPhrase,
   cancelPairing,
+  checkPhraseCode,
   currentSecret,
   finishNewAccount,
   phraseSaved,
   runSync,
   sendCode,
+  sendPhraseCode,
   signOut,
   startPairing,
   unlockWithPhrase,
@@ -364,11 +366,127 @@ function Unlock() {
   )
 }
 
+/**
+ * The recovery phrase opens only after a code sent to the account's email: someone at an unlocked
+ * computer cannot just read it off the screen.
+ */
+function RecoveryPhrase({ email, secret }: { email: string; secret: Uint8Array | null }) {
+  const { t } = useTranslation()
+  const [step, setStep] = useState<'hidden' | 'code' | 'shown'>('hidden')
+  const [code, setCode] = useState('')
+  const [cooldown, setCooldown] = useState(0)
+  const send = useBusy()
+  const check = useBusy()
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(id)
+  }, [cooldown])
+
+  const sendNow = () =>
+    send.run(
+      async () => {
+        await sendPhraseCode()
+        setCode('')
+        setCooldown(30)
+        setStep('code')
+      },
+      () => t('account.sendFailed'),
+    )
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    void check.run(
+      async () => {
+        if (!(await checkPhraseCode(code))) throw new Error('wrong code')
+        setStep('shown')
+      },
+      (err) =>
+        err instanceof Error && err.message === 'wrong code'
+          ? t('account.badCode')
+          : t('account.checkFailed'),
+    )
+  }
+
+  if (step === 'shown' && secret) {
+    return (
+      <div className="space-y-3">
+        <Button variant="ghost" size="sm" className="-ml-3" onClick={() => setStep('hidden')}>
+          <EyeOff />
+          {t('account.hidePhrase')}
+        </Button>
+        <PhraseGrid phrase={secretToPhrase(secret)} />
+      </div>
+    )
+  }
+  if (step === 'code') {
+    return (
+      <form onSubmit={submit} className="space-y-3">
+        <p className="max-w-md text-sm text-muted-foreground">
+          {t('account.phraseCodeSent', { email })}
+        </p>
+        <div className="flex max-w-md gap-2">
+          <Input
+            autoFocus
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={10}
+            placeholder="123456"
+            aria-label={t('account.code')}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            className="max-w-40 font-mono text-lg tracking-[0.3em]"
+          />
+          <Button type="submit" loading={check.busy} disabled={code.length < 6}>
+            {t('account.showPhraseConfirm')}
+          </Button>
+        </div>
+        <ErrorText>{check.error ?? send.error}</ErrorText>
+        <div className="flex gap-3 text-sm">
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0"
+            disabled={cooldown > 0 || check.busy}
+            loading={send.busy}
+            onClick={() => void sendNow()}
+          >
+            {cooldown > 0 ? t('account.resendIn', { seconds: cooldown }) : t('account.resend')}
+          </Button>
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 text-muted-foreground"
+            onClick={() => setStep('hidden')}
+          >
+            {t('common.cancel')}
+          </Button>
+        </div>
+      </form>
+    )
+  }
+  return (
+    <div className="space-y-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-3"
+        loading={send.busy}
+        onClick={() => void sendNow()}
+      >
+        <Eye />
+        {t('account.showPhrase')}
+      </Button>
+      <ErrorText>{send.error}</ErrorText>
+    </div>
+  )
+}
+
 function Ready() {
   const { t, i18n } = useTranslation()
   const email = useAccount((s) => s.email)
   const sync = useAccount((s) => s.sync)
-  const [showPhrase, setShowPhrase] = useState(false)
   const [confirmOut, setConfirmOut] = useState(false)
   const secret = currentSecret()
 
@@ -409,18 +527,7 @@ function Ready() {
           {t('account.syncNow')}
         </Button>
       </div>
-      <div className="space-y-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3"
-          onClick={() => setShowPhrase((v) => !v)}
-        >
-          {showPhrase ? <EyeOff /> : <Eye />}
-          {showPhrase ? t('account.hidePhrase') : t('account.showPhrase')}
-        </Button>
-        {showPhrase && secret ? <PhraseGrid phrase={secretToPhrase(secret)} /> : null}
-      </div>
+      <RecoveryPhrase email={email} secret={secret} />
       <SharedLinksSection />
       <Button variant="outline" onClick={() => setConfirmOut(true)}>
         <LogOut />

@@ -18,6 +18,10 @@ export const en: Dict = {
       description:
         'How FixNote encrypts notes on your device, what the server stores, what the assistant sees and how to work fully offline.',
     },
+    privacy: {
+      title: 'FixNote privacy policy',
+      description: 'What data FixNote has, why it needs it and how to delete it.',
+    },
     download: {
       title: 'Download FixNote for Windows and macOS',
       description:
@@ -81,7 +85,7 @@ export const en: Dict = {
   how: {
     eyebrow: 'How it works',
     headline: ['Three steps', '\n', 'from thought to', { text: 'answer', tone: 'brand' }],
-    lead: 'No folders, tags or rules to set up first. Tidy up later: the assistant will suggest how.',
+    lead: 'No folders or rules to set up first. Tidy up later: the assistant will suggest how.',
     step: 'Step',
     steps: [
       {
@@ -94,7 +98,7 @@ export const en: Dict = {
       },
       {
         title: 'Tidy up in one click.',
-        text: 'FixNote suggests titles, folders and tags and finds duplicates. Nothing changes until you accept, and every change can be undone.',
+        text: 'FixNote suggests titles and folders and finds duplicates. Nothing changes until you accept, and every change can be undone.',
       },
     ],
     visual: {
@@ -143,7 +147,7 @@ export const en: Dict = {
       },
       mcp: {
         title: 'Claude and Cursor',
-        text: 'A built-in MCP server: Claude Desktop and Cursor can search your notes and add to them if you allow it.',
+        text: 'A built-in MCP server: Claude Desktop and Cursor can search your notes, look at their images and files, and add to them if you allow it.',
       },
     },
   },
@@ -230,7 +234,7 @@ export const en: Dict = {
       },
       {
         q: 'Can I move my notes from Notion, Bear or Obsidian?',
-        a: 'Yes. Import understands a Markdown folder (Obsidian too), a Bear backup and a Notion export, and keeps folders, tags, dates and images. You can export everything back to Markdown at any time.',
+        a: 'Yes. Import understands a Markdown folder (Obsidian too), a Bear backup and a Notion export, and keeps folders, dates and images. You can export everything back to Markdown at any time.',
       },
       {
         q: 'Which languages does FixNote support?',
@@ -258,6 +262,7 @@ export const en: Dict = {
     resources: 'Resources',
     webApp: 'Web app',
     rss: 'RSS',
+    privacy: 'Privacy',
     rights: 'FixNote',
   },
 
@@ -301,7 +306,7 @@ export const en: Dict = {
       {
         id: 'daily',
         title: 'A daily note and effortless order',
-        text: 'A daily note with tasks and day-to-day navigation: carry yesterday’s unfinished tasks over with one click. Every few days, “Tidy up” suggests titles, folders and tags and merges duplicates.',
+        text: 'A daily note with tasks and day-to-day navigation: carry yesterday’s unfinished tasks over with one click. Every few days, “Tidy up” suggests titles and folders and merges duplicates.',
         points: [
           'Carry over tasks, with confirmation',
           'Notes grouped by date',
@@ -317,13 +322,13 @@ export const en: Dict = {
       {
         id: 'mcp',
         title: 'Claude, Cursor and other MCP clients',
-        text: 'The desktop app includes a local MCP server. Connect it to Claude Desktop or Cursor in one click and they can search and read your notes, and with your permission create new ones.',
+        text: 'The desktop app includes a local MCP server. Connect it to Claude Desktop or Cursor in one click and they can search and read your notes, look at the images and files in them, and with your permission create new ones and attach files.',
         points: ['Read-only by default', 'Works on the local database', 'One-click setup'],
       },
       {
         id: 'import',
         title: 'Move in, and leave any time',
-        text: 'Import a Markdown or Obsidian folder, Bear or Notion with folders, tags, dates and images. Export all notes to Markdown whenever you like: your data belongs to you.',
+        text: 'Import a Markdown or Obsidian folder, Bear or Notion with folders, dates and images. Export all notes to Markdown whenever you like: your data belongs to you.',
         points: [
           'Notion, Bear, Obsidian, Markdown',
           'Re-import without duplicates',
@@ -393,6 +398,94 @@ export const en: Dict = {
     published: 'Published',
     empty: 'Articles are coming soon.',
     otherLanguages: 'This article in other languages',
+  },
+
+  privacyPage: {
+    eyebrow: 'Privacy',
+    title: 'Privacy policy',
+    updated: 'Updated September 28, 2026',
+    lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data FixNote has and why.',
+    sections: [
+      {
+        title: 'Without an account',
+        text: [
+          'FixNote works without an account. Your notes, attachments and settings then stay on your device only. In local-only mode the app does not contact our server at all.',
+        ],
+      },
+      {
+        title: 'Account',
+        text: [
+          "Signing in needs an email address, where we send a code. We store the address, your account's public key (so people can send you invitations and Telegram messages) and session data that keeps you signed in.",
+        ],
+      },
+      {
+        title: 'Notes and sync',
+        text: [
+          'Notes, folders and attachments are encrypted on your device with a key only you have. The server stores them encrypted, along with sync data: version numbers, creation and edit dates and whether a note is a daily note. We cannot read the contents.',
+        ],
+      },
+      {
+        title: 'Shared notes and folders',
+        text: [
+          "When you invite someone, we store their email address, role and invitation date. Members see each other's addresses. Note text and folder names are encrypted with a key only the members have. Edits made together also pass through the server encrypted.",
+        ],
+      },
+      {
+        title: 'Note links',
+        text: [
+          'A linked copy of a note is encrypted with a key kept in the part of the link after “#”. Browsers do not send that part to the server, so we store a copy we cannot read. You can turn a link off at any time.',
+        ],
+      },
+      {
+        title: 'Assistant',
+        text: [
+          'Search across your notes runs on your device. When you ask FixNote AI, your question and the matching note excerpts pass through our server to a language model provider to get the answer. We do not store or log what is in these requests.',
+          'With your own key, requests go straight to the service you chose and follow its terms. With Ollama everything stays on your computer.',
+        ],
+      },
+      {
+        title: 'Voice',
+        text: ['Speech is recognized on your device. The recording is not sent anywhere.'],
+      },
+      {
+        title: 'Telegram',
+        text: [
+          'If you connect the bot, messages reach us from Telegram and are sealed with your public key right away. We keep them sealed until your app picks them up, and we keep the link between your account and the chat. Telegram itself handles messages under its own terms.',
+        ],
+      },
+      {
+        title: 'Other services',
+        text: [
+          'Account data and encrypted notes are stored with Supabase, and sign-in emails are sent by Resend. Payments for Pro are handled by Suby: we get the state of the subscription, never the card.',
+          'The app downloads its search and speech models from Hugging Face. Link cards in the browser are fetched through our server (URLs are not logged), and directly in the desktop app. The desktop app checks for updates at fixnote.space and GitHub; the Microsoft Store version gets them from the Store.',
+        ],
+      },
+      {
+        title: 'Ads and tracking',
+        text: [
+          'There are no ads, analytics or trackers in the app or on the site. We do not sell data or share it for advertising.',
+        ],
+      },
+      {
+        title: 'Keeping and deleting data',
+        text: [
+          'We keep your data while you have an account. You can export your notes at any time: Settings → Data.',
+          'One exception: if an account has never paid for Pro, the server copy of its images and files is removed 90 days after its Pro (the trial or the beta) ends. The app says so a month before and keeps the files on your devices. Nothing is removed for anyone who has paid.',
+          'To delete your account and everything linked to it on the server, email us from the address you sign in with. We delete the data within 30 days. Notes on your devices stay with you.',
+        ],
+      },
+      {
+        title: 'Children',
+        text: [
+          'FixNote is not meant for children under 13, and we do not knowingly collect their data.',
+        ],
+      },
+      {
+        title: 'Changes',
+        text: ['If this policy changes, we will update this page and the date at the top.'],
+      },
+    ],
+    contact: 'Questions about your data and deletion requests:',
   },
 
   notFound: {

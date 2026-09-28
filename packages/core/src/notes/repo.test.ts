@@ -45,21 +45,18 @@ describe('notes', () => {
       title: 'Wednesday',
       folderId: null,
       type: 'text',
-      tags: ['design', 'dev/cli'],
       tasks: { done: 1, total: 2 },
     })
     expect(note.excerpt).toContain('Spent the morning in CSS')
   })
 
-  it('updates content, title and tags, and skips no-op saves', async () => {
+  it('updates content and title, and skips no-op saves', async () => {
     const note = await repo.createNote({ content: 'Draft #a' })
     const edited = await repo.updateContent(note.id, 'Final title\n#b')
     expect(edited.title).toBe('Final title')
-    expect(edited.tags).toEqual(['b'])
     expect(edited.updatedAt).toBeGreaterThan(note.updatedAt)
     const same = await repo.updateContent(note.id, 'Final title\n#b')
     expect(same.updatedAt).toBe(edited.updatedAt)
-    expect(await repo.listTags()).toEqual([{ name: 'b', count: 1 }])
   })
 
   it('merges an edit with a change that arrived since the edit started', async () => {
@@ -92,7 +89,6 @@ describe('notes', () => {
     await repo.deleteNote(note.id)
     expect(await repo.getNote(note.id)).toBeNull()
     expect((await repo.listNotes()).items).toHaveLength(0)
-    expect(await repo.listTags()).toEqual([])
     expect(await repo.search('gone')).toEqual([])
     await repo.restoreNote(note.id)
     expect((await repo.getNote(note.id))?.title).toBe('gone #x')
@@ -112,7 +108,7 @@ describe('listNotes', () => {
     expect(seen).toEqual(['note 6', 'note 5', 'note 4', 'note 3', 'note 2', 'note 1', 'note 0'])
   })
 
-  it('filters by inbox, folder, type, tag with children, and date', async () => {
+  it('filters by inbox, folder, type and date', async () => {
     const folder = await repo.createFolder('Work')
     await repo.createNote({ content: 'inbox #work' })
     const t = clock
@@ -124,8 +120,6 @@ describe('listNotes', () => {
     expect(await titles({ scope: 'inbox' })).toEqual(['Daily', 'inbox #work'])
     expect(await titles({ folderId: folder.id })).toEqual(['filed #work/fixnote'])
     expect(await titles({ type: 'daily' })).toEqual(['Daily'])
-    expect(await titles({ tag: 'WORK' })).toEqual(['filed #work/fixnote', 'inbox #work'])
-    expect(await titles({ tag: 'work/fixnote' })).toEqual(['filed #work/fixnote'])
     expect(await titles({ updatedSince: t })).toEqual(['Daily', 'filed #work/fixnote'])
     expect(await repo.counts()).toEqual({ all: 3, inbox: 2, daily: 1 })
     // A folder also lists the notes of its subfolders.

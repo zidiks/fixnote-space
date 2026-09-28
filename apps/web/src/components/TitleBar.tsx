@@ -59,8 +59,6 @@ function useRouteLabel(route: Route): string {
       return t('nav.home')
     case 'folder':
       return folders?.find((f) => f.id === route.id)?.name ?? ''
-    case 'tag':
-      return `#${route.name}`
     case 'note':
       return note.data?.title || t('common.untitled')
     case 'tidy':

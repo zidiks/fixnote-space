@@ -24,6 +24,10 @@ export class ChatError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Why FixNote AI refused (llm-proxy): 'pro_required', 'month_limit', 'day_limit', 'paused'. */
+    readonly code: string | null = null,
+    /** When the allowance renews (YYYY-MM-DD), with a limit code. */
+    readonly resetsAt: string | null = null,
   ) {
     super(message)
     this.name = 'ChatError'
@@ -47,16 +51,25 @@ export async function* streamChat(req: ChatRequest): AsyncGenerator<string, void
   })
   if (!res.ok || !res.body) {
     let message = res.statusText || `HTTP ${res.status}`
+    let code: string | null = null
+    let resetsAt: string | null = null
     try {
-      const body = (await res.json()) as { error?: { message?: string } | string; message?: string }
+      const body = (await res.json()) as {
+        error?: { message?: string; code?: string; resetsAt?: string } | string
+        message?: string
+      }
       message =
         (typeof body.error === 'string' ? body.error : body.error?.message) ??
         body.message ??
         message
+      if (typeof body.error === 'object') {
+        code = body.error.code ?? null
+        resetsAt = body.error.resetsAt ?? null
+      }
     } catch {
       // not JSON
     }
-    throw new ChatError(res.status, message)
+    throw new ChatError(res.status, message, code, resetsAt)
   }
 
   const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deriveExcerpt, deriveTitle, extractTags, taskProgress, toPlainText } from './markdown'
+import { deriveExcerpt, deriveTitle, taskProgress, toPlainText } from './markdown'
 
 describe('deriveTitle', () => {
   it('uses the first non-empty line without Markdown syntax', () => {
@@ -19,24 +19,6 @@ describe('deriveExcerpt', () => {
     expect(deriveExcerpt('# Title\n\nFirst *line*\n- second\n\n> third')).toBe(
       'First line second third',
     )
-  })
-})
-
-describe('extractTags', () => {
-  it('finds Bear-style tags in any script', () => {
-    expect(extractTags('Идея #работа и #idea/fixnote, again #Работа')).toEqual([
-      'работа',
-      'idea/fixnote',
-    ])
-  })
-
-  it('ignores headings, numbers, code and URL fragments', () => {
-    const md = '# Heading\nissue #123\n`#code` and\n```\n#fenced\n```\nsee https://x.com/#anchor'
-    expect(extractTags(md)).toEqual([])
-  })
-
-  it('accepts an escaped hash at line start', () => {
-    expect(extractTags('\\#daily til')).toEqual(['daily'])
   })
 })
 
