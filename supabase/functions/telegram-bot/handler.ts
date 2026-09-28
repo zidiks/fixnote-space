@@ -20,6 +20,8 @@ export interface CaptureStore {
   unlink(chatId: string): Promise<boolean>
   userForChat(chatId: string): Promise<string | null>
   publicKey(userId: string): Promise<string | null>
+  /** Saving from messengers is part of Pro (supabase/migrations/*_plans.sql). */
+  isPro(userId: string): Promise<boolean>
   addItem(userId: string, sealed: string): Promise<void>
 }
 
@@ -38,30 +40,37 @@ type Lang = 'en' | 'ru' | 'es'
 const TEXT: Record<Lang, Record<string, string>> = {
   en: {
     linked: 'Done. Everything you send here will appear in FixNote. To disconnect, send /stop.',
-    notLinked: 'This chat is not connected. In FixNote, open Settings → Account → Telegram.',
-    badCode: 'This link has expired. Create a new one in FixNote: Settings → Account → Telegram.',
+    notLinked: 'This chat is not connected. In FixNote, open Settings → Integrations → Telegram.',
+    badCode:
+      'This link has expired. Create a new one in FixNote: Settings → Integrations → Telegram.',
     stopped: 'Chat disconnected. Messages no longer go to FixNote.',
     unsupported: 'For now I take text, voice messages and photos.',
     tooBig: 'This file is too large (over 10 MB).',
     noKeys: 'Your FixNote account is not set up yet. Open the app and finish signing in.',
+    needsPro:
+      'Saving from messengers is part of FixNote Pro. Open FixNote → Settings → Plan to upgrade.',
   },
   ru: {
     linked: 'Готово. Всё, что вы пришлёте сюда, появится в FixNote. Отключить: /stop',
-    notLinked: 'Этот чат не подключён. В FixNote откройте Настройки → Аккаунт → Telegram.',
-    badCode: 'Ссылка устарела. Создайте новую в FixNote: Настройки → Аккаунт → Telegram.',
+    notLinked: 'Этот чат не подключён. В FixNote откройте Настройки → Интеграции → Telegram.',
+    badCode: 'Ссылка устарела. Создайте новую в FixNote: Настройки → Интеграции → Telegram.',
     stopped: 'Чат отключён. Сообщения больше не попадают в FixNote.',
     unsupported: 'Пока принимаю текст, голосовые и фото.',
     tooBig: 'Файл слишком большой (больше 10 МБ).',
     noKeys: 'Аккаунт FixNote ещё не настроен. Откройте приложение и завершите вход.',
+    needsPro:
+      'Сохранение из мессенджеров входит в FixNote Pro. Откройте FixNote → Настройки → Тариф.',
   },
   es: {
     linked: 'Listo. Todo lo que envíes aquí aparecerá en FixNote. Para desconectar, envía /stop.',
-    notLinked: 'Este chat no está conectado. En FixNote, abre Ajustes → Cuenta → Telegram.',
-    badCode: 'Este enlace ha caducado. Crea uno nuevo en FixNote: Ajustes → Cuenta → Telegram.',
+    notLinked: 'Este chat no está conectado. En FixNote, abre Ajustes → Integraciones → Telegram.',
+    badCode:
+      'Este enlace ha caducado. Crea uno nuevo en FixNote: Ajustes → Integraciones → Telegram.',
     stopped: 'Chat desconectado. Los mensajes ya no llegan a FixNote.',
     unsupported: 'Por ahora acepto texto, mensajes de voz y fotos.',
     tooBig: 'Este archivo es demasiado grande (más de 10 MB).',
     noKeys: 'Tu cuenta de FixNote aún no está lista. Abre la app y termina de iniciar sesión.',
+    needsPro: 'Guardar desde mensajería es parte de FixNote Pro. Abre FixNote → Ajustes → Plan.',
   },
 }
 
@@ -206,6 +215,10 @@ async function onMessage(m: TgMessage, deps: BotDeps) {
   const publicKey = await deps.store.publicKey(user)
   if (!publicKey) {
     await say(t.noKeys)
+    return
+  }
+  if (!(await deps.store.isPro(user))) {
+    await say(t.needsPro)
     return
   }
 

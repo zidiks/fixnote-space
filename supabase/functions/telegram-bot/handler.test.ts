@@ -28,7 +28,8 @@ function setup() {
     link: async (chat, user) => void links.set(chat, user),
     unlink: async (chat) => links.delete(chat),
     userForChat: async (chat) => links.get(chat) ?? null,
-    publicKey: async (user) => (user === 'user-1' ? PK : null),
+    publicKey: async (user) => (user === 'user-1' || user === 'free-user' ? PK : null),
+    isPro: async (user) => user !== 'free-user',
     addItem: async (user, sealed) => void items.push({ user, sealed }),
   }
   const deps: BotDeps = {
@@ -64,6 +65,17 @@ function setup() {
     )
   return { sent, reactions, links, items, send }
 }
+
+Deno.test('a Free account is told that saving from messengers needs Pro', async () => {
+  const { send, sent, items, links } = setup()
+  links.set('42', 'free-user')
+  await send({ text: 'Купить молоко' })
+  assertEquals(items.length, 0)
+  assertEquals(
+    sent.at(-1)?.text.startsWith('Сохранение из мессенджеров входит в FixNote Pro'),
+    true,
+  )
+})
 
 Deno.test('rejects requests without the webhook secret', async () => {
   const { send, items } = setup()

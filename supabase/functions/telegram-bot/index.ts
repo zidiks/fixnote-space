@@ -93,6 +93,11 @@ const store: CaptureStore = {
       .maybeSingle()
     return data?.public_key ?? null
   },
+  async isPro(userId) {
+    const { data, error } = await db.rpc('is_pro', { p_user: userId })
+    // When the check itself fails, the table's own check still stops a Free account.
+    return error ? true : data === true
+  },
   async addItem(userId, sealed) {
     const { error } = await db
       .from('inbox_items')

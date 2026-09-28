@@ -6,8 +6,8 @@ export const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-export const jsonError = (status: number, message: string) =>
-  new Response(JSON.stringify({ error: { message } }), {
+export const jsonError = (status: number, message: string, extra: Record<string, unknown> = {}) =>
+  new Response(JSON.stringify({ error: { message, ...extra } }), {
     status,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   })
