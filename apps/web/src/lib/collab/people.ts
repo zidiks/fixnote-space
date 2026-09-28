@@ -3,31 +3,59 @@ import type { Awareness } from 'y-protocols/awareness'
 
 /** How a person shows up to the others in a shared note (their awareness `user` field). */
 export interface LiveUser {
+  /** The account, so everyone can work out the same colours (see assignColors). */
+  id: string
   name: string
   email: string
-  /** Caret, selection and avatar colour: the same for this person everywhere. */
+  /** Caret, selection and avatar colour: never the same as anyone else's in the note. */
   color: string
   role: SharedRole
 }
 
-/** Readable on light and dark backgrounds, with white letters on top (6-digit hex for the carets). */
+/**
+ * Clearly different hues, readable on light and dark backgrounds with white letters on top
+ * (6-digit hex for the carets). The first ones differ the most.
+ */
 const COLORS = [
-  '#e8590c',
-  '#1c7ed6',
-  '#2f9e44',
-  '#ae3ec9',
-  '#d6336c',
-  '#0c8599',
-  '#e03131',
-  '#6741d9',
-  '#5c940d',
-  '#1971c2',
+  '#1c7ed6', // blue
+  '#e8590c', // orange
+  '#2f9e44', // green
+  '#ae3ec9', // purple
+  '#e03131', // red
+  '#0c8599', // teal
+  '#d6336c', // pink
+  '#6741d9', // indigo
+  '#f08c00', // amber
+  '#495057', // slate
 ]
 
-export function colorFor(userId: string): string {
+const hash = (id: string) => {
   let h = 0
-  for (let i = 0; i < userId.length; i++) h = (h * 31 + userId.charCodeAt(i)) >>> 0
-  return COLORS[h % COLORS.length] as string
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return h
+}
+
+/** The colour a person gets when nobody else in the note has it. */
+export function colorFor(userId: string): string {
+  return COLORS[hash(userId) % COLORS.length] as string
+}
+
+/**
+ * Colours for the people in a note: each keeps their own (colorFor) unless someone before them
+ * (by account id) has it, then takes the next free one. It depends only on who is there, so every
+ * device works out the same colours.
+ */
+export function assignColors(ids: Iterable<string>): Map<string, string> {
+  const out = new Map<string, string>()
+  const taken = new Set<number>()
+  for (const id of [...new Set(ids)].sort()) {
+    let at = hash(id) % COLORS.length
+    for (let tries = 0; taken.has(at) && tries < COLORS.length; tries++)
+      at = (at + 1) % COLORS.length
+    taken.add(at)
+    out.set(id, COLORS[at] as string)
+  }
+  return out
 }
 
 /** One or two letters from an email: "bob.smith@…" → "BS", "ann@…" → "AN", "z@…" → "Z". */
@@ -52,6 +80,7 @@ export function othersIn(awareness: Awareness): (LiveUser & { clientId: number }
     seen.add(id)
     out.push({
       clientId,
+      id: user.id ?? id,
       name: user.name,
       email: user.email ?? '',
       color: user.color ?? colorFor(id),
