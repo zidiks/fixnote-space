@@ -12,6 +12,9 @@ param(
   [string]$PublisherDisplayName = ''
 )
 $ErrorActionPreference = 'Stop'
+# Full paths without "..": the SDK tools pick how to treat a file from its path.
+$Release = [System.IO.Path]::GetFullPath($Release)
+$Out = [System.IO.Path]::GetFullPath($Out)
 
 if (-not $IdentityName) { $IdentityName = 'FixNote.Test' }
 if (-not $Publisher) { $Publisher = 'CN=FixNote Test' }
@@ -77,7 +80,7 @@ try {
   $pfx = Join-Path ([System.IO.Path]::GetTempPath()) 'msix-test.pfx'
   $password = [guid]::NewGuid().ToString()
   Export-PfxCertificate -Cert $cert -FilePath $pfx -Password (ConvertTo-SecureString $password -AsPlainText -Force) | Out-Null
-  & "$tools/signtool.exe" sign /fd SHA256 /f $pfx /p $password $test
+  & "$tools/signtool.exe" sign /v /debug /fd SHA256 /f $pfx /p $password $test
   if ($LASTEXITCODE) { throw 'signtool sign failed' }
   Export-Certificate -Cert $cert -FilePath (Join-Path $Out 'FixNote-Store-test.cer') | Out-Null
   Remove-Item $pfx
