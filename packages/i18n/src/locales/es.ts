@@ -610,7 +610,7 @@ const es: LocaleResource = {
     phraseWrong: 'Esta frase pertenece a otra cuenta.',
     wrongAccountTitle: 'Otra cuenta usa este dispositivo',
     wrongAccountBody:
-      'Las notas de aquí se sincronizan con {{email}}. Entra con esa cuenta o cierra sesión.',
+      'Las notas de este dispositivo pertenecen a {{email}}. Inicia sesión en esa cuenta o quita sus notas de este dispositivo: se quedan en la cuenta.',
     signedInAs: 'Sesión iniciada como {{email}}',
     syncNow: 'Sincronizar ahora',
     showPhrase: 'Mostrar frase de recuperación',
@@ -619,7 +619,18 @@ const es: LocaleResource = {
     showPhraseConfirm: 'Mostrar',
     checkFailed: 'No se pudo comprobar el código. Revisa la conexión e inténtalo de nuevo.',
     signOut: 'Cerrar sesión',
-    signOutBody: 'Las notas se quedan en este dispositivo. La sincronización se detiene.',
+    signOutTitle: '¿Cerrar sesión?',
+    signOutChoice:
+      'Puedes dejar tus notas en este dispositivo o quitarlas de él. En tu cuenta se quedan de todos modos.',
+    signOutForget: 'Cerrar sesión y quitar del dispositivo',
+    checkingSync: 'Comprobando que todo esté en el servidor',
+    unsynced:
+      'Algunos cambios aún no están en el servidor ({{count}}). Si quitas las notas de este dispositivo, se perderán.',
+    signInAs: 'Iniciar sesión como {{email}}',
+    forgetOther: 'Quitar notas del dispositivo',
+    forgetOtherTitle: '¿Quitar las notas de {{email}} de este dispositivo?',
+    forgetOtherBody: 'Se quedan en la cuenta {{email}}. Después se abrirá tu cuenta aquí.',
+    forgetOtherConfirm: 'Quitar y continuar',
     status: {
       synced: 'Sincronizado {{time}}',
       syncing: 'Sincronizando…',

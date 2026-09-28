@@ -1,6 +1,15 @@
 import { secretToPhrase } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button, ConfirmDialog, cn, Input, Spinner } from '@fixnote/ui'
+import {
+  Button,
+  cn,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  Input,
+  Spinner,
+} from '@fixnote/ui'
 import { Copy, Eye, EyeOff, LogOut, MonitorSmartphone, RefreshCw } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import {
@@ -10,13 +19,16 @@ import {
   checkPhraseCode,
   currentSecret,
   finishNewAccount,
+  forgetPreviousAccount,
   phraseSaved,
   runSync,
   sendCode,
   sendPhraseCode,
+  signInAsOwner,
   signOut,
   startPairing,
   unlockWithPhrase,
+  unsyncedLocalChanges,
   useAccount,
   verifyCode,
 } from '../../lib/account/account'
@@ -483,6 +495,136 @@ function RecoveryPhrase({ email, secret }: { email: string; secret: Uint8Array |
   )
 }
 
+interface LeaveAction {
+  label: string
+  variant?: 'outline'
+  destructive?: boolean
+  run: () => Promise<void>
+}
+
+/**
+ * Leaving the account or removing notes from this device: says whether some changes are not on
+ * the server yet (removing the notes would lose them) before the choice is made.
+ */
+function LeaveDialog({
+  open,
+  onOpenChange,
+  title,
+  body,
+  actions,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  body: string
+  actions: LeaveAction[]
+}) {
+  const { t } = useTranslation()
+  const [unsynced, setUnsynced] = useState<number | null>(null)
+  const [running, setRunning] = useState<string | null>(null)
+  useEffect(() => {
+    if (!open) return
+    setUnsynced(null)
+    setRunning(null)
+    let alive = true
+    void unsyncedLocalChanges()
+      .catch(() => 0)
+      .then((n) => {
+        if (alive) setUnsynced(n)
+      })
+    return () => {
+      alive = false
+    }
+  }, [open])
+  return (
+    <Dialog open={open} onOpenChange={(o) => running === null && onOpenChange(o)}>
+      <DialogContent className="max-w-md">
+        <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
+        <DialogDescription className="text-sm">{body}</DialogDescription>
+        {unsynced === null ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner /> {t('account.checkingSync')}
+          </p>
+        ) : unsynced > 0 ? (
+          <p className="text-sm text-destructive">{t('account.unsynced', { count: unsynced })}</p>
+        ) : null}
+        <div className="flex flex-wrap justify-end gap-2 pt-2">
+          <Button variant="ghost" disabled={running !== null} onClick={() => onOpenChange(false)}>
+            {t('common.cancel')}
+          </Button>
+          {actions.map((a) => (
+            <Button
+              key={a.label}
+              variant={a.variant ?? 'default'}
+              className={cn(a.destructive && 'text-destructive hover:text-destructive')}
+              loading={running === a.label}
+              disabled={unsynced === null || (running !== null && running !== a.label)}
+              onClick={() => {
+                setRunning(a.label)
+                void a.run().finally(() => setRunning(null))
+              }}
+            >
+              {a.label}
+            </Button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/** This device holds another account's notes: go to that account, or remove them from here. */
+function WrongAccount({ ownerEmail }: { ownerEmail: string }) {
+  const { t } = useTranslation()
+  const { busy, error, run } = useBusy()
+  const [forget, setForget] = useState(false)
+  return (
+    <div className="space-y-4">
+      <Heading
+        title={t('account.wrongAccountTitle')}
+        body={t('account.wrongAccountBody', { email: ownerEmail })}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button
+          loading={busy}
+          disabled={!ownerEmail}
+          onClick={() =>
+            void run(
+              () => signInAsOwner(),
+              () => t('account.sendFailed'),
+            )
+          }
+        >
+          {t('account.signInAs', { email: ownerEmail })}
+        </Button>
+        <Button
+          variant="outline"
+          className="text-destructive hover:text-destructive"
+          disabled={busy}
+          onClick={() => setForget(true)}
+        >
+          {t('account.forgetOther')}
+        </Button>
+      </div>
+      <ErrorText>{error}</ErrorText>
+      <LeaveDialog
+        open={forget}
+        onOpenChange={setForget}
+        title={t('account.forgetOtherTitle', { email: ownerEmail })}
+        body={t('account.forgetOtherBody', { email: ownerEmail })}
+        actions={[
+          {
+            label: t('account.forgetOtherConfirm'),
+            destructive: true,
+            variant: 'outline',
+            run: forgetPreviousAccount,
+          },
+        ]}
+      />
+    </div>
+  )
+}
+
 function Ready() {
   const { t, i18n } = useTranslation()
   const email = useAccount((s) => s.email)
@@ -533,14 +675,20 @@ function Ready() {
         <LogOut />
         {t('account.signOut')}
       </Button>
-      <ConfirmDialog
+      <LeaveDialog
         open={confirmOut}
         onOpenChange={setConfirmOut}
-        title={t('account.signOut')}
-        description={t('account.signOutBody')}
-        confirmLabel={t('account.signOut')}
-        cancelLabel={t('common.cancel')}
-        onConfirm={() => void signOut()}
+        title={t('account.signOutTitle')}
+        body={t('account.signOutChoice')}
+        actions={[
+          {
+            label: t('account.signOutForget'),
+            variant: 'outline',
+            destructive: true,
+            run: () => signOut({ forget: true }),
+          },
+          { label: t('account.signOut'), run: () => signOut() },
+        ]}
       />
     </div>
   )
@@ -566,18 +714,7 @@ export function AccountSection() {
     case 'needs-phrase':
       return <Unlock />
     case 'wrong-account':
-      return (
-        <div className="space-y-4">
-          <Heading
-            title={t('account.wrongAccountTitle')}
-            body={t('account.wrongAccountBody', { email: ownerEmail })}
-          />
-          <Button variant="outline" onClick={() => void signOut()}>
-            <LogOut />
-            {t('account.signOut')}
-          </Button>
-        </div>
-      )
+      return <WrongAccount ownerEmail={ownerEmail} />
     case 'ready':
       return <Ready />
   }
