@@ -536,6 +536,7 @@ const en = {
     hideCard: 'Hide',
     syncInPro: 'Sync is in Pro',
     devTitle: 'Plan on the test server',
+    devPayTest: 'Payment test: shown only in development',
     devSpend: 'Use up AI',
     filesDeleteAt:
       'Your files on the server ({{size}}) are kept until {{date}}. With Pro they stay there; the copies on your devices stay either way.',

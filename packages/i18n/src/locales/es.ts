@@ -543,6 +543,7 @@ const es: LocaleResource = {
     hideCard: 'Ocultar',
     syncInPro: 'La sincronización es de Pro',
     devTitle: 'Plan en el servidor de prueba',
+    devPayTest: 'Prueba de pago: solo se ve en desarrollo',
     devSpend: 'Agotar la IA',
     filesDeleteAt:
       'Tus archivos en el servidor ({{size}}) se guardan hasta el {{date}}. Con Pro se quedan allí; las copias en tus dispositivos se quedan de todos modos.',

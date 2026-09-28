@@ -154,7 +154,16 @@ export function PlanSection() {
           })}
         </p>
       ) : null}
-      {info.status === 'beta' ? null : paying ? (
+      {info.status === 'beta' ? (
+        // Local development against the real server: try the payment (Suby's sandbox) during the
+        // beta, when nobody else is shown it.
+        import.meta.env.DEV && !usesDevBackend() ? (
+          <div className="space-y-2 rounded-lg border border-dashed p-3">
+            <p className="text-xs font-medium text-muted-foreground">{t('plan.devPayTest')}</p>
+            <Upgrade />
+          </div>
+        ) : null
+      ) : paying ? (
         <Button variant="outline" onClick={() => void platform.openExternal(SUBY_PORTAL)}>
           {t('plan.manage')}
           <ArrowUpRight />
