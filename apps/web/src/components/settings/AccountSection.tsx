@@ -370,7 +370,7 @@ function Unlock() {
  * The recovery phrase opens only after a code sent to the account's email: someone at an unlocked
  * computer cannot just read it off the screen.
  */
-function RecoveryPhrase({ email, secret }: { email: string; secret: string | null }) {
+function RecoveryPhrase({ email, secret }: { email: string; secret: Uint8Array | null }) {
   const { t } = useTranslation()
   const [step, setStep] = useState<'hidden' | 'code' | 'shown'>('hidden')
   const [code, setCode] = useState('')
