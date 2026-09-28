@@ -1,5 +1,5 @@
 import { useTranslation } from '@fixnote/i18n'
-import { Button } from '@fixnote/ui'
+import { Button, Spinner } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link2Off, Send } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
@@ -56,6 +56,7 @@ function TelegramCard() {
   const platform = usePlatform()
   const qc = useQueryClient()
   const [waiting, setWaiting] = useState(false)
+  const [busy, setBusy] = useState(false)
   const phase = useAccount((s) => s.phase)
   const backend = captureBackend()
   const links = useQuery({
@@ -72,6 +73,7 @@ function TelegramCard() {
 
   const connect = async () => {
     if (!backend) return
+    setBusy(true)
     try {
       const code = await backend.createCaptureCode()
       setWaiting(true)
@@ -79,6 +81,8 @@ function TelegramCard() {
       setTimeout(() => setWaiting(false), 5 * 60_000)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -92,18 +96,27 @@ function TelegramCard() {
     <Button
       variant="ghost"
       size="sm"
+      loading={busy}
       onClick={async () => {
-        for (const link of list) await backend.unlinkCapture(link)
-        await qc.invalidateQueries({ queryKey: LINKS })
+        setBusy(true)
+        try {
+          for (const link of list) await backend.unlinkCapture(link)
+          await qc.invalidateQueries({ queryKey: LINKS })
+        } finally {
+          setBusy(false)
+        }
       }}
     >
       <Link2Off />
       {t('capture.unlink')}
     </Button>
   ) : waiting ? (
-    <span className="text-sm text-muted-foreground">{t('capture.waiting')}</span>
+    <span className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Spinner />
+      {t('capture.waiting')}
+    </span>
   ) : (
-    <Button variant="outline" size="sm" onClick={() => void connect()}>
+    <Button variant="outline" size="sm" loading={busy} onClick={() => void connect()}>
       {t('capture.connect')}
     </Button>
   )

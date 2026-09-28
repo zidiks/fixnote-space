@@ -13,18 +13,18 @@ export function PairingRequestDialog() {
   const { t } = useTranslation()
   const request = useAccount((s) => s.pairingRequests[0])
   const [dismissed, setDismissed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<'allow' | 'decline' | null>(null)
   if (!request || dismissed === request.id) return null
 
-  const act = async (fn: () => Promise<void>, done?: string) => {
-    setBusy(true)
+  const act = async (key: 'allow' | 'decline', fn: () => Promise<void>, done?: string) => {
+    setBusy(key)
     try {
       await fn()
       if (done) toast(done)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err))
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
@@ -52,15 +52,17 @@ export function PairingRequestDialog() {
           <Button
             variant="outline"
             size="sm"
-            disabled={busy}
-            onClick={() => void act(() => declinePairing(request))}
+            disabled={busy !== null}
+            loading={busy === 'decline'}
+            onClick={() => void act('decline', () => declinePairing(request))}
           >
             {t('pairing.decline')}
           </Button>
           <Button
             size="sm"
-            disabled={busy}
-            onClick={() => void act(() => approvePairing(request), t('pairing.allowed'))}
+            disabled={busy !== null}
+            loading={busy === 'allow'}
+            onClick={() => void act('allow', () => approvePairing(request), t('pairing.allowed'))}
           >
             {t('pairing.allow')}
           </Button>

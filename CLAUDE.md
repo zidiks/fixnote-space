@@ -15,6 +15,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   the locale test fails on missing keys or placeholders.
 - UI components: shadcn style in `packages/ui`, Tailwind 4 tokens in `packages/ui/src/styles.css`.
   Use semantic color tokens (`bg-card`, `text-muted-foreground`), not raw palette colors.
+- A button that waits for something (the server, a long task) gets `loading` (spinner, same size,
+  no second click); with several actions in one place, only the clicked one spins. Waiting that is
+  not a button shows `Spinner` next to its text. Nothing may look frozen.
 - Hotkeys: Mod = Ctrl on Windows/Linux, ⌘ on macOS. Windows is the primary desktop target. Match
   letters by physical key (`e.code`, see `hotkeys.ts`), never only by `e.key`: users type in RU/ES layouts.
 - Local DB: schema and all SQL live in `packages/core` (`db/schema.ts`, `notes/repo.ts`). Append

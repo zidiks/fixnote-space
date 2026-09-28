@@ -51,7 +51,7 @@ export function NewFolderDialog({
             <Button type="button" variant="ghost" size="sm" onClick={() => close(false)}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" size="sm" disabled={!name.trim() || busy}>
+            <Button type="submit" size="sm" disabled={!name.trim()} loading={busy}>
               {t('menu.createFolder')}
             </Button>
           </div>

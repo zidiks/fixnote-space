@@ -75,6 +75,8 @@ export function NoteView({ id }: { id: string }) {
   const voice = useVoice((s) => s.status)
   const aiRequest = useUi((s) => s.aiRequest)
   const [sharing, setSharing] = useState(false)
+  // Deleting a shared note waits for the server (leaving or unsharing it first).
+  const [deleting, setDeleting] = useState(false)
   // A shared note is always edited live with the people it is shared with.
   const shared = useSharedLive(note.data?.sharedId ?? null, () => {
     toast(t('people.lost'))
@@ -111,7 +113,14 @@ export function NoteView({ id }: { id: string }) {
   const folder = folders.find((f) => f.id === n.folderId)
 
   // Shared notes: leaving or unsharing is handled there too.
-  const onDelete = () => void deleteWithUndo(n.id)
+  const onDelete = async () => {
+    setDeleting(true)
+    try {
+      await deleteWithUndo(n.id)
+    } finally {
+      setDeleting(false)
+    }
+  }
   const pinned = n.pinnedAt !== null
 
   return (
@@ -267,6 +276,7 @@ export function NoteView({ id }: { id: string }) {
                   variant="ghost"
                   size="icon-xs"
                   onClick={() => void onDelete()}
+                  loading={deleting}
                   aria-label={t('note.delete')}
                 >
                   <Trash2 />

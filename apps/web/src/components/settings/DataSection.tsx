@@ -49,9 +49,9 @@ export function DataSection() {
       <div className="space-y-3">
         <h3 className="font-medium">{t('data.export')}</h3>
         <p className="max-w-md text-sm text-muted-foreground">{t('data.exportBody')}</p>
-        <Button variant="outline" onClick={exportNotes} disabled={busy}>
+        <Button variant="outline" onClick={exportNotes} loading={busy}>
           <Download />
-          {busy ? t('data.exporting') : t('data.export')}
+          {t('data.export')}
         </Button>
       </div>
       <ImportSection />

@@ -6,7 +6,7 @@ import {
   type SyncConflict,
 } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@fixnote/ui'
+import { Button, Dialog, DialogContent, DialogDescription, DialogTitle, Spinner } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { GitCompareArrows } from 'lucide-react'
 import { useState } from 'react'
@@ -48,7 +48,8 @@ function CompareDialog({ conflict, onClose }: { conflict: SyncConflict; onClose:
   const repo = useRepo()
   const qc = useQueryClient()
   const invalidate = useInvalidateNotes()
-  const [busy, setBusy] = useState(false)
+  // The choice being applied: its button shows a spinner.
+  const [busy, setBusy] = useState<ConflictChoice | null>(null)
   const notes = useQuery({
     queryKey: ['conflict-notes', conflict.copyId],
     queryFn: async () => ({
@@ -59,7 +60,7 @@ function CompareDialog({ conflict, onClose }: { conflict: SyncConflict; onClose:
   }).data
 
   const settle = async (choice: ConflictChoice) => {
-    setBusy(true)
+    setBusy(choice)
     try {
       await repo.settleConflict(conflict.copyId, choice)
       await qc.invalidateQueries({ queryKey: ['conflicts'] })
@@ -73,7 +74,7 @@ function CompareDialog({ conflict, onClose }: { conflict: SyncConflict; onClose:
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err))
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
@@ -91,19 +92,46 @@ function CompareDialog({ conflict, onClose }: { conflict: SyncConflict; onClose:
               className="max-h-[55vh]"
               parts={diffLines(body(notes.note), conflictCopyBody(body(notes.copy)))}
             />
-          ) : null}
+          ) : (
+            <div className="flex h-40 items-center justify-center text-muted-foreground">
+              <Spinner />
+            </div>
+          )}
         </div>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <Button variant="ghost" size="sm" disabled={busy} onClick={() => void settle('both')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy !== null}
+            loading={busy === 'both'}
+            onClick={() => void settle('both')}
+          >
             {t('sync.keepBoth')}
           </Button>
-          <Button variant="outline" size="sm" disabled={busy} onClick={() => void settle('note')}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy !== null}
+            loading={busy === 'note'}
+            onClick={() => void settle('note')}
+          >
             {t('sync.keepNote')}
           </Button>
-          <Button variant="outline" size="sm" disabled={busy} onClick={() => void settle('copy')}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy !== null}
+            loading={busy === 'copy'}
+            onClick={() => void settle('copy')}
+          >
             {t('sync.keepCopy')}
           </Button>
-          <Button size="sm" disabled={busy} onClick={() => void settle('combined')}>
+          <Button
+            size="sm"
+            disabled={busy !== null}
+            loading={busy === 'combined'}
+            onClick={() => void settle('combined')}
+          >
             {t('sync.combine')}
           </Button>
         </div>

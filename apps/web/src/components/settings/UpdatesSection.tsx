@@ -57,7 +57,8 @@ export function UpdatesSection() {
               <Button
                 size="sm"
                 variant="outline"
-                disabled={phase.kind === 'checking' || phase.kind === 'installing'}
+                disabled={phase.kind === 'installing'}
+                loading={phase.kind === 'checking'}
                 onClick={() => void checkForUpdate(updater, false)}
               >
                 <RefreshCw />

@@ -3,6 +3,7 @@ import { useTranslation } from '@fixnote/i18n'
 import { Button, cn } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Plug } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
@@ -20,6 +21,7 @@ export function McpSection() {
   const qc = useQueryClient()
   const kv = kvStore(driver)
   const mcp = platform.mcp
+  const [connecting, setConnecting] = useState<'claude' | 'cursor' | 'codex' | null>(null)
   const info = useQuery({
     queryKey: ['mcp', 'info'],
     queryFn: () => mcp?.info() ?? null,
@@ -36,6 +38,7 @@ export function McpSection() {
     await qc.invalidateQueries({ queryKey: KEY })
   }
   const connect = async (client: 'claude' | 'cursor' | 'codex') => {
+    setConnecting(client)
     try {
       const path = (await mcp?.connect(client)) ?? ''
       toast(t('mcp.connected', { path }))
@@ -43,6 +46,8 @@ export function McpSection() {
       const message = err instanceof Error ? err.message : String(err)
       if (message === 'not-built' || message === 'not-installed') toast.error(t(`mcp.${message}`))
       else toast.error(message)
+    } finally {
+      setConnecting(null)
     }
   }
   const copy = async () => {
@@ -101,7 +106,8 @@ export function McpSection() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={access === 'off'}
+                disabled={access === 'off' || connecting !== null}
+                loading={connecting === 'claude'}
                 onClick={() => void connect('claude')}
               >
                 <Plug />
@@ -110,7 +116,8 @@ export function McpSection() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={access === 'off'}
+                disabled={access === 'off' || connecting !== null}
+                loading={connecting === 'cursor'}
                 onClick={() => void connect('cursor')}
               >
                 <Plug />
@@ -119,7 +126,8 @@ export function McpSection() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={access === 'off'}
+                disabled={access === 'off' || connecting !== null}
+                loading={connecting === 'codex'}
                 onClick={() => void connect('codex')}
               >
                 <Plug />
