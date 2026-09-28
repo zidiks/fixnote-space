@@ -18,6 +18,10 @@ export const es: Dict = {
       description:
         'Cómo FixNote cifra las notas en tu dispositivo, qué guarda el servidor, qué ve el asistente y cómo trabajar totalmente sin conexión.',
     },
+    privacy: {
+      title: 'Política de privacidad de FixNote',
+      description: 'Qué datos tiene FixNote, para qué los necesita y cómo borrarlos.',
+    },
     download: {
       title: 'Descargar FixNote para Windows y macOS',
       description:
@@ -260,6 +264,7 @@ export const es: Dict = {
     resources: 'Recursos',
     webApp: 'Versión web',
     rss: 'RSS',
+    privacy: 'Privacidad',
     rights: 'FixNote',
   },
 
@@ -411,6 +416,93 @@ export const es: Dict = {
     published: 'Publicado',
     empty: 'Pronto habrá artículos aquí.',
     otherLanguages: 'Este artículo en otros idiomas',
+  },
+
+  privacyPage: {
+    eyebrow: 'Privacidad',
+    title: 'Política de privacidad',
+    updated: 'Actualizada el 28 de septiembre de 2026',
+    lead: 'En resumen: no podemos leer tus notas, no vendemos datos y no mostramos anuncios. A continuación, qué datos tiene FixNote y para qué.',
+    sections: [
+      {
+        title: 'Sin cuenta',
+        text: [
+          'FixNote funciona sin cuenta. En ese caso tus notas, adjuntos y ajustes se quedan solo en tu dispositivo. En el modo «solo local» la app no se conecta a nuestro servidor en absoluto.',
+        ],
+      },
+      {
+        title: 'Cuenta',
+        text: [
+          'Para entrar hace falta un correo, al que enviamos un código. Guardamos la dirección, la clave pública de tu cuenta (para que puedan enviarte invitaciones y mensajes de Telegram) y los datos de sesión que te mantienen conectado.',
+        ],
+      },
+      {
+        title: 'Notas y sincronización',
+        text: [
+          'Las notas, carpetas y adjuntos se cifran en tu dispositivo con una clave que solo tienes tú. El servidor los guarda cifrados, junto con datos de sincronización: números de versión, fechas de creación y edición y si una nota es la nota del día. No podemos leer el contenido.',
+        ],
+      },
+      {
+        title: 'Notas y carpetas compartidas',
+        text: [
+          'Cuando invitas a alguien, guardamos su correo, su rol y la fecha de la invitación. Los miembros ven las direcciones de los demás. El texto de las notas y los nombres de las carpetas se cifran con una clave que solo tienen los miembros. Los cambios en la edición conjunta también pasan cifrados por el servidor.',
+        ],
+      },
+      {
+        title: 'Enlaces a notas',
+        text: [
+          'La copia de una nota enlazada se cifra con una clave que va en la parte del enlace después de «#». Los navegadores no envían esa parte al servidor, así que guardamos una copia que no podemos leer. Puedes desactivar el enlace cuando quieras.',
+        ],
+      },
+      {
+        title: 'Asistente',
+        text: [
+          'La búsqueda en tus notas funciona en tu dispositivo. Cuando preguntas a FixNote AI, tu pregunta y los fragmentos encontrados pasan por nuestro servidor a un proveedor de modelos de lenguaje para obtener la respuesta. No guardamos ni registramos el contenido de estas solicitudes.',
+          'Con tu propia clave, las solicitudes van directamente al servicio que elegiste y siguen sus condiciones. Con Ollama todo se queda en tu ordenador.',
+        ],
+      },
+      {
+        title: 'Voz',
+        text: ['La voz se reconoce en tu dispositivo. La grabación no se envía a ninguna parte.'],
+      },
+      {
+        title: 'Telegram',
+        text: [
+          'Si conectas el bot, los mensajes nos llegan desde Telegram y se sellan al instante con tu clave pública. Los guardamos sellados hasta que tu app los recoge, y guardamos el vínculo entre tu cuenta y el chat. Telegram trata los mensajes según sus propias condiciones.',
+        ],
+      },
+      {
+        title: 'Otros servicios',
+        text: [
+          'Los datos de la cuenta y las notas cifradas se guardan en Supabase, y los correos con el código los envía Resend.',
+          'La app descarga sus modelos de búsqueda y de voz desde Hugging Face. Las tarjetas de enlaces en el navegador se obtienen a través de nuestro servidor (sin registrar las direcciones) y directamente en la app de escritorio. La app de escritorio busca actualizaciones en fixnote.space y GitHub; la versión de Microsoft Store las recibe desde la Store.',
+        ],
+      },
+      {
+        title: 'Publicidad y seguimiento',
+        text: [
+          'No hay anuncios, analíticas ni rastreadores en la app ni en el sitio. No vendemos datos ni los compartimos con fines publicitarios.',
+        ],
+      },
+      {
+        title: 'Conservación y borrado',
+        text: [
+          'Guardamos tus datos mientras tengas una cuenta. Puedes exportar tus notas cuando quieras: Ajustes → Datos.',
+          'Para borrar tu cuenta y todo lo vinculado a ella en el servidor, escríbenos desde la dirección con la que entras. Borramos los datos en un plazo de 30 días. Las notas en tus dispositivos se quedan contigo.',
+        ],
+      },
+      {
+        title: 'Menores',
+        text: [
+          'FixNote no está pensado para menores de 13 años, y no recopilamos sus datos a sabiendas.',
+        ],
+      },
+      {
+        title: 'Cambios',
+        text: ['Si esta política cambia, actualizaremos esta página y la fecha de arriba.'],
+      },
+    ],
+    contact: 'Preguntas sobre tus datos y solicitudes de borrado:',
   },
 
   notFound: {
