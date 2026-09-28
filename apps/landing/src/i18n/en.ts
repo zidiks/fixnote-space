@@ -470,7 +470,7 @@ export const en: Dict = {
         title: 'Keeping and deleting data',
         text: [
           'We keep your data while you have an account. You can export your notes at any time: Settings → Data.',
-          'One exception: if an account has never paid for Pro, the server copy of its images and files is removed 90 days after its Pro (the trial or the beta) ends. The app says so a month before and keeps the files on your devices. Nothing is removed for anyone who has paid.',
+          'One exception: if an account has never paid for Pro, the server copy of its images and files is removed 90 days after its Pro trial ends. The app says so a month before and keeps the files on your devices. Nothing is removed for anyone who has paid.',
           'To delete your account and everything linked to it on the server, email us from the address you sign in with. We delete the data within 30 days. Notes on your devices stay with you.',
         ],
       },

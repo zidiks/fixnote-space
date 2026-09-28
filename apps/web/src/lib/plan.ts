@@ -9,17 +9,13 @@ import { create } from 'zustand'
  */
 export interface PlanInfo {
   plan: 'free' | 'pro'
-  /** 'beta': everyone has Pro for now. */
-  status: 'beta' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'free'
-  betaUntil: number | null
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'free'
+  /** Only a label ("Beta"): plans work the same either way. */
+  beta: boolean
   trialEndsAt: number | null
   periodEnd: number | null
   /** Paid at least once: its files are never removed from the server. */
   paidBefore: boolean
-  /** A paid subscription runs now (also during the beta, which hides it in `status`). */
-  subscribed: boolean
-  /** That subscription ends at `periodEnd` instead of renewing. */
-  canceled: boolean
   /** When the server copy of the files goes (Free, never paid, files on the server); else null. */
   filesDeleteAt: number | null
   /** What Pro did for the account (the note at the end of the trial). */
@@ -91,15 +87,10 @@ export function toPlanInfo(raw: Record<string, unknown>): PlanInfo {
   return {
     plan: raw.plan === 'pro' ? 'pro' : 'free',
     status: (raw.status as PlanInfo['status']) ?? 'free',
-    betaUntil: time(raw.beta_until),
+    beta: raw.beta === true,
     trialEndsAt: time(raw.trial_ends_at),
     periodEnd: time(raw.current_period_end),
     paidBefore: raw.paid_before === true,
-    subscribed:
-      raw.paid_before === true &&
-      (time(raw.current_period_end) ?? 0) > Date.now() &&
-      raw.status !== 'past_due',
-    canceled: raw.canceled === true,
     filesDeleteAt: time(raw.files_delete_at),
     usage: {
       notes: num(usage.notes),

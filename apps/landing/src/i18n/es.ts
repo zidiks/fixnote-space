@@ -488,7 +488,7 @@ export const es: Dict = {
         title: 'Conservación y borrado',
         text: [
           'Guardamos tus datos mientras tengas una cuenta. Puedes exportar tus notas cuando quieras: Ajustes → Datos.',
-          'Una excepción: si una cuenta nunca ha pagado Pro, la copia de sus imágenes y archivos en el servidor se elimina 90 días después de que termine su Pro (la prueba o la beta). La app avisa un mes antes y guarda los archivos en tus dispositivos. A quien ha pagado no se le elimina nada.',
+          'Una excepción: si una cuenta nunca ha pagado Pro, la copia de sus imágenes y archivos en el servidor se elimina 90 días después de que termine su prueba de Pro. La app avisa un mes antes y guarda los archivos en tus dispositivos. A quien ha pagado no se le elimina nada.',
           'Para borrar tu cuenta y todo lo vinculado a ella en el servidor, escríbenos desde la dirección con la que entras. Borramos los datos en un plazo de 30 días. Las notas en tus dispositivos se quedan contigo.',
         ],
       },

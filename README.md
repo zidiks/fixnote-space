@@ -258,8 +258,7 @@ sharing notes and folders (people invited join on Free), public links, capture f
 `supabase/migrations/*_plans.sql` and `*_open_trial.sql`); the app only explains (Settings → Plan,
 the sidebar card, "This is part of Pro", the note at the end of the trial).
 
-- Trial: 7 days of Pro from sign-up, no card; for accounts made during the beta it starts when the
-  beta ends. It is kept cheap so a new account is not worth making for it: 1 GB of files
+- Trial: 7 days of Pro from sign-up, no card. It is kept cheap so a new account is not worth making for it: 1 GB of files
   (`trial_storage_bytes`) and a smaller AI allowance (`ai_trial_tokens`). Addresses at throwaway
   mail services (`disposable_domains`, add more with an insert) get no trial and start on Free.
   Two days before the end the sidebar reminds; after it, a note says what Pro did and that nothing
@@ -268,8 +267,8 @@ the sidebar card, "This is part of Pro", the note at the end of the trial).
   `storage-cleanup`, called every night by pg_cron (the migration schedules it on the hosted
   project). A month before, Settings → Plan and the sidebar say when, and the app fetches every file
   the notes use onto the device. Anyone who paid once keeps their files.
-- Beta: until `plan_config.beta_until` (2027-01-01 at first) everyone has Pro. To end it, run
-  `select end_beta();` in the SQL editor: the waiting trials start that day. Limits live in
+- Beta: only a label. While `plan_config.beta_until` is ahead, Settings → Plan says "Beta"; plans
+  work the same either way. `select end_beta();` removes the label. Limits live in
   `plan_config` (`ai_month_tokens`, `ai_trial_tokens`, `ai_day_requests`,
   `ai_global_month_tokens`, `storage_bytes`, `trial_storage_bytes`, `trial_days`,
   `free_files_days`).
@@ -292,7 +291,7 @@ the sidebar card, "This is part of Pro", the note at the end of the trial).
      and `pnpm sb:functions`.
   Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds.
 - Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
-  (beta, trial, pro, free, "use up AI", "trial ends tomorrow", "never paid"); switching to free
+  (trial, pro, free, "use up AI", "trial ends tomorrow", "never paid"); switching to free
   ends the trial, and the fake checkout turns Pro on.
 
 ## Supabase
