@@ -1,5 +1,5 @@
 import { buildSharedNote, encodeShare, newShareId, shareLinkKey, shareUrl } from '@fixnote/core'
-import { attachmentSync, shareContext } from './account/account'
+import { attachmentSource, shareContext } from './account/account'
 import { usesDevBackend } from './account/pick'
 import { env } from './env'
 import { platform } from './platform'
@@ -48,7 +48,7 @@ export async function publishShare(
 ): Promise<string> {
   const { backend, keys, attachments } = need()
   const id = existingId ?? newShareId()
-  const copy = await buildSharedNote(note, (att) => attachments.load(att, attachmentSync()))
+  const copy = await buildSharedNote(note, (att) => attachments.load(att, attachmentSource()))
   const payload = encodeShare(shareLinkKey(keys, id), id, copy)
   if (existingId) await backend.shares.update(id, payload)
   else await backend.shares.create({ id, noteId, payload })

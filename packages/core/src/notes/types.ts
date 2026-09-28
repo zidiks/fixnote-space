@@ -38,8 +38,12 @@ export interface NoteFilter {
   pinned?: boolean
 }
 
+/** How a list of notes is ordered: last edited or created first, or by title (A to Z). */
+export type NoteSort = 'edited' | 'created' | 'title'
+
+/** Where the next page starts: the last note's sort value and id (the tie-breaker). */
 export interface NoteCursor {
-  updatedAt: number
+  key: number | string
   id: string
 }
 

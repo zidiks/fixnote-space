@@ -1,6 +1,9 @@
 import * as Y from 'yjs'
+import { type AttachmentSource, type Attachments, attachmentIds } from '../attachments'
 import {
   type AccountKeys,
+  decryptSharedAttachment,
+  encryptSharedAttachment,
   newNoteKey,
   openFolderShareName,
   openKeyFromFolder,
@@ -158,6 +161,11 @@ export interface SharedRemote {
   removeFromFolder(sharedId: string): Promise<void>
   /** Owner and editors: a note of the folder is deleted for everyone. */
   deleteFolderNote(sharedId: string): Promise<void>
+
+  /** Owner and editors: a file of the note, sealed with its key, for every member. */
+  putFile(sharedId: string, fileId: string, sealed: Uint8Array): Promise<void>
+  /** Members: a file of the note; null when the server has none. */
+  getFile(sharedId: string, fileId: string): Promise<Uint8Array | null>
 }
 
 /** Markdown ⇄ the editor's Yjs document. Needs the editor schema, so the app provides it. */
@@ -299,6 +307,80 @@ export class SharedNotes {
   /** Whether an invitation sent at `invitedAt` can no longer be accepted. */
   isExpired(member: { accepted: boolean; invitedAt: number }): boolean {
     return !member.accepted && this.expired(member.invitedAt)
+  }
+
+  /**
+   * Uploads the files that the shared notes this account may edit use and that are not under the
+   * note on the server yet, sealed with the note key, so every member can open them. Files this
+   * device does not have are someone else's to upload. Returns how many went up.
+   */
+  async pushFiles(attachments: Attachments): Promise<number> {
+    const rows = await this.db.query<{ shared_id: string; note_key: string; content: string }>(
+      `SELECT d.shared_id, d.note_key, n.content FROM shared_docs d
+         JOIN notes n ON n.shared_id = d.shared_id AND n.deleted_at IS NULL
+        WHERE d.role IN ('owner', 'edit')`,
+    )
+    let sent = 0
+    for (const row of rows) {
+      const done = new Set(
+        (
+          await this.db.query<{ attachment_id: string }>(
+            'SELECT attachment_id FROM shared_files WHERE shared_id = ?',
+            [row.shared_id],
+          )
+        ).map((r) => r.attachment_id),
+      )
+      for (const id of attachmentIds(row.content)) {
+        if (done.has(id)) continue
+        const file = await attachments.local(id)
+        if (!file) continue
+        const sealed = encryptSharedAttachment(
+          row.note_key,
+          row.shared_id,
+          id,
+          file.mime,
+          file.bytes,
+        )
+        try {
+          await this.remote.putFile(row.shared_id, id, sealed)
+        } catch {
+          // Not allowed or offline: tried again with the next sync.
+          continue
+        }
+        await this.markFile(row.shared_id, id)
+        sent++
+      }
+    }
+    return sent
+  }
+
+  /** Files of shared notes: tried under each shared note that uses the file, with its key. */
+  fileSource(): AttachmentSource {
+    return {
+      fetch: async (id) => {
+        const rows = await this.db.query<{ shared_id: string; note_key: string }>(
+          `SELECT d.shared_id, d.note_key FROM shared_docs d
+             JOIN notes n ON n.shared_id = d.shared_id
+            WHERE n.content LIKE ?`,
+          [`%attachment:${id}%`],
+        )
+        for (const row of rows) {
+          const sealed = await this.remote.getFile(row.shared_id, id).catch(() => null)
+          if (!sealed) continue
+          const file = decryptSharedAttachment(row.note_key, row.shared_id, id, sealed)
+          await this.markFile(row.shared_id, id)
+          return file
+        }
+        return null
+      },
+    }
+  }
+
+  private async markFile(sharedId: string, fileId: string) {
+    await this.db.execute(
+      'INSERT OR IGNORE INTO shared_files (shared_id, attachment_id) VALUES (?, ?)',
+      [sharedId, fileId],
+    )
   }
 
   async doc(sharedId: string): Promise<SharedDoc | null> {

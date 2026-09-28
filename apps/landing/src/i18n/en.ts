@@ -427,7 +427,7 @@ export const en: Dict = {
       {
         title: 'Shared notes and folders',
         text: [
-          "When you invite someone, we store their email address, role and invitation date. Members see each other's addresses. Note text and folder names are encrypted with a key only the members have. Edits made together also pass through the server encrypted.",
+          "When you invite someone, we store their email address, role and invitation date. Members see each other's addresses. Note text, folder names and the images and files in shared notes are encrypted with a key only the members have. Edits made together also pass through the server encrypted.",
         ],
       },
       {

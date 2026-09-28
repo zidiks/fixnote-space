@@ -1,7 +1,7 @@
 import { type Attachments, attachmentUrl, MAX_ATTACHMENT_BYTES } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
-import { attachmentSync } from './account/account'
+import { attachmentSource } from './account/account'
 import { prepareImage } from './images'
 import { platform } from './platform'
 
@@ -23,7 +23,7 @@ export function attachmentObjectUrl(
   const known = urls.get(id)
   if (known) return known
   const task = attachments
-    .load(id, attachmentSync())
+    .load(id, attachmentSource())
     .then((blob) => (blob ? { url: URL.createObjectURL(blob), mime: blob.type } : null))
     .catch(() => null)
   urls.set(id, task)
@@ -75,7 +75,7 @@ export function fileSize(bytes: number): string {
 /** Saves an attached file where the user chooses (a download on the web). */
 export async function saveAttachment(attachments: Attachments, id: string, name: string) {
   try {
-    const blob = await attachments.load(id, attachmentSync())
+    const blob = await attachments.load(id, attachmentSource())
     if (!blob) {
       toast.error(i18n.t('drop.fileMissing'))
       return

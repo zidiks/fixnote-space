@@ -38,6 +38,34 @@ export interface AttachmentInfo {
   uploaded: boolean
 }
 
+/** Where a file this device does not have can come from: downloads and opens it. */
+export interface AttachmentSource {
+  fetch(id: string): Promise<{ mime: string; bytes: Uint8Array } | null>
+}
+
+/** The account's own copy on the server, encrypted with its keys. */
+export function accountSource(keys: AccountKeys, remote: AttachmentRemote): AttachmentSource {
+  return {
+    async fetch(id) {
+      const sealed = await remote.download(id)
+      return sealed ? decryptAttachment(keys, id, sealed) : null
+    },
+  }
+}
+
+/** The first of `sources` that has the file. */
+export function anySource(...sources: (AttachmentSource | null | undefined)[]): AttachmentSource {
+  return {
+    async fetch(id) {
+      for (const source of sources) {
+        const file = await source?.fetch(id)
+        if (file) return file
+      }
+      return null
+    },
+  }
+}
+
 const blobKey = (id: string) => `att/${id}`
 
 /**
@@ -74,29 +102,25 @@ export class Attachments {
       : null
   }
 
-  /** The file, from this device or downloaded (and kept) when signed in; null if unavailable. */
-  async load(
-    id: string,
-    sync?: { keys: AccountKeys; remote: AttachmentRemote },
-  ): Promise<Blob | null> {
+  /** The file, from this device or fetched from `source` (and kept); null if unavailable. */
+  async load(id: string, source?: AttachmentSource): Promise<Blob | null> {
     const info = await this.info(id)
     if (info) {
       const local = await this.blobs.get(blobKey(id))
       if (local) return local.type ? local : new Blob([local], { type: info.mime })
     }
-    if (!sync) return null
+    if (!source) return null
     const running = this.downloads.get(id)
     if (running) return running
     const task = (async () => {
-      const sealed = await sync.remote.download(id)
-      if (!sealed) return null
-      const { mime, bytes } = decryptAttachment(sync.keys, id, sealed)
-      const blob = new Blob([bytes as BlobPart], { type: mime })
+      const file = await source.fetch(id)
+      if (!file) return null
+      const blob = new Blob([file.bytes as BlobPart], { type: file.mime })
       await this.blobs.put(blobKey(id), blob)
       await this.db.execute(
         `INSERT INTO attachments (id, mime, size, created_at, uploaded) VALUES (?, ?, ?, ?, 1)
          ON CONFLICT (id) DO UPDATE SET mime = excluded.mime, size = excluded.size, uploaded = 1`,
-        [id, mime, bytes.length, (this.opts.now ?? Date.now)()],
+        [id, file.mime, file.bytes.length, (this.opts.now ?? Date.now)()],
       )
       return blob
     })()
@@ -108,18 +132,23 @@ export class Attachments {
     }
   }
 
+  /** The bytes of a file this device has (to upload somewhere else); null if it has not. */
+  async local(id: string): Promise<{ mime: string; bytes: Uint8Array } | null> {
+    const info = await this.info(id)
+    const blob = info ? await this.blobs.get(blobKey(id)) : null
+    if (!info || !blob) return null
+    return { mime: info.mime, bytes: new Uint8Array(await blob.arrayBuffer()) }
+  }
+
   /**
    * Fetches every file in `ids` that is not on this device yet (before the server copy goes).
    * Returns how many were fetched; files the server no longer has are skipped.
    */
-  async keepLocal(
-    ids: string[],
-    sync: { keys: AccountKeys; remote: AttachmentRemote },
-  ): Promise<number> {
+  async keepLocal(ids: string[], source: AttachmentSource): Promise<number> {
     let fetched = 0
     for (const id of ids) {
       if ((await this.info(id)) && (await this.blobs.get(blobKey(id)))) continue
-      if (await this.load(id, sync)) fetched++
+      if (await this.load(id, source)) fetched++
     }
     return fetched
   }

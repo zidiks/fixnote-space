@@ -200,5 +200,22 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
       rpc('attach_note_to_folder', { p_note: id, p_folder: folderId, p_folder_key: folderKey }),
     removeFromFolder: (id) => rpc('remove_note_from_folder', { p_note: id }),
     deleteFolderNote: (id) => rpc('delete_folder_note', { p_note: id }),
+    // Files of a shared note: `shared/<note>/<file>` in the attachments bucket (*_shared_files.sql).
+    async putFile(id, fileId, sealed) {
+      const { error } = await client.storage
+        .from('attachments')
+        .upload(`shared/${id}/${fileId}`, sealed, {
+          contentType: 'application/octet-stream',
+          upsert: true,
+        })
+      if (error) throw new Error(error.message)
+    },
+    async getFile(id, fileId) {
+      const { data, error } = await client.storage
+        .from('attachments')
+        .download(`shared/${id}/${fileId}`)
+      if (error) return null
+      return new Uint8Array(await data.arrayBuffer())
+    },
   }
 }

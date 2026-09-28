@@ -50,6 +50,8 @@ export class MemorySharedServer {
   readonly users = new Map<string, { email: string; publicKey: string }>()
   readonly notes = new Map<string, NoteRow>()
   readonly folders = new Map<string, FolderRow>()
+  /** Files of shared notes (`<shared id>/<file id>`), sealed, as base64. */
+  readonly files = new Map<string, string>()
   private seq = 0
   /** The server's clock, for invitations that expire. */
   now = () => Date.now()
@@ -72,6 +74,7 @@ export class MemorySharedServer {
         id,
         { ...f, members: members(f.members) },
       ]),
+      files: [...this.files.entries()],
     })
   }
 
@@ -84,6 +87,7 @@ export class MemorySharedServer {
       users?: [string, { email: string; publicKey: string }][]
       notes?: [string, Stored<NoteRow>][]
       folders?: [string, Stored<FolderRow>][]
+      files?: [string, string][]
     }
     server.seq = data.seq ?? 0
     for (const [id, u] of data.users ?? []) server.users.set(id, u)
@@ -91,6 +95,7 @@ export class MemorySharedServer {
       server.notes.set(id, { ...n, members: new Map(n.members) })
     for (const [id, f] of data.folders ?? [])
       server.folders.set(id, { ...f, members: new Map(f.members) })
+    for (const [path, b64] of data.files ?? []) server.files.set(path, b64)
     return server
   }
 
@@ -361,6 +366,22 @@ export class MemorySharedServer {
           n.deleted = true
           n.state = null
         }
+      },
+      // As the storage policies of *_shared_files.sql: members read; the owner and editors add,
+      // within the owner's plan (the files count against the owner's storage).
+      putFile: async (id, fileId, sealed) => {
+        const n = this.notes.get(id)
+        const r = active(id)
+        must(Boolean(n) && !n?.deleted && (r === 'owner' || r === 'edit'), 'read only')
+        must(this.isPro(n?.owner ?? ''), 'pro_required')
+        let bin = ''
+        for (const b of sealed) bin += String.fromCharCode(b)
+        this.files.set(`${id}/${fileId}`, btoa(bin))
+      },
+      getFile: async (id, fileId) => {
+        if (!active(id)) return null
+        const b64 = this.files.get(`${id}/${fileId}`)
+        return b64 ? Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) : null
       },
     }
   }

@@ -5,7 +5,7 @@ import { strToU8, zipSync } from 'fflate'
 import { Download } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { attachmentSync } from '../../lib/account/account'
+import { attachmentSource } from '../../lib/account/account'
 import { useDb } from '../../lib/db'
 import { usePlatform } from '../../lib/platform'
 import { localDate } from '../../lib/queries'
@@ -29,7 +29,7 @@ export function DataSection() {
         },
         Date.now(),
         // Images from other devices are downloaded for the export when signed in.
-        { load: (id) => attachments.load(id, attachmentSync()) },
+        { load: (id) => attachments.load(id, attachmentSource()) },
       )
       const zip = zipSync(
         Object.fromEntries(files.map((f) => [f.path, f.data ?? strToU8(f.content)])),

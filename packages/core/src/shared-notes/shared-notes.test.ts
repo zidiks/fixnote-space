@@ -1,9 +1,10 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
+import { Attachments, attachmentUrl } from '../attachments'
 import { cryptoReady, deriveKeys, newRecoverySecret, publicKeyB64 } from '../crypto'
 import { prepareDatabase } from '../db/migrate'
 import { NotesRepo, ReadOnlyError } from '../notes/repo'
-import type { SqlDriver } from '../platform'
+import type { BlobStore, SqlDriver } from '../platform'
 import { createMemoryDriver } from '../testing/memory-driver'
 import { type DocProjector, PersonNotFoundError, SharedNotes } from './index'
 import { MemorySharedServer } from './memory-server'
@@ -85,6 +86,19 @@ async function account(userId: string, email: string) {
 
 const content = async (d: Device, noteId: string) => (await d.repo.getNote(noteId))?.content
 
+/** A device's files (images and other attachments), with the bytes in memory. */
+function filesOf(d: Device) {
+  const map = new Map<string, Blob>()
+  const blobs: BlobStore = {
+    put: async (k, b) => void map.set(k, b),
+    get: async (k) => map.get(k) ?? null,
+    delete: async (k) => void map.delete(k),
+  }
+  return new Attachments(d.db, blobs)
+}
+const bytesOf = async (blob: Blob | null) =>
+  blob ? [...new Uint8Array(await blob.arrayBuffer())] : null
+
 beforeAll(cryptoReady)
 beforeEach(() => {
   server = new MemorySharedServer()
@@ -118,6 +132,54 @@ describe('SharedNotes', () => {
     await ann.shared.sync()
     await bob.shared.sync()
     expect(await content(bob, bobNote)).toBe('Our Plan from Bob')
+  })
+
+  it('files in a shared note reach every member, sealed with the note key', async () => {
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    const cat = await (await account('cat', 'cat@x.io')).device()
+    const annFiles = filesOf(ann)
+    const photo = await annFiles.add(new Blob([new Uint8Array([7, 7, 7])]), 'image/png')
+    // The image was in the note before it was shared.
+    const note = await ann.repo.createNote({
+      content: `Trip\n\n![](${attachmentUrl(photo.id)})`,
+    })
+    const id = await ann.shared.share(note.id)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    await ann.shared.invite(id, 'cat@x.io', 'view')
+    await bob.shared.accept(id)
+    await cat.shared.accept(id)
+
+    expect(await ann.shared.pushFiles(annFiles)).toBe(1)
+    expect(await ann.shared.pushFiles(annFiles)).toBe(0)
+    // Only ciphertext on the server.
+    expect(server.files.get(`${id}/${photo.id}`)).not.toContain('BwcH')
+
+    const bobFiles = filesOf(bob)
+    expect(await bytesOf(await bobFiles.load(photo.id, bob.shared.fileSource()))).toEqual([7, 7, 7])
+    const catFiles = filesOf(cat)
+    expect(await bytesOf(await catFiles.load(photo.id, cat.shared.fileSource()))).toEqual([7, 7, 7])
+
+    // Bob (an editor) adds a file; Cat (a viewer) cannot put one on the server.
+    const scan = await bobFiles.add(new Blob([new Uint8Array([1, 2])]), 'application/pdf')
+    const bobNote = await bob.repo.listNotes().then((p) => p.items[0])
+    await typeInEditor(bob, id, (t) =>
+      t.insert(t.length, `\n[scan.pdf](${attachmentUrl(scan.id)})`),
+    )
+    expect(await bob.shared.pushFiles(bobFiles)).toBe(1)
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect(await bytesOf(await annFiles.load(scan.id, ann.shared.fileSource()))).toEqual([1, 2])
+    expect(bobNote?.sharedId).toBe(id)
+    const own = await catFiles.add(new Blob([new Uint8Array([9])]), 'image/png')
+    await expect(server.remoteFor('cat').putFile(id, own.id, new Uint8Array([1]))).rejects.toThrow(
+      'read only',
+    )
+
+    // Someone who is not a member gets nothing.
+    const dan = await (await account('dan', 'dan@x.io')).device()
+    await dan.repo.createNote({ content: `![](${attachmentUrl(photo.id)})` })
+    expect(await server.remoteFor('dan').getFile(id, photo.id)).toBeNull()
   })
 
   it('shares a note with a person who then edits it; edits flow both ways and merge', async () => {
@@ -368,6 +430,21 @@ describe('shared folders', () => {
     )
     expect(row).toEqual({ shared_id: id, dirty: 0 })
     expect(await bob.shared.folderOf(bobTrip)).toMatchObject({ role: 'edit', owner: false })
+  })
+
+  it('files in notes of a shared folder reach its members', async () => {
+    const { ann, bob, trip, id } = await setUp()
+    const annFiles = filesOf(ann)
+    const map = await annFiles.add(new Blob([new Uint8Array([4, 2])]), 'image/png')
+    await ann.repo.createNote({
+      content: `Map\n\n![](${attachmentUrl(map.id)})`,
+      folderId: trip.id,
+    })
+    await ann.shared.sync()
+    expect(await ann.shared.pushFiles(annFiles)).toBe(1)
+    await bob.shared.acceptFolder(id)
+    const bobFiles = filesOf(bob)
+    expect(await bytesOf(await bobFiles.load(map.id, bob.shared.fileSource()))).toEqual([4, 2])
   })
 
   it('an editor adds notes and edits; the owner renames; everyone sees it', async () => {

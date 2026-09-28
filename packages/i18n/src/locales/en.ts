@@ -474,6 +474,20 @@ const en = {
     restore: 'Restore',
     close: 'Close',
   },
+  view: {
+    menu: 'View options',
+    title: 'View',
+    cards: 'Cards',
+    list: 'List',
+    compact: 'Compact',
+    sort: 'Sort',
+    allNotes: 'Notes',
+    by: {
+      edited: 'Last edited',
+      created: 'Date created',
+      title: 'Title',
+    },
+  },
   plan: {
     title: 'Plan',
     free: 'Free',

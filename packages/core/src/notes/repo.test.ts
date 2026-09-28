@@ -108,6 +108,34 @@ describe('listNotes', () => {
     expect(seen).toEqual(['note 6', 'note 5', 'note 4', 'note 3', 'note 2', 'note 1', 'note 0'])
   })
 
+  it('sorts by creation or title and pages each order without gaps', async () => {
+    const make = async (content: string) => {
+      const n = await repo.createNote({ content })
+      clock += 1000
+      return n
+    }
+    const pear = await make('pear')
+    await make('Apple')
+    await make('')
+    await make('banana')
+    await make('cherry')
+    // An edit moves a note up in the default order, not in the others.
+    await repo.updateContent(pear.id, 'pear pie')
+    const all = async (sort: 'edited' | 'created' | 'title') => {
+      const titles: string[] = []
+      let cursor = null
+      do {
+        const page = await repo.listNotes({ sort, cursor, limit: 2 })
+        titles.push(...page.items.map((n) => n.title))
+        cursor = page.nextCursor
+      } while (cursor)
+      return titles
+    }
+    expect(await all('edited')).toEqual(['pear pie', 'cherry', 'banana', '', 'Apple'])
+    expect(await all('created')).toEqual(['cherry', 'banana', '', 'Apple', 'pear pie'])
+    expect(await all('title')).toEqual(['Apple', 'banana', 'cherry', 'pear pie', ''])
+  })
+
   it('filters by inbox, folder, type and date', async () => {
     const folder = await repo.createFolder('Work')
     await repo.createNote({ content: 'inbox #work' })

@@ -445,7 +445,7 @@ export const es: Dict = {
       {
         title: 'Notas y carpetas compartidas',
         text: [
-          'Cuando invitas a alguien, guardamos su correo, su rol y la fecha de la invitación. Los miembros ven las direcciones de los demás. El texto de las notas y los nombres de las carpetas se cifran con una clave que solo tienen los miembros. Los cambios en la edición conjunta también pasan cifrados por el servidor.',
+          'Cuando invitas a alguien, guardamos su correo, su rol y la fecha de la invitación. Los miembros ven las direcciones de los demás. El texto de las notas, los nombres de las carpetas y las imágenes y archivos de las notas compartidas se cifran con una clave que solo tienen los miembros. Los cambios en la edición conjunta también pasan cifrados por el servidor.',
         ],
       },
       {

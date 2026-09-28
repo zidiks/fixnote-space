@@ -162,8 +162,49 @@ export function encryptAttachment(
   mime: string,
   bytes: Uint8Array,
 ): Uint8Array {
+  return sealFile(keys.wrapKey, `ak:${id}`, id, mime, bytes)
+}
+
+export function decryptAttachment(
+  keys: AccountKeys,
+  id: string,
+  blob: Uint8Array,
+): { mime: string; bytes: Uint8Array } {
+  return openFile(keys.wrapKey, `ak:${id}`, id, blob)
+}
+
+/**
+ * A file of a shared note, for every member: the same layout as `encryptAttachment`, the data key
+ * wrapped with the note key instead of the account key and bound to the note and the file.
+ */
+export function encryptSharedAttachment(
+  noteKey: string,
+  sharedId: string,
+  id: string,
+  mime: string,
+  bytes: Uint8Array,
+): Uint8Array {
+  return sealFile(noteKeyBytes(noteKey), `sk:${sharedId}:${id}`, id, mime, bytes)
+}
+
+export function decryptSharedAttachment(
+  noteKey: string,
+  sharedId: string,
+  id: string,
+  blob: Uint8Array,
+): { mime: string; bytes: Uint8Array } {
+  return openFile(noteKeyBytes(noteKey), `sk:${sharedId}:${id}`, id, blob)
+}
+
+function sealFile(
+  wrapKey: Uint8Array,
+  wrapAd: string,
+  id: string,
+  mime: string,
+  bytes: Uint8Array,
+): Uint8Array {
   const dataKey = sodium.randombytes_buf(32)
-  const wrapped = sodium.from_string(seal(keys.wrapKey, dataKey, `ak:${id}`))
+  const wrapped = sodium.from_string(seal(wrapKey, dataKey, wrapAd))
   const header = sodium.from_string(JSON.stringify({ mime }))
   const plain = new Uint8Array(4 + header.length + bytes.length)
   new DataView(plain.buffer).setUint32(0, header.length)
@@ -186,8 +227,9 @@ export function encryptAttachment(
   return out
 }
 
-export function decryptAttachment(
-  keys: AccountKeys,
+function openFile(
+  wrapKey: Uint8Array,
+  wrapAd: string,
   id: string,
   blob: Uint8Array,
 ): { mime: string; bytes: Uint8Array } {
@@ -198,7 +240,7 @@ export function decryptAttachment(
   const nonceLength = sodium.crypto_aead_xchacha20poly1305_ietf_NPUBBYTES
   if (blob.length < 3 + wrappedLength + nonceLength) throw new DecryptionError(what)
   const wrapped = sodium.to_string(blob.subarray(3, 3 + wrappedLength))
-  const dataKey = open(keys.wrapKey, wrapped, `ak:${id}`, what)
+  const dataKey = open(wrapKey, wrapped, wrapAd, what)
   const nonce = blob.subarray(3 + wrappedLength, 3 + wrappedLength + nonceLength)
   let plain: Uint8Array
   try {
