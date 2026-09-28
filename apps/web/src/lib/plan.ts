@@ -14,13 +14,12 @@ export interface PlanInfo {
   betaUntil: number | null
   trialEndsAt: number | null
   periodEnd: number | null
-  /** The account had a paid subscription before: no second free trial. */
-  trialUsed: boolean
-  /**
-   * Days of the free trial a first subscription starts with (the card is taken at checkout); 0 when
-   * the Suby products have none. `plan_config.trial_days` must match the products.
-   */
-  trialDays: number
+  /** Paid at least once: its files are never removed from the server. */
+  paidBefore: boolean
+  /** When the server copy of the files goes (Free, never paid, files on the server); else null. */
+  filesDeleteAt: number | null
+  /** What Pro did for the account (the note at the end of the trial). */
+  usage: { notes: number; aiAnswers: number; files: number }
   ai: { used: number; limit: number; resetsAt: number; today: number; dayLimit: number }
   storage: { used: number; limit: number }
 }
@@ -84,14 +83,20 @@ export function toPlanInfo(raw: Record<string, unknown>): PlanInfo {
   const num = (v: unknown) => Number(v ?? 0)
   const ai = (raw.ai ?? {}) as Record<string, unknown>
   const storage = (raw.storage ?? {}) as Record<string, unknown>
+  const usage = (raw.usage ?? {}) as Record<string, unknown>
   return {
     plan: raw.plan === 'pro' ? 'pro' : 'free',
     status: (raw.status as PlanInfo['status']) ?? 'free',
     betaUntil: time(raw.beta_until),
     trialEndsAt: time(raw.trial_ends_at),
     periodEnd: time(raw.current_period_end),
-    trialUsed: raw.trial_used === true,
-    trialDays: raw.trial_days == null ? 7 : num(raw.trial_days),
+    paidBefore: raw.paid_before === true,
+    filesDeleteAt: time(raw.files_delete_at),
+    usage: {
+      notes: num(usage.notes),
+      aiAnswers: num(usage.ai_answers),
+      files: num(usage.files),
+    },
     ai: {
       used: num(ai.used),
       limit: num(ai.limit),

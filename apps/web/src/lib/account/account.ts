@@ -2,6 +2,7 @@ import {
   type AccountKeys,
   type AttachmentRemote,
   type Attachments,
+  attachmentIds,
   cryptoReady,
   deriveKeys,
   importInbox,
@@ -449,9 +450,30 @@ export async function refreshPlan(force = false) {
   if (!force && Date.now() - planFetchedAt < PLAN_EVERY) return
   planFetchedAt = Date.now()
   try {
-    usePlan.setState({ info: toPlanInfo(await b.plan()) })
+    const info = toPlanInfo(await b.plan())
+    usePlan.setState({ info })
+    if (info.filesDeleteAt) void keepFilesHere()
   } catch {
     planFetchedAt = 0
+  }
+}
+
+let keptFilesFor: string | null = null
+
+/**
+ * The server copy of the files is going (Free, never paid): fetch the ones this device does not
+ * have, once per session, so every file the notes use stays on the device.
+ */
+async function keepFilesHere() {
+  const sync = attachmentSync()
+  const d = deps
+  if (!sync || !d || !session || keptFilesFor === session.userId) return
+  keptFilesFor = session.userId
+  try {
+    const ids = new Set((await d.repo.allContents()).flatMap(attachmentIds))
+    await d.attachments.keepLocal([...ids], sync)
+  } catch {
+    keptFilesFor = null
   }
 }
 

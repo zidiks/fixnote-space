@@ -116,3 +116,7 @@ verify_jwt = true
 [functions.suby-webhook]
 enabled = true
 verify_jwt = false
+
+[functions.storage-cleanup]
+enabled = true
+verify_jwt = false

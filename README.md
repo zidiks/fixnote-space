@@ -254,15 +254,25 @@ builds.
 
 Free is everything on the device; Pro is what goes through the server: personal sync, FixNote AI,
 sharing notes and folders (people invited join on Free), public links, capture from messengers and
-20 GB of files. The first subscription starts with a 7-day free trial that needs a card (Suby
-takes it at checkout and charges when the trial ends), one per account. The server decides (triggers and the storage
-policy in `supabase/migrations/*_plans.sql`); the app only explains (Settings → Plan, the sidebar
-card, "This is part of Pro").
+20 GB of files. The server decides (triggers and the storage policy in
+`supabase/migrations/*_plans.sql` and `*_open_trial.sql`); the app only explains (Settings → Plan,
+the sidebar card, "This is part of Pro", the note at the end of the trial).
 
-- Beta: until `plan_config.beta_until` (2027-01-01 at first) everyone has Pro. To end it:
-  `update plan_config set beta_until = now();` in the SQL editor. Limits live in the same row
-  (`ai_month_tokens`, `ai_trial_tokens`, `ai_day_requests`, `ai_global_month_tokens`,
-  `storage_bytes`).
+- Trial: 7 days of Pro from sign-up, no card; for accounts made during the beta it starts when the
+  beta ends. It is kept cheap so a new account is not worth making for it: 1 GB of files
+  (`trial_storage_bytes`) and a smaller AI allowance (`ai_trial_tokens`). Addresses at throwaway
+  mail services (`disposable_domains`, add more with an insert) get no trial and start on Free.
+  Two days before the end the sidebar reminds; after it, a note says what Pro did and that nothing
+  is lost.
+- Files of accounts that never paid leave the server `free_files_days` (90) after their Pro ended:
+  `storage-cleanup`, called every night by pg_cron (the migration schedules it on the hosted
+  project). A month before, Settings → Plan and the sidebar say when, and the app fetches every file
+  the notes use onto the device. Anyone who paid once keeps their files.
+- Beta: until `plan_config.beta_until` (2027-01-01 at first) everyone has Pro. To end it, run
+  `select end_beta();` in the SQL editor: the waiting trials start that day. Limits live in
+  `plan_config` (`ai_month_tokens`, `ai_trial_tokens`, `ai_day_requests`,
+  `ai_global_month_tokens`, `storage_bytes`, `trial_storage_bytes`, `trial_days`,
+  `free_files_days`).
 - `llm-proxy` charges each answer in tokens (`ai_usage`); past a limit it answers with a code and
   the renewal date, which the app shows next to the offer to use your own key or a local model.
 - Payments go through [Suby](https://docs.suby.fi/v3-beta): Settings → Plan opens a Suby checkout
@@ -273,23 +283,17 @@ card, "This is part of Pro").
   1. Suby dashboard → Products → Create: Recurring payments, "FixNote Pro, monthly" ($7 USD,
      Monthly) and "FixNote Pro, yearly" ($60 USD, Yearly). Leave Access & delivery, the discount,
      custom fields and the After payment URLs empty: the app sets where the buyer returns. Note
-     their ids (`pro_…`). The 7-day trial is a product setting that neither the create dialog nor
-     the API has: turn it on in the product's settings, or ask Suby support to. Then two more
-     products the same but without a trial, for accounts that already had a subscription
-     (`SUBY_PRODUCT_MONTH_NO_TRIAL`, `SUBY_PRODUCT_YEAR_NO_TRIAL`; without them a returning
-     account gets the trial again). Until the trial is on, set `plan_config.trial_days = 0` so the
-     app does not promise one.
+     their ids (`pro_…`).
   2. Dashboard → Settings: an API key (start with `sk_sandbox_…` to test, `sk_live_…` for real),
      and a webhook endpoint `https://<project-ref>.supabase.co/functions/v1/suby-webhook` for the
      `payment.*`, `subscription.*` and `dispute.*` events; keep its `whsec_…` secret.
-  3. `pnpm sb secrets set SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_... SUBY_PRODUCT_MONTH_NO_TRIAL=pro_... SUBY_PRODUCT_YEAR_NO_TRIAL=pro_...`
+  3. `pnpm sb secrets set SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_...`
      (optional `BILLING_RETURN_URL`, default `https://app.fixnote.space/`), then `pnpm sb:migrate`
      and `pnpm sb:functions`.
-  Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds
-  (status "trialing" with a trial, "active" without).
+  Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds.
 - Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
-  (beta, trial, pro, free, "use up AI", "trial again"); the fake checkout starts the trial the
-  first time and Pro after that.
+  (beta, trial, pro, free, "use up AI", "trial ends tomorrow", "never paid"); switching to free
+  ends the trial, and the fake checkout turns Pro on.
 
 ## Supabase
 

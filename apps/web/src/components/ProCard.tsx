@@ -20,31 +20,57 @@ const ART: CSSProperties = {
 
 const HIDDEN_KEY = 'fixnote.pro-card-hidden'
 const HIDE_FOR = 14 * 86_400_000
+const DAY = 86_400_000
 
-const hiddenRecently = () => {
+/** What the card is about: each can be hidden on its own. */
+type CardKind = 'offer' | 'ending' | 'files'
+
+const hiddenKey = (kind: CardKind) => (kind === 'offer' ? HIDDEN_KEY : `${HIDDEN_KEY}.${kind}`)
+
+const hiddenRecently = (kind: CardKind) => {
   try {
-    return Date.now() - Number(localStorage.getItem(HIDDEN_KEY) ?? 0) < HIDE_FOR
+    return Date.now() - Number(localStorage.getItem(hiddenKey(kind)) ?? 0) < HIDE_FOR
   } catch {
     return false
   }
 }
 
 /**
- * Bottom of the sidebar: Pro for someone not signed in or signed in on Free, with the free trial
- * of a first subscription. Not shown in "only on this device" mode, which chose to keep away from the server.
- * Hiding it keeps it away for two weeks.
+ * Bottom of the sidebar: Pro for someone not signed in or signed in on Free; on the trial's last
+ * two days, a reminder that it ends; on Free, a month before the server copy of the files goes, a
+ * note about that. Not shown in "only on this device" mode, which chose to keep away from the
+ * server. Hiding it keeps it away for two weeks.
  */
 export function ProCard() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const phase = useAccount((s) => s.phase)
-  const plan = usePlan((s) => s.info?.plan)
-  const trial = usePlan((s) => !!s.info && !s.info.trialUsed && s.info.trialDays > 0)
+  const info = usePlan((s) => s.info)
   const localOnly = useLlm((s) => s.localOnly)
   const openSettings = useUi((s) => s.openSettings)
-  const [hidden, setHidden] = useState(hiddenRecently)
+  const [, setHidden] = useState(0)
 
   const signedOut = phase !== 'ready' && phase !== 'disabled'
-  if (hidden || localOnly || phase === 'disabled' || !(signedOut || plan === 'free')) return null
+  const now = Date.now()
+  const date = (ms: number) =>
+    new Date(ms).toLocaleDateString(i18n.resolvedLanguage, { day: 'numeric', month: 'long' })
+  const card: { kind: CardKind; title: string; body: string } | null = signedOut
+    ? { kind: 'offer', title: t('plan.cardTitle'), body: t('plan.cardBody') }
+    : info?.status === 'trialing' && info.trialEndsAt && info.trialEndsAt - now < 2 * DAY
+      ? {
+          kind: 'ending',
+          title: t('plan.cardTrialEnds', { date: date(info.trialEndsAt) }),
+          body: t('plan.cardKeepPro'),
+        }
+      : info?.plan === 'free' && info.filesDeleteAt && info.filesDeleteAt - now < 30 * DAY
+        ? {
+            kind: 'files',
+            title: t('plan.cardTitle'),
+            body: t('plan.cardFiles', { date: date(info.filesDeleteAt) }),
+          }
+        : info?.plan === 'free'
+          ? { kind: 'offer', title: t('plan.cardTitle'), body: t('plan.cardBodyFree') }
+          : null
+  if (!card || localOnly || phase === 'disabled' || hiddenRecently(card.kind)) return null
 
   return (
     <div className="relative mx-2 mb-2 overflow-hidden rounded-xl border bg-card shadow-xs">
@@ -55,11 +81,11 @@ export function ProCard() {
         className="block w-full px-3 pt-2 pb-3 text-left hover:bg-accent/40"
       >
         <span className="flex items-center gap-1 text-sm font-semibold">
-          {t('plan.cardTitle')}
+          {card.title}
           <ArrowUpRight className="size-3.5 text-muted-foreground" />
         </span>
         <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-          {signedOut || trial ? t('plan.cardBody') : t('plan.cardBodyFree')}
+          {card.body}
         </span>
       </button>
       <Button
@@ -69,11 +95,11 @@ export function ProCard() {
         className="absolute top-1.5 right-1.5 bg-card/70 backdrop-blur-sm"
         onClick={() => {
           try {
-            localStorage.setItem(HIDDEN_KEY, String(Date.now()))
+            localStorage.setItem(hiddenKey(card.kind), String(Date.now()))
           } catch {
             // private window: hidden for this session only
           }
-          setHidden(true)
+          setHidden((n) => n + 1)
         }}
       >
         <X />
@@ -118,6 +144,91 @@ export function ProDialog() {
               }}
             >
               {t('plan.seePlan')}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+const SEEN_KEY = 'fixnote.trial-ended-seen'
+
+/**
+ * Once, when the trial is over and the account stayed on Free: what Pro did for it, that nothing
+ * is lost, and the way to keep Pro.
+ */
+export function TrialEndedDialog() {
+  const { t, i18n } = useTranslation()
+  const info = usePlan((s) => s.info)
+  const openSettings = useUi((s) => s.openSettings)
+  const [seen, setSeen] = useState(() => {
+    try {
+      return localStorage.getItem(SEEN_KEY)
+    } catch {
+      return null
+    }
+  })
+  const ended =
+    info?.plan === 'free' &&
+    !info.paidBefore &&
+    info.trialEndsAt !== null &&
+    info.trialEndsAt < Date.now() &&
+    Date.now() - info.trialEndsAt < 30 * DAY
+  const key = info?.trialEndsAt ? String(info.trialEndsAt) : ''
+  if (!ended || seen === key) return null
+
+  const close = () => {
+    try {
+      localStorage.setItem(SEEN_KEY, key)
+    } catch {
+      // private window: shown again next time
+    }
+    setSeen(key)
+  }
+  const { notes, aiAnswers, files } = info.usage
+  const lines = [
+    notes ? String(t('plan.endedNotes', { count: notes })) : null,
+    aiAnswers ? String(t('plan.endedAi', { count: aiAnswers })) : null,
+    files
+      ? String(
+          t('plan.endedFiles', {
+            size: new Intl.NumberFormat(i18n.resolvedLanguage, {
+              style: 'unit',
+              unit: files >= 1024 ** 3 ? 'gigabyte' : 'megabyte',
+              unitDisplay: 'short',
+              maximumFractionDigits: 1,
+            }).format(files / (files >= 1024 ** 3 ? 1024 ** 3 : 1024 ** 2)),
+          }),
+        )
+      : null,
+  ].filter((line): line is string => line !== null)
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && close()}>
+      <DialogContent className="max-w-sm overflow-hidden p-0">
+        <div className="h-20" style={ART} aria-hidden />
+        <div className="space-y-3 px-6 pt-4 pb-6">
+          <DialogTitle className="text-lg font-semibold">{t('plan.endedTitle')}</DialogTitle>
+          {lines.length ? (
+            <ul className="list-disc space-y-1 pl-5 text-sm">
+              {lines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
+          <DialogDescription className="text-sm">{t('plan.endedKept')}</DialogDescription>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={close}>
+              {t('plan.endedStayFree')}
+            </Button>
+            <Button
+              onClick={() => {
+                close()
+                openSettings('plan')
+              }}
+            >
+              {t('plan.endedKeepPro')}
             </Button>
           </div>
         </div>

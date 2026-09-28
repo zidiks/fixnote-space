@@ -456,7 +456,7 @@ export const en: Dict = {
       {
         title: 'Other services',
         text: [
-          'Account data and encrypted notes are stored with Supabase, and sign-in emails are sent by Resend.',
+          'Account data and encrypted notes are stored with Supabase, and sign-in emails are sent by Resend. Payments for Pro are handled by Suby: we get the state of the subscription, never the card.',
           'The app downloads its search and speech models from Hugging Face. Link cards in the browser are fetched through our server (URLs are not logged), and directly in the desktop app. The desktop app checks for updates at fixnote.space and GitHub; the Microsoft Store version gets them from the Store.',
         ],
       },
@@ -470,6 +470,7 @@ export const en: Dict = {
         title: 'Keeping and deleting data',
         text: [
           'We keep your data while you have an account. You can export your notes at any time: Settings → Data.',
+          'One exception: if an account has never paid for Pro, the server copy of its images and files is removed 90 days after its Pro (the trial or the beta) ends. The app says so a month before and keeps the files on your devices. Nothing is removed for anyone who has paid.',
           'To delete your account and everything linked to it on the server, email us from the address you sign in with. We delete the data within 30 days. Notes on your devices stay with you.',
         ],
       },

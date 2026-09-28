@@ -102,8 +102,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `lib/account/dev-plan.ts` mirror the rules: change them together with the SQL. Payments: Suby
   (`functions/billing` opens the checkout, `functions/suby-webhook` sets `subscriptions` from the
   subscription Suby reports; `_shared/suby.ts`). The Suby key never leaves the edge functions.
-  The trial needs a card: it is the Suby product's trial, never given at sign-up; one per account
-  (`had_subscription`, the `*_NO_TRIAL` products), and `plan_config.trial_days` drives the copy.
+  The trial is given at sign-up without a card (`*_open_trial.sql`: after the beta, none for
+  `disposable_domains`, 1 GB of files). Files of accounts that never paid leave the server
+  `free_files_days` after Pro ended (`functions/storage-cleanup`, pg_cron); before that the app
+  keeps a local copy (`Attachments.keepLocal`). Never delete anything of an account that paid.
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).

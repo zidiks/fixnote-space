@@ -474,7 +474,7 @@ export const es: Dict = {
       {
         title: 'Otros servicios',
         text: [
-          'Los datos de la cuenta y las notas cifradas se guardan en Supabase, y los correos con el código los envía Resend.',
+          'Los datos de la cuenta y las notas cifradas se guardan en Supabase, y los correos con el código los envía Resend. Los pagos de Pro los gestiona Suby: recibimos el estado de la suscripción, nunca la tarjeta.',
           'La app descarga sus modelos de búsqueda y de voz desde Hugging Face. Las tarjetas de enlaces en el navegador se obtienen a través de nuestro servidor (sin registrar las direcciones) y directamente en la app de escritorio. La app de escritorio busca actualizaciones en fixnote.space y GitHub; la versión de Microsoft Store las recibe desde la Store.',
         ],
       },
@@ -488,6 +488,7 @@ export const es: Dict = {
         title: 'Conservación y borrado',
         text: [
           'Guardamos tus datos mientras tengas una cuenta. Puedes exportar tus notas cuando quieras: Ajustes → Datos.',
+          'Una excepción: si una cuenta nunca ha pagado Pro, la copia de sus imágenes y archivos en el servidor se elimina 90 días después de que termine su Pro (la prueba o la beta). La app avisa un mes antes y guarda los archivos en tus dispositivos. A quien ha pagado no se le elimina nada.',
           'Para borrar tu cuenta y todo lo vinculado a ella en el servidor, escríbenos desde la dirección con la que entras. Borramos los datos en un plazo de 30 días. Las notas en tus dispositivos se quedan contigo.',
         ],
       },

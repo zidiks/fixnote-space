@@ -9,7 +9,7 @@ export type DevPlanMode = 'beta' | 'trial' | 'pro' | 'free'
 interface DevPlanState {
   mode: DevPlanMode
   trialEndsAt: number
-  /** Paid (or started a trial) once: the next checkout has no trial. */
+  /** Paid once: files are never removed from the server. */
   subscribed: boolean
   month: string
   tokens: number
@@ -20,14 +20,21 @@ interface DevPlanState {
 const KEY = 'fixnote.dev-plan'
 const DAY = 86_400_000
 /** Small, so "used up" is easy to reach while trying things. */
-const LIMITS = { month: 20_000, trial: 5_000, dayRequests: 150, storage: 20 * 1024 ** 3 }
+const LIMITS = {
+  month: 20_000,
+  trial: 5_000,
+  dayRequests: 150,
+  storage: 20 * 1024 ** 3,
+  trialStorage: 1024 ** 3,
+  freeFilesDays: 90,
+}
 
 const today = () => new Date().toISOString().slice(0, 10)
 const thisMonth = () => today().slice(0, 7)
 
 function load(): DevPlanState {
   const fresh: DevPlanState = {
-    mode: 'free',
+    mode: 'trial',
     trialEndsAt: Date.now() + 7 * DAY,
     subscribed: false,
     month: thisMonth(),
@@ -49,24 +56,33 @@ const save = (s: DevPlanState) => localStorage.setItem(KEY, JSON.stringify(s))
 
 export const devPlanMode = () => load().mode
 
+/** Free after the trial means the trial just ended; Pro means paid. */
 export function setDevPlanMode(mode: DevPlanMode) {
   const s = load()
   save({
     ...s,
     mode,
-    trialEndsAt: Date.now() + 7 * DAY,
-    subscribed: mode === 'free' || mode === 'beta' ? s.subscribed : true,
+    trialEndsAt:
+      mode === 'trial'
+        ? Date.now() + 7 * DAY
+        : mode === 'free'
+          ? Date.now() - 60_000
+          : s.trialEndsAt,
+    subscribed: s.subscribed || mode === 'pro',
   })
 }
 
-/** The fake checkout: the first subscription starts with the trial, like Suby's product. */
-export function devCheckout() {
-  setDevPlanMode(load().subscribed ? 'pro' : 'trial')
+/** The fake checkout: paying turns Pro on. */
+export const devCheckout = () => setDevPlanMode('pro')
+
+/** The last day of the trial (to see the reminder). */
+export function endDevTrialSoon() {
+  save({ ...load(), mode: 'trial', trialEndsAt: Date.now() + DAY - 60_000 })
 }
 
-/** Forget the earlier subscription, to see the trial offer again. */
-export function resetDevTrial() {
-  save({ ...load(), mode: 'free', subscribed: false })
+/** Forget the payments (to see what an account that never paid is shown). */
+export function forgetDevPayments() {
+  save({ ...load(), subscribed: false })
 }
 
 /** Spends the whole month's AI allowance (to see what running out looks like). */
@@ -98,8 +114,12 @@ function aiStatus(s: DevPlanState) {
 }
 
 /** The fake `my_plan()`. */
-export function devMyPlan(storageUsed: number): Record<string, unknown> {
+export function devMyPlan(storageUsed: number, notes: number): Record<string, unknown> {
   const s = load()
+  const filesDeleteAt =
+    s.mode === 'free' && !s.subscribed && storageUsed > 0
+      ? new Date(s.trialEndsAt + LIMITS.freeFilesDays * DAY).toISOString()
+      : null
   return {
     plan: s.mode === 'free' ? 'free' : 'pro',
     status:
@@ -113,10 +133,14 @@ export function devMyPlan(storageUsed: number): Record<string, unknown> {
     beta_until: s.mode === 'beta' ? '2027-01-01T00:00:00Z' : null,
     trial_ends_at: new Date(s.trialEndsAt).toISOString(),
     current_period_end: s.mode === 'pro' ? new Date(Date.now() + 30 * DAY).toISOString() : null,
-    trial_used: s.subscribed,
-    trial_days: 7,
+    paid_before: s.subscribed,
+    files_delete_at: filesDeleteAt,
     ai: aiStatus(s),
-    storage: { used: storageUsed, limit: s.mode === 'free' ? 0 : LIMITS.storage },
+    storage: {
+      used: storageUsed,
+      limit: s.mode === 'free' ? 0 : s.mode === 'trial' ? LIMITS.trialStorage : LIMITS.storage,
+    },
+    usage: { notes, ai_answers: s.requests, files: storageUsed },
   }
 }
 

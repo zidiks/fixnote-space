@@ -9,7 +9,6 @@ const signedIn = {
 }
 const env: BillingEnv = {
   products: { month: 'pro_month', year: 'pro_year' },
-  noTrial: { month: 'pro_month_nt', year: 'pro_year_nt' },
   returnUrl: 'https://app.fixnote.space/',
 }
 const post = (body: unknown, headers: Record<string, string> = signedIn) =>
@@ -47,7 +46,7 @@ function fakeSuby() {
 
 Deno.test('opens a Suby checkout for the plan, with the account email and id', async () => {
   const { suby, calls } = fakeSuby()
-  const res = await handle(post({ plan: 'year' }), env, suby, async () => false)
+  const res = await handle(post({ plan: 'year' }), env, suby)
   assertEquals(res.status, 200)
   assertEquals(await res.json(), { url: 'https://pay.suby.fi/cs_1' })
   assertEquals(calls[0]?.key, 'sk_sandbox_x')
@@ -61,33 +60,13 @@ Deno.test('opens a Suby checkout for the plan, with the account email and id', a
   })
 })
 
-const never = async () => false
-
-Deno.test('a second subscription gets the product without the trial', async () => {
-  const { suby, calls } = fakeSuby()
-  await handle(post({ plan: 'month' }), env, suby, async () => true)
-  assertEquals((calls[0]?.body as { productId?: string } | undefined)?.productId, 'pro_month_nt')
-  // Without trial-free products configured, the trial ones are used (Suby has the last word).
-  await handle(
-    post({ plan: 'month' }),
-    { ...env, noTrial: { month: undefined, year: undefined } },
-    suby,
-    async () => true,
-  )
-  assertEquals((calls[1]?.body as { productId?: string } | undefined)?.productId, 'pro_month')
-})
-
 Deno.test('needs a signed-in account, a known plan and the payment setup', async () => {
   const { suby } = fakeSuby()
-  assertEquals((await handle(post({ plan: 'year' }, {}), env, suby, never)).status, 401)
-  assertEquals((await handle(post({ plan: 'lifetime' }), env, suby, never)).status, 400)
-  assertEquals((await handle(post({ plan: 'month' }), env, null, never)).status, 503)
-  const noProducts = {
-    ...env,
-    products: { month: undefined, year: undefined },
-    noTrial: { month: undefined, year: undefined },
-  }
-  assertEquals((await handle(post({ plan: 'month' }), noProducts, suby, never)).status, 503)
+  assertEquals((await handle(post({ plan: 'year' }, {}), env, suby)).status, 401)
+  assertEquals((await handle(post({ plan: 'lifetime' }), env, suby)).status, 400)
+  assertEquals((await handle(post({ plan: 'month' }), env, null)).status, 503)
+  const noProducts = { ...env, products: { month: undefined, year: undefined } }
+  assertEquals((await handle(post({ plan: 'month' }), noProducts, suby)).status, 503)
 })
 
 Deno.test('reads a subscription back, and nothing for an unknown one', async () => {

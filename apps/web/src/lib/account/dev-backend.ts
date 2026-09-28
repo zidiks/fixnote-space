@@ -306,7 +306,8 @@ export const devBackend: AccountBackend = {
       if (key?.startsWith(prefix))
         used += Math.floor(((localStorage.getItem(key) ?? '').length * 3) / 4)
     }
-    return devMyPlan(used)
+    const notes = Object.values(load().notes).filter((n) => n.deletedAt === null).length
+    return devMyPlan(used, notes)
   },
   signOut: async () => {
     const s = load()

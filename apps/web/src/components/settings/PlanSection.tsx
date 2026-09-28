@@ -7,7 +7,8 @@ import { refreshPlan, startCheckout, useAccount } from '../../lib/account/accoun
 import {
   type DevPlanMode,
   devPlanMode,
-  resetDevTrial,
+  endDevTrialSoon,
+  forgetDevPayments,
   setDevPlanMode,
   spendDevAi,
 } from '../../lib/account/dev-plan'
@@ -110,12 +111,8 @@ export function PlanSection() {
               ? t('plan.statusActive', { date: date(info.periodEnd) })
               : t('plan.statusFree')
   const pro = info.plan === 'pro'
-  // A trial is a subscription too (the card is on file): cancelled in the same place.
   const paying =
-    info.status === 'trialing' ||
-    info.status === 'active' ||
-    info.status === 'past_due' ||
-    info.status === 'canceled'
+    info.status === 'active' || info.status === 'past_due' || info.status === 'canceled'
 
   return (
     <div className="space-y-6">
@@ -149,25 +146,29 @@ export function PlanSection() {
           <li>{t('plan.promptFiles')}</li>
         </ul>
       )}
+      {info.filesDeleteAt ? (
+        <p className="max-w-md rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
+          {t('plan.filesDeleteAt', {
+            size: size(info.storage.used, i18n.resolvedLanguage),
+            date: date(info.filesDeleteAt),
+          })}
+        </p>
+      ) : null}
       {info.status === 'beta' ? null : paying ? (
         <Button variant="outline" onClick={() => void platform.openExternal(SUBY_PORTAL)}>
           {t('plan.manage')}
           <ArrowUpRight />
         </Button>
       ) : (
-        <Upgrade trialDays={info.trialUsed ? 0 : info.trialDays} />
+        <Upgrade />
       )}
       {usesDevBackend() ? <DevPlanSwitch /> : null}
     </div>
   )
 }
 
-/**
- * Monthly or yearly: opens Suby's payment page in the browser; Pro turns on when it is paid. The
- * first subscription starts with a free trial (`trialDays`, 0 when it was used): the card is taken
- * at checkout and charged when the trial ends.
- */
-function Upgrade({ trialDays }: { trialDays: number }) {
+/** Monthly or yearly: opens Suby's payment page in the browser; Pro turns on when it is paid. */
+function Upgrade() {
   const { t } = useTranslation()
   const platform = usePlatform()
   const [busy, setBusy] = useState<'month' | 'year' | null>(null)
@@ -187,16 +188,7 @@ function Upgrade({ trialDays }: { trialDays: number }) {
   }
   return (
     <div className="space-y-2">
-      <div className="space-y-0.5">
-        <p className="text-sm font-medium">
-          {trialDays ? t('plan.upgradeTrial', { days: trialDays }) : t('plan.upgrade')}
-        </p>
-        {trialDays ? (
-          <p className="max-w-md text-xs text-muted-foreground">
-            {t('plan.trialTerms', { days: trialDays })}
-          </p>
-        ) : null}
-      </div>
+      <p className="text-sm font-medium">{t('plan.upgrade')}</p>
       <div className="flex flex-wrap gap-2">
         <Button loading={busy === 'year'} disabled={busy !== null} onClick={() => void buy('year')}>
           {t('plan.yearly')}
@@ -261,8 +253,11 @@ function DevPlanSwitch() {
         <Button size="sm" variant="ghost" onClick={() => void apply(spendDevAi)}>
           {t('plan.devSpend')}
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => void apply(resetDevTrial)}>
-          {t('plan.devResetTrial')}
+        <Button size="sm" variant="ghost" onClick={() => void apply(endDevTrialSoon)}>
+          {t('plan.devTrialEnding')}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => void apply(forgetDevPayments)}>
+          {t('plan.devNeverPaid')}
         </Button>
       </div>
     </div>
