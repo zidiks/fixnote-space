@@ -250,6 +250,24 @@ builds.
 | `pnpm check` | lint + typecheck + test |
 | `pnpm tg:webhook` | Point the Telegram bot at its edge function |
 
+## Plans (Free and Pro)
+
+Free is everything on the device; Pro is what goes through the server: personal sync, FixNote AI,
+sharing notes and folders (people invited join on Free), public links, capture from messengers and
+20 GB of files. A new account gets 7 days of Pro. The server decides (triggers and the storage
+policy in `supabase/migrations/*_plans.sql`); the app only explains (Settings → Plan, the sidebar
+card, "This is part of Pro").
+
+- Beta: until `plan_config.beta_until` (2027-01-01 at first) everyone has Pro. To end it:
+  `update plan_config set beta_until = now();` in the SQL editor. Limits live in the same row
+  (`ai_month_tokens`, `ai_trial_tokens`, `ai_day_requests`, `ai_global_month_tokens`,
+  `storage_bytes`).
+- `llm-proxy` charges each answer in tokens (`ai_usage`); past a limit it answers with a code and
+  the renewal date, which the app shows next to the offer to use your own key or a local model.
+- Payments (Suby) are not connected yet: `subscriptions` is written only by the server.
+- Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
+  (beta, trial, pro, free, "use up AI").
+
 ## Supabase
 
 Project ref: `nsteehqbmljuczxgkvae`. Sign-in is passwordless: email plus a 6-digit code.

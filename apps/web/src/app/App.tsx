@@ -8,6 +8,7 @@ import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
 import { ListView } from '../components/ListView'
 import { PairingRequestDialog } from '../components/PairingRequestDialog'
+import { ProDialog } from '../components/ProCard'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
@@ -186,6 +187,7 @@ function AppShell() {
       ) : null}
       <Spotlight />
       <SettingsDialog />
+      <ProDialog />
       <VoiceBar />
       <DropLayer />
       <PairingRequestDialog />

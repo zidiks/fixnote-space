@@ -10,6 +10,7 @@ import {
 import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
 import { create } from 'zustand'
+import { aiRefusalText } from '../plan'
 import { providerLabel } from './assistant'
 import { llm, useLlm } from './llm'
 
@@ -87,7 +88,9 @@ export async function runTidy(tidy: Tidy, kv: { set(key: string, value: string):
     else await kv.set(LAST_RUN, String(Date.now()))
   } catch (err) {
     useTidy.setState({
-      error: i18n.t('tidy.error', { message: err instanceof Error ? err.message : String(err) }),
+      error:
+        aiRefusalText(err) ??
+        i18n.t('tidy.error', { message: err instanceof Error ? err.message : String(err) }),
     })
   } finally {
     useTidy.setState({ running: false })

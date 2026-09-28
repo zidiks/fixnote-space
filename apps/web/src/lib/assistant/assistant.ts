@@ -20,6 +20,7 @@ import {
 } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
+import { aiRefusalText } from '../plan'
 import { type LlmUnavailable, llm as llmRoute } from './llm'
 
 export type AssistantStatus = 'idle' | 'thinking' | 'answering' | 'done' | 'error'
@@ -29,6 +30,8 @@ interface AssistantState {
   messages: ChatEntry[]
   status: AssistantStatus
   error: string | null
+  /** The error is FixNote AI saying no (plan or allowance), not a failure: shown calmly. */
+  refused: boolean
   scopeMode: 'auto' | 'all'
   semantic: SemanticState
   modelProgress: number
@@ -39,6 +42,7 @@ export const useAssistant = create<AssistantState>()(() => ({
   messages: [],
   status: 'idle',
   error: null,
+  refused: false,
   scopeMode: 'auto',
   semantic: 'off',
   modelProgress: 0,
@@ -147,7 +151,8 @@ function patchMessage(id: string, patch: Partial<ChatEntry>) {
 }
 
 const errorText = (err: unknown) =>
-  err instanceof ChatError ? err.message : err instanceof Error ? err.message : String(err)
+  aiRefusalText(err) ??
+  (err instanceof ChatError ? err.message : err instanceof Error ? err.message : String(err))
 
 /** Asks one question about the notes in `scope`, streaming the answer into the thread. */
 export async function ask(question: string, scope: ChatScope): Promise<'ok' | LlmUnavailable> {
@@ -156,7 +161,7 @@ export async function ask(question: string, scope: ChatScope): Promise<'ok' | Ll
   if (!repo || !d || !question.trim()) return 'ok'
   const reach = await llmRoute()
   if (!reach.ok) {
-    set({ status: 'error', error: unavailableText(reach.reason) })
+    set({ status: 'error', error: unavailableText(reach.reason), refused: false })
     return reach.reason
   }
   const route = reach.route
@@ -211,7 +216,11 @@ export async function ask(question: string, scope: ChatScope): Promise<'ok' | Ll
     const status = aborted ? 'stopped' : 'error'
     await repo.finish(answer.id, { content: text, status })
     patchMessage(answer.id, { content: text, status })
-    set({ status: aborted ? 'idle' : 'error', error: aborted ? null : errorText(err) })
+    set({
+      status: aborted ? 'idle' : 'error',
+      error: aborted ? null : errorText(err),
+      refused: !aborted && aiRefusalText(err) !== null,
+    })
     if (!aborted) doneTimer = setTimeout(() => set({ status: 'idle' }), 4000)
   } finally {
     if (controller === ctrl) controller = null

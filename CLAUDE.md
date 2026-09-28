@@ -95,6 +95,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   would change them (`note.readOnly`, `folder.shared === 'view'`).
 - The recovery phrase shows only after a code sent to the account's email (`RecoveryPhrase` in
   `AccountSection.tsx`, `sendCheckCode`/`checkCode` on the backend; `123456` with `?dev-backend`).
+- Plans: Free = on the device, Pro = through our server (sync push, FixNote AI, sharing, links,
+  capture, files). The server enforces it (`*_plans.sql`: triggers, storage policy, `ai_allowance`
+  in `llm-proxy`); the app only explains (`lib/plan.ts`, `PlanSection`, `ProCard`, `withPro`). On
+  Free, sync only downloads (`engine.sync({ push: false })`). `MemorySharedServer.isPro` and
+  `lib/account/dev-plan.ts` mirror the rules: change them together with the SQL.
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).

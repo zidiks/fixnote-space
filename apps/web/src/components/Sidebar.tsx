@@ -28,6 +28,7 @@ import { useLlm } from '../lib/assistant/llm'
 import { useTidy } from '../lib/assistant/tidy'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useOpenDaily } from '../lib/queries'
+import { ProCard } from './ProCard'
 import { SidebarFolders } from './SidebarFolders'
 
 function NavItem({
@@ -107,6 +108,7 @@ export function Sidebar() {
         <SidebarFolders />
       </nav>
 
+      <ProCard />
       <SidebarFooter />
     </aside>
   )
@@ -140,6 +142,18 @@ function SyncIndicator() {
       >
         <CloudOff className="size-3.5" />
         {t('account.signInToSync')}
+      </button>
+    )
+  }
+  if (status === 'free') {
+    return (
+      <button
+        type="button"
+        onClick={() => openSettings('plan')}
+        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground"
+      >
+        <CloudOff className="size-3.5" />
+        {t('plan.syncInPro')}
       </button>
     )
   }

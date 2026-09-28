@@ -19,6 +19,7 @@ import type {
   ShareRow,
   UserKeysRow,
 } from './backend'
+import { devAiRecord, devAiRefusal, devIsPro, devMyPlan, devRequirePro } from './dev-plan'
 
 /**
  * Development-only stand-in for Supabase, enabled with `?dev-backend` in `pnpm dev`. The "server"
@@ -111,6 +112,7 @@ const devTelegram = {
     return 'linked'
   },
   send(payload: Record<string, unknown>) {
+    if (!devIsPro()) return 'needs pro'
     const c = loadCapture()
     const link = c.links.find((l) => l.externalId === 'dev-chat')
     const key = link && load().keys[link.userId]
@@ -150,8 +152,15 @@ const read = <T extends { seq: number }>(rows: Record<string, T>, after: number,
 const remote: SyncRemote = {
   pullNotes: async (after, limit) => read(load().notes, after, limit),
   pullFolders: async (after, limit) => read(load().folders, after, limit),
-  pushNote: async (row: RemoteNoteWrite, base) => write<RemoteNote>('notes', row, base),
-  pushFolder: async (row: RemoteFolderWrite, base) => write<RemoteFolder>('folders', row, base),
+  // Pushing needs Pro, like the real server's triggers; pulling never does.
+  pushNote: async (row: RemoteNoteWrite, base) => {
+    devRequirePro()
+    return write<RemoteNote>('notes', row, base)
+  },
+  pushFolder: async (row: RemoteFolderWrite, base) => {
+    devRequirePro()
+    return write<RemoteFolder>('folders', row, base)
+  },
 }
 
 /**
@@ -228,6 +237,8 @@ function devTidy(prompt: string): string {
 }
 
 const devLlm: typeof fetch = async (_url, init) => {
+  const refusal = devAiRefusal()
+  if (refusal) return refusal
   const body = JSON.parse(String(init?.body)) as { messages: { role: string; content: string }[] }
   const prompt = body.messages.at(-1)?.content ?? ''
   const expansion = body.messages[0]?.content.includes(EXPANSION_MARKER)
@@ -244,6 +255,8 @@ const devLlm: typeof fetch = async (_url, init) => {
           ? `From your note "${first[1]}": ${first[2]} [1]`
           : "I couldn't find this in your notes. Try other words."
   const words = expansion || tidy ? [answer] : answer.split(/(?<= )/)
+  // What llm-proxy charges: about 3 characters per token, question and answer.
+  devAiRecord(Math.ceil((String(init?.body).length + answer.length) / 3))
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       for (const w of words) {
@@ -271,6 +284,17 @@ export const devBackend: AccountBackend = {
   },
   sendCheckCode: async () => undefined,
   checkCode: async (_email, code) => code === '123456',
+  plan: async () => {
+    const userId = signedIn()
+    let used = 0
+    const prefix = `fixnote.dev-attachment.${userId}.`
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith(prefix))
+        used += Math.floor(((localStorage.getItem(key) ?? '').length * 3) / 4)
+    }
+    return devMyPlan(used)
+  },
   signOut: async () => {
     const s = load()
     s.session = null
@@ -296,6 +320,7 @@ export const devBackend: AccountBackend = {
     const key = (id: string) => `fixnote.dev-attachment.${userId}.${id}`
     return {
       upload: async (id, blob) => {
+        devRequirePro()
         let bin = ''
         for (const b of blob) bin += String.fromCharCode(b)
         localStorage.setItem(key(id), btoa(bin))
@@ -404,6 +429,7 @@ export const devBackend: AccountBackend = {
     },
     create: async (row) => {
       const userId = signedIn()
+      devRequirePro()
       const now = new Date().toISOString()
       saveShares([...loadShares(), { ...row, userId, createdAt: now, updatedAt: now }])
     },

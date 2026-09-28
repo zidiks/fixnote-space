@@ -70,6 +70,8 @@ export interface AccountBackend {
   sendCheckCode(email: string, lang: string): Promise<void>
   /** Whether the code from `sendCheckCode` is right; throws when the server cannot be reached. */
   checkCode(email: string, code: string): Promise<boolean>
+  /** The signed-in account's plan (`my_plan()`), raw; see lib/plan.ts. */
+  plan(): Promise<Record<string, unknown>>
   signOut(): Promise<void>
   getUserKeys(): Promise<UserKeysRow | null>
   createUserKeys(row: UserKeysRow): Promise<void>
@@ -143,6 +145,11 @@ export function supabaseBackend(
       if (!error) return Boolean(data.session)
       if (error.status && error.status < 500) return false
       throw toError(error)
+    },
+    async plan() {
+      const { data, error } = await client.rpc('my_plan')
+      if (error) throw toError(error)
+      return (data ?? {}) as Record<string, unknown>
     },
     async signOut() {
       await client.auth.signOut()

@@ -1,4 +1,5 @@
 import { MemorySharedServer, type SharedRemote } from '@fixnote/core'
+import { devIsPro } from '../account/dev-plan'
 
 /**
  * `?dev-backend`: shared notes and folders on a fake server in localStorage, with the rules of the
@@ -43,6 +44,8 @@ export function devSharedRemote(userId: string): SharedRemote {
   for (const name of Object.keys(new MemorySharedServer().remoteFor(userId))) {
     remote[name] = async (...args: unknown[]) => {
       const server = load()
+      // This browser's account has the plan of the fake server; the others are someone else's.
+      server.isPro = (user) => user !== userId || devIsPro()
       const call = server.remoteFor(userId)[name as keyof SharedRemote] as (
         ...a: unknown[]
       ) => Promise<unknown>

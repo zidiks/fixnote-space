@@ -25,6 +25,7 @@ import {
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
 import { conflictHeading } from '../conflict'
+import { isProRequired, toPlanInfo, usePlan } from '../plan'
 import { projector } from '../shared/projector'
 import type { AccountBackend, PairingRequest, Session } from './backend'
 
@@ -39,7 +40,8 @@ export type Phase =
   | 'wrong-account' // local notes belong to another account
   | 'ready'
 
-export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error'
+/** 'free': signed in on Free, so this device only downloads (sync is part of Pro). */
+export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error' | 'free'
 
 interface AccountState {
   phase: Phase
@@ -212,7 +214,8 @@ async function becomeReady(k: AccountKeys) {
     : null
   set({ phase: 'ready', pendingSecret: null })
   startWatching()
-  void runSync()
+  // The plan first, so a Free account does not try to push.
+  void refreshPlan(true).then(runSync)
 }
 
 function startWatching() {
@@ -398,6 +401,8 @@ export async function signOut() {
     .keyStore.clear()
     .catch(() => undefined)
   await backend().signOut()
+  usePlan.setState({ info: null })
+  planFetchedAt = 0
   set({
     phase: 'signed-out',
     email: '',
@@ -428,6 +433,28 @@ export function requestSync() {
   debounce = setTimeout(() => void runSync(), SYNC_DELAY)
 }
 
+const PLAN_EVERY = 5 * 60_000
+let planFetchedAt = 0
+
+/**
+ * Asks the server for the account's plan (at most every few minutes unless `force`). Offline the
+ * last known plan stays; signed out there is none.
+ */
+export async function refreshPlan(force = false) {
+  const b = deps?.backend
+  if (!b || !session) {
+    usePlan.setState({ info: null })
+    return
+  }
+  if (!force && Date.now() - planFetchedAt < PLAN_EVERY) return
+  planFetchedAt = Date.now()
+  try {
+    usePlan.setState({ info: toPlanInfo(await b.plan()) })
+  } catch {
+    planFetchedAt = 0
+  }
+}
+
 export async function runSync() {
   const e = engine
   if (!e) return
@@ -437,8 +464,10 @@ export async function runSync() {
     return
   }
   setSync({ status: 'syncing' })
+  // On Free this device only downloads; the server would refuse its changes anyway.
+  const push = usePlan.getState().info?.plan !== 'free'
   try {
-    const report = await e.sync()
+    const report = await e.sync({ push })
     // Notes shared with other people: their own channel, merged as Yjs documents.
     const sharedReport = shared ? await shared.sync() : null
     let sharedChanged = false
@@ -476,10 +505,11 @@ export async function runSync() {
         d.onRemoteChange()
         requestSync()
       }
-      await d.attachments.uploadPending(sync.keys, sync.remote)
+      if (push) await d.attachments.uploadPending(sync.keys, sync.remote)
     }
+    void refreshPlan()
     setSync({
-      status: 'idle',
+      status: push ? 'idle' : 'free',
       lastSyncedAt: Date.now(),
       error: null,
       pending: (await e.pendingCount()) + (await need().attachments.pendingCount()),
@@ -494,6 +524,12 @@ export async function runSync() {
       need().onRemoteChange()
     if (report.conflictCopies) need().onConflicts?.(report.conflictCopies)
   } catch (err) {
+    if (isProRequired(err)) {
+      // Pro ended since the plan was last read: from now on this device only downloads.
+      await refreshPlan(true)
+      setSync({ status: 'free', error: null, pending: await e.pendingCount().catch(() => 0) })
+      return
+    }
     setSync({
       status: isOffline(err) ? 'offline' : 'error',
       error: err instanceof Error ? err.message : String(err),

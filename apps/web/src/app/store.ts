@@ -12,7 +12,7 @@ export type Route =
   /** Tidy suggestions to review. */
   | { kind: 'tidy' }
 
-export type SettingsSection = 'general' | 'account' | 'integrations' | 'ai' | 'data'
+export type SettingsSection = 'general' | 'account' | 'plan' | 'integrations' | 'ai' | 'data'
 
 /** An AI edit a note should open as soon as it is on screen (e.g. "tidy up" after dictation). */
 export interface AiRequest {
