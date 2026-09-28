@@ -498,6 +498,7 @@ const en = {
     statusCanceled: 'Pro until {{date}}, then Free.',
     statusPastDue: 'The last payment failed. Update your card to keep Pro.',
     statusFree: 'Everything on this device, free forever.',
+    subscribedUntil: 'Subscribed. Renews {{date}}.',
     signedOut: 'Sign in to try Pro free for 7 days. No card needed.',
     signIn: 'Sign in',
     ai: 'FixNote AI',
@@ -536,7 +537,6 @@ const en = {
     hideCard: 'Hide',
     syncInPro: 'Sync is in Pro',
     devTitle: 'Plan on the test server',
-    devPayTest: 'Payment test: shown only in development',
     devSpend: 'Use up AI',
     filesDeleteAt:
       'Your files on the server ({{size}}) are kept until {{date}}. With Pro they stay there; the copies on your devices stay either way.',

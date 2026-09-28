@@ -503,6 +503,7 @@ const ru: LocaleResource = {
     statusCanceled: 'Pro до {{date}}, потом Free.',
     statusPastDue: 'Последний платёж не прошёл. Обновите карту, чтобы сохранить Pro.',
     statusFree: 'Всё на этом устройстве, бесплатно навсегда.',
+    subscribedUntil: 'Подписка оформлена, продлится {{date}}.',
     signedOut: 'Войдите, чтобы попробовать Pro бесплатно 7 дней. Карта не нужна.',
     signIn: 'Войти',
     ai: 'FixNote AI',
@@ -541,7 +542,6 @@ const ru: LocaleResource = {
     hideCard: 'Скрыть',
     syncInPro: 'Синхронизация в Pro',
     devTitle: 'Тариф на тестовом сервере',
-    devPayTest: 'Проверка оплаты: видно только при разработке',
     devSpend: 'Израсходовать AI',
     filesDeleteAt:
       'Ваши файлы на сервере ({{size}}) хранятся до {{date}}. С Pro они останутся, а копии на ваших устройствах сохранятся в любом случае.',

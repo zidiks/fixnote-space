@@ -504,6 +504,7 @@ const es: LocaleResource = {
     statusCanceled: 'Pro hasta el {{date}}, luego Free.',
     statusPastDue: 'El último pago falló. Actualiza tu tarjeta para mantener Pro.',
     statusFree: 'Todo en este dispositivo, gratis para siempre.',
+    subscribedUntil: 'Suscripción activa. Se renueva el {{date}}.',
     signedOut: 'Inicia sesión para probar Pro gratis 7 días. Sin tarjeta.',
     signIn: 'Iniciar sesión',
     ai: 'FixNote AI',
@@ -543,7 +544,6 @@ const es: LocaleResource = {
     hideCard: 'Ocultar',
     syncInPro: 'La sincronización es de Pro',
     devTitle: 'Plan en el servidor de prueba',
-    devPayTest: 'Prueba de pago: solo se ve en desarrollo',
     devSpend: 'Agotar la IA',
     filesDeleteAt:
       'Tus archivos en el servidor ({{size}}) se guardan hasta el {{date}}. Con Pro se quedan allí; las copias en tus dispositivos se quedan de todos modos.',
