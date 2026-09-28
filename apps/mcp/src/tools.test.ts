@@ -32,7 +32,6 @@ describe('NotesTools', () => {
     expect(await tools.search('кофе')).toBe('No notes match "кофе".')
     const got = await tools.get(n.id)
     expect(got).toContain('folder: Работа')
-    expect(got).toContain('tags: #bot')
     expect(got).toContain('команды /today')
     expect(await tools.recent(5)).toContain('Рецепт борща')
     expect(await tools.folders()).toBe(`(no folder): 1 notes\nРабота (id: ${work.id}): 1 notes`)

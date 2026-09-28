@@ -198,9 +198,9 @@ function devEdit(prompt: string): string {
   return text.replace(/(^|\s)очень\s+/giu, '$1').replace(/^./, (c) => c.toUpperCase())
 }
 
-/** Plausible tidy proposals from the prompt's note list: tags from keywords, a folder, titles. */
+/** Plausible tidy proposals from the prompt's note list: a folder, titles. */
 function devTidy(prompt: string): string {
-  const folders = [...(prompt.split('\n\nExisting tags')[0] ?? '').matchAll(/^\[(\d+)\] (.+)$/gm)]
+  const folders = [...(prompt.split('\n\nNotes:')[0] ?? '').matchAll(/^\[(\d+)\] (.+)$/gm)]
   const notes = (prompt.split('Notes:\n\n')[1] ?? '').split('\n\n').map((block) => {
     const [head = '', ...rest] = block.split('\n')
     const m = head.match(/^\[(\d+)\] (.*)$/)
@@ -209,19 +209,8 @@ function devTidy(prompt: string): string {
       title: m?.[2] ?? '',
       noFolder: rest.some((l) => l.trim() === 'no folder'),
       needsTitle: rest.some((l) => l.trim() === 'needs title'),
-      untagged: rest.some((l) => l.trim() === 'tags: none'),
     }
   })
-  const words: [RegExp, string][] = [
-    [/бот|telegram/i, 'бот'],
-    [/покуп|молок|хлеб/i, 'покупки'],
-    [/партн|детейлинг/i, 'партнёры'],
-    [/идея|идеи/i, 'идеи'],
-  ]
-  const tags = notes
-    .filter((n) => n.untagged)
-    .map((n) => ({ note: n.ref, tags: words.filter(([re]) => re.test(n.title)).map(([, t]) => t) }))
-    .filter((t) => t.tags.length)
   const moves = notes
     .filter((n) => n.noFolder)
     .map((n) =>
@@ -235,7 +224,7 @@ function devTidy(prompt: string): string {
       note: n.ref,
       title: n.title.split(/\s+/).slice(0, 3).join(' ').replace(/[,.]$/, ''),
     }))
-  return JSON.stringify({ moves, tags, titles })
+  return JSON.stringify({ moves, titles })
 }
 
 const devLlm: typeof fetch = async (_url, init) => {

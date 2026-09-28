@@ -1,5 +1,4 @@
 import { unzipSync } from 'fflate'
-import { addTags } from '../ai/tidy'
 import { attachmentUrl } from '../attachments'
 import { toPlainText } from '../notes/markdown'
 import type { NotesRepo } from '../notes/repo'
@@ -165,7 +164,17 @@ export function parseFrontMatter(content: string): {
   }
 }
 
-/** Bear's `#tag with spaces#` → `#tag-with-spaces`, which the rest of FixNote understands. */
+/**
+ * Front matter tags kept as a last line of `#words` (FixNote has no tags; the words stay
+ * searchable), leaving out the ones the text already has.
+ */
+export function withTagLine(body: string, tags: readonly string[]): string {
+  const text = body.toLocaleLowerCase()
+  const add = tags.filter((t) => !text.includes(`#${t.toLocaleLowerCase()}`))
+  return add.length ? `${body.trimEnd()}\n\n${add.map((t) => `#${t}`).join(' ')}` : body
+}
+
+/** Bear's `#tag with spaces#` → `#tag-with-spaces`, one word that search finds. */
 export function bearTags(content: string): string {
   return content.replace(
     /(^|\s)#([^\s#][^#\n]*?[^\s#])#(?=\s|$)/g,
@@ -277,7 +286,7 @@ export function planImport(input: ImportFile[]): ImportPlan {
     const fm = parseFrontMatter(text(f.data))
     let body = source === 'bear' ? bearTags(fm.body) : fm.body
     body = withTitle(body, fm.title ?? name)
-    if (fm.tags.length) body = addTags(body, fm.tags)
+    if (fm.tags.length) body = withTagLine(body, fm.tags)
     const baseDir = bundle ? [...dirParts, bundle[2] as string] : f.path.split('/').slice(0, -1)
     const linked = linkImages(body, baseDir, map, byName)
     for (const img of linked.images) used.add(img.file)

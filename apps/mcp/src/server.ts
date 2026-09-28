@@ -47,7 +47,7 @@ export function createServer(db: SqlDriver): McpServer {
     'get_note',
     {
       title: 'Get a note',
-      description: 'The full Markdown of a note with its folder, tags and dates.',
+      description: 'The full Markdown of a note with its folder and dates.',
       inputSchema: { id: z.string().min(1) },
       annotations: { readOnlyHint: true },
     },
@@ -78,7 +78,7 @@ export function createServer(db: SqlDriver): McpServer {
     {
       title: 'Create a note',
       description:
-        'Saves a new note (Markdown; the first line becomes its title; #tags work). Without a folder it lands on Home without a folder. The user sees it in FixNote and can undo it.',
+        'Saves a new note (Markdown; the first line becomes its title). Without a folder it lands on Home without a folder. The user sees it in FixNote and can undo it.',
       inputSchema: {
         content: z.string().min(1),
         folder: z.string().optional().describe('Folder id, name or path ("Work / Projects")'),

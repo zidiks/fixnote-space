@@ -28,6 +28,7 @@ export interface FolderChange {
 export type AiActionKind =
   | 'edit'
   | 'tidy.move'
+  /** Tags are gone; kept so older entries still read. */
   | 'tidy.tag'
   | 'tidy.title'
   | 'tidy.merge'

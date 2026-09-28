@@ -56,7 +56,6 @@ describe('buildExport', () => {
       exportedAt: '2026-09-25T00:00:00.000Z',
     })
     expect(json.notes).toHaveLength(5)
-    expect(json.notes[0].tags).toEqual(['x'])
     expect(json.folders).toHaveLength(2)
   })
 

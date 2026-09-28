@@ -1,4 +1,4 @@
-import { deriveExcerpt, extractTags, toPlainText } from '../notes/markdown'
+import { deriveExcerpt, toPlainText } from '../notes/markdown'
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
 import type { AuditLog } from './audit'
@@ -6,7 +6,6 @@ import type { AuditLog } from './audit'
 /** One proposed change, waiting for Accept or Reject. */
 export type TidySuggestion = { id: string; noteId: string; noteTitle: string } & (
   | { kind: 'move'; folderId: string | null; folderName: string; newFolder: boolean }
-  | { kind: 'tag'; tags: string[] }
   | { kind: 'title'; title: string }
   | { kind: 'merge'; otherId: string; otherTitle: string }
 )
@@ -25,12 +24,10 @@ export interface TidyCandidates {
     id: string
     title: string
     excerpt: string
-    tags: string[]
     needsTitle: boolean
     noFolder: boolean
   }[]
   folders: { ref: number; id: string; name: string }[]
-  tags: string[]
 }
 
 /** The first line reads like a paragraph rather than a title. */
@@ -110,31 +107,14 @@ export function mergeContents(keep: string, other: string): string {
   return extra.length ? `${keep.trimEnd()}\n\n${extra.join('\n')}` : keep
 }
 
-const TAG_LINE = /^(\s*#[\p{L}\p{N}_][\p{L}\p{N}_\-/]*)+\s*$/u
-
-export function addTags(content: string, tags: readonly string[]): string {
-  const have = new Set(extractTags(content).map((t) => t.toLocaleLowerCase()))
-  const add = tags.filter((t) => !have.has(t.toLocaleLowerCase()))
-  if (!add.length) return content
-  const line = add.map((t) => `#${t}`).join(' ')
-  const lines = content.trimEnd().split('\n')
-  const last = lines.at(-1) ?? ''
-  if (TAG_LINE.test(last)) {
-    lines[lines.length - 1] = `${last.trimEnd()} ${line}`
-    return lines.join('\n')
-  }
-  return `${content.trimEnd()}\n\n${line}`
-}
-
 export interface TidyLabels {
   move: (folder: string, note: string) => string
-  tag: (tags: string, note: string) => string
   title: (title: string) => string
   merge: (note: string, other: string) => string
 }
 
 /**
- * Tidy: proposals to move notes into folders, add tags, give long-lined notes a title and merge
+ * Tidy: proposals to move notes into folders, give long-lined notes a title and merge
  * duplicates. Nothing changes until a suggestion is accepted; every accepted one is recorded in
  * the audit log and can be undone there.
  */
@@ -153,7 +133,7 @@ export class Tidy {
   private id = () => (this.opts.newId ?? (() => crypto.randomUUID()))()
   private now = () => (this.opts.now ?? Date.now)()
 
-  /** Notes worth a look: no folder, untagged or with a prose first line; or just `noteIds`. */
+  /** Notes worth a look: no folder or a prose first line; or just `noteIds`. */
   async candidates(opts: { noteIds?: string[]; limit?: number } = {}): Promise<TidyCandidates> {
     const limit = opts.limit ?? 40
     const rows = opts.noteIds?.length
@@ -182,11 +162,10 @@ export class Tidy {
         id: r.id,
         title: r.title,
         excerpt: deriveExcerpt(r.content, 280),
-        tags: extractTags(r.content),
         needsTitle: needsTitle(r.content),
         noFolder: r.folder_id === null,
       }))
-      .filter((n) => opts.noteIds || n.noFolder || !n.tags.length || n.needsTitle)
+      .filter((n) => opts.noteIds || n.noFolder || n.needsTitle)
       .slice(0, limit)
       .map((n, i) => ({ ...n, ref: i + 1 }))
     // Someone else's folder shared to view only takes no notes.
@@ -197,8 +176,7 @@ export class Tidy {
         id: f.id,
         name: f.name,
       }))
-    const tags = (await this.repo.listTags()).map((t) => t.name).slice(0, 80)
-    return { notes, folders, tags }
+    return { notes, folders }
   }
 
   /** Duplicate pairs among all notes, as merge suggestions (no model needed). */
@@ -304,21 +282,6 @@ export class Tidy {
       )
       return action.changes.length ? action.id : null
     }
-    if (s.kind === 'tag') {
-      const { action } = await this.audit.track(
-        {
-          kind: 'tidy.tag',
-          summary: labels.tag(s.tags.map((t) => `#${t}`).join(' '), title),
-          provider,
-        },
-        [s.noteId],
-        async () => {
-          await this.repo.updateContent(s.noteId, addTags(note.content, s.tags))
-          return {}
-        },
-      )
-      return action.changes.length ? action.id : null
-    }
     if (s.kind === 'title') {
       const { action } = await this.audit.track(
         { kind: 'tidy.title', summary: labels.title(s.title), provider },
@@ -351,7 +314,6 @@ export function suggestionsFromProposals(
   proposals: (
     | { kind: 'move'; note: number; folder: number }
     | { kind: 'move'; note: number; newFolder: string }
-    | { kind: 'tag'; note: number; tags: string[] }
     | { kind: 'title'; note: number; title: string }
   )[],
 ): NewTidySuggestion[] {
@@ -385,8 +347,7 @@ export function suggestionsFromProposals(
           newFolder: !existing,
         })
       }
-    } else if (p.kind === 'tag') out.push({ ...base, kind: 'tag', tags: p.tags })
-    else out.push({ ...base, kind: 'title', title: p.title })
+    } else out.push({ ...base, kind: 'title', title: p.title })
   }
   return out
 }

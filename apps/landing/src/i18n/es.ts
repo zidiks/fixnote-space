@@ -86,7 +86,7 @@ export const es: Dict = {
   how: {
     eyebrow: 'Cómo funciona',
     headline: ['Tres pasos', '\n', 'de la idea a la', { text: 'respuesta', tone: 'brand' }],
-    lead: 'Sin carpetas, etiquetas ni reglas al empezar. Ordena después: el asistente te sugerirá cómo.',
+    lead: 'Sin carpetas ni reglas al empezar. Ordena después: el asistente te sugerirá cómo.',
     step: 'Paso',
     steps: [
       {
@@ -99,7 +99,7 @@ export const es: Dict = {
       },
       {
         title: 'Ordena con un clic.',
-        text: 'FixNote sugiere títulos, carpetas y etiquetas y encuentra duplicados. Nada cambia sin tu confirmación y todo se puede deshacer.',
+        text: 'FixNote sugiere títulos y carpetas y encuentra duplicados. Nada cambia sin tu confirmación y todo se puede deshacer.',
       },
     ],
     visual: {
@@ -236,7 +236,7 @@ export const es: Dict = {
       },
       {
         q: '¿Puedo traer mis notas de Notion, Bear u Obsidian?',
-        a: 'Sí. La importación entiende una carpeta de Markdown (también Obsidian), una copia de Bear y una exportación de Notion, y conserva carpetas, etiquetas, fechas e imágenes. Puedes exportarlo todo a Markdown cuando quieras.',
+        a: 'Sí. La importación entiende una carpeta de Markdown (también Obsidian), una copia de Bear y una exportación de Notion, y conserva carpetas, fechas e imágenes. Puedes exportarlo todo a Markdown cuando quieras.',
       },
       {
         q: '¿En qué idiomas funciona FixNote?',
@@ -316,7 +316,7 @@ export const es: Dict = {
       {
         id: 'daily',
         title: 'Nota diaria y orden sin esfuerzo',
-        text: 'Una nota diaria con tareas y navegación entre días: pasa las tareas pendientes de ayer con un clic. Cada pocos días, «Ordenar» sugiere títulos, carpetas y etiquetas y une duplicados.',
+        text: 'Una nota diaria con tareas y navegación entre días: pasa las tareas pendientes de ayer con un clic. Cada pocos días, «Ordenar» sugiere títulos y carpetas y une duplicados.',
         points: [
           'Pasar tareas, con confirmación',
           'Notas agrupadas por fecha',
@@ -346,7 +346,7 @@ export const es: Dict = {
       {
         id: 'import',
         title: 'Múdate, y vete cuando quieras',
-        text: 'Importa una carpeta de Markdown u Obsidian, Bear o Notion con carpetas, etiquetas, fechas e imágenes. Exporta todas las notas a Markdown cuando quieras: tus datos son tuyos.',
+        text: 'Importa una carpeta de Markdown u Obsidian, Bear o Notion con carpetas, fechas e imágenes. Exporta todas las notas a Markdown cuando quieras: tus datos son tuyos.',
         points: [
           'Notion, Bear, Obsidian, Markdown',
           'Reimportar sin duplicados',

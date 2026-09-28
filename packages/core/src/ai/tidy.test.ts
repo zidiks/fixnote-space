@@ -5,7 +5,6 @@ import type { SqlDriver } from '../platform'
 import { createMemoryDriver } from '../testing/memory-driver'
 import { AuditLog } from './audit'
 import {
-  addTags,
   findDuplicates,
   mergeContents,
   needsTitle,
@@ -16,7 +15,6 @@ import {
 
 const labels: TidyLabels = {
   move: (f, n) => `move ${n} → ${f}`,
-  tag: (t, n) => `tag ${n} ${t}`,
   title: (t) => `title ${t}`,
   merge: (a, b) => `merge ${a} + ${b}`,
 }
@@ -29,12 +27,6 @@ describe('tidy helpers', () => {
       needsTitle('Партнёрства с детейлингом, студиями защитной плёнки, тюнинг-ателье и дилерами'),
     ).toBe(true)
     expect(needsTitle('Позвонить маме. Потом купить хлеб')).toBe(true)
-  })
-
-  it('adds tags to an existing tag line or a new one, without repeats', () => {
-    expect(addTags('Text', ['идеи', 'bot'])).toBe('Text\n\n#идеи #bot')
-    expect(addTags('Text\n\n#work', ['идеи', 'Work'])).toBe('Text\n\n#work #идеи')
-    expect(addTags('Text #bot', ['bot'])).toBe('Text #bot')
   })
 
   it('keeps the longer note when two were edited at the same moment', () => {
@@ -91,17 +83,16 @@ describe('Tidy', () => {
       suggestionsFromProposals(c, [
         { kind: 'move', note: refA, folder: 1 },
         { kind: 'move', note: refB, newFolder: 'Партнёры' },
-        { kind: 'tag', note: refA, tags: ['бот'] },
         { kind: 'title', note: refB, title: 'Партнёрства' },
       ]),
     )
-    expect((await tidy.pending()).map((s) => s.kind)).toEqual(['move', 'move', 'tag', 'title'])
+    expect((await tidy.pending()).map((s) => s.kind)).toEqual(['move', 'move', 'title'])
 
     for (const s of saved) await tidy.accept(s, 'test', labels)
     expect(await tidy.pendingCount()).toBe(0)
     const na = await repo.getNote(a.id)
     const nb = await repo.getNote(b.id)
-    expect([na?.folderId, na?.content]).toEqual([work.id, 'Бот в Telegram\nкоманды\n\n#бот'])
+    expect([na?.folderId, na?.content]).toEqual([work.id, 'Бот в Telegram\nкоманды'])
     expect(nb?.content.startsWith('# Партнёрства\n\nПартнёрства с')).toBe(true)
     const partners = (await repo.listFolders()).find((f) => f.name === 'Партнёры')
     expect(nb?.folderId).toBe(partners?.id)
@@ -109,13 +100,12 @@ describe('Tidy', () => {
     const log = await audit.list()
     expect(log.map((x) => x.summary)).toEqual([
       'title Партнёрства',
-      'tag Бот в Telegram #бот',
       'move Партнёрства с детейлингом, студиями защитной плёнки, тюнинг-ателье и дилерами → Партнёры',
       'move Бот в Telegram → Работа',
     ])
     // Undo the newest first, then the move of the same note.
     expect(await audit.undo(log[0]?.id ?? '')).toEqual({ ok: true })
-    expect(await audit.undo(log[2]?.id ?? '')).toEqual({ ok: true })
+    expect(await audit.undo(log[1]?.id ?? '')).toEqual({ ok: true })
     const back = await repo.getNote(b.id)
     expect([back?.folderId, back?.content.startsWith('Партнёрства с')]).toEqual([null, true])
   })
@@ -136,7 +126,7 @@ describe('Tidy', () => {
     const n = await repo.createNote({ content: 'Бот\nx' })
     const c = await tidy.candidates()
     const [t] = await tidy.save(
-      suggestionsFromProposals(c, [{ kind: 'tag', note: c.notes[0]?.ref ?? 0, tags: ['a'] }]),
+      suggestionsFromProposals(c, [{ kind: 'title', note: c.notes[0]?.ref ?? 0, title: 'Бот' }]),
     )
     if (!t) throw new Error('no suggestion')
     await tidy.reject(t.id)

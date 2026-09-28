@@ -200,7 +200,6 @@ describe('tidy prompts', () => {
         ref: 1,
         title: 'Бот в Telegram',
         excerpt: 'команды',
-        tags: ['bot'],
         needsTitle: false,
         noFolder: true,
       },
@@ -208,31 +207,27 @@ describe('tidy prompts', () => {
         ref: 2,
         title: 'Очень длинная первая строка',
         excerpt: '',
-        tags: [],
         needsTitle: true,
         noFolder: false,
       },
     ],
     folders: [{ ref: 1, name: 'Проекты' }],
-    tags: ['bot'],
   }
 
-  it('lists folders, tags and notes with their flags', async () => {
+  it('lists folders and notes with their flags', async () => {
     const { buildTidyMessages, TIDY_MARKER } = await import('./tidy')
     const [system, user] = buildTidyMessages(req)
     expect(system?.content).toContain(TIDY_MARKER)
     expect(user?.content).toContain('[1] Проекты')
-    expect(user?.content).toContain('[2] Очень длинная первая строка\n  tags: none\n  needs title')
+    expect(user?.content).toContain('[2] Очень длинная первая строка\n  needs title')
   })
 
   it('keeps only valid proposals about known notes', async () => {
     const { parseTidyReply } = await import('./tidy')
     const reply = `Sure! {"moves":[{"note":1,"folder":1},{"note":2,"folder":1},{"note":9,"folder":1},{"note":1,"newFolder":"x"}],
-      "tags":[{"note":1,"tags":["#Bot","идеи","идеи","два слова","123"]}],
       "titles":[{"note":2,"title":"«Партнёрства»"},{"note":1,"title":"no"}]}`
     expect(parseTidyReply(reply, req)).toEqual([
       { kind: 'move', note: 1, folder: 1 },
-      { kind: 'tag', note: 1, tags: ['идеи', 'два-слова'] },
       { kind: 'title', note: 2, title: 'Партнёрства' },
     ])
     expect(parseTidyReply('not json', req)).toEqual([])

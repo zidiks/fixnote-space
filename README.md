@@ -12,7 +12,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
 - Notes in Markdown with a Bear-like editor: headings, lists, checklists, quotes, code, links,
   images (paste or drop; large ones are scaled down).
 - Home shows every note with filters (no folder, folder, type, period) and infinite scroll;
-  folders with subfolders; `#tags` and nested `#area/project` tags from the text.
+  folders with subfolders.
 - Link cards: a URL alone on its line shows the page's title, description and image.
 - Spotlight: recent notes, full-text search with highlighted snippets in ru/es/en that also tries
   the other alphabet ("телеграм" finds "Telegram"), notes similar in meaning once the assistant's
@@ -40,7 +40,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   the LLM for translations and synonyms of the question, so "розыгрыши" finds a note about a
   "giveaway". The avatar is
   [Bloub](https://github.com/jeremy-prt/bloub) (MIT).
-- Tidy up: the assistant suggests titles, folders, tags and merging duplicates, a batch every few
+- Tidy up: the assistant suggests titles, folders and merging duplicates, a batch every few
   days and one note right after you write it. Nothing changes until you accept a suggestion, and
   every accepted change can be undone.
 - AI history (Settings → AI): every change the assistant made to a note, with before and after,
@@ -53,7 +53,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   with permission create notes or append to them (Settings → AI → MCP; off / read / read and
   write). The server `fixnote-mcp` ships with the app and works on the local database.
 - Import (Settings → Data): a folder of Markdown files (Obsidian too), a Bear backup
-  (`.bear2bk`), a Notion export (`.zip`) or a FixNote export, with folders, tags, dates and images.
+  (`.bear2bk`), a Notion export (`.zip`) or a FixNote export, with folders, dates and images (front matter tags stay as `#words` at the end).
   Notes that are already there are skipped; Undo removes the whole import.
 - Share a note by link (signed in): the copy is sealed with a key that exists only in the link, so
   the server cannot read it. Update the link after edits or turn it off, from the note or from

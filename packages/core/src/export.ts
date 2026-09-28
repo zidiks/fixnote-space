@@ -1,5 +1,4 @@
 import { attachmentIds } from './attachments'
-import { extractTags } from './notes/markdown'
 import type { SqlDriver, SqlRow } from './platform'
 
 export interface ExportFile {
@@ -133,7 +132,6 @@ export async function buildExport(
       type: n.type,
       dailyDate: n.daily_date,
       title: n.title,
-      tags: extractTags(n.content),
       content: n.content,
       createdAt: new Date(Number(n.created_at)).toISOString(),
       updatedAt: new Date(Number(n.updated_at)).toISOString(),

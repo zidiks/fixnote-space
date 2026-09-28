@@ -119,18 +119,6 @@ export function NoteCard({ note, inFolder }: { note: NoteSummary; inFolder?: str
               {note.excerpt}
             </p>
           ) : null}
-          {note.tags.length ? (
-            <div className="mt-auto flex flex-wrap gap-1 pt-2">
-              {note.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] text-brand"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
         </button>
       </ContextMenuTrigger>
       <ContextMenuContent>

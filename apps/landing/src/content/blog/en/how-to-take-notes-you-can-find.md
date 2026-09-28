@@ -25,7 +25,7 @@ Think about how you'll look for this note. If everyone calls the project "Landin
 
 ## 5. Keep folders to a minimum
 
-An elaborate folder system on day one is a sure way to stop taking notes two weeks later. Three to five broad folders (Work, Home, Travel) and tags for cross-cutting topics are enough. Search does the rest.
+An elaborate folder system on day one is a sure way to stop taking notes two weeks later. Three to five broad folders (Work, Home, Travel) are enough. Search does the rest.
 
 ## 6. Keep a daily note
 
@@ -37,6 +37,6 @@ Instead of trying to remember which folder holds a decision, ask: "What did Oleg
 
 ## How FixNote helps
 
-These habits work in any app, but FixNote is built around them. You can capture by typing, by voice, or by messaging a Telegram bot. The daily note carries over unfinished tasks. Search understands three languages and transliteration, and the assistant answers from your notes and shows its sources. Every few days, "Tidy up" suggests titles, folders and tags, and nothing changes without your approval.
+These habits work in any app, but FixNote is built around them. You can capture by typing, by voice, or by messaging a Telegram bot. The daily note carries over unfinished tasks. Search understands three languages and transliteration, and the assistant answers from your notes and shows its sources. Every few days, "Tidy up" suggests titles and folders, and nothing changes without your approval.
 
 [Try FixNote](/en/download/): it takes a couple of minutes.

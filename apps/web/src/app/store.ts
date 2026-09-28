@@ -8,7 +8,6 @@ export type Route =
   /** Home: the greeting and every note; `filter: 'inbox'` shows notes without a folder. */
   | { kind: 'home'; filter?: 'inbox' }
   | { kind: 'folder'; id: string }
-  | { kind: 'tag'; name: string }
   | { kind: 'note'; id: string }
   /** Tidy suggestions to review. */
   | { kind: 'tidy' }

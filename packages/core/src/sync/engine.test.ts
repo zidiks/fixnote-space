@@ -50,7 +50,7 @@ describe('merge3', () => {
 })
 
 describe('SyncEngine', () => {
-  it('moves notes, folders and tags between devices, encrypted on the way', async () => {
+  it('moves notes and folders between devices, encrypted on the way', async () => {
     const a = await device('a')
     const b = await device('b')
     const folder = await a.repo.createFolder('Работа')
@@ -63,7 +63,7 @@ describe('SyncEngine', () => {
 
     expect(await b.engine.sync()).toMatchObject({ pulled: 3, pushed: 0 })
     const [note] = (await b.repo.listNotes()).items
-    expect(note).toMatchObject({ title: 'Секретный план #work', folderId: sub.id, tags: ['work'] })
+    expect(note).toMatchObject({ title: 'Секретный план #work', folderId: sub.id })
     expect((await b.repo.listFolders()).map((f) => [f.name, f.parentId])).toEqual([
       ['Проекты', folder.id],
       ['Работа', null],

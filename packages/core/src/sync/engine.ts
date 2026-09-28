@@ -7,7 +7,6 @@ import {
 } from '../crypto'
 import { mergeDailyNotes } from '../notes/daily'
 import { deriveTitle, toPlainText } from '../notes/markdown'
-import { syncNoteTags } from '../notes/repo'
 import type { NoteType } from '../notes/types'
 import type { SqlDriver, SqlRow } from '../platform'
 import { merge3 } from './merge'
@@ -231,7 +230,6 @@ export class SyncEngine {
           theirs,
         ],
       )
-      await syncNoteTags(tx, r.id, content)
       return
     }
 
@@ -303,7 +301,6 @@ export class SyncEngine {
         r.id,
       ],
     )
-    if (content !== local.content) await syncNoteTags(tx, r.id, content)
   }
 
   /** A folder id if it exists locally; otherwise null (the note shows in Inbox until it arrives). */
@@ -343,7 +340,6 @@ export class SyncEngine {
           WHERE id = ?`,
         [merged, deriveTitle(merged), toPlainText(merged), ts, holder.id],
       )
-      await syncNoteTags(tx, holder.id, merged)
       return { date: null, content, lost: true }
     }
     await tx.execute(
@@ -370,7 +366,6 @@ export class SyncEngine {
        VALUES (?, ?, 'text', NULL, ?, ?, ?, ?, ?, NULL, 0, 1, 1)`,
       [id, local.folder_id, deriveTitle(content), content, toPlainText(content), ts, ts],
     )
-    await syncNoteTags(tx, id, content)
   }
 
   // ── Push ─────────────────────────────────────────────────────────────────

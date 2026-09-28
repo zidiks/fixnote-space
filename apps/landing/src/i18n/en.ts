@@ -85,7 +85,7 @@ export const en: Dict = {
   how: {
     eyebrow: 'How it works',
     headline: ['Three steps', '\n', 'from thought to', { text: 'answer', tone: 'brand' }],
-    lead: 'No folders, tags or rules to set up first. Tidy up later: the assistant will suggest how.',
+    lead: 'No folders or rules to set up first. Tidy up later: the assistant will suggest how.',
     step: 'Step',
     steps: [
       {
@@ -98,7 +98,7 @@ export const en: Dict = {
       },
       {
         title: 'Tidy up in one click.',
-        text: 'FixNote suggests titles, folders and tags and finds duplicates. Nothing changes until you accept, and every change can be undone.',
+        text: 'FixNote suggests titles and folders and finds duplicates. Nothing changes until you accept, and every change can be undone.',
       },
     ],
     visual: {
@@ -234,7 +234,7 @@ export const en: Dict = {
       },
       {
         q: 'Can I move my notes from Notion, Bear or Obsidian?',
-        a: 'Yes. Import understands a Markdown folder (Obsidian too), a Bear backup and a Notion export, and keeps folders, tags, dates and images. You can export everything back to Markdown at any time.',
+        a: 'Yes. Import understands a Markdown folder (Obsidian too), a Bear backup and a Notion export, and keeps folders, dates and images. You can export everything back to Markdown at any time.',
       },
       {
         q: 'Which languages does FixNote support?',
@@ -306,7 +306,7 @@ export const en: Dict = {
       {
         id: 'daily',
         title: 'A daily note and effortless order',
-        text: 'A daily note with tasks and day-to-day navigation: carry yesterday’s unfinished tasks over with one click. Every few days, “Tidy up” suggests titles, folders and tags and merges duplicates.',
+        text: 'A daily note with tasks and day-to-day navigation: carry yesterday’s unfinished tasks over with one click. Every few days, “Tidy up” suggests titles and folders and merges duplicates.',
         points: [
           'Carry over tasks, with confirmation',
           'Notes grouped by date',
@@ -328,7 +328,7 @@ export const en: Dict = {
       {
         id: 'import',
         title: 'Move in, and leave any time',
-        text: 'Import a Markdown or Obsidian folder, Bear or Notion with folders, tags, dates and images. Export all notes to Markdown whenever you like: your data belongs to you.',
+        text: 'Import a Markdown or Obsidian folder, Bear or Notion with folders, dates and images. Export all notes to Markdown whenever you like: your data belongs to you.',
         points: [
           'Notion, Bear, Obsidian, Markdown',
           'Re-import without duplicates',

@@ -19,7 +19,6 @@ import { useInvalidateNotes } from '../lib/queries'
 
 const GROUPS = [
   { kind: 'move', label: 'tidy.groupMove' },
-  { kind: 'tag', label: 'tidy.groupTag' },
   { kind: 'title', label: 'tidy.groupTitle' },
   { kind: 'merge', label: 'tidy.groupMerge' },
 ] as const satisfies readonly { kind: TidySuggestion['kind']; label: string }[]

@@ -26,7 +26,6 @@ const EVERY = 3 * 24 * 3600 * 1000
 
 export const tidyLabels = (): TidyLabels => ({
   move: (folder, note) => i18n.t('tidy.logMove', { folder, note }),
-  tag: (tags, note) => i18n.t('tidy.logTag', { tags, note }),
   title: (title) => i18n.t('tidy.logTitle', { title }),
   merge: (note, other) => i18n.t('tidy.logMerge', { note, other }),
 })
@@ -36,8 +35,6 @@ export function describeSuggestion(s: TidySuggestion | NewTidySuggestion): strin
   switch (s.kind) {
     case 'move':
       return i18n.t(s.newFolder ? 'tidy.moveNew' : 'tidy.move', { folder: s.folderName })
-    case 'tag':
-      return i18n.t('tidy.tag', { tags: s.tags.map((t) => `#${t}`).join(' ') })
     case 'title':
       return i18n.t('tidy.setTitle', { title: s.title })
     case 'merge':
@@ -154,7 +151,7 @@ export async function acceptWithUndo(list: TidySuggestion[], deps: AcceptDeps) {
 const suggestedThisSession = new Set<string>()
 
 /**
- * After leaving a fresh note that has no folder: ask for a folder, tags and a title for it and
+ * After leaving a fresh note that has no folder: ask for a folder and a title for it and
  * offer them in a toast. Silent when there is nothing to suggest or no model access.
  */
 export async function suggestForNewNote(

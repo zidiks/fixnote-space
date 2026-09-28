@@ -1,7 +1,6 @@
 /** Plain-text helpers over note Markdown. Pure functions; no Markdown parser dependency. */
 
 const FENCE = /^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm
-const INLINE_CODE = /`[^`\n]*`/g
 
 function stripInline(line: string): string {
   return line
@@ -85,24 +84,6 @@ export function deriveTitle(markdown: string, max = 120): string {
 export function deriveExcerpt(markdown: string, max = 240): string {
   const text = plainLines(tablesAsHeaders(markdown)).slice(1).join(' ').replace(/\s+/g, ' ').trim()
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text
-}
-
-const TAG = /(^|[\s(,;])\\?#([\p{L}\p{N}_][\p{L}\p{N}_\-/]*)/gu
-
-/**
- * `#tag` and nested `#area/project` tags, Bear-style. Ignores headings (`# Title`), code, URL
- * fragments and pure numbers like `#123`. Returns unique names in first-seen order.
- */
-export function extractTags(markdown: string): string[] {
-  const text = markdown.replace(FENCE, ' ').replace(INLINE_CODE, ' ')
-  const seen = new Map<string, string>()
-  for (const m of text.matchAll(TAG)) {
-    const name = (m[2] ?? '').replace(/[/-]+$/, '')
-    if (!name || /^\d+$/.test(name)) continue
-    const key = name.toLocaleLowerCase()
-    if (!seen.has(key)) seen.set(key, name)
-  }
-  return [...seen.values()]
 }
 
 /** Checkbox progress, or null when the note has no task items. */

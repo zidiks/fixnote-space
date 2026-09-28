@@ -148,7 +148,6 @@ export class NotesTools {
       `id: ${n.id}`,
       `folder: ${this.folderPath(reach, n.folderId)}`,
       n.pinnedAt ? 'pinned: yes' : '',
-      n.tags.length ? `tags: ${n.tags.map((t) => `#${t}`).join(' ')}` : '',
       `created: ${iso(n.createdAt)}, edited: ${iso(n.updatedAt)}`,
       '\n' + n.content,
     ]
