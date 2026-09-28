@@ -334,7 +334,7 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
   `AppxManifest.xml`, `build.ps1`, images from `pnpm --filter @fixnote/desktop icons`), installs it
   on the runner and checks that the MCP server answers through its `fixnote-mcp` alias. The
   `fixnote-microsoft-store` artifact has `FixNote-Store-x64.msix` (upload this one in Partner
-  Center; the Store signs it) and a test copy signed with a throwaway certificate. Set up once:
+  Center; the Store signs it) and an unsigned test copy. Set up once:
   1. Partner Center → Apps and games → New product → MSIX or PWA app, reserve the name FixNote.
   2. Product management → Product identity: copy `Package/Identity/Name`,
      `Package/Identity/Publisher` and `Package/Properties/PublisherDisplayName` into the GitHub
@@ -347,6 +347,6 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
      `%APPDATA%\Claude\claude_desktop_config.json`).
 
   The Store version never updates itself (Settings shows "updates from the Microsoft Store"): each
-  release, run the release, then upload the new `.msix` in a new submission. To try the test copy:
-  `Import-Certificate FixNote-Store-test.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople`
-  (admin PowerShell), then open `FixNote-Store-x64-test.msix`.
+  release, run the release, then upload the new `.msix` in a new submission. To try the test copy
+  on Windows 11: `Add-AppxPackage FixNote-Store-x64-test.msix -AllowUnsigned` in PowerShell
+  (`Remove-AppxPackage` takes it off again).

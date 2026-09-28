@@ -1,7 +1,6 @@
 # Packs the built app (target/release after `tauri build`) into the Microsoft Store package:
 #   <Out>/FixNote-Store-x64.msix       unsigned, for Partner Center (the Store signs it)
-#   <Out>/FixNote-Store-x64-test.msix  signed with a throwaway certificate, to install and try
-#   <Out>/FixNote-Store-test.cer       that certificate (README > Microsoft Store)
+#   <Out>/FixNote-Store-x64-test.msix  unsigned, to install and try (README > Microsoft Store)
 # The identity comes from Partner Center (Product management > Product identity); without it the
 # package gets a test identity, fine for trying it out but not accepted by the Store.
 param(
@@ -69,23 +68,19 @@ $msix = Join-Path $Out 'FixNote-Store-x64.msix'
 & "$tools/makeappx.exe" pack /o /h SHA256 /d $layout /p $msix
 if ($LASTEXITCODE) { throw 'makeappx pack failed' }
 
-# A signed copy to install on a test machine. The certificate's subject must equal Publisher.
+# An unsigned copy to install for testing (Windows 11: Add-AppxPackage -AllowUnsigned). Windows
+# takes an unsigned package only when its publisher carries this marker; the Store copy has none.
+$testLayout = Join-Path $Out 'layout-test'
+Copy-Item $layout $testLayout -Recurse
+$unsigned = $Publisher + ', OID.2.25.311729368913984317654407730594956997722=1'
+$testManifest = $manifest.Replace(
+  "Publisher=""$([System.Security.SecurityElement]::Escape($Publisher))""",
+  "Publisher=""$([System.Security.SecurityElement]::Escape($unsigned))""")
+if ($testManifest -eq $manifest) { throw 'the test manifest still has the Store publisher' }
+[System.IO.File]::WriteAllText("$testLayout/AppxManifest.xml", $testManifest, [System.Text.UTF8Encoding]::new($false))
 $test = Join-Path $Out 'FixNote-Store-x64-test.msix'
-Copy-Item $msix $test
-$cert = New-SelfSignedCertificate -Type Custom -Subject $Publisher -KeyUsage DigitalSignature `
-  -FriendlyName 'FixNote Store test package' -CertStoreLocation 'Cert:\CurrentUser\My' `
-  -NotAfter (Get-Date).AddYears(1) `
-  -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
-try {
-  $pfx = Join-Path ([System.IO.Path]::GetTempPath()) 'msix-test.pfx'
-  $password = [guid]::NewGuid().ToString()
-  Export-PfxCertificate -Cert $cert -FilePath $pfx -Password (ConvertTo-SecureString $password -AsPlainText -Force) | Out-Null
-  & "$tools/signtool.exe" sign /v /debug /fd SHA256 /f $pfx /p $password $test
-  if ($LASTEXITCODE) { throw 'signtool sign failed' }
-  Export-Certificate -Cert $cert -FilePath (Join-Path $Out 'FixNote-Store-test.cer') | Out-Null
-  Remove-Item $pfx
-} finally {
-  Remove-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)"
-}
+& "$tools/makeappx.exe" pack /o /h SHA256 /d $testLayout /p $test
+if ($LASTEXITCODE) { throw 'makeappx pack (test copy) failed' }
+Remove-Item $testLayout -Recurse
 
 Get-ChildItem $Out -File | ForEach-Object { Write-Host ('{0,12:N0}  {1}' -f $_.Length, $_.Name) }

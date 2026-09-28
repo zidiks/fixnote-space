@@ -82,7 +82,7 @@ jobs:
               apps/desktop/src-tauri/target/release/bundle/nsis/*.exe.sig
               apps/desktop/src-tauri/target/release/bundle/msi/*.msi
             # The Microsoft Store package, uploaded by hand in Partner Center (not in the release).
-            store: apps/desktop/src-tauri/target/msix/*.*
+            store: apps/desktop/src-tauri/target/msix/*.msix
           # macOS: Apple Silicon (arm64) and Intel (x86_64), each built natively, so the MCP
           # sidecar matches the app. Ad-hoc signed, not notarized: see README.
           - os: macos-latest
@@ -243,8 +243,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $out = 'apps/desktop/src-tauri/target/msix'
           $name = ([xml](Get-Content "$out/layout/AppxManifest.xml" -Encoding UTF8)).Package.Identity.Name
-          Import-Certificate -FilePath "$out/FixNote-Store-test.cer" -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
-          Add-AppxPackage -Path "$out/FixNote-Store-x64-test.msix"
+          # The unsigned test copy (its publisher carries the "unsigned" marker).
+          Add-AppxPackage -Path "$out/FixNote-Store-x64-test.msix" -AllowUnsigned
           $pkg = Get-AppxPackage -Name $name
           if (-not $pkg) { throw "$name is not installed" }
           Write-Host "installed $($pkg.PackageFullName) at $($pkg.InstallLocation)"
