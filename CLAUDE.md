@@ -97,6 +97,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   View only means nothing may change: `NotesRepo` throws `ReadOnlyError` for such notes and folders
   (every writer goes through it); only the shared sync writes, with `fromSharing`. The UI hides what
   would change them (`note.readOnly`, `folder.shared === 'view'`).
+- A device's notes belong to one account (`account.owner` in kv). Signing out asks whether to keep
+  them or remove them (`forgetLocalNotes` in core: notes and everything made from them, device
+  settings stay); another account signing in gets "sign in as the owner" or "remove their notes
+  and continue", both warning about changes not on the server yet (`unsyncedChanges`). Anything
+  new stored per account must be removed there too.
 - The recovery phrase shows only after a code sent to the account's email (`RecoveryPhrase` in
   `AccountSection.tsx`, `sendCheckCode`/`checkCode` on the backend; `123456` with `?dev-backend`).
 - Plans: Free = on the device, Pro = through our server (sync push, FixNote AI, sharing, links,

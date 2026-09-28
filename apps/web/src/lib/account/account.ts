@@ -6,8 +6,10 @@ import {
   accountSource,
   anySource,
   attachmentIds,
+  type BlobStore,
   cryptoReady,
   deriveKeys,
+  forgetLocalNotes,
   importInbox,
   type KeyStore,
   makeKeyCheck,
@@ -24,6 +26,7 @@ import {
   type SqlDriver,
   SyncEngine,
   sealSecretForDevice,
+  unsyncedChanges,
   verifyKeyCheck,
 } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
@@ -80,6 +83,8 @@ const setSync = (patch: Partial<AccountState['sync']>) =>
 interface Deps {
   backend: AccountBackend | null
   db: SqlDriver
+  /** The bytes of files, to remove them with the notes. */
+  blobs: BlobStore
   keyStore: KeyStore
   attachments: Attachments
   repo: NotesRepo
@@ -128,6 +133,10 @@ async function kvSet(key: string, value: string) {
     'INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
     [key, value],
   )
+}
+
+async function kvDelete(key: string) {
+  await need().db.execute('DELETE FROM kv WHERE key = ?', [key])
 }
 
 function need(): Deps {
@@ -392,7 +401,37 @@ async function refreshPairingRequests() {
   set({ pairingRequests: requests.map((r) => ({ ...r, code: pairingCode(r.ephemeralKey) })) })
 }
 
-export async function signOut() {
+/** Changes on this device the server does not have yet; tries a sync first when signed in. */
+export async function unsyncedLocalChanges(): Promise<number> {
+  if (engine) await runSync().catch(() => undefined)
+  return unsyncedChanges(need().db)
+}
+
+/** Removes the notes on this device (the account keeps them) and starts the app over. */
+async function forgetDevice() {
+  await forgetLocalNotes(need().db, need().blobs)
+  await kvDelete(OWNER)
+  await kvDelete(OWNER_EMAIL)
+  location.reload()
+}
+
+/**
+ * The device holds another account's notes: sign out of this one and send a code to the account
+ * the notes belong to.
+ */
+export async function signInAsOwner() {
+  const owner = useAccount.getState().ownerEmail
+  await signOut()
+  if (owner) await sendCode(owner)
+}
+
+/** The device holds another account's notes: remove them here and go on with this account. */
+export async function forgetPreviousAccount() {
+  await forgetDevice()
+}
+
+/** Signs out; with `forget`, the notes leave this device too (they stay in the account). */
+export async function signOut(opts: { forget?: boolean } = {}) {
   cancelPairing()
   stopWatching?.()
   stopWatching = null
@@ -414,6 +453,7 @@ export async function signOut() {
     sync: { status: 'idle', lastSyncedAt: null, error: null, pending: 0 },
     invites: [],
   })
+  if (opts.forget) await forgetDevice()
 }
 
 /** The unlocked account's recovery secret, for "show recovery phrase". */

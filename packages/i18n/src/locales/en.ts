@@ -603,7 +603,7 @@ const en = {
     phraseWrong: 'This phrase belongs to a different account.',
     wrongAccountTitle: 'Another account owns this device',
     wrongAccountBody:
-      'Notes here are synced with {{email}}. Sign in with that account, or sign out.',
+      'The notes on this device belong to {{email}}. Sign in to that account, or remove its notes from this device: they stay in the account.',
     signedInAs: 'Signed in as {{email}}',
     syncNow: 'Sync now',
     showPhrase: 'Show recovery phrase',
@@ -612,7 +612,18 @@ const en = {
     showPhraseConfirm: 'Show',
     checkFailed: 'Could not check the code. Check your connection and try again.',
     signOut: 'Sign out',
-    signOutBody: 'Notes stay on this device. Sync stops.',
+    signOutTitle: 'Sign out?',
+    signOutChoice:
+      'You can keep your notes on this device or remove them from it. Either way they stay in your account.',
+    signOutForget: 'Sign out and remove from device',
+    checkingSync: 'Checking that everything is on the server',
+    unsynced:
+      'Some changes are not on the server yet ({{count}}). Removing the notes from this device would lose them.',
+    signInAs: 'Sign in as {{email}}',
+    forgetOther: 'Remove notes from this device',
+    forgetOtherTitle: 'Remove the notes of {{email}} from this device?',
+    forgetOtherBody: 'They stay in the {{email}} account. Then your account opens here.',
+    forgetOtherConfirm: 'Remove and continue',
     status: {
       synced: 'Synced {{time}}',
       syncing: 'Syncing…',

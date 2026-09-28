@@ -33,6 +33,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       void initAccount({
         backend,
         db: driver,
+        blobs: platform.blobs,
         keyStore: platform.keyStore,
         attachments,
         repo,
