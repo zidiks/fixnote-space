@@ -58,7 +58,12 @@
       </uap:VisualElements>
     </Application>
 
-    <Application Id="Mcp" Executable="fixnote-mcp.exe" EntryPoint="Windows.FullTrustApplication">
+    <!-- One copy per MCP client: Claude, Cursor and Codex can each run their own at once. -->
+    <Application
+      Id="Mcp"
+      Executable="fixnote-mcp.exe"
+      EntryPoint="Windows.FullTrustApplication"
+      desktop4:SupportsMultipleInstances="true">
       <uap:VisualElements
         DisplayName="FixNote MCP server"
         Description="Lets AI apps on this computer read and edit your FixNote notes."
