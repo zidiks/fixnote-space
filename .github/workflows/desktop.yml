@@ -8,6 +8,10 @@ name: Desktop build
 # after the latest `v*` tag and stamps it into the build, so no file needs a version bump. With the update signing key set up
 # (secret TAURI_SIGNING_PRIVATE_KEY, variable TAURI_UPDATER_PUBKEY; see README → Releases), the
 # release also carries signed update files and latest.json, from which installed apps update.
+# Windows code signing (Azure Artifact Signing, so SmartScreen and Windows trust the installers):
+# on when the secrets AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET and the variables
+# AZURE_SIGNING_ENDPOINT, AZURE_SIGNING_ACCOUNT, AZURE_SIGNING_PROFILE are set (README → Releases);
+# without them the Windows build is unsigned as before.
 on:
   push:
     branches: ['**']
@@ -150,12 +154,44 @@ jobs:
           grep -o '^VITE_[A-Z_]*=' .env | tr '\n' ' '
       - name: MCP server (single executable, bundled with the app)
         run: pnpm --filter @fixnote/mcp build:sea
+      - name: Windows code signing (Azure Artifact Signing)
+        id: winsign
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ENDPOINT: ${{ vars.AZURE_SIGNING_ENDPOINT }}
+          ACCOUNT: ${{ vars.AZURE_SIGNING_ACCOUNT }}
+          PROFILE: ${{ vars.AZURE_SIGNING_PROFILE }}
+        # Tauri runs the sign command for every file it ships (the app, the MCP server, the
+        # installers), so what is inside an installer is signed too, and the update files are made
+        # from the signed installers.
+        run: |
+          if [ -z "$AZURE_TENANT_ID" ] || [ -z "$AZURE_CLIENT_ID" ] || [ -z "$AZURE_CLIENT_SECRET" ] ||
+             [ -z "$ENDPOINT" ] || [ -z "$ACCOUNT" ] || [ -z "$PROFILE" ]; then
+            echo "::notice::no Azure signing set up: the Windows build is not code signed"
+            echo "on=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cargo install trusted-signing-cli --locked
+          node -e '
+            const cmd = `trusted-signing-cli -e ${process.env.ENDPOINT} -a ${process.env.ACCOUNT} -c ${process.env.PROFILE} -d FixNote %1`
+            console.log(JSON.stringify({ bundle: { windows: { signCommand: cmd } } }))
+          ' > "$RUNNER_TEMP/winsign.json"
+          echo "on=1" >> "$GITHUB_OUTPUT"
       - name: Build installers
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           PUBKEY: ${{ vars.TAURI_UPDATER_PUBKEY }}
+          # For the Windows sign command (read by trusted-signing-cli).
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          WINSIGN: ${{ steps.winsign.outputs.on }}
         run: |
           # With the signing key: signed update files, and the public key the app checks them with.
           args=()
@@ -165,7 +201,23 @@ jobs:
           else
             echo "::notice::no update signing key: this build cannot update itself"
           fi
+          if [ -n "$WINSIGN" ]; then args+=(--config "$RUNNER_TEMP/winsign.json"); fi
           pnpm --filter @fixnote/desktop tauri build --bundles ${{ matrix.bundles }} "${args[@]}"
+      - name: Windows signatures are valid
+        if: runner.os == 'Windows' && steps.winsign.outputs.on != ''
+        shell: pwsh
+        run: |
+          # The app and the MCP server as built, and the installers.
+          $files = (Get-ChildItem apps/desktop/src-tauri/target/release/*.exe).FullName `
+            + (Get-ChildItem apps/desktop/src-tauri/target/release/bundle/nsis/*.exe).FullName `
+            + (Get-ChildItem apps/desktop/src-tauri/target/release/bundle/msi/*.msi).FullName
+          $bad = 0
+          foreach ($f in $files) {
+            $sig = Get-AuthenticodeSignature $f
+            Write-Host "$($sig.Status)  $($sig.SignerCertificate.Subject)  $f"
+            if ($sig.Status -ne 'Valid') { $bad++ }
+          }
+          if ($bad) { throw "$bad file(s) are not signed" }
       - name: App checks (MCP server runs as bundled, microphone prompt)
         shell: bash
         run: |

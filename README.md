@@ -313,3 +313,18 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
   Release builds then carry the public key and the release gets `latest.json` plus signed update
   files; apps read it at `https://fixnote.space/download/latest.json`. Builds without the key
   (local ones too) work normally but do not update themselves.
+- Windows installers are code signed with Azure Artifact Signing (no "unknown publisher" or
+  SmartScreen warning once the signature has built reputation). Set it up once in the Azure portal:
+  1. A subscription, then register the resource provider `Microsoft.CodeSigning`.
+  2. Create an Artifact Signing account (note its region endpoint, e.g.
+     `https://weu.codesigning.azure.net`), give yourself the role *Artifact Signing Identity
+     Verifier* on it, run the identity validation (Public), then create a certificate profile
+     (Public Trust) from it.
+  3. Microsoft Entra ID → App registrations → a new app for CI with a client secret; on the signing
+     account give it the role *Artifact Signing Certificate Profile Signer*.
+  4. In GitHub add the secrets `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` and the
+     variables `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT`, `AZURE_SIGNING_PROFILE`.
+
+  The Windows build then signs the app, the MCP server and both installers (Tauri's `signCommand`
+  with `trusted-signing-cli`) and fails if any of them is not validly signed. Without the settings
+  it builds unsigned, as before.
