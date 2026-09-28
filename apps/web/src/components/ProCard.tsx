@@ -30,14 +30,15 @@ const hiddenRecently = () => {
 }
 
 /**
- * Bottom of the sidebar: Pro for someone not signed in (7 days free after signing up) or signed in
- * on Free. Not shown in "only on this device" mode, which chose to keep away from the server.
+ * Bottom of the sidebar: Pro for someone not signed in or signed in on Free, with the free trial
+ * of a first subscription. Not shown in "only on this device" mode, which chose to keep away from the server.
  * Hiding it keeps it away for two weeks.
  */
 export function ProCard() {
   const { t } = useTranslation()
   const phase = useAccount((s) => s.phase)
   const plan = usePlan((s) => s.info?.plan)
+  const trial = usePlan((s) => !!s.info && !s.info.trialUsed && s.info.trialDays > 0)
   const localOnly = useLlm((s) => s.localOnly)
   const openSettings = useUi((s) => s.openSettings)
   const [hidden, setHidden] = useState(hiddenRecently)
@@ -58,7 +59,7 @@ export function ProCard() {
           <ArrowUpRight className="size-3.5 text-muted-foreground" />
         </span>
         <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-          {signedOut ? t('plan.cardBody') : t('plan.cardBodyFree')}
+          {signedOut || trial ? t('plan.cardBody') : t('plan.cardBodyFree')}
         </span>
       </button>
       <Button

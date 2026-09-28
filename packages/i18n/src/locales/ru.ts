@@ -484,7 +484,8 @@ const ru: LocaleResource = {
     free: 'Free',
     pro: 'Pro',
     statusBeta: 'Бета: всё из Pro бесплатно до {{date}}.',
-    statusTrial: 'Пробный период Pro до {{date}}.',
+    statusTrial:
+      'Бесплатный пробный период до {{date}}. В этот день первое списание, отменить можно раньше.',
     statusActive: 'Продлится {{date}}.',
     statusCanceled: 'Pro до {{date}}, потом Free.',
     statusPastDue: 'Последний платёж не прошёл. Обновите карту, чтобы сохранить Pro.',
@@ -497,6 +498,9 @@ const ru: LocaleResource = {
     storage: 'Картинки и файлы',
     storageUsed: '{{used}} из {{limit}}',
     upgrade: 'Перейти на Pro',
+    upgradeTrial: 'Попробовать Pro бесплатно {{days}} дней',
+    trialTerms:
+      'Нужна карта. Первое списание через {{days}} дней, отменить можно в любой момент до этого.',
     soon: 'Оплата скоро появится.',
     manage: 'Управлять подпиской',
     monthly: '$7 в месяц',
@@ -528,6 +532,7 @@ const ru: LocaleResource = {
     syncInPro: 'Синхронизация в Pro',
     devTitle: 'Тариф на тестовом сервере',
     devSpend: 'Израсходовать AI',
+    devResetTrial: 'Снова триал',
   },
   settings: {
     title: 'Настройки',

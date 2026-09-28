@@ -7,6 +7,7 @@ import { refreshPlan, startCheckout, useAccount } from '../../lib/account/accoun
 import {
   type DevPlanMode,
   devPlanMode,
+  resetDevTrial,
   setDevPlanMode,
   spendDevAi,
 } from '../../lib/account/dev-plan'
@@ -109,8 +110,12 @@ export function PlanSection() {
               ? t('plan.statusActive', { date: date(info.periodEnd) })
               : t('plan.statusFree')
   const pro = info.plan === 'pro'
+  // A trial is a subscription too (the card is on file): cancelled in the same place.
   const paying =
-    info.status === 'active' || info.status === 'past_due' || info.status === 'canceled'
+    info.status === 'trialing' ||
+    info.status === 'active' ||
+    info.status === 'past_due' ||
+    info.status === 'canceled'
 
   return (
     <div className="space-y-6">
@@ -150,15 +155,19 @@ export function PlanSection() {
           <ArrowUpRight />
         </Button>
       ) : (
-        <Upgrade />
+        <Upgrade trialDays={info.trialUsed ? 0 : info.trialDays} />
       )}
       {usesDevBackend() ? <DevPlanSwitch /> : null}
     </div>
   )
 }
 
-/** Monthly or yearly: opens Suby's payment page in the browser; Pro turns on when it is paid. */
-function Upgrade() {
+/**
+ * Monthly or yearly: opens Suby's payment page in the browser; Pro turns on when it is paid. The
+ * first subscription starts with a free trial (`trialDays`, 0 when it was used): the card is taken
+ * at checkout and charged when the trial ends.
+ */
+function Upgrade({ trialDays }: { trialDays: number }) {
   const { t } = useTranslation()
   const platform = usePlatform()
   const [busy, setBusy] = useState<'month' | 'year' | null>(null)
@@ -178,7 +187,16 @@ function Upgrade() {
   }
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">{t('plan.upgrade')}</p>
+      <div className="space-y-0.5">
+        <p className="text-sm font-medium">
+          {trialDays ? t('plan.upgradeTrial', { days: trialDays }) : t('plan.upgrade')}
+        </p>
+        {trialDays ? (
+          <p className="max-w-md text-xs text-muted-foreground">
+            {t('plan.trialTerms', { days: trialDays })}
+          </p>
+        ) : null}
+      </div>
       <div className="flex flex-wrap gap-2">
         <Button loading={busy === 'year'} disabled={busy !== null} onClick={() => void buy('year')}>
           {t('plan.yearly')}
@@ -242,6 +260,9 @@ function DevPlanSwitch() {
         ))}
         <Button size="sm" variant="ghost" onClick={() => void apply(spendDevAi)}>
           {t('plan.devSpend')}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => void apply(resetDevTrial)}>
+          {t('plan.devResetTrial')}
         </Button>
       </div>
     </div>

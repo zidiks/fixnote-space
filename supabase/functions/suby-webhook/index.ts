@@ -48,6 +48,7 @@ const store: BillingStore = {
         provider: 'suby',
         provider_customer_id: row.customerId,
         provider_subscription_id: row.subscriptionId,
+        ...(row.trialEndsAt ? { trial_ends_at: row.trialEndsAt } : {}),
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' },

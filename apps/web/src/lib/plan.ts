@@ -14,6 +14,13 @@ export interface PlanInfo {
   betaUntil: number | null
   trialEndsAt: number | null
   periodEnd: number | null
+  /** The account had a paid subscription before: no second free trial. */
+  trialUsed: boolean
+  /**
+   * Days of the free trial a first subscription starts with (the card is taken at checkout); 0 when
+   * the Suby products have none. `plan_config.trial_days` must match the products.
+   */
+  trialDays: number
   ai: { used: number; limit: number; resetsAt: number; today: number; dayLimit: number }
   storage: { used: number; limit: number }
 }
@@ -83,6 +90,8 @@ export function toPlanInfo(raw: Record<string, unknown>): PlanInfo {
     betaUntil: time(raw.beta_until),
     trialEndsAt: time(raw.trial_ends_at),
     periodEnd: time(raw.current_period_end),
+    trialUsed: raw.trial_used === true,
+    trialDays: raw.trial_days == null ? 7 : num(raw.trial_days),
     ai: {
       used: num(ai.used),
       limit: num(ai.limit),

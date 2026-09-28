@@ -8,11 +8,13 @@
 
 import type { Suby, SubySubscription } from '../_shared/suby.ts'
 
-export type PlanStatus = 'active' | 'past_due' | 'canceled'
+export type PlanStatus = 'trialing' | 'active' | 'past_due' | 'canceled'
 
 export interface SubscriptionRow {
   status: PlanStatus
   currentPeriodEnd: string | null
+  /** Set while the subscription is in its free trial (the card is on file, not charged yet). */
+  trialEndsAt?: string | null
   customerId: string | null
   subscriptionId: string
 }
@@ -72,10 +74,16 @@ async function validSignature(secret: string, timestamp: string, body: string, s
 export function planFromSubscription(
   s: SubySubscription,
   nowIso: string,
-): Pick<SubscriptionRow, 'status' | 'currentPeriodEnd'> | null {
+): Pick<SubscriptionRow, 'status' | 'currentPeriodEnd' | 'trialEndsAt'> | null {
   switch (s.status) {
+    case 'TRIALING': {
+      // The trial: Pro until it ends, even when the first charge was cancelled in the meantime.
+      const end = s.trialEndAt ?? s.currentCycleDueAt
+      return s.cancelAtPeriodEnd
+        ? { status: 'canceled', currentPeriodEnd: end }
+        : { status: 'trialing', currentPeriodEnd: end, trialEndsAt: end }
+    }
     case 'ACTIVE':
-    case 'TRIALING':
       // A cancellation that waits for the period end: Pro until then.
       return {
         status: s.cancelAtPeriodEnd ? 'canceled' : 'active',

@@ -479,7 +479,8 @@ const en = {
     free: 'Free',
     pro: 'Pro',
     statusBeta: 'Beta: everything in Pro is free until {{date}}.',
-    statusTrial: 'Pro trial until {{date}}.',
+    statusTrial:
+      'Free trial until {{date}}. The first payment is on that day; cancel before then and nothing is charged.',
     statusActive: 'Renews {{date}}.',
     statusCanceled: 'Pro until {{date}}, then Free.',
     statusPastDue: 'The last payment failed. Update your card to keep Pro.',
@@ -492,6 +493,9 @@ const en = {
     storage: 'Images and files',
     storageUsed: '{{used}} of {{limit}}',
     upgrade: 'Upgrade to Pro',
+    upgradeTrial: 'Try Pro free for {{days}} days',
+    trialTerms:
+      'A card is needed. The first payment is in {{days}} days; cancel any time before then and nothing is charged.',
     soon: 'Payments are coming soon.',
     manage: 'Manage subscription',
     monthly: '$7 / month',
@@ -523,6 +527,7 @@ const en = {
     syncInPro: 'Sync is in Pro',
     devTitle: 'Plan on the test server',
     devSpend: 'Use up AI',
+    devResetTrial: 'Trial again',
   },
   settings: {
     title: 'Settings',

@@ -8,7 +8,10 @@ import { CORS, jsonError, userEmail, userId } from '../_shared/auth.ts'
 import type { Suby } from '../_shared/suby.ts'
 
 export interface BillingEnv {
+  /** Products with the 7-day trial (set on the product in Suby: the card is taken, charged later). */
   products: { month: string | undefined; year: string | undefined }
+  /** The same without a trial, for accounts that already had a subscription (one trial each). */
+  noTrial: { month: string | undefined; year: string | undefined }
   /** Where Suby sends the buyer back to (the web app). */
   returnUrl: string
 }
@@ -19,6 +22,10 @@ export function envFromDeno(): BillingEnv {
       month: Deno.env.get('SUBY_PRODUCT_MONTH'),
       year: Deno.env.get('SUBY_PRODUCT_YEAR'),
     },
+    noTrial: {
+      month: Deno.env.get('SUBY_PRODUCT_MONTH_NO_TRIAL'),
+      year: Deno.env.get('SUBY_PRODUCT_YEAR_NO_TRIAL'),
+    },
     returnUrl: Deno.env.get('BILLING_RETURN_URL') ?? 'https://app.fixnote.space/',
   }
 }
@@ -26,7 +33,13 @@ export function envFromDeno(): BillingEnv {
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { headers: { ...CORS, 'Content-Type': 'application/json' } })
 
-export async function handle(req: Request, env: BillingEnv, suby: Suby | null): Promise<Response> {
+export async function handle(
+  req: Request,
+  env: BillingEnv,
+  suby: Suby | null,
+  /** Whether the account had a subscription before (then it gets no second trial). */
+  hadSubscription: (userId: string) => Promise<boolean>,
+): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (req.method !== 'POST') return jsonError(405, 'Method not allowed')
   const user = userId(req)
@@ -41,7 +54,8 @@ export async function handle(req: Request, env: BillingEnv, suby: Suby | null): 
   }
   const plan = body.plan === 'year' ? 'year' : body.plan === 'month' ? 'month' : null
   if (!plan) return jsonError(400, 'Plan must be "month" or "year"')
-  const productId = env.products[plan]
+  const again = await hadSubscription(user)
+  const productId = (again ? env.noTrial[plan] : undefined) ?? env.products[plan]
   if (!suby || !productId) return jsonError(503, 'Payments are not set up yet')
 
   const back = new URL(env.returnUrl)

@@ -485,7 +485,8 @@ const es: LocaleResource = {
     free: 'Free',
     pro: 'Pro',
     statusBeta: 'Beta: todo lo de Pro es gratis hasta el {{date}}.',
-    statusTrial: 'Prueba de Pro hasta el {{date}}.',
+    statusTrial:
+      'Prueba gratis hasta el {{date}}. Ese día llega el primer cobro; cancela antes y no se cobra nada.',
     statusActive: 'Se renueva el {{date}}.',
     statusCanceled: 'Pro hasta el {{date}}, luego Free.',
     statusPastDue: 'El último pago falló. Actualiza tu tarjeta para mantener Pro.',
@@ -498,6 +499,9 @@ const es: LocaleResource = {
     storage: 'Imágenes y archivos',
     storageUsed: '{{used}} de {{limit}}',
     upgrade: 'Pasar a Pro',
+    upgradeTrial: 'Prueba Pro gratis {{days}} días',
+    trialTerms:
+      'Hace falta una tarjeta. El primer cobro llega en {{days}} días; cancela cuando quieras antes y no se cobra nada.',
     soon: 'Los pagos llegarán pronto.',
     manage: 'Gestionar suscripción',
     monthly: '$7 al mes',
@@ -530,6 +534,7 @@ const es: LocaleResource = {
     syncInPro: 'La sincronización es de Pro',
     devTitle: 'Plan en el servidor de prueba',
     devSpend: 'Agotar la IA',
+    devResetTrial: 'Prueba otra vez',
   },
   settings: {
     title: 'Ajustes',

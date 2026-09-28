@@ -90,6 +90,27 @@ Deno.test('a paid subscription gives the account in its metadata Pro until the p
   })
 })
 
+Deno.test('a subscription in its free trial gives Pro until the trial ends', async () => {
+  const { deps, rows } = setup({
+    status: 'TRIALING',
+    trialEndAt: '2026-10-08T12:00:00Z',
+    currentCycleDueAt: '2026-10-08T12:00:00Z',
+  })
+  const created = {
+    id: 'evt_t',
+    type: 'subscription.created',
+    data: { object: 'subscription', id: 'sub_1' },
+  }
+  assertEquals((await deliver(created, deps)).status, 200)
+  assertEquals(rows.get('user-ann'), {
+    status: 'trialing',
+    currentPeriodEnd: '2026-10-08T12:00:00Z',
+    trialEndsAt: '2026-10-08T12:00:00Z',
+    customerId: 'cus_1',
+    subscriptionId: 'sub_1',
+  })
+})
+
 Deno.test('refuses unsigned, wrongly signed and stale deliveries', async () => {
   const { deps, rows } = setup()
   assertEquals((await deliver(paid, deps, { sig: 'v1=00' })).status, 401)

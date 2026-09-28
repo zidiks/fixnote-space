@@ -10,6 +10,8 @@ export interface SubySubscription {
   customerId: string | null
   status: string
   cancelAtPeriodEnd: boolean
+  /** End of the free trial, while there is one. */
+  trialEndAt?: string | null
   /** When the paid period ends (the next renewal). */
   currentCycleDueAt: string | null
   endedAt: string | null

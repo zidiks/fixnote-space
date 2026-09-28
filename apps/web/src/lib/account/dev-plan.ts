@@ -9,6 +9,8 @@ export type DevPlanMode = 'beta' | 'trial' | 'pro' | 'free'
 interface DevPlanState {
   mode: DevPlanMode
   trialEndsAt: number
+  /** Paid (or started a trial) once: the next checkout has no trial. */
+  subscribed: boolean
   month: string
   tokens: number
   day: string
@@ -25,8 +27,9 @@ const thisMonth = () => today().slice(0, 7)
 
 function load(): DevPlanState {
   const fresh: DevPlanState = {
-    mode: 'trial',
+    mode: 'free',
     trialEndsAt: Date.now() + 7 * DAY,
+    subscribed: false,
     month: thisMonth(),
     tokens: 0,
     day: today(),
@@ -47,7 +50,23 @@ const save = (s: DevPlanState) => localStorage.setItem(KEY, JSON.stringify(s))
 export const devPlanMode = () => load().mode
 
 export function setDevPlanMode(mode: DevPlanMode) {
-  save({ ...load(), mode, trialEndsAt: Date.now() + 7 * DAY })
+  const s = load()
+  save({
+    ...s,
+    mode,
+    trialEndsAt: Date.now() + 7 * DAY,
+    subscribed: mode === 'free' || mode === 'beta' ? s.subscribed : true,
+  })
+}
+
+/** The fake checkout: the first subscription starts with the trial, like Suby's product. */
+export function devCheckout() {
+  setDevPlanMode(load().subscribed ? 'pro' : 'trial')
+}
+
+/** Forget the earlier subscription, to see the trial offer again. */
+export function resetDevTrial() {
+  save({ ...load(), mode: 'free', subscribed: false })
 }
 
 /** Spends the whole month's AI allowance (to see what running out looks like). */
@@ -94,6 +113,8 @@ export function devMyPlan(storageUsed: number): Record<string, unknown> {
     beta_until: s.mode === 'beta' ? '2027-01-01T00:00:00Z' : null,
     trial_ends_at: new Date(s.trialEndsAt).toISOString(),
     current_period_end: s.mode === 'pro' ? new Date(Date.now() + 30 * DAY).toISOString() : null,
+    trial_used: s.subscribed,
+    trial_days: 7,
     ai: aiStatus(s),
     storage: { used: storageUsed, limit: s.mode === 'free' ? 0 : LIMITS.storage },
   }

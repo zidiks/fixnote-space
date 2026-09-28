@@ -22,10 +22,10 @@ import type {
 import {
   devAiRecord,
   devAiRefusal,
+  devCheckout,
   devIsPro,
   devMyPlan,
   devRequirePro,
-  setDevPlanMode,
 } from './dev-plan'
 
 /**
@@ -291,10 +291,10 @@ export const devBackend: AccountBackend = {
   },
   sendCheckCode: async () => undefined,
   checkCode: async (_email, code) => code === '123456',
-  // No payment page on the fake server: paying just turns Pro on.
+  // No payment page on the fake server: "paying" starts the trial, or Pro after one.
   checkout: async () => {
     signedIn()
-    setDevPlanMode('pro')
+    devCheckout()
     return null
   },
   plan: async () => {

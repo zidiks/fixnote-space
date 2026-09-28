@@ -254,7 +254,8 @@ builds.
 
 Free is everything on the device; Pro is what goes through the server: personal sync, FixNote AI,
 sharing notes and folders (people invited join on Free), public links, capture from messengers and
-20 GB of files. A new account gets 7 days of Pro. The server decides (triggers and the storage
+20 GB of files. The first subscription starts with a 7-day free trial that needs a card (Suby
+takes it at checkout and charges when the trial ends), one per account. The server decides (triggers and the storage
 policy in `supabase/migrations/*_plans.sql`); the app only explains (Settings → Plan, the sidebar
 card, "This is part of Pro").
 
@@ -269,17 +270,26 @@ card, "This is part of Pro").
   `subscriptions` (`supabase/functions/suby-webhook`: reads the subscription back from Suby, Pro
   until the paid period ends, taken away on a refund or chargeback). "Manage subscription" opens
   Suby's customer portal (customer.suby.fi) for cancelling and changing the card. Set up once:
-  1. Suby dashboard: two subscription products, "FixNote Pro, monthly" ($7, every month) and
-     "FixNote Pro, yearly" ($60, every year). Note their ids (`pro_…`).
+  1. Suby dashboard → Products → Create: Recurring payments, "FixNote Pro, monthly" ($7 USD,
+     Monthly) and "FixNote Pro, yearly" ($60 USD, Yearly). Leave Access & delivery, the discount,
+     custom fields and the After payment URLs empty: the app sets where the buyer returns. Note
+     their ids (`pro_…`). The 7-day trial is a product setting that neither the create dialog nor
+     the API has: turn it on in the product's settings, or ask Suby support to. Then two more
+     products the same but without a trial, for accounts that already had a subscription
+     (`SUBY_PRODUCT_MONTH_NO_TRIAL`, `SUBY_PRODUCT_YEAR_NO_TRIAL`; without them a returning
+     account gets the trial again). Until the trial is on, set `plan_config.trial_days = 0` so the
+     app does not promise one.
   2. Dashboard → Settings: an API key (start with `sk_sandbox_…` to test, `sk_live_…` for real),
      and a webhook endpoint `https://<project-ref>.supabase.co/functions/v1/suby-webhook` for the
      `payment.*`, `subscription.*` and `dispute.*` events; keep its `whsec_…` secret.
-  3. `pnpm sb secrets set SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_...`
+  3. `pnpm sb secrets set SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_... SUBY_PRODUCT_MONTH_NO_TRIAL=pro_... SUBY_PRODUCT_YEAR_NO_TRIAL=pro_...`
      (optional `BILLING_RETURN_URL`, default `https://app.fixnote.space/`), then `pnpm sb:migrate`
      and `pnpm sb:functions`.
-  Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds.
+  Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds
+  (status "trialing" with a trial, "active" without).
 - Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
-  (beta, trial, pro, free, "use up AI").
+  (beta, trial, pro, free, "use up AI", "trial again"); the fake checkout starts the trial the
+  first time and Pro after that.
 
 ## Supabase
 
