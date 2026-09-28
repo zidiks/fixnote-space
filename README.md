@@ -326,5 +326,5 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
      variables `AZURE_SIGNING_ENDPOINT`, `AZURE_SIGNING_ACCOUNT`, `AZURE_SIGNING_PROFILE`.
 
   The Windows build then signs the app, the MCP server and both installers (Tauri's `signCommand`
-  with `trusted-signing-cli`) and fails if any of them is not validly signed. Without the settings
+  with `artifact-signing-cli`) and fails if any of them is not validly signed. Without the settings
   it builds unsigned, as before.
