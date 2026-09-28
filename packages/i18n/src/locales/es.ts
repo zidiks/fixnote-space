@@ -500,6 +500,12 @@ const es: LocaleResource = {
     upgrade: 'Pasar a Pro',
     soon: 'Los pagos llegarán pronto.',
     manage: 'Gestionar suscripción',
+    monthly: '$7 al mes',
+    yearly: '$60 al año',
+    yearlySave: 'ahorra un 28%',
+    checkoutFailed: 'No se pudo abrir la página de pago. Inténtalo en un minuto.',
+    thanks: '¡Gracias! Pro se activa en un momento.',
+    paymentOpened: 'Termina el pago en el navegador. Pro se activa aquí solo.',
     aiNeedsPro:
       'El asistente integrado es parte de Pro. Puedes usar tu propia clave o un modelo local en Ajustes → IA.',
     aiMonthLimit:

@@ -12,6 +12,23 @@ export const jsonError = (status: number, message: string, extra: Record<string,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   })
 
+function claims(req: Request): { sub?: string; role?: string; email?: string } | null {
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  const payload = token?.split('.')[1]
+  if (!payload) return null
+  try {
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+  } catch {
+    return null
+  }
+}
+
+/** Email of a signed-in user's JWT (verified by the platform, like `userId`). */
+export function userEmail(req: Request): string | null {
+  const c = claims(req)
+  return c?.role === 'authenticated' && c.email ? c.email : null
+}
+
 /** Subject of a signed-in user's JWT, without verifying it (the platform already did). */
 export function userId(req: Request): string | null {
   const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')

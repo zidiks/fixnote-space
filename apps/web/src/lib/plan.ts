@@ -18,6 +18,9 @@ export interface PlanInfo {
   storage: { used: number; limit: number }
 }
 
+/** Suby's self-serve portal: cancel, change the card, receipts (by the account's email). */
+export const SUBY_PORTAL = 'https://customer.suby.fi'
+
 /** What a Free account is shown a "Pro" prompt for. */
 export type ProFeature = 'sync' | 'ai' | 'share' | 'link' | 'integrations' | 'files'
 

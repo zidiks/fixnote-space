@@ -19,7 +19,14 @@ import type {
   ShareRow,
   UserKeysRow,
 } from './backend'
-import { devAiRecord, devAiRefusal, devIsPro, devMyPlan, devRequirePro } from './dev-plan'
+import {
+  devAiRecord,
+  devAiRefusal,
+  devIsPro,
+  devMyPlan,
+  devRequirePro,
+  setDevPlanMode,
+} from './dev-plan'
 
 /**
  * Development-only stand-in for Supabase, enabled with `?dev-backend` in `pnpm dev`. The "server"
@@ -284,6 +291,12 @@ export const devBackend: AccountBackend = {
   },
   sendCheckCode: async () => undefined,
   checkCode: async (_email, code) => code === '123456',
+  // No payment page on the fake server: paying just turns Pro on.
+  checkout: async () => {
+    signedIn()
+    setDevPlanMode('pro')
+    return null
+  },
   plan: async () => {
     const userId = signedIn()
     let used = 0

@@ -72,6 +72,8 @@ export interface AccountBackend {
   checkCode(email: string, code: string): Promise<boolean>
   /** The signed-in account's plan (`my_plan()`), raw; see lib/plan.ts. */
   plan(): Promise<Record<string, unknown>>
+  /** A payment page for Pro (supabase/functions/billing); null when there is none to open. */
+  checkout(plan: 'month' | 'year'): Promise<string | null>
   signOut(): Promise<void>
   getUserKeys(): Promise<UserKeysRow | null>
   createUserKeys(row: UserKeysRow): Promise<void>
@@ -145,6 +147,17 @@ export function supabaseBackend(
       if (!error) return Boolean(data.session)
       if (error.status && error.status < 500) return false
       throw toError(error)
+    },
+    async checkout(plan) {
+      const { data, error } = await client.functions.invoke<{ url?: string }>('billing', {
+        body: { plan },
+      })
+      if (error) {
+        // 503: the payment keys are not on the server yet.
+        const status = (error as { context?: { status?: number } }).context?.status
+        throw status === 503 ? new Error('Payments are not set up yet') : toError(error)
+      }
+      return data?.url ?? null
     },
     async plan() {
       const { data, error } = await client.rpc('my_plan')

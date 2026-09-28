@@ -1,8 +1,9 @@
 import { useTranslation } from '@fixnote/i18n'
 import { Button, cn, Spinner } from '@fixnote/ui'
+import { ArrowUpRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useUi } from '../../app/store'
-import { refreshPlan, useAccount } from '../../lib/account/account'
+import { refreshPlan, startCheckout, useAccount } from '../../lib/account/account'
 import {
   type DevPlanMode,
   devPlanMode,
@@ -10,7 +11,8 @@ import {
   spendDevAi,
 } from '../../lib/account/dev-plan'
 import { usesDevBackend } from '../../lib/account/pick'
-import { usePlan } from '../../lib/plan'
+import { SUBY_PORTAL, usePlan } from '../../lib/plan'
+import { usePlatform } from '../../lib/platform'
 
 /** "3.2 MB", "20 GB" in the UI language. */
 function size(bytes: number, lang: string | undefined): string {
@@ -63,6 +65,7 @@ export function PlanSection() {
   const phase = useAccount((s) => s.phase)
   const info = usePlan((s) => s.info)
   const openSettings = useUi((s) => s.openSettings)
+  const platform = usePlatform()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -141,16 +144,62 @@ export function PlanSection() {
           <li>{t('plan.promptFiles')}</li>
         </ul>
       )}
-      {info.status !== 'beta' ? (
-        <div className="space-y-2">
-          {/* Payments are not connected yet: the button says so instead of doing nothing. */}
-          <Button disabled variant={paying ? 'outline' : 'default'}>
-            {paying ? t('plan.manage') : t('plan.upgrade')}
-          </Button>
-          <p className="text-xs text-muted-foreground">{t('plan.soon')}</p>
-        </div>
-      ) : null}
+      {info.status === 'beta' ? null : paying ? (
+        <Button variant="outline" onClick={() => void platform.openExternal(SUBY_PORTAL)}>
+          {t('plan.manage')}
+          <ArrowUpRight />
+        </Button>
+      ) : (
+        <Upgrade />
+      )}
       {usesDevBackend() ? <DevPlanSwitch /> : null}
+    </div>
+  )
+}
+
+/** Monthly or yearly: opens Suby's payment page in the browser; Pro turns on when it is paid. */
+function Upgrade() {
+  const { t } = useTranslation()
+  const platform = usePlatform()
+  const [busy, setBusy] = useState<'month' | 'year' | null>(null)
+  const [note, setNote] = useState<{ text: string; error: boolean } | null>(null)
+  const buy = async (plan: 'month' | 'year') => {
+    setBusy(plan)
+    setNote(null)
+    try {
+      await startCheckout(plan, (url) => platform.openExternal(url))
+      setNote({ text: t('plan.paymentOpened'), error: false })
+    } catch (err) {
+      const unset = /not set up|503/i.test(err instanceof Error ? err.message : String(err))
+      setNote({ text: unset ? t('plan.soon') : t('plan.checkoutFailed'), error: true })
+    } finally {
+      setBusy(null)
+    }
+  }
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">{t('plan.upgrade')}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button loading={busy === 'year'} disabled={busy !== null} onClick={() => void buy('year')}>
+          {t('plan.yearly')}
+          <span className="rounded-full bg-brand-foreground/20 px-1.5 text-xs">
+            {t('plan.yearlySave')}
+          </span>
+        </Button>
+        <Button
+          variant="outline"
+          loading={busy === 'month'}
+          disabled={busy !== null}
+          onClick={() => void buy('month')}
+        >
+          {t('plan.monthly')}
+        </Button>
+      </div>
+      {note ? (
+        <p className={cn('text-xs', note.error ? 'text-destructive' : 'text-muted-foreground')}>
+          {note.text}
+        </p>
+      ) : null}
     </div>
   )
 }

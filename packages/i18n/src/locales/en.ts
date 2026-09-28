@@ -494,6 +494,12 @@ const en = {
     upgrade: 'Upgrade to Pro',
     soon: 'Payments are coming soon.',
     manage: 'Manage subscription',
+    monthly: '$7 / month',
+    yearly: '$60 / year',
+    yearlySave: 'save 28%',
+    checkoutFailed: 'Could not open the payment page. Try again in a minute.',
+    thanks: 'Thank you! Pro turns on in a moment.',
+    paymentOpened: 'Finish the payment in the browser. Pro turns on here by itself.',
     aiNeedsPro:
       'The built-in assistant is part of Pro. You can use your own key or a local model in Settings → AI.',
     aiMonthLimit:

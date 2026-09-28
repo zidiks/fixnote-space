@@ -99,7 +99,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   capture, files). The server enforces it (`*_plans.sql`: triggers, storage policy, `ai_allowance`
   in `llm-proxy`); the app only explains (`lib/plan.ts`, `PlanSection`, `ProCard`, `withPro`). On
   Free, sync only downloads (`engine.sync({ push: false })`). `MemorySharedServer.isPro` and
-  `lib/account/dev-plan.ts` mirror the rules: change them together with the SQL.
+  `lib/account/dev-plan.ts` mirror the rules: change them together with the SQL. Payments: Suby
+  (`functions/billing` opens the checkout, `functions/suby-webhook` sets `subscriptions` from the
+  subscription Suby reports; `_shared/suby.ts`). The Suby key never leaves the edge functions.
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).

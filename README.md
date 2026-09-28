@@ -264,7 +264,20 @@ card, "This is part of Pro").
   `storage_bytes`).
 - `llm-proxy` charges each answer in tokens (`ai_usage`); past a limit it answers with a code and
   the renewal date, which the app shows next to the offer to use your own key or a local model.
-- Payments (Suby) are not connected yet: `subscriptions` is written only by the server.
+- Payments go through [Suby](https://docs.suby.fi/v3-beta): Settings → Plan opens a Suby checkout
+  for the account's email (`supabase/functions/billing`), and Suby's signed webhooks set
+  `subscriptions` (`supabase/functions/suby-webhook`: reads the subscription back from Suby, Pro
+  until the paid period ends, taken away on a refund or chargeback). "Manage subscription" opens
+  Suby's customer portal (customer.suby.fi) for cancelling and changing the card. Set up once:
+  1. Suby dashboard: two subscription products, "FixNote Pro, monthly" ($7, every month) and
+     "FixNote Pro, yearly" ($60, every year). Note their ids (`pro_…`).
+  2. Dashboard → Settings: an API key (start with `sk_sandbox_…` to test, `sk_live_…` for real),
+     and a webhook endpoint `https://<project-ref>.supabase.co/functions/v1/suby-webhook` for the
+     `payment.*`, `subscription.*` and `dispute.*` events; keep its `whsec_…` secret.
+  3. `pnpm sb secrets set SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_...`
+     (optional `BILLING_RETURN_URL`, default `https://app.fixnote.space/`), then `pnpm sb:migrate`
+     and `pnpm sb:functions`.
+  Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds.
 - Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
   (beta, trial, pro, free, "use up AI").
 

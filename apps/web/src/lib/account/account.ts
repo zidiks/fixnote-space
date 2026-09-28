@@ -455,6 +455,33 @@ export async function refreshPlan(force = false) {
   }
 }
 
+let paymentStartedAt = 0
+
+/**
+ * Opens the payment page for Pro. The plan is then read again whenever the app comes back to the
+ * front (for an hour), so Pro shows up as soon as Suby has told the server.
+ */
+export async function startCheckout(plan: 'month' | 'year', open: (url: string) => Promise<void>) {
+  const url = await backend().checkout(plan)
+  paymentStartedAt = Date.now()
+  if (url) await open(url)
+  await refreshPlan(true)
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', () => {
+    const waiting = Date.now() - paymentStartedAt < 3_600_000
+    if (waiting && usePlan.getState().info?.plan !== 'pro') void refreshPlan(true)
+    else if (waiting) paymentStartedAt = 0
+  })
+}
+
+/** Back from the payment page on the web (`?billing=success`): look for Pro a few times. */
+export function paymentReturned() {
+  paymentStartedAt = Date.now()
+  for (const delay of [1500, 5000, 15000]) setTimeout(() => void refreshPlan(true), delay)
+}
+
 export async function runSync() {
   const e = engine
   if (!e) return
