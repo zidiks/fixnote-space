@@ -71,6 +71,19 @@ describe('SyncEngine', () => {
     expect((await b.repo.search('план')).length).toBe(1)
   })
 
+  it('only downloads when told not to push, and sends the waiting changes later', async () => {
+    const a = await device('a')
+    const b = await device('b')
+    await a.repo.createNote({ content: 'с первого устройства' })
+    await a.engine.sync()
+    await b.repo.createNote({ content: 'со второго, пока без синхронизации' })
+    expect(await b.engine.sync({ push: false })).toMatchObject({ pulled: 1, pushed: 0 })
+    expect(remote.notes.size).toBe(1)
+    expect(await b.engine.pendingCount()).toBe(1)
+    expect(await b.engine.sync()).toMatchObject({ pushed: 1 })
+    expect(remote.notes.size).toBe(2)
+  })
+
   it('is idempotent', async () => {
     const a = await device('a')
     await a.repo.createNote({ content: 'x' })

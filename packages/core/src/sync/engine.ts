@@ -96,12 +96,15 @@ export class SyncEngine {
       opts.conflictHeading ?? ((at) => `Conflict copy · ${new Date(at).toISOString().slice(0, 16)}`)
   }
 
-  /** Runs one full sync. Calls made while one is running join it and then run once more. */
-  sync(): Promise<SyncReport> {
+  /**
+   * Runs one full sync. Calls made while one is running join it and then run once more. With
+   * `push: false` it only downloads (an account without sync keeps getting what is on the server).
+   */
+  sync(opts: { push?: boolean } = {}): Promise<SyncReport> {
     const previous = this.running
     const next = (async () => {
       if (previous) await previous.catch(() => undefined)
-      return this.syncOnce()
+      return this.syncOnce(opts.push ?? true)
     })()
     this.running = next
     void next.finally(() => {
@@ -110,7 +113,7 @@ export class SyncEngine {
     return next
   }
 
-  private async syncOnce(): Promise<SyncReport> {
+  private async syncOnce(push: boolean): Promise<SyncReport> {
     const report: SyncReport = {
       pulled: 0,
       pushed: 0,
@@ -120,8 +123,10 @@ export class SyncEngine {
     }
     await this.pullFolders(report)
     await this.pullNotes(report)
-    await this.pushFolders(report)
-    await this.pushNotes(report)
+    if (push) {
+      await this.pushFolders(report)
+      await this.pushNotes(report)
+    }
     return report
   }
 
