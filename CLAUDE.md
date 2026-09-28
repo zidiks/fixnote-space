@@ -91,6 +91,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   View only means nothing may change: `NotesRepo` throws `ReadOnlyError` for such notes and folders
   (every writer goes through it); only the shared sync writes, with `fromSharing`. The UI hides what
   would change them (`note.readOnly`, `folder.shared === 'view'`).
+- The recovery phrase shows only after a code sent to the account's email (`RecoveryPhrase` in
+  `AccountSection.tsx`, `sendCheckCode`/`checkCode` on the backend; `123456` with `?dev-backend`).
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).

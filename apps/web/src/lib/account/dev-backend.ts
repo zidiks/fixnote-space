@@ -269,6 +269,8 @@ export const devBackend: AccountBackend = {
     save(s)
     return s.session
   },
+  sendCheckCode: async () => undefined,
+  checkCode: async (_email, code) => code === '123456',
   signOut: async () => {
     const s = load()
     s.session = null

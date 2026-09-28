@@ -66,6 +66,10 @@ export interface AccountBackend {
   getSession(): Promise<Session | null>
   sendCode(email: string, lang: string): Promise<void>
   verifyCode(email: string, code: string): Promise<Session>
+  /** A code to the signed-in account's email, to prove it is its owner (before showing the phrase). */
+  sendCheckCode(email: string, lang: string): Promise<void>
+  /** Whether the code from `sendCheckCode` is right; throws when the server cannot be reached. */
+  checkCode(email: string, code: string): Promise<boolean>
   signOut(): Promise<void>
   getUserKeys(): Promise<UserKeysRow | null>
   createUserKeys(row: UserKeysRow): Promise<void>
@@ -125,6 +129,20 @@ export function supabaseBackend(
       const { data, error } = await client.auth.verifyOtp({ email, token: code, type: 'email' })
       if (error || !data.session) throw error ? toError(error) : new Error('No session')
       return session(data.session) as Session
+    },
+    async sendCheckCode(email, lang) {
+      const { error } = await client.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false, data: { lang } },
+      })
+      if (error) throw toError(error)
+    },
+    async checkCode(email, code) {
+      // A right code signs the same account in again, which leaves the session as it was.
+      const { data, error } = await client.auth.verifyOtp({ email, token: code, type: 'email' })
+      if (!error) return Boolean(data.session)
+      if (error.status && error.status < 500) return false
+      throw toError(error)
     },
     async signOut() {
       await client.auth.signOut()

@@ -528,6 +528,9 @@ const en = {
     syncNow: 'Sync now',
     showPhrase: 'Show recovery phrase',
     hidePhrase: 'Hide phrase',
+    phraseCodeSent: 'To show the phrase, enter the code we sent to {{email}}.',
+    showPhraseConfirm: 'Show',
+    checkFailed: 'Could not check the code. Check your connection and try again.',
     signOut: 'Sign out',
     signOutBody: 'Notes stay on this device. Sync stops.',
     status: {

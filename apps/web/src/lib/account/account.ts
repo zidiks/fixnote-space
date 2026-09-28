@@ -240,6 +240,15 @@ export async function verifyCode(code: string) {
   await resolveSession(s)
 }
 
+/** Showing the recovery phrase: a code to the account's email first. */
+export async function sendPhraseCode() {
+  await backend().sendCheckCode(useAccount.getState().email, i18n.resolvedLanguage ?? 'en')
+}
+
+export async function checkPhraseCode(code: string): Promise<boolean> {
+  return backend().checkCode(useAccount.getState().email, code.trim())
+}
+
 export function backToEmail() {
   set({ phase: 'signed-out' })
 }

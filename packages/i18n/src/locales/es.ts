@@ -534,6 +534,9 @@ const es: LocaleResource = {
     syncNow: 'Sincronizar ahora',
     showPhrase: 'Mostrar frase de recuperación',
     hidePhrase: 'Ocultar frase',
+    phraseCodeSent: 'Para ver la frase, escribe el código que enviamos a {{email}}.',
+    showPhraseConfirm: 'Mostrar',
+    checkFailed: 'No se pudo comprobar el código. Revisa la conexión e inténtalo de nuevo.',
     signOut: 'Cerrar sesión',
     signOutBody: 'Las notas se quedan en este dispositivo. La sincronización se detiene.',
     status: {
