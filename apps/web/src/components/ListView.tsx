@@ -4,7 +4,7 @@ import { Folder } from 'lucide-react'
 import { useMemo } from 'react'
 import { type Route, useUi } from '../app/store'
 import { useCreateNote, useFolders } from '../lib/queries'
-import { EmptyState, NoteGrid } from './NoteGrid'
+import { EmptyState, NoteGrid, ViewMenu } from './NoteGrid'
 
 type ListRoute = Extract<Route, { kind: 'folder' }>
 
@@ -30,6 +30,7 @@ export function ListView({ route }: { route: ListRoute }) {
         {count !== undefined ? (
           <span className="text-sm text-muted-foreground">{t('list.count', { count })}</span>
         ) : null}
+        <ViewMenu className="ml-auto self-center" />
       </header>
       <NoteGrid
         filter={filter}

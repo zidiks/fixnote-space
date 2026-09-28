@@ -480,6 +480,20 @@ const es: LocaleResource = {
     restore: 'Restaurar',
     close: 'Cerrar',
   },
+  view: {
+    menu: 'Vista y orden',
+    title: 'Vista',
+    cards: 'Tarjetas',
+    list: 'Lista',
+    compact: 'Compacta',
+    sort: 'Ordenar',
+    allNotes: 'Notas',
+    by: {
+      edited: 'Última edición',
+      created: 'Fecha de creación',
+      title: 'Título',
+    },
+  },
   plan: {
     title: 'Plan',
     free: 'Free',

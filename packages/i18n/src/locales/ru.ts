@@ -479,6 +479,20 @@ const ru: LocaleResource = {
     restore: 'Восстановить',
     close: 'Закрыть',
   },
+  view: {
+    menu: 'Вид и сортировка',
+    title: 'Вид',
+    cards: 'Карточки',
+    list: 'Список',
+    compact: 'Компактно',
+    sort: 'Сортировка',
+    allNotes: 'Заметки',
+    by: {
+      edited: 'По изменению',
+      created: 'По созданию',
+      title: 'По названию',
+    },
+  },
   plan: {
     title: 'Тариф',
     free: 'Free',

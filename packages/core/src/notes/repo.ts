@@ -14,6 +14,7 @@ import {
   type NoteCursor,
   type NoteFilter,
   type NotePage,
+  type NoteSort,
   type NoteSummary,
   type NoteType,
   type SearchHit,
@@ -300,27 +301,35 @@ export class NotesRepo {
     )
   }
 
-  /** Newest first, keyset-paginated so infinite scroll stays stable while notes change. */
+  /**
+   * Keyset-paginated so infinite scroll stays stable while notes change. Newest edit first by
+   * default; `created` puts the newest note first, `title` goes A to Z with untitled notes last.
+   */
   async listNotes(
-    opts: { filter?: NoteFilter; cursor?: NoteCursor | null; limit?: number } = {},
+    opts: { filter?: NoteFilter; sort?: NoteSort; cursor?: NoteCursor | null; limit?: number } = {},
   ): Promise<NotePage> {
     const limit = Math.min(Math.max(opts.limit ?? 30, 1), 200)
+    const sort = opts.sort ?? 'edited'
     const { where, params } = filterSql(opts.filter ?? {})
+    // Untitled notes sort after every title: a key that is never below a real one.
+    const titleKey = `CASE WHEN n.title = '' THEN char(1114111) ELSE lower(n.title) END`
+    const key = sort === 'title' ? titleKey : sort === 'created' ? 'n.created_at' : 'n.edited_at'
+    const [before, order] = sort === 'title' ? ['>', 'ASC'] : ['<', 'DESC']
     if (opts.cursor) {
-      where.push('(n.edited_at < ? OR (n.edited_at = ? AND n.id < ?))')
-      params.push(opts.cursor.updatedAt, opts.cursor.updatedAt, opts.cursor.id)
+      where.push(`(${key} ${before} ? OR (${key} = ? AND n.id ${before} ?))`)
+      params.push(opts.cursor.key, opts.cursor.key, opts.cursor.id)
     }
-    const rows = await this.db.query<NoteRow>(
-      `SELECT ${SUMMARY_COLUMNS}, substr(n.content, 1, ${PREVIEW_CHARS}) AS body
+    const rows = await this.db.query<NoteRow & { sort_key: number | string }>(
+      `SELECT ${SUMMARY_COLUMNS}, substr(n.content, 1, ${PREVIEW_CHARS}) AS body, ${key} AS sort_key
          FROM notes n WHERE ${where.join(' AND ')}
-        ORDER BY n.edited_at DESC, n.id DESC LIMIT ?`,
+        ORDER BY ${key} ${order}, n.id ${order} LIMIT ?`,
       [...params, limit + 1],
     )
     const items = rows.slice(0, limit).map(toSummary)
-    const last = items.at(-1)
+    const last = rows[limit - 1]
     return {
       items,
-      nextCursor: rows.length > limit && last ? { updatedAt: last.updatedAt, id: last.id } : null,
+      nextCursor: rows.length > limit && last ? { key: last.sort_key, id: last.id } : null,
     }
   }
 

@@ -1,4 +1,4 @@
-import type { Note, NoteCursor, NoteFilter, NotesRepo } from '@fixnote/core'
+import type { Note, NoteCursor, NoteFilter, NoteSort, NotesRepo } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import {
   keepPreviousData,
@@ -25,11 +25,11 @@ export const keys = {
 
 const PAGE = 30
 
-export function useNotesInfinite(filter: NoteFilter) {
+export function useNotesInfinite(filter: NoteFilter, sort: NoteSort = 'edited') {
   const repo = useRepo()
   return useInfiniteQuery({
-    queryKey: keys.list(filter),
-    queryFn: ({ pageParam }) => repo.listNotes({ filter, cursor: pageParam, limit: PAGE }),
+    queryKey: [...keys.list(filter), sort],
+    queryFn: ({ pageParam }) => repo.listNotes({ filter, sort, cursor: pageParam, limit: PAGE }),
     initialPageParam: null as NoteCursor | null,
     getNextPageParam: (last) => last.nextCursor,
     placeholderData: keepPreviousData,
@@ -37,12 +37,12 @@ export function useNotesInfinite(filter: NoteFilter) {
 }
 
 /** Pinned notes for a list: all of them, they are few. */
-export function usePinnedNotes(filter: NoteFilter, enabled = true) {
+export function usePinnedNotes(filter: NoteFilter, enabled = true, sort: NoteSort = 'edited') {
   const repo = useRepo()
   return useQuery({
-    queryKey: keys.list({ ...filter, pinned: true }),
+    queryKey: [...keys.list({ ...filter, pinned: true }), sort],
     queryFn: async () =>
-      (await repo.listNotes({ filter: { ...filter, pinned: true }, limit: 200 })).items,
+      (await repo.listNotes({ filter: { ...filter, pinned: true }, sort, limit: 200 })).items,
     enabled,
     placeholderData: keepPreviousData,
   })

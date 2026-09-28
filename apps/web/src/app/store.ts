@@ -1,3 +1,4 @@
+import type { NoteSort } from '@fixnote/core'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -11,6 +12,9 @@ export type Route =
   | { kind: 'note'; id: string }
   /** Tidy suggestions to review. */
   | { kind: 'tidy' }
+
+/** How lists of notes look: cards in a grid, rows with a preview, or one line per note. */
+export type NoteView = 'cards' | 'list' | 'compact'
 
 export type SettingsSection = 'general' | 'account' | 'plan' | 'integrations' | 'ai' | 'data'
 
@@ -33,6 +37,9 @@ interface UiState {
   spotlightOpen: boolean
   settings: SettingsSection | null
   theme: Theme
+  /** Remembered on this device, like the theme. */
+  noteView: NoteView
+  noteSort: NoteSort
   chatDraft: string
   aiRequest: AiRequest | null
   route: Route
@@ -44,6 +51,8 @@ interface UiState {
   setSpotlightOpen: (open: boolean) => void
   openSettings: (section: SettingsSection | null) => void
   setTheme: (theme: Theme) => void
+  setNoteView: (noteView: NoteView) => void
+  setNoteSort: (noteSort: NoteSort) => void
   setChatDraft: (text: string) => void
   requestAi: (request: AiRequest | null) => void
   navigate: (route: Route, opts?: { replace?: boolean }) => void
@@ -64,6 +73,8 @@ export const useUi = create<UiState>()(
       spotlightOpen: false,
       settings: null,
       theme: 'system',
+      noteView: 'cards',
+      noteSort: 'edited',
       chatDraft: '',
       aiRequest: null,
       route: { kind: 'home' },
@@ -76,6 +87,8 @@ export const useUi = create<UiState>()(
       setSpotlightOpen: (spotlightOpen) => set({ spotlightOpen }),
       openSettings: (settings) => set({ settings }),
       setTheme: (theme) => set({ theme }),
+      setNoteView: (noteView) => set({ noteView }),
+      setNoteSort: (noteSort) => set({ noteSort }),
       setChatDraft: (chatDraft) => set({ chatDraft }),
       requestAi: (aiRequest) => set({ aiRequest }),
       navigate: (route, opts) =>
@@ -104,7 +117,12 @@ export const useUi = create<UiState>()(
     }),
     {
       name: 'fixnote.ui',
-      partialize: ({ sidebarOpen, theme }) => ({ sidebarOpen, theme }),
+      partialize: ({ sidebarOpen, theme, noteView, noteSort }) => ({
+        sidebarOpen,
+        theme,
+        noteView,
+        noteSort,
+      }),
     },
   ),
 )

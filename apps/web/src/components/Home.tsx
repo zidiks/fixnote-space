@@ -15,7 +15,7 @@ import { useCounts, useCreateNote, useFolders } from '../lib/queries'
 import { startOfDay } from '../lib/time'
 import { toggleVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
-import { EmptyState, NoteGrid } from './NoteGrid'
+import { EmptyState, NoteGrid, ViewMenu } from './NoteGrid'
 
 type Period = 'any' | 'today' | 'week' | 'month'
 
@@ -203,10 +203,11 @@ export function Home() {
             { value: 'month', label: t('home.filters.month') },
           ]}
         />
+        <ViewMenu className="ml-auto" />
         <Button
           variant="outline"
           size="icon-sm"
-          className="ml-auto rounded-full"
+          className="rounded-full"
           aria-label={t('sidebar.search')}
           onClick={() => setSpotlightOpen(true)}
         >
