@@ -1,7 +1,10 @@
 import {
   type AccountKeys,
   type AttachmentRemote,
+  type AttachmentSource,
   type Attachments,
+  accountSource,
+  anySource,
   attachmentIds,
   cryptoReady,
   deriveKeys,
@@ -465,13 +468,13 @@ let keptFilesFor: string | null = null
  * have, once per session, so every file the notes use stays on the device.
  */
 async function keepFilesHere() {
-  const sync = attachmentSync()
+  const source = attachmentSource()
   const d = deps
-  if (!sync || !d || !session || keptFilesFor === session.userId) return
+  if (!source || !d || !session || keptFilesFor === session.userId) return
   keptFilesFor = session.userId
   try {
     const ids = new Set((await d.repo.allContents()).flatMap(attachmentIds))
-    await d.attachments.keepLocal([...ids], sync)
+    await d.attachments.keepLocal([...ids], source)
   } catch {
     keptFilesFor = null
   }
@@ -555,6 +558,8 @@ export async function runSync() {
         requestSync()
       }
       if (push) await d.attachments.uploadPending(sync.keys, sync.remote)
+      // Files of shared notes go up under the note for every member, on any plan of one's own.
+      if (shared) await shared.pushFiles(d.attachments).catch(() => 0)
     }
     void refreshPlan()
     setSync({
@@ -593,6 +598,16 @@ export function captureBackend() {
 }
 
 /** Keys and storage for attachments, when signed in and unlocked. */
+/**
+ * Where a file this device lacks is fetched from: the account's own copy, else the copy under a
+ * shared note that uses it (sealed with the note key). Undefined when signed out or locked.
+ */
+export function attachmentSource(): AttachmentSource | undefined {
+  const sync = attachmentSync()
+  if (!sync) return undefined
+  return anySource(accountSource(sync.keys, sync.remote), shared?.fileSource())
+}
+
 export function attachmentSync(): { keys: AccountKeys; remote: AttachmentRemote } | undefined {
   const b = deps?.backend
   if (!b || !keys || !session || !engine) return undefined

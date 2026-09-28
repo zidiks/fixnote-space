@@ -3,7 +3,13 @@ import { cryptoReady, deriveKeys } from '../crypto'
 import { prepareDatabase } from '../db/migrate'
 import type { BlobStore, SqlDriver } from '../platform'
 import { createMemoryDriver } from '../testing/memory-driver'
-import { type AttachmentRemote, Attachments, attachmentIdFromUrl, attachmentIds } from './index'
+import {
+  type AttachmentRemote,
+  Attachments,
+  accountSource,
+  attachmentIdFromUrl,
+  attachmentIds,
+} from './index'
 
 function memoryBlobs(): BlobStore & { map: Map<string, Blob> } {
   const map = new Map<string, Blob>()
@@ -71,8 +77,8 @@ describe('Attachments', () => {
     const b = new Attachments(otherDb, otherBlobs)
     expect(await b.load('id1')).toBeNull()
     const [x, y] = await Promise.all([
-      b.load('id1', { keys: keys(), remote }),
-      b.load('id1', { keys: keys(), remote }),
+      b.load('id1', accountSource(keys(), remote)),
+      b.load('id1', accountSource(keys(), remote)),
     ])
     expect(x?.type).toBe('image/png')
     expect(new Uint8Array(await (x as Blob).arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]))
@@ -80,7 +86,7 @@ describe('Attachments', () => {
     expect(await b.info('id1')).toMatchObject({ uploaded: true, size: 3 })
     // Now local: no network needed.
     expect(await b.load('id1')).not.toBeNull()
-    expect(await b.load('missing', { keys: keys(), remote })).toBeNull()
+    expect(await b.load('missing', accountSource(keys(), remote))).toBeNull()
   })
 
   it('keeps a local copy of every file before the server one goes', async () => {
@@ -94,7 +100,7 @@ describe('Attachments', () => {
     const otherDb = await createMemoryDriver()
     await prepareDatabase(otherDb)
     const b = new Attachments(otherDb, memoryBlobs())
-    await b.load('f1', { keys: keys(), remote })
+    await b.load('f1', accountSource(keys(), remote))
     const downloads: string[] = []
     const counting: AttachmentRemote = {
       upload: remote.upload,
@@ -104,7 +110,7 @@ describe('Attachments', () => {
       },
     }
     // f1 is here already, f2 is fetched, gone is no longer on the server.
-    expect(await b.keepLocal(['f1', 'f2', 'gone'], { keys: keys(), remote: counting })).toBe(1)
+    expect(await b.keepLocal(['f1', 'f2', 'gone'], accountSource(keys(), counting))).toBe(1)
     expect(downloads).toEqual(['f2', 'gone'])
     remote.files.clear()
     expect(await b.load('f2')).not.toBeNull()

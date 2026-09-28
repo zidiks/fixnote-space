@@ -90,6 +90,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`shared-notes/layout.ts`, `*_shared_folder_layout.sql`). `MemorySharedServer` in core mirrors
   the SQL rules for tests and `?dev-backend`:
   change both together.
+  Files in shared notes: `shared/<shared id>/<file id>` in Storage, sealed with the note key
+  (`encryptSharedAttachment`), uploaded by `SharedNotes.pushFiles` on each sync and fetched through
+  `attachmentSource()` (own copy first, then `SharedNotes.fileSource()`); they count against the
+  note owner's storage (`*_shared_files.sql`) and storage-cleanup leaves them alone.
   View only means nothing may change: `NotesRepo` throws `ReadOnlyError` for such notes and folders
   (every writer goes through it); only the shared sync writes, with `fromSharing`. The UI hides what
   would change them (`note.readOnly`, `folder.shared === 'view'`).

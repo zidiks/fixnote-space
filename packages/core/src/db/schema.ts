@@ -235,6 +235,15 @@ export const MIGRATIONS: readonly string[] = [
   DROP TABLE tags;
   DELETE FROM tidy_suggestions WHERE kind = 'tag';
   `,
+  // 15: files of shared notes already on the server under the note (sealed with its key), so each
+  // is uploaded once for everyone.
+  `
+  CREATE TABLE shared_files (
+    shared_id     TEXT NOT NULL,
+    attachment_id TEXT NOT NULL,
+    PRIMARY KEY (shared_id, attachment_id)
+  );
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */
