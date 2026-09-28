@@ -121,8 +121,11 @@ export interface AvailableUpdate {
 }
 
 export interface AppUpdater {
-  /** This build's version, and whether it can install updates (release builds are signed). */
-  info(): Promise<{ version: string; enabled: boolean }>
+  /**
+   * This build's version, whether it can install updates (release builds are signed), and whether
+   * a store installs them instead (the Microsoft Store build).
+   */
+  info(): Promise<{ version: string; enabled: boolean; store: boolean }>
   /** The newer version, or null when this one is the latest (or updates are not enabled). */
   check(): Promise<AvailableUpdate | null>
 }

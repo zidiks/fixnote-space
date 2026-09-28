@@ -6,12 +6,13 @@ import { check } from '@tauri-apps/plugin-updater'
 interface Info {
   version: string
   updates: boolean
+  store: boolean
 }
 
 /**
  * Updates from signed GitHub releases (endpoint and public key in tauri.conf.json). Windows runs the
  * new installer in passive mode, which restarts the app; macOS swaps the app bundle, then we
- * restart it.
+ * restart it. The Microsoft Store build never updates itself: the Store does it.
  */
 export function tauriUpdater(): AppUpdater {
   let info: Promise<Info> | null = null
@@ -21,8 +22,8 @@ export function tauriUpdater(): AppUpdater {
   }
   return {
     info: async () => {
-      const { version, updates } = await load()
-      return { version, enabled: updates }
+      const { version, updates, store } = await load()
+      return { version, enabled: updates, store }
     },
     check: async () => {
       if (!(await load()).updates) return null

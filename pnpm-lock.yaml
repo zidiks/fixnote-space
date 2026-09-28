@@ -26,6 +26,9 @@ importers:
       '@tauri-apps/cli':
         specifier: ^2.11.5
         version: 2.11.5
+      sharp:
+        specifier: ^0.35.4
+        version: 0.35.4(@types/node@24.13.6)
 
   apps/landing:
     dependencies:

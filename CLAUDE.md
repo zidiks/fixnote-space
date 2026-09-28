@@ -66,6 +66,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.
   Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
   placeholder otherwise).
+- Microsoft Store build: the same exe packed as MSIX by CI (`apps/desktop/msix`). When packaged
+  (`store::packaged()` in Rust, `store` in `app_info`) the app never updates itself and MCP clients
+  get the `fixnote-mcp` alias path instead of the exe next to the app. Folders the app shares with
+  other programs must be listed in the manifest's `ExcludedDirectories`, or Windows virtualizes them.
 - Repeating tasks live in the task line (`- [ ] Call mom 🔁 weekly:mon`, rules in
   `packages/core/src/notes/recurrence.ts`); a new daily note gets the tasks due that day
   (`getOrCreateDaily`), and a changed rule reaches existing later days via `applyRecurrence`.

@@ -225,6 +225,7 @@ const en = {
     title: 'Updates',
     version: 'Version {{version}}',
     devBuild: 'development build, no automatic updates',
+    store: 'updates from the Microsoft Store',
     auto: 'Check for updates automatically',
     check: 'Check for updates',
     checking: 'Checking…',

@@ -227,6 +227,7 @@ const ru: LocaleResource = {
     title: 'Обновления',
     version: 'Версия {{version}}',
     devBuild: 'сборка для разработки, без автообновления',
+    store: 'обновления из Microsoft Store',
     auto: 'Проверять обновления автоматически',
     check: 'Проверить обновления',
     checking: 'Проверяю…',

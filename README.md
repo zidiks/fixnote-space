@@ -328,3 +328,23 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
   The Windows build then signs the app, the MCP server and both installers (Tauri's `signCommand`
   with `artifact-signing-cli`) and fails if any of them is not validly signed. Without the settings
   it builds unsigned, as before.
+- Microsoft Store: the Windows job also packs the app into an MSIX (`apps/desktop/msix`:
+  `AppxManifest.xml`, `build.ps1`, images from `pnpm --filter @fixnote/desktop icons`), installs it
+  on the runner and checks that the MCP server answers through its `fixnote-mcp` alias. The
+  `fixnote-microsoft-store` artifact has `FixNote-Store-x64.msix` (upload this one in Partner
+  Center; the Store signs it) and a test copy signed with a throwaway certificate. Set up once:
+  1. Partner Center → Apps and games → New product → MSIX or PWA app, reserve the name FixNote.
+  2. Product management → Product identity: copy `Package/Identity/Name`,
+     `Package/Identity/Publisher` and `Package/Properties/PublisherDisplayName` into the GitHub
+     variables `MSSTORE_IDENTITY_NAME`, `MSSTORE_PUBLISHER`, `MSSTORE_PUBLISHER_DISPLAY_NAME`
+     (without them the package gets a test identity the Store does not accept).
+  3. In the submission, the privacy policy is `https://fixnote.space/privacy/`; the restricted
+     capabilities need a note for certification: `runFullTrust` (a desktop app: local database,
+     OS credential store, its own MCP server) and `unvirtualizedResources` (the app's data folders
+     are shared with its MCP server and the installer version, and connecting Claude Desktop edits
+     `%APPDATA%\Claude\claude_desktop_config.json`).
+
+  The Store version never updates itself (Settings shows "updates from the Microsoft Store"): each
+  release, run the release, then upload the new `.msix` in a new submission. To try the test copy:
+  `Import-Certificate FixNote-Store-test.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople`
+  (admin PowerShell), then open `FixNote-Store-x64-test.msix`.

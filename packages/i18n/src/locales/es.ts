@@ -227,6 +227,7 @@ const es: LocaleResource = {
     title: 'Actualizaciones',
     version: 'Versión {{version}}',
     devBuild: 'versión de desarrollo, sin actualizaciones automáticas',
+    store: 'actualizaciones desde Microsoft Store',
     auto: 'Buscar actualizaciones automáticamente',
     check: 'Buscar actualizaciones',
     checking: 'Buscando…',
