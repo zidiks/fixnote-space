@@ -16,7 +16,6 @@ for (const [name, size] of [
   ['Square44x44Logo', 44],
   ['Square71x71Logo', 71],
   ['Square150x150Logo', 150],
-  ['Square310x310Logo', 310],
 ]) {
   files[`${name}.png`] = size
   files[`${name}.scale-200.png`] = size * 2
