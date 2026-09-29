@@ -2,6 +2,7 @@ import { secretToPhrase } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
+  ConfirmDialog,
   cn,
   Dialog,
   DialogContent,
@@ -19,7 +20,6 @@ import {
   checkPhraseCode,
   currentSecret,
   finishNewAccount,
-  forgetPreviousAccount,
   phraseSaved,
   runSync,
   sendCode,
@@ -27,6 +27,7 @@ import {
   signInAsOwner,
   signOut,
   startPairing,
+  unbindDevice,
   unlockWithPhrase,
   unsyncedLocalChanges,
   useAccount,
@@ -538,7 +539,7 @@ function LeaveDialog({
   }, [open])
   return (
     <Dialog open={open} onOpenChange={(o) => running === null && onOpenChange(o)}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md space-y-3">
         <DialogTitle className="text-lg font-semibold">{title}</DialogTitle>
         <DialogDescription className="text-sm">{body}</DialogDescription>
         {unsynced === null ? (
@@ -573,21 +574,23 @@ function LeaveDialog({
   )
 }
 
-/** This device holds another account's notes: go to that account, or remove them from here. */
-function WrongAccount({ ownerEmail }: { ownerEmail: string }) {
+/**
+ * The device is bound to an account (signed out of it, or another account tried to sign in): sign
+ * in to that account, or unbind the device to use another one.
+ */
+function BoundDevice({ ownerEmail, other }: { ownerEmail: string; other: boolean }) {
   const { t } = useTranslation()
   const { busy, error, run } = useBusy()
-  const [forget, setForget] = useState(false)
+  const [unbind, setUnbind] = useState(false)
   return (
     <div className="space-y-4">
       <Heading
-        title={t('account.wrongAccountTitle')}
-        body={t('account.wrongAccountBody', { email: ownerEmail })}
+        title={t('account.boundTitle', { email: ownerEmail })}
+        body={other ? t('account.boundOther') : t('account.boundSignedOut')}
       />
       <div className="flex flex-wrap gap-2">
         <Button
           loading={busy}
-          disabled={!ownerEmail}
           onClick={() =>
             void run(
               () => signInAsOwner(),
@@ -595,29 +598,29 @@ function WrongAccount({ ownerEmail }: { ownerEmail: string }) {
             )
           }
         >
-          {t('account.signInAs', { email: ownerEmail })}
+          {other ? t('account.signInAs', { email: ownerEmail }) : t('account.signIn')}
         </Button>
         <Button
           variant="outline"
           className="text-destructive hover:text-destructive"
           disabled={busy}
-          onClick={() => setForget(true)}
+          onClick={() => setUnbind(true)}
         >
-          {t('account.forgetOther')}
+          {t('account.unbind')}
         </Button>
       </div>
       <ErrorText>{error}</ErrorText>
       <LeaveDialog
-        open={forget}
-        onOpenChange={setForget}
-        title={t('account.forgetOtherTitle', { email: ownerEmail })}
-        body={t('account.forgetOtherBody', { email: ownerEmail })}
+        open={unbind}
+        onOpenChange={setUnbind}
+        title={t('account.unbindTitle')}
+        body={t('account.unbindBody')}
         actions={[
           {
-            label: t('account.forgetOtherConfirm'),
+            label: t('account.unbindConfirm'),
             destructive: true,
             variant: 'outline',
-            run: forgetPreviousAccount,
+            run: unbindDevice,
           },
         ]}
       />
@@ -675,20 +678,14 @@ function Ready() {
         <LogOut />
         {t('account.signOut')}
       </Button>
-      <LeaveDialog
+      <ConfirmDialog
         open={confirmOut}
         onOpenChange={setConfirmOut}
         title={t('account.signOutTitle')}
-        body={t('account.signOutChoice')}
-        actions={[
-          {
-            label: t('account.signOutForget'),
-            variant: 'outline',
-            destructive: true,
-            run: () => signOut({ forget: true }),
-          },
-          { label: t('account.signOut'), run: () => signOut() },
-        ]}
+        description={t('account.signOutBody')}
+        confirmLabel={t('account.signOut')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={() => void signOut()}
       />
     </div>
   )
@@ -704,7 +701,7 @@ export function AccountSection() {
     case 'loading':
       return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
     case 'signed-out':
-      return <SignIn />
+      return ownerEmail ? <BoundDevice ownerEmail={ownerEmail} other={false} /> : <SignIn />
     case 'code-sent':
       return <EnterCode />
     case 'new-account':
@@ -714,7 +711,7 @@ export function AccountSection() {
     case 'needs-phrase':
       return <Unlock />
     case 'wrong-account':
-      return <WrongAccount ownerEmail={ownerEmail} />
+      return <BoundDevice ownerEmail={ownerEmail} other />
     case 'ready':
       return <Ready />
   }

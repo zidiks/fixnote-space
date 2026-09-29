@@ -53,6 +53,10 @@ export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error' | 'free'
 interface AccountState {
   phase: Phase
   email: string
+  /**
+   * The account this device's notes belong to, signed in or not ('' when the device is not bound
+   * to any). Another account can sign in only after the device is unbound (`unbindDevice`).
+   */
   ownerEmail: string
   /** Only while creating an account: the secret behind the phrase on screen. */
   pendingSecret: Uint8Array | null
@@ -169,10 +173,15 @@ export async function initAccount(d: Deps) {
   try {
     const s = await d.backend.getSession()
     if (s) await resolveSession(s)
-    else set({ phase: 'signed-out' })
+    else set({ phase: 'signed-out', ownerEmail: await boundEmail() })
   } catch {
-    set({ phase: 'signed-out' })
+    set({ phase: 'signed-out', ownerEmail: await boundEmail().catch(() => '') })
   }
+}
+
+/** The email of the account this device is bound to, or ''. */
+async function boundEmail(): Promise<string> {
+  return (await kvGet(OWNER)) ? ((await kvGet(OWNER_EMAIL)) ?? '') : ''
 }
 
 /** After sign-in (or on start with a stored session): decide which step the user is at. */
@@ -213,6 +222,7 @@ async function becomeReady(k: AccountKeys) {
   if (session) {
     await kvSet(OWNER, session.userId)
     await kvSet(OWNER_EMAIL, session.email)
+    set({ ownerEmail: session.email })
   }
   engine = new SyncEngine(need().db, backend().remote, k, { conflictHeading })
   shared = session
@@ -407,31 +417,26 @@ export async function unsyncedLocalChanges(): Promise<number> {
   return unsyncedChanges(need().db)
 }
 
-/** Removes the notes on this device (the account keeps them) and starts the app over. */
-async function forgetDevice() {
+/**
+ * Unbinds the device from its account: the notes leave this device (the account keeps them,
+ * encrypted), and any account can sign in afterwards. The app starts over.
+ */
+export async function unbindDevice() {
   await forgetLocalNotes(need().db, need().blobs)
   await kvDelete(OWNER)
   await kvDelete(OWNER_EMAIL)
   location.reload()
 }
 
-/**
- * The device holds another account's notes: sign out of this one and send a code to the account
- * the notes belong to.
- */
+/** Sends a sign-in code to the account the device is bound to (signing out another one first). */
 export async function signInAsOwner() {
   const owner = useAccount.getState().ownerEmail
-  await signOut()
+  if (useAccount.getState().phase === 'wrong-account') await signOut()
   if (owner) await sendCode(owner)
 }
 
-/** The device holds another account's notes: remove them here and go on with this account. */
-export async function forgetPreviousAccount() {
-  await forgetDevice()
-}
-
-/** Signs out; with `forget`, the notes leave this device too (they stay in the account). */
-export async function signOut(opts: { forget?: boolean } = {}) {
+/** Signs out. The notes stay on this device, which stays bound to the account. */
+export async function signOut() {
   cancelPairing()
   stopWatching?.()
   stopWatching = null
@@ -452,8 +457,8 @@ export async function signOut(opts: { forget?: boolean } = {}) {
     pendingSecret: null,
     sync: { status: 'idle', lastSyncedAt: null, error: null, pending: 0 },
     invites: [],
+    ownerEmail: await boundEmail(),
   })
-  if (opts.forget) await forgetDevice()
 }
 
 /** The unlocked account's recovery secret, for "show recovery phrase". */
@@ -526,6 +531,13 @@ let paymentStartedAt = 0
  * Opens the payment page for Pro. The plan is then read again whenever the app comes back to the
  * front (for an hour), so Pro shows up as soon as Suby has told the server.
  */
+/** Starts the free trial; Pro is on right away, and this device starts sending its notes. */
+export async function startTrial() {
+  await backend().startTrial()
+  await refreshPlan(true)
+  void runSync()
+}
+
 export async function startCheckout(plan: 'month' | 'year', open: (url: string) => Promise<void>) {
   const url = await backend().checkout(plan)
   paymentStartedAt = Date.now()

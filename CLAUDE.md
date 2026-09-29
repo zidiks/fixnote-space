@@ -97,11 +97,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   View only means nothing may change: `NotesRepo` throws `ReadOnlyError` for such notes and folders
   (every writer goes through it); only the shared sync writes, with `fromSharing`. The UI hides what
   would change them (`note.readOnly`, `folder.shared === 'view'`).
-- A device's notes belong to one account (`account.owner` in kv). Signing out asks whether to keep
-  them or remove them (`forgetLocalNotes` in core: notes and everything made from them, device
-  settings stay); another account signing in gets "sign in as the owner" or "remove their notes
-  and continue", both warning about changes not on the server yet (`unsyncedChanges`). Anything
-  new stored per account must be removed there too.
+- A device's notes belong to one account (`account.owner` in kv, `ownerEmail` in the account
+  store). Signing out keeps them and the binding (offline use goes on); another account can sign in
+  only after "Unbind device" (`unbindDevice` → `forgetLocalNotes` in core: notes and everything
+  made from them, device settings stay), which warns about changes not synced yet
+  (`unsyncedChanges`). Anything new stored per account must be removed there too.
 - The recovery phrase shows only after a code sent to the account's email (`RecoveryPhrase` in
   `AccountSection.tsx`, `sendCheckCode`/`checkCode` on the backend; `123456` with `?dev-backend`).
 - Plans: Free = on the device, Pro = through our server (sync push, FixNote AI, sharing, links,
@@ -112,8 +112,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`functions/billing` opens the checkout, `functions/suby-webhook` sets `subscriptions` from the
   subscription Suby reports; `_shared/suby.ts`). The Suby key never leaves the edge functions.
   The beta is only a label (`my_plan().beta`); nothing depends on it (`*_beta_label.sql`).
-  The trial is given at sign-up without a card (`*_open_trial.sql`: none for
-  `disposable_domains`, 1 GB of files). Files of accounts that never paid leave the server
+  The trial is the account's choice, no card (`begin_trial()` in `*_trial_on_request.sql`; the
+  `Paywall` offer once after sign-in, the Pro card, Settings → Plan); none for `disposable_domains`,
+  1 GB of files. Files of accounts that never paid leave the server
   `free_files_days` after Pro ended (`functions/storage-cleanup`, pg_cron); before that the app
   keeps a local copy (`Attachments.keepLocal`). Never delete anything of an account that paid.
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the

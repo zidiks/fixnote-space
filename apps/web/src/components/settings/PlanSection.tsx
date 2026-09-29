@@ -8,13 +8,14 @@ import {
   type DevPlanMode,
   devPlanMode,
   endDevTrialSoon,
-  forgetDevPayments,
+  resetDevAccount,
   setDevPlanMode,
   spendDevAi,
 } from '../../lib/account/dev-plan'
 import { usesDevBackend } from '../../lib/account/pick'
 import { SUBY_PORTAL, usePlan } from '../../lib/plan'
 import { usePlatform } from '../../lib/platform'
+import { TrialButton } from '../ProCard'
 
 /** "3.2 MB", "20 GB" in the UI language. */
 function size(bytes: number, lang: string | undefined): string {
@@ -152,6 +153,13 @@ export function PlanSection() {
           })}
         </p>
       ) : null}
+      {info.plan === 'free' && info.trialAvailable ? (
+        <div className="max-w-md space-y-2 rounded-lg border p-4">
+          <p className="text-sm font-medium">{t('plan.paywallTitle')}</p>
+          <p className="text-sm text-muted-foreground">{t('plan.paywallBody')}</p>
+          <TrialButton label={t('plan.tryFreeDays')} />
+        </div>
+      ) : null}
       {paying ? (
         <Button variant="outline" onClick={() => void platform.openExternal(SUBY_PORTAL)}>
           {t('plan.manage')}
@@ -260,8 +268,8 @@ function DevPlanSwitch() {
         <Button size="sm" variant="ghost" onClick={() => void apply(endDevTrialSoon)}>
           {t('plan.devTrialEnding')}
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => void apply(forgetDevPayments)}>
-          {t('plan.devNeverPaid')}
+        <Button size="sm" variant="ghost" onClick={() => void apply(resetDevAccount)}>
+          {t('plan.devNewAccount')}
         </Button>
       </div>
     </div>

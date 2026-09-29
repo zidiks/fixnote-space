@@ -92,7 +92,7 @@ export function Spotlight() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-      <DialogContent aria-describedby={undefined}>
+      <DialogContent aria-describedby={undefined} className="p-0">
         <DialogTitle className="sr-only">{t('sidebar.search')}</DialogTitle>
         <Command shouldFilter={false} loop className="flex max-h-[min(70vh,520px)] flex-col">
           <div className="flex items-center gap-3 border-b px-4">

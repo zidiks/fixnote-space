@@ -27,7 +27,7 @@ export function SettingsDialog() {
     <Dialog open={section !== null} onOpenChange={(o) => !o && open(null)}>
       <DialogContent
         aria-describedby={undefined}
-        className="top-[12%] flex h-[min(560px,76vh)] max-w-3xl"
+        className="top-[12%] flex h-[min(560px,76vh)] max-w-3xl p-0"
       >
         <nav className="flex w-44 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2 sm:w-60">
           <DialogTitle className="px-2.5 pt-1.5 pb-3 text-sm font-semibold">
