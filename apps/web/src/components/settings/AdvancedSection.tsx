@@ -1,5 +1,6 @@
 import {
   type ModelInfo,
+  OCR_MODEL,
   type Platform,
   SEARCH_MODEL,
   SPEECH_MODELS,
@@ -13,10 +14,11 @@ import { toast } from 'sonner'
 import { fileSize } from '../../lib/attachments'
 import { usePlatform } from '../../lib/platform'
 
-type Kind = 'search' | SpeechModelKey
+type Kind = 'search' | 'ocr' | SpeechModelKey
 
 const ROWS: { kind: Kind; model: ModelInfo }[] = [
   { kind: 'search', model: SEARCH_MODEL },
+  { kind: 'ocr', model: OCR_MODEL },
   ...(Object.keys(SPEECH_MODELS) as SpeechModelKey[]).map((kind) => ({
     kind,
     model: SPEECH_MODELS[kind],
@@ -30,6 +32,10 @@ async function download(platform: Platform, kind: Kind, onProgress: (p: number) 
     await embedder.ready(onProgress)
     return
   }
+  if (kind === 'ocr') {
+    await (await platform.ocr?.())?.ready(onProgress)
+    return
+  }
   const transcriber = await platform.transcriber()
   transcriber.setModel?.(SPEECH_MODELS[kind].id)
   await transcriber.ready(onProgress)
@@ -37,6 +43,7 @@ async function download(platform: Platform, kind: Kind, onProgress: (p: number) 
 
 async function unload(platform: Platform, kind: Kind) {
   if (kind === 'search') (await platform.embedder()).unload?.()
+  else if (kind === 'ocr') (await platform.ocr?.())?.unload?.()
   else {
     const transcriber = await platform.transcriber()
     if (transcriber.modelId === SPEECH_MODELS[kind].id) transcriber.unload?.()
@@ -75,7 +82,7 @@ function ModelsSection() {
     setBusy({ kind, progress: null })
     try {
       await download(platform, kind, (p) => setBusy({ kind, progress: p }))
-      if (kind !== 'search') setSpeech(SPEECH_MODELS[kind].id)
+      if (kind !== 'search' && kind !== 'ocr') setSpeech(SPEECH_MODELS[kind].id)
     } catch (err) {
       toast(t('models.failed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
@@ -136,7 +143,16 @@ function ModelsSection() {
     )
   }
 
-  const search = ROWS[0]
+  const single = (kind: 'search' | 'ocr', model: ModelInfo) => (
+    <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5">
+      <span className="min-w-0 flex-1 basis-48 space-y-0.5">
+        <span className="block text-sm font-medium">{t(`models.${kind}`)}</span>
+        <span className="block text-sm text-muted-foreground">{t(`models.${kind}Body`)}</span>
+      </span>
+      {row(kind, model)}
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
@@ -144,15 +160,10 @@ function ModelsSection() {
         <p className="max-w-md text-sm text-muted-foreground">{t('models.body')}</p>
       </div>
 
-      {search ? (
-        <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5">
-          <span className="min-w-0 flex-1 basis-48 space-y-0.5">
-            <span className="block text-sm font-medium">{t('models.search')}</span>
-            <span className="block text-sm text-muted-foreground">{t('models.searchBody')}</span>
-          </span>
-          {row(search.kind, search.model)}
-        </div>
-      ) : null}
+      <div className="space-y-2">
+        {single('search', SEARCH_MODEL)}
+        {platform.ocr ? single('ocr', OCR_MODEL) : null}
+      </div>
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">{t('models.speech')}</h4>

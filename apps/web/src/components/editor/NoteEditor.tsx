@@ -27,6 +27,7 @@ import {
   List,
   ListChecks,
   Repeat,
+  ScanText,
   Scissors,
   Sparkles,
   Strikethrough,
@@ -64,6 +65,7 @@ export interface NoteEditorHandle {
 
 import { AiRangeExtension } from './ai-range'
 import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
+import { ImageTextDialog } from './ImageTextDialog'
 import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
@@ -114,6 +116,7 @@ function EditorMenu({
   onInsertImage,
   onRepeat,
   onRemove,
+  onImageText,
   readOnly,
 }: {
   editor: Editor
@@ -125,6 +128,8 @@ function EditorMenu({
   onRepeat?: () => void
   /** Set when the menu was opened on an attached file or an image. */
   onRemove?: { label: string; run: () => void }
+  /** Set when the menu was opened on an image: shows the text in it. */
+  onImageText?: () => void
 }) {
   const { t } = useTranslation()
   // Subscribed, so the menu reflects the selection and marks at the moment it opens.
@@ -267,6 +272,9 @@ function EditorMenu({
       items.unshift({ icon: Repeat, label: t('repeat.menu'), hint: '', run: onRepeat }, 'sep')
     if (onRemove) items.unshift({ icon: Trash2, hint: '', ...onRemove }, 'sep')
   }
+  // Reading the text changes nothing: offered in notes shared to view too.
+  if (onImageText)
+    items.unshift({ icon: ScanText, label: t('ocr.menu'), hint: '', run: onImageText }, 'sep')
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
@@ -395,6 +403,8 @@ export function NoteEditor({
   const [menuTask, setMenuTask] = useState<TaskTarget | null>(null)
   /** The attached file or image right-clicked, as the range that removes it. */
   const [menuAttachment, setMenuAttachment] = useState<AttachmentRange | null>(null)
+  /** The image whose text is shown (its attachment id). */
+  const [imageText, setImageText] = useState<string | null>(null)
   const [repeatTask, setRepeatTask] = useState<(TaskTarget & { rule: Recurrence | null }) | null>(
     null,
   )
@@ -814,6 +824,16 @@ export function NoteEditor({
                   }
                 : undefined
             }
+            onImageText={
+              menuAttachment?.kind === 'image' && platform.ocr
+                ? () => {
+                    const src = editor.state.doc.nodeAt(menuAttachment.from)?.attrs.src
+                    const id = typeof src === 'string' ? attachmentIdFromUrl(src) : null
+                    // After the menu has closed, so the dialog gets focus.
+                    if (id) setTimeout(() => setImageText(id), 0)
+                  }
+                : undefined
+            }
             onRepeat={
               menuTask
                 ? () => {
@@ -827,6 +847,7 @@ export function NoteEditor({
         ) : null}
       </ContextMenu>
       {editor && live ? <LiveCarets editor={editor} awareness={live.session.awareness} /> : null}
+      {imageText ? <ImageTextDialog id={imageText} onClose={() => setImageText(null)} /> : null}
       {editor && repeatTask && note.dailyDate ? (
         <RepeatDialog
           date={note.dailyDate}

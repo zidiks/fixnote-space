@@ -1,3 +1,4 @@
+import { ImageTexts } from '../attachments/image-text'
 import { transliterate } from '../notes/translit'
 import type { SqlDriver } from '../platform'
 import { chunkNote } from './chunk'
@@ -132,6 +133,9 @@ async function scopeNoteIds(db: SqlDriver, scope: ChatScope): Promise<Set<string
   return new Set(rows.map((r) => r.id))
 }
 
+/** The passage made of a note's image text (OCR) comes after its own passages. */
+const IMAGE_ORD = 10_000
+
 const RRF_K = 60
 const DAY = 86_400_000
 
@@ -233,6 +237,20 @@ export async function retrieve(
         .map((c) => ({ c, hits: stems.filter((s) => c.text.toLowerCase().includes(s)).length }))
         .sort((a, b) => b.hits - a.hits)[0]
       if (best) add(id, best.c.ord, best.c.text, rank++, 'keyword')
+    }
+    // Text read from the notes' images (OCR) answers too: a photo of a receipt, a page, a board.
+    const pictured = (await new ImageTexts(db).matchNotes(match, { limit: 20 })).filter(
+      (m) => !allowed || allowed.has(m.noteId),
+    )
+    await loadNotes(pictured.map((m) => m.noteId))
+    for (const [i, m] of pictured.entries()) {
+      add(
+        m.noteId,
+        IMAGE_ORD,
+        `Text in an image of this note:\n${m.text.slice(0, 800)}`,
+        i,
+        'keyword',
+      )
     }
   }
 

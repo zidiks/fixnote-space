@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AuditLog } from '../ai/audit'
+import { ImageTexts } from '../attachments/image-text'
 import { prepareDatabase } from '../db/migrate'
 import { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
@@ -63,5 +64,16 @@ describe('NoteTools for the assistant', () => {
         expect(spec.parameters.properties[key]).toBeDefined()
       }
     }
+  })
+})
+
+describe('NoteTools and images', () => {
+  it('shows the text read from an image with the note', async () => {
+    await db.execute(
+      "INSERT INTO attachments (id, mime, size, created_at) VALUES ('rcpt', 'image/jpeg', 50000, 1)",
+    )
+    const n = await repo.createNote({ content: '# Lunch\n\n![](attachment:rcpt)' })
+    await new ImageTexts(db).set('rcpt', 'Cafe Leto\nTotal 570')
+    expect(await tools.get(n.id)).toContain('text in it: Cafe Leto / Total 570')
   })
 })

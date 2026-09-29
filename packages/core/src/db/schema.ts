@@ -253,6 +253,30 @@ export const MIGRATIONS: readonly string[] = [
   `
   ALTER TABLE chat_messages ADD COLUMN actions TEXT;
   `,
+  // 18: text read from images on this device (OCR), searchable with the notes that show them.
+  // Each device reads its own copies; an empty text means the image has none (not tried again).
+  `
+  CREATE TABLE image_text (
+    attachment_id TEXT PRIMARY KEY,
+    text          TEXT NOT NULL,
+    created_at    INTEGER NOT NULL
+  );
+  CREATE VIRTUAL TABLE image_text_fts USING fts5(
+    text,
+    content = 'image_text', content_rowid = 'rowid',
+    tokenize = 'unicode61 remove_diacritics 2'
+  );
+  CREATE TRIGGER image_text_insert AFTER INSERT ON image_text BEGIN
+    INSERT INTO image_text_fts(rowid, text) VALUES (new.rowid, new.text);
+  END;
+  CREATE TRIGGER image_text_delete AFTER DELETE ON image_text BEGIN
+    INSERT INTO image_text_fts(image_text_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+  END;
+  CREATE TRIGGER image_text_update AFTER UPDATE OF text ON image_text BEGIN
+    INSERT INTO image_text_fts(image_text_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+    INSERT INTO image_text_fts(rowid, text) VALUES (new.rowid, new.text);
+  END;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

@@ -69,6 +69,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   stores files, holds keys and edits MCP client configs. Every on-device model is listed in
   `packages/core/src/models.ts` (Settings → Advanced shows size, download, remove); the speech model
   the person picked is kept by the Whisper client (`setModel`).
+- Text in images (OCR, on the device, Free): Tesseract via tesseract.js (`platform-web/src/ocr`; its
+  language data is fetched into Cache Storage and handed over through tesseract.js's own idb cache,
+  never downloaded by it). Read in the background (`lib/ocr.ts`) into `image_text` (+ FTS), which
+  note search, the assistant's retrieval and `get_note` include; right-click an image → "Text from
+  image". Local and derived: not synced, forgotten with the notes.
 - Every AI change to a note goes through `AuditLog` (`packages/core/src/ai/audit.ts`), so it shows
   in Settings → AI and can be undone. LLM calls go through `llm()` in
   `apps/web/src/lib/assistant/llm.ts` (FixNote AI, the user's key, or Ollama). In local-only mode
