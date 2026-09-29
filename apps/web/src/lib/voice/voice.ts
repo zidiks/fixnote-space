@@ -48,7 +48,7 @@ type Sink = (dictation: Dictation) => void
 const PEAKS = 36
 
 /** Loudness samples taken while recording, squeezed into `PEAKS` bars. */
-function toPeaks(levels: number[]): number[] {
+export function toPeaks(levels: number[]): number[] {
   if (!levels.length) return []
   const out: number[] = []
   for (let i = 0; i < PEAKS; i++) {

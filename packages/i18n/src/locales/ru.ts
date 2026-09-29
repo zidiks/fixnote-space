@@ -619,6 +619,17 @@ const ru: LocaleResource = {
     copy: 'Копировать',
     copied: 'Текст скопирован',
   },
+  talk: {
+    start: 'Голосовой разговор',
+    starting: 'Включаю микрофон…',
+    listening: 'Слушаю',
+    hearing: 'Слышу вас',
+    transcribing: 'Распознаю…',
+    thinking: 'Думаю…',
+    speaking: 'Отвечаю',
+    interrupt: 'Перебить',
+    end: 'Закончить разговор',
+  },
   agent: {
     today: 'сегодня',
     compacting: 'Сокращаю историю разговора…',

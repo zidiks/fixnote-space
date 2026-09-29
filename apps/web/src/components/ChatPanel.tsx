@@ -16,6 +16,7 @@ import {
 } from '@fixnote/ui'
 import {
   ArrowUp,
+  AudioLines,
   Check,
   ChevronDown,
   FileText,
@@ -41,10 +42,12 @@ import {
 import { useLlm } from '../lib/assistant/llm'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote } from '../lib/queries'
+import { startTalk, stopTalk, useTalk } from '../lib/voice/conversation'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { AgentActivity, AgentConfirm, AnswerChanges, ContextRing } from './chat/AgentParts'
 import { AnswerText } from './chat/AnswerText'
+import { TalkPanel } from './chat/TalkPanel'
 import { VoiceMessage } from './chat/VoiceMessage'
 import { VOICE_KEYS } from './VoiceBar'
 import { WindowControls } from './WindowControls'
@@ -281,6 +284,7 @@ export function ChatPanel() {
   const busy = status === 'thinking' || status === 'answering'
   const last = messages.at(-1)
   const voice = useVoice((s) => s.status)
+  const talking = useTalk((s) => s.phase !== 'off')
 
   // A question asked by voice goes out right away, as a voice message: the recording stays on
   // this device, the assistant answers what was heard.
@@ -307,6 +311,9 @@ export function ChatPanel() {
     void enableSemantic()
     input.current?.focus()
   }, [])
+
+  // Closing the assistant ends a spoken conversation.
+  useEffect(() => stopTalk, [])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run to follow new messages and streamed text
   useEffect(() => {
@@ -448,8 +455,10 @@ export function ChatPanel() {
               </DropdownMenu>
               <ContextRing />
             </div>
+            {talking ? <TalkPanel /> : null}
             <div
               data-voice-target="chat"
+              hidden={talking}
               className="flex items-end gap-1.5 rounded-xl border bg-card p-1.5 focus-within:ring-2 focus-within:ring-ring/30"
             >
               <textarea
@@ -462,6 +471,17 @@ export function ChatPanel() {
                 aria-label={t('chat.placeholder')}
                 className="max-h-40 flex-1 resize-none bg-transparent px-1.5 py-1 text-sm outline-none placeholder:text-muted-foreground"
               />
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                className="rounded-lg"
+                onClick={() => void startTalk(() => scopeRef.current)}
+                aria-label={t('talk.start')}
+                title={t('talk.start')}
+                disabled={voice !== 'idle'}
+              >
+                <AudioLines />
+              </Button>
               <Button
                 size="icon-xs"
                 variant="ghost"

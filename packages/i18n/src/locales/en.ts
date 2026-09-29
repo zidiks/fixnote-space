@@ -614,6 +614,17 @@ const en = {
     copy: 'Copy',
     copied: 'Text copied',
   },
+  talk: {
+    start: 'Voice conversation',
+    starting: 'Getting the microphone ready…',
+    listening: 'Listening',
+    hearing: 'Hearing you',
+    transcribing: 'Transcribing…',
+    thinking: 'Thinking…',
+    speaking: 'Answering',
+    interrupt: 'Interrupt',
+    end: 'End conversation',
+  },
   agent: {
     today: 'today',
     compacting: 'Shortening the conversation…',

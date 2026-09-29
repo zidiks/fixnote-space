@@ -621,6 +621,17 @@ const es: LocaleResource = {
     copy: 'Copiar',
     copied: 'Texto copiado',
   },
+  talk: {
+    start: 'Conversación por voz',
+    starting: 'Preparando el micrófono…',
+    listening: 'Escuchando',
+    hearing: 'Te escucho',
+    transcribing: 'Transcribiendo…',
+    thinking: 'Pensando…',
+    speaking: 'Respondiendo',
+    interrupt: 'Interrumpir',
+    end: 'Terminar la conversación',
+  },
   agent: {
     today: 'hoy',
     compacting: 'Resumiendo la conversación…',

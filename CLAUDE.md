@@ -69,6 +69,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   stores files, holds keys and edits MCP client configs. Every on-device model is listed in
   `packages/core/src/models.ts` (Settings → Advanced shows size, download, remove); the speech model
   the person picked is kept by the Whisper client (`setModel`).
+- Spoken conversation with the assistant (the button left of the mic in the chat,
+  `lib/voice/conversation.ts`): an open mic with a loudness VAD (`vad.ts`, `live-mic.ts`), Whisper on
+  the device, `ask()` as a voice message, and the answer read aloud by the system's speech synthesis
+  (`speech.ts`) sentence by sentence as it streams, in the language the person spoke; a filler phrase
+  when the answer is slow, yes/no aloud for changes that ask. The mic pauses while the app speaks.
 - Text in images (OCR, on the device, Free): Tesseract via tesseract.js (`platform-web/src/ocr`; its
   language data is fetched into Cache Storage and handed over through tesseract.js's own idb cache,
   never downloaded by it). Read in the background (`lib/ocr.ts`) into `image_text` (+ FTS), which
