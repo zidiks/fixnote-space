@@ -303,9 +303,10 @@ export function ChatPanel() {
           .then(() =>
             ask(d.text, scopeRef.current, {
               voice: { key, durationMs: d.durationMs, peaks: d.peaks },
+              language: d.language,
             }),
           )
-          .catch(() => ask(d.text, scopeRef.current))
+          .catch(() => ask(d.text, scopeRef.current, { language: d.language }))
       }),
     [platform],
   )

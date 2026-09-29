@@ -304,7 +304,8 @@ function askUser(request: ConfirmRequest, signal: AbortSignal): Promise<ConfirmA
 export async function ask(
   question: string,
   scope: ChatScope,
-  opts: { voice?: VoiceClip } = {},
+  /** `language`: the one a voice message was spoken in. */
+  opts: { voice?: VoiceClip; language?: string } = {},
 ): Promise<'ok' | LlmUnavailable> {
   const repo = chat
   const d = deps
@@ -378,6 +379,8 @@ export async function ask(
       scope,
       history: turns,
       summary,
+      language: (opts.language ?? i18n.language).slice(0, 2),
+      spoken: Boolean(opts.voice),
     })
     text = await runAgent(
       {

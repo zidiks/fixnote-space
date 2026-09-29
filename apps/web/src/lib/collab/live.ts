@@ -10,8 +10,12 @@ export interface LiveEditing {
   sharedId: string
   /** A viewer: sees others' edits, cannot edit. */
   readOnly: boolean
-  /** Stores the document (with the Markdown the editor wrote for it) and asks sync to send it. */
-  persist(markdown: string): Promise<void>
+  /**
+   * Stores the document and the Markdown the editor shows for it (into the note too), and asks
+   * sync to send it. An edit made to the note outside the editor meanwhile (MCP, Telegram) comes
+   * into the document. `taken`: the editor already shows the note's text (the assistant's change).
+   */
+  persist(markdown: string, opts?: { taken?: boolean }): Promise<void>
   /**
    * Takes in the stored document after sync brought the server's copy. A viewer cannot ask the
    * room for what it missed (it may not send), so this is how it catches up; for editors it is a
@@ -69,8 +73,9 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     user,
     sharedId,
     readOnly,
-    persist: async (markdown) => {
-      await ctx.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(doc), markdown)
+    persist: async (markdown, opts) => {
+      const outside = await ctx.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(doc), markdown, opts)
+      if (outside) Y.applyUpdate(doc, outside, 'stored')
       requestSync()
     },
     refresh: async () => {

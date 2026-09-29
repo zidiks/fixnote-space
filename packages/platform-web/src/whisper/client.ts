@@ -129,6 +129,7 @@ export function createWhisperTranscriber(): Transcriber {
           audio: samples,
           ...(opts?.language ? { language: opts.language } : {}),
           ...(opts?.languages ? { languages: opts.languages } : {}),
+          ...(opts?.prefer ? { prefer: opts.prefer } : {}),
         },
         [samples.buffer],
       )

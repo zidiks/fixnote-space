@@ -6,6 +6,32 @@ export const DEFAULT_LANGUAGES = ['en', 'ru', 'es']
 const SAMPLE_RATE = 16_000
 /** Whisper hears 30 s at a time; longer recordings are transcribed in chunks. */
 const WINDOW_S = 30
+/** How sure detection must be to take another language than the preferred one. */
+const OVERRIDE = 0.8
+
+/**
+ * The language among the candidates, from the decoder's scores of their language tokens. Short or
+ * quiet phrases are often misheard as English (and then "translated"), so the preferred language
+ * (the app's, or the one spoken last) stays unless another one is clearly more likely.
+ */
+export function pickLanguage(scores: Record<string, number>, prefer?: string): string | undefined {
+  const codes = Object.keys(scores)
+  if (!codes.length) return prefer
+  const max = Math.max(...codes.map((c) => scores[c] ?? -Infinity))
+  const weights = codes.map((c) => Math.exp((scores[c] ?? -Infinity) - max))
+  const sum = weights.reduce((a, b) => a + b, 0)
+  let best = codes[0] as string
+  let p = 0
+  codes.forEach((c, i) => {
+    const q = (weights[i] ?? 0) / sum
+    if (q > p) {
+      p = q
+      best = c
+    }
+  })
+  if (prefer && prefer in scores && best !== prefer && p < OVERRIDE) return prefer
+  return best
+}
 
 /**
  * transformers.js does not detect the language (it quietly takes English, which turned Russian
@@ -18,6 +44,7 @@ export async function transcribe(
   audio: Float32Array,
   fixed: string | undefined,
   candidates: string[],
+  prefer?: string,
 ): Promise<{ text: string; language: string }> {
   const model = asr.model as unknown as {
     generation_config: {
@@ -50,16 +77,12 @@ export async function transcribe(
     const vocab = logits.dims.at(-1) ?? 0
     const data = logits.data as Float32Array
     const row = data.subarray(data.length - vocab)
-    let best = -Infinity
+    const scores: Record<string, number> = {}
     for (const code of candidates.length ? candidates : DEFAULT_LANGUAGES) {
       const id = config.lang_to_id[`<|${code}|>`]
-      if (id === undefined) continue
-      const score = row[id] ?? -Infinity
-      if (score > best) {
-        best = score
-        language = code
-      }
+      if (id !== undefined && row[id] !== undefined) scores[code] = row[id]
     }
+    language = pickLanguage(scores, prefer)
     language ??= 'en'
   }
   if (audio.length > head.length) {

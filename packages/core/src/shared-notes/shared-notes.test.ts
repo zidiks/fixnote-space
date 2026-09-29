@@ -46,7 +46,6 @@ async function typeInEditor(d: Device, sharedId: string, edit: (t: Y.Text) => vo
   edit(y.getText('t'))
   const markdown = y.getText('t').toString()
   await d.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(y), markdown)
-  await d.repo.updateContent(doc?.noteId as string, markdown)
 }
 
 let server: MemorySharedServer
@@ -235,6 +234,37 @@ describe('SharedNotes', () => {
     await bob.shared.sync()
     await ann.shared.sync()
     expect(await content(ann, note.id)).toBe('List\n- milk\n- bread')
+
+    // While the note is open: the next save of the editor takes such an edit in, with the typing.
+    const open = new Y.Doc()
+    Y.applyUpdate(open, (await bob.shared.doc(id))?.state as Uint8Array)
+    await bob.repo.updateContent(bobNote, 'List\n- milk\n- bread\n- eggs')
+    open.getText('t').insert(0, 'My ')
+    const taken = await bob.shared.saveDoc(
+      id,
+      Y.encodeStateAsUpdate(open),
+      'My List\n- milk\n- bread',
+    )
+    Y.applyUpdate(open, taken as Uint8Array)
+    expect(open.getText('t').toString()).toBe('My List\n- milk\n- bread\n- eggs')
+    expect(await content(bob, bobNote)).toBe('My List\n- milk\n- bread\n- eggs')
+    // Taken once: the next save has nothing to take in, and sync adds nothing twice.
+    expect(
+      await bob.shared.saveDoc(id, Y.encodeStateAsUpdate(open), open.getText('t').toString()),
+    ).toBeNull()
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect(await content(ann, note.id)).toBe('My List\n- milk\n- bread\n- eggs')
+
+    // The assistant's change is typed into the open editor: nothing to take in, nothing doubled.
+    await bob.repo.updateContent(bobNote, 'My List\n- milk\n- bread\n- eggs\n- tea')
+    open.getText('t').insert(open.getText('t').length, '\n- tea')
+    const text = open.getText('t').toString()
+    expect(
+      await bob.shared.saveDoc(id, Y.encodeStateAsUpdate(open), text, { taken: true }),
+    ).toBeNull()
+    await bob.shared.sync()
+    expect(await content(bob, bobNote)).toBe('My List\n- milk\n- bread\n- eggs\n- tea')
   })
 
   it('a viewer gets edits but cannot change the note', async () => {

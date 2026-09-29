@@ -45,7 +45,7 @@ const speaker = new Speaker()
 /** Changes when the conversation stops or is interrupted: late work from before then is dropped. */
 let generation = 0
 /** The language the person spoke last (the answer is read in it). */
-let lang = i18n.language || 'en'
+let lang = (i18n.language || 'en').slice(0, 2)
 /** Waiting for a spoken yes or no to a change the assistant asks about. */
 let confirming: { tries: number } | null = null
 
@@ -60,6 +60,7 @@ export async function startTalk(scope: () => ChatScope): Promise<void> {
   if (useTalk.getState().phase !== 'off') return
   scopeOf = scope
   generation++
+  lang = (i18n.language || 'en').slice(0, 2)
   set({ phase: 'starting', download: null, level: 0 })
   try {
     transcriber = await platform.transcriber()
@@ -115,7 +116,8 @@ async function heard(phrase: Phrase, gen: number) {
   set({ phase: 'transcribing' })
   let text = ''
   try {
-    const result = await transcriber.transcribe(phrase.audio)
+    // The language spoken last stays unless a phrase is clearly in another one.
+    const result = await transcriber.transcribe(phrase.audio, { prefer: lang })
     text = result.text.trim()
     if (text && !confirming) lang = result.language || lang
   } catch {
@@ -146,7 +148,11 @@ async function heard(phrase: Phrase, gen: number) {
     .then(() => ({ key, durationMs: phrase.durationMs, peaks: toPeaks(phrase.levels) }))
     .catch(() => undefined)
   const before = new Set(useAssistant.getState().messages.map((m) => m.id))
-  await answerAloud(gen, before, ask(text, scopeOf(), voice ? { voice } : {}))
+  await answerAloud(
+    gen,
+    before,
+    ask(text, scopeOf(), voice ? { voice, language: lang } : { language: lang }),
+  )
 }
 
 /** Reads the answer aloud as it streams, and the assistant's questions; then listens again. */

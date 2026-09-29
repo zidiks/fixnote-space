@@ -102,6 +102,7 @@ self.onmessage = async (event: MessageEvent<WhisperRequest>) => {
       req.audio,
       req.language,
       req.languages ?? DEFAULT_LANGUAGES,
+      req.prefer,
     )
     self.postMessage({
       kind: 'result',

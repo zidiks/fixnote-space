@@ -106,7 +106,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   share, invite, save with version + CRDT merge, sync), live editing in `packages/core/src/collab`
   (`CollabSession`) over private Realtime channels `shared:<id>` (`backend.collab`; BroadcastChannel
   with `?dev-backend`). A shared note is a normal `notes` row with `shared_id` (Markdown for search,
-  cards, AI) plus `shared_docs` (Yjs state; `projected` detects edits made outside the editor). Shared
+  cards, AI) plus `shared_docs` (Yjs state; `projected` detects edits made outside the editor; the
+  editor saves document and Markdown together with `saveDoc`, which takes such edits in). Shared
   notes never go through the personal sync. Markdown ⇄ Yjs via `lib/shared/projector.ts`.
   Invitations must be accepted (`accepted` column, the bell in `Notifications.tsx`) and expire after
   `INVITE_DAYS`; role changes reach an open note through `onSharedSync`. Others' carets: `LiveCarets`

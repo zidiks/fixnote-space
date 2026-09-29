@@ -158,7 +158,9 @@ export async function stopVoice() {
   try {
     const audio = await rec.stop()
     const transcriber = await d.transcriber()
-    const { text, language } = await transcriber.transcribe(audio)
+    const { text, language } = await transcriber.transcribe(audio, {
+      prefer: i18n.language.slice(0, 2),
+    })
     set({ status: 'idle', download: null })
     try {
       localStorage.setItem(USED_KEY, '1')

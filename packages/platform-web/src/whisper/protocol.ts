@@ -7,6 +7,7 @@ export type WhisperRequest =
       audio: Float32Array
       language?: string
       languages?: string[]
+      prefer?: string
     }
 
 /** Request without the id the client assigns. */
@@ -18,6 +19,7 @@ export type WhisperBody =
       audio: Float32Array
       language?: string
       languages?: string[]
+      prefer?: string
     }
 
 export type WhisperResponse =
