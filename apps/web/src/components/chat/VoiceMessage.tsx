@@ -4,6 +4,7 @@ import { cn } from '@fixnote/ui'
 import { Pause, Play } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { usePlatform } from '../../lib/platform'
+import { typedAudio } from '../../lib/voice/audio-type'
 
 const clock = (ms: number) => {
   const s = Math.max(0, Math.round(ms / 1000))
@@ -40,7 +41,7 @@ export function VoiceMessage({ voice, transcript }: { voice: VoiceClip; transcri
         setMissing(true)
         return
       }
-      a = new Audio(URL.createObjectURL(blob))
+      a = new Audio(URL.createObjectURL(await typedAudio(blob)))
       a.ontimeupdate = () => setAt((a?.currentTime ?? 0) * 1000)
       a.onended = () => {
         setPlaying(false)

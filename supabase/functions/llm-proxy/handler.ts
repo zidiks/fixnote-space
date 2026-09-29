@@ -6,6 +6,10 @@
  * provider reports when the answer ends (an estimate when the reader stops early). The assistant
  * may pass tools (function calling); a request that only brings tool results back is a step of the
  * same question and does not count as a new request.
+ *
+ * `level`: "medium" (default) is the fast model without reasoning; "hard" is the larger model
+ * thinking first (Settings → AI), its tokens weighed by `hardWeight` since they cost that much
+ * more. A thinking model's `reasoning_content` goes back to it with its tool calls.
  */
 
 import { CORS, jsonError, rateLimiter, userId } from '../_shared/auth.ts'
@@ -15,6 +19,10 @@ export interface ProxyEnv {
   baseUrl: string
   model: string
   maxTokens: number
+  /** The model that thinks first ("hard"), its output cap (reasoning included) and its weight. */
+  hardModel: string
+  maxTokensHard: number
+  hardWeight: number
   perMinute: number
 }
 
@@ -51,8 +59,12 @@ export function envFromDeno(): ProxyEnv {
   return {
     apiKey: Deno.env.get('DEEPSEEK_API_KEY'),
     baseUrl: Deno.env.get('LLM_BASE_URL') ?? 'https://api.deepseek.com',
-    model: Deno.env.get('LLM_MODEL') ?? 'deepseek-chat',
+    // deepseek-chat and deepseek-reasoner were retired on 2026-07-24.
+    model: Deno.env.get('LLM_MODEL') ?? 'deepseek-flash',
     maxTokens: Number(Deno.env.get('LLM_MAX_TOKENS') ?? 2048),
+    hardModel: Deno.env.get('LLM_MODEL_HARD') ?? 'deepseek-v4-pro',
+    maxTokensHard: Number(Deno.env.get('LLM_MAX_TOKENS_HARD') ?? 16384),
+    hardWeight: Number(Deno.env.get('LLM_HARD_WEIGHT') ?? 4),
     perMinute: Number(Deno.env.get('LLM_REQUESTS_PER_MINUTE') ?? 20),
   }
 }
@@ -70,11 +82,12 @@ interface Incoming {
   tools?: unknown
   temperature?: unknown
   max_tokens?: unknown
+  level?: unknown
 }
 
 type Message =
   | { role: 'system' | 'user'; content: string }
-  | { role: 'assistant'; content: string | null; tool_calls?: Call[] }
+  | { role: 'assistant'; content: string | null; tool_calls?: Call[]; reasoning_content?: string }
   | { role: 'tool'; tool_call_id: string; content: string }
 
 interface Call {
@@ -112,7 +125,14 @@ function messages(v: unknown): Message[] | null {
       if (m.tool_calls.length > MAX_CALLS) return null
       const calls = m.tool_calls.map(call)
       if (calls.some((c) => !c) || (content !== null && typeof content !== 'string')) return null
-      out.push({ role, content: content ?? null, tool_calls: calls as Call[] })
+      out.push({
+        role,
+        content: content ?? null,
+        tool_calls: calls as Call[],
+        ...(typeof m.reasoning_content === 'string'
+          ? { reasoning_content: m.reasoning_content }
+          : {}),
+      })
     } else if (role === 'assistant' && typeof content === 'string') {
       out.push({ role, content })
     } else if (
@@ -181,22 +201,34 @@ export async function handle(
     return json(status, message, { code: reason, resetsAt: allowance.resets_at ?? null })
   }
 
+  const hard = body.level === 'hard'
+  const asked = typeof body.max_tokens === 'number' ? body.max_tokens : hard ? 8192 : 1024
   const upstream = await fetch(`${env.baseUrl.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.apiKey}` },
     body: JSON.stringify({
-      model: env.model,
       messages: sent,
       ...(toolList ? { tools: toolList } : {}),
       stream: true,
       // The last chunk then carries the tokens used, which the allowance is charged with.
       stream_options: { include_usage: true },
-      temperature:
-        typeof body.temperature === 'number' ? Math.min(Math.max(body.temperature, 0), 1.5) : 0.3,
-      max_tokens: Math.min(
-        typeof body.max_tokens === 'number' ? body.max_tokens : 1024,
-        env.maxTokens,
-      ),
+      ...(hard
+        ? {
+            // Thinking takes no temperature; its reasoning counts in max_tokens.
+            model: env.hardModel,
+            thinking: { type: 'enabled' },
+            reasoning_effort: 'high',
+            max_tokens: Math.min(asked, env.maxTokensHard),
+          }
+        : {
+            model: env.model,
+            thinking: { type: 'disabled' },
+            temperature:
+              typeof body.temperature === 'number'
+                ? Math.min(Math.max(body.temperature, 0), 1.5)
+                : 0.3,
+            max_tokens: Math.min(asked, env.maxTokens),
+          }),
     }),
     signal: req.signal,
   })
@@ -215,7 +247,9 @@ export async function handle(
   }
 
   return new Response(
-    metered(upstream.body, raw.length, (tokens) => meter.record(user, tokens, step ? 0 : 1)),
+    metered(upstream.body, raw.length, (tokens) =>
+      meter.record(user, Math.ceil(tokens * (hard ? env.hardWeight : 1)), step ? 0 : 1),
+    ),
     {
       status: 200,
       headers: {

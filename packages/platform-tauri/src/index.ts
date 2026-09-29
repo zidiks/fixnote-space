@@ -65,6 +65,7 @@ export function createTauriPlatform(): Platform {
     kind: 'desktop',
     chrome,
     ...(chrome === 'custom' ? { window: windowControls() } : {}),
+    shown: () => void invoke('window_ready').catch(() => undefined),
     capabilities: {
       localTranscription: true,
       localOnlyMode: true,

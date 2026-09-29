@@ -298,34 +298,42 @@ export class NoteTools {
     return `Attached ${name} (${fileSize(bytes.length)}) to "${title(note)}".`
   }
 
-  async search(query: string, limit = 8): Promise<string> {
+  /** Full-text search, in one folder (and its subfolders) when `folder` is given. */
+  async search(query: string, limit = 8, folder?: string): Promise<string> {
     await this.need('read')
     const reach = await this.reach()
+    const within = folder?.trim() ? this.folderRef(reach, folder) : null
     // Ask for more when only part of the notes is visible, then keep the visible ones.
     let hits = await retrieve(
       this.db,
       null,
       query,
-      { kind: 'all' },
+      within ? { kind: 'folder', id: within.id, name: within.name } : { kind: 'all' },
       { limit: reach.folderIds ? 60 : limit },
     )
-    if (reach.folderIds && hits.length) {
-      const ids = [...new Set(hits.map((h) => h.noteId))]
-      const rows = await this.db.query<{ id: string; folder_id: string | null }>(
-        `SELECT id, folder_id FROM notes WHERE id IN (${ids.map(() => '?').join(',')})`,
-        ids,
-      )
-      const folderOf = new Map(rows.map((r) => [r.id, r.folder_id]))
+    const ids = [...new Set(hits.map((h) => h.noteId))]
+    const rows = ids.length
+      ? await this.db.query<{ id: string; folder_id: string | null }>(
+          `SELECT id, folder_id FROM notes WHERE id IN (${ids.map(() => '?').join(',')})`,
+          ids,
+        )
+      : []
+    const folderOf = new Map(rows.map((r) => [r.id, r.folder_id]))
+    if (reach.folderIds) {
       hits = hits.filter((h) =>
         this.sees(reach, { id: h.noteId, folderId: folderOf.get(h.noteId) ?? null }),
       )
     }
     hits = hits.slice(0, limit)
-    if (!hits.length) return `No notes match "${query}".`
+    if (!hits.length) {
+      return within
+        ? `No notes in "${this.folderPath(reach, within.id)}" match "${query}".`
+        : `No notes match "${query}".`
+    }
     return hits
       .map(
         (h, i) =>
-          `${i + 1}. ${title(h)} (id: ${h.noteId}, edited ${iso(h.updatedAt)})\n${h.text
+          `${i + 1}. ${title(h)} (id: ${h.noteId}, in ${this.folderPath(reach, folderOf.get(h.noteId) ?? null)}, edited ${iso(h.updatedAt)})\n${h.text
             .split('\n')
             .map((l) => `   ${l}`)
             .join('\n')}`,
@@ -339,17 +347,24 @@ export class NoteTools {
     return this.describe(reach, await this.visibleNote(reach, id))
   }
 
-  async recent(limit = 10): Promise<string> {
+  /** Notes, last edited first: all of them, or those of one folder (and its subfolders). */
+  async recent(limit = 10, folder?: string): Promise<string> {
     await this.need('read')
     const reach = await this.reach()
+    const within = folder?.trim() ? this.folderRef(reach, folder) : null
     const want = Math.min(Math.max(limit, 1), 50)
-    const page = await this.repo.listNotes({ limit: reach.folderIds ? 200 : want })
+    const page = await this.repo.listNotes({
+      limit: reach.folderIds ? 200 : want,
+      ...(within ? { filter: { folderId: within.id } } : {}),
+    })
     const items = page.items.filter((n) => this.sees(reach, n)).slice(0, want)
-    if (!items.length) return 'No notes yet.'
+    if (!items.length) {
+      return within ? `No notes in "${this.folderPath(reach, within.id)}".` : 'No notes yet.'
+    }
     return items
       .map(
         (n) =>
-          `- ${title(n)} (id: ${n.id}, edited ${iso(n.updatedAt)})${n.excerpt ? `\n  ${n.excerpt}` : ''}`,
+          `- ${title(n)} (id: ${n.id}, in ${this.folderPath(reach, n.folderId)}, edited ${iso(n.updatedAt)})${n.excerpt ? `\n  ${n.excerpt}` : ''}`,
       )
       .join('\n')
   }

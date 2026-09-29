@@ -373,6 +373,9 @@ export async function ask(
       scope,
       { extraKeywords },
     )
+    // "Think harder" (Settings → AI) is for FixNote AI; other models are what the person chose.
+    const { settings, level } = useLlm.getState()
+    const hard = settings.kind === 'fixnote' && level === 'hard'
     const messages = buildAgentMessages({
       question: question.trim(),
       fragments,
@@ -381,10 +384,13 @@ export async function ask(
       summary,
       language: (opts.language ?? i18n.language).slice(0, 2),
       spoken: Boolean(opts.voice),
+      // The folders at a glance, so "what is in Work" needs no guessing.
+      folders: await tools.folders().catch(() => ''),
+      historyAsText: hard,
     })
     text = await runAgent(
       {
-        request: llm,
+        request: hard ? { ...llm, body: { ...llm.body, level: 'hard' } } : llm,
         messages,
         tools,
         repo: d.repo,

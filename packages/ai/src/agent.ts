@@ -24,8 +24,18 @@ export interface AgentInput {
   language?: string
   /** The message was spoken and transcribed, so it may have recognition errors. */
   spoken?: boolean
+  /** The folders the tools can use, one per line (`list_folders`), so the model knows them. */
+  folders?: string
+  /**
+   * The earlier turns as text in the question rather than as messages: a thinking model with tools
+   * wants its own reasoning back with every earlier answer, which is not kept (DeepSeek).
+   */
+  historyAsText?: boolean
   now?: Date
 }
+
+/** Folders shown to the model in each turn; more is noise (it can still list them all). */
+const MAX_FOLDER_LINES = 80
 
 const SYSTEM = `You are the assistant inside FixNote, a private notes app. ${AGENT_MARKER}: search, read, create, edit, move and delete notes and folders.
 
@@ -35,6 +45,7 @@ Rules:
 - Change notes only when the user asks for it. Read a note with get_note before editing it, and prefer edit_note for small changes. Never invent ids: take them from fragments or tool results.
 - A request to fix, tidy up, format, restructure, shorten, expand or translate a note is a request to change it: do it with the tools (get_note, then edit_note or update_note). Never answer with the new text of the note instead of saving it, and do not paste a note's full text into the answer. "This note" or "the note" is the one the user is looking at.
 - When tidying a note, keep everything it says: fix structure, headings, lists and typos, and drop nothing but exact repeats.
+- The user's folders come with each message. For what is in a folder, use list_recent with "folder"; to look for something in one, search_notes with "folder". Note fragments are only the best matches, not everything there is.
 - Do not ask the user to confirm deletions yourself: the app asks when needed, and every change can be undone.
 - After changing notes, say in one short sentence what you did. If a tool fails, say what went wrong.
 - In notes, "- [x]" is a finished task and "- [ ]" an open one.
@@ -68,10 +79,17 @@ export function buildAgentMessages(input: AgentInput): AgentMessage[] {
         ? `${SYSTEM}\n\nEarlier in this conversation (summary):\n${input.summary}`
         : SYSTEM,
     },
-    ...input.history.map((m) => ({ role: m.role, content: m.content })),
+    ...(input.historyAsText
+      ? []
+      : input.history.map((m) => ({ role: m.role, content: m.content }))),
     {
       role: 'user',
       content: [
+        input.historyAsText && input.history.length
+          ? `The conversation so far:\n\n${input.history
+              .map((m) => `${m.role === 'user' ? 'User' : 'You'}: ${m.content}`)
+              .join('\n\n')}`
+          : '',
         [
           `Today is ${now.toISOString().slice(0, 10)}. ${scopeLine(input.scope)}`,
           input.language
@@ -83,9 +101,14 @@ export function buildAgentMessages(input: AgentInput): AgentMessage[] {
         ]
           .filter(Boolean)
           .join(' '),
+        input.folders?.trim()
+          ? `Folders (path, id, notes):\n${input.folders.trim().split('\n').slice(0, MAX_FOLDER_LINES).join('\n')}`
+          : '',
         fragments ? `Note fragments:\n\n${fragments}` : 'Note fragments: none were found.',
         `Message: ${input.question}`,
-      ].join('\n\n'),
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
     },
   ]
 }

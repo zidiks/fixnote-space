@@ -28,11 +28,12 @@ export const NOTE_TOOL_SPECS: readonly ToolSpec[] = [
   {
     name: 'search_notes',
     description:
-      'Full-text search over the notes (Russian, English, Spanish; word forms and the other alphabet match too). Returns the best passage of each matching note with its id. Notes mix languages: if nothing matches, try translations and synonyms (e.g. "giveaway" for "розыгрыш").',
+      'Full-text search over the notes (Russian, English, Spanish; word forms and the other alphabet match too). Returns the best passage of each matching note with its id and folder. Notes mix languages: if nothing matches, try translations and synonyms (e.g. "giveaway" for "розыгрыш").',
     parameters: params(
       {
         query: { type: 'string', description: 'Words to look for' },
         limit: { type: 'integer', description: 'How many notes, 1 to 20 (default 8)' },
+        folder: { type: 'string', description: `Only this folder and its subfolders. ${FOLDER}` },
       },
       ['query'],
     ),
@@ -47,8 +48,12 @@ export const NOTE_TOOL_SPECS: readonly ToolSpec[] = [
   },
   {
     name: 'list_recent',
-    description: 'Most recently edited notes with a short excerpt.',
-    parameters: params({ limit: { type: 'integer', description: '1 to 50 (default 10)' } }),
+    description:
+      'Notes with a short excerpt and their folder, most recently edited first. With `folder`: what is in that folder and its subfolders.',
+    parameters: params({
+      limit: { type: 'integer', description: '1 to 50 (default 10)' },
+      folder: { type: 'string', description: FOLDER },
+    }),
     level: 'read',
   },
   {
@@ -182,11 +187,15 @@ export async function runNoteTool(
 ): Promise<string> {
   switch (name) {
     case 'search_notes':
-      return tools.search(need(args, 'query'), Math.min(Math.max(int(args.limit) ?? 8, 1), 20))
+      return tools.search(
+        need(args, 'query'),
+        Math.min(Math.max(int(args.limit) ?? 8, 1), 20),
+        str(args.folder) || undefined,
+      )
     case 'get_note':
       return tools.get(need(args, 'id'))
     case 'list_recent':
-      return tools.recent(int(args.limit))
+      return tools.recent(int(args.limit), str(args.folder) || undefined)
     case 'list_folders':
       return tools.folders()
     case 'daily_note':

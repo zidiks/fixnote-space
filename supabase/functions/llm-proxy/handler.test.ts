@@ -43,8 +43,11 @@ const upstream = Deno.serve({ port: 0, onListen() {} }, async (req) => {
 const env = (over: Partial<ProxyEnv> = {}): ProxyEnv => ({
   apiKey: 'sk-server',
   baseUrl: `http://localhost:${upstream.addr.port}`,
-  model: 'deepseek-chat',
+  model: 'deepseek-flash',
   maxTokens: 2048,
+  hardModel: 'deepseek-v4-pro',
+  maxTokensHard: 16384,
+  hardWeight: 4,
   perMinute: 3,
   ...over,
 })
@@ -60,9 +63,47 @@ Deno.test('streams the provider answer with the server key and fixed model', asy
   assertEquals(res.headers.get('content-type'), 'text/event-stream; charset=utf-8')
   assertStringIncludes(await res.text(), '"Hi"')
   assertEquals(seen?.auth, 'Bearer sk-server')
-  assertEquals(seen?.body.model, 'deepseek-chat')
+  assertEquals(seen?.body.model, 'deepseek-flash')
+  assertEquals(seen?.body.thinking, { type: 'disabled' })
   assertEquals(seen?.body.max_tokens, 2048)
   assertEquals(seen?.body.stream, true)
+})
+
+Deno.test('"hard" thinks on the larger model, gets its reasoning back and weighs more', async () => {
+  const { m, charged } = meter({ ok: true })
+  const call = { id: 'c1', type: 'function', function: { name: 'list_folders', arguments: '{}' } }
+  const res = await handle(
+    post(
+      {
+        level: 'hard',
+        max_tokens: 99999,
+        temperature: 0.2,
+        messages: [
+          { role: 'user', content: 'what is in Work?' },
+          {
+            role: 'assistant',
+            content: null,
+            tool_calls: [call],
+            reasoning_content: 'Look first.',
+          },
+          { role: 'tool', tool_call_id: 'c1', content: 'Work (id: 1): 3 notes' },
+        ],
+      },
+      auth('h1'),
+    ),
+    env(),
+    Date.now(),
+    m,
+  )
+  await res.text()
+  assertEquals(seen?.body.model, 'deepseek-v4-pro')
+  assertEquals(seen?.body.thinking, { type: 'enabled' })
+  assertEquals(seen?.body.max_tokens, 16384)
+  assertEquals(seen?.body.temperature, undefined)
+  const sent = seen?.body.messages as { reasoning_content?: string }[]
+  assertEquals(sent[1]?.reasoning_content, 'Look first.')
+  // 42 tokens at four times the weight; a step with tool results is no new request.
+  assertEquals(charged, [['h1', 168]])
 })
 
 Deno.test('rejects anonymous callers and bad input', async () => {

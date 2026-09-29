@@ -47,6 +47,12 @@ describe('NotesTools', () => {
     expect(got).toContain('команды /today')
     expect(await tools.recent(5)).toContain('Рецепт борща')
     expect(await tools.folders()).toBe(`(no folder): 1 notes\nРабота (id: ${work.id}): 1 notes`)
+    // By folder: its notes (and where each one is), nothing from elsewhere.
+    expect(await tools.search('телеграм')).toContain('in Работа')
+    const inWork = await tools.recent(10, 'работа')
+    expect(inWork).toContain('Бот в Telegram')
+    expect(inWork).not.toContain('Рецепт борща')
+    expect(await tools.search('борщ', 8, 'Работа')).toBe('No notes in "Работа" match "борщ".')
   })
 
   it('writes only when the user allowed it, and logs writes for undo', async () => {
