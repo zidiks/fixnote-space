@@ -26,6 +26,7 @@ import {
   devIsPro,
   devMyPlan,
   devRequirePro,
+  devStartTrial,
 } from './dev-plan'
 
 /**
@@ -296,6 +297,10 @@ export const devBackend: AccountBackend = {
     signedIn()
     devCheckout()
     return null
+  },
+  startTrial: async () => {
+    signedIn()
+    devStartTrial()
   },
   plan: async () => {
     const userId = signedIn()

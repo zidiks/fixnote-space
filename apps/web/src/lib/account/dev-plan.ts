@@ -11,6 +11,8 @@ interface DevPlanState {
   trialEndsAt: number
   /** Paid once: files are never removed from the server. */
   subscribed: boolean
+  /** The trial was started (once per account). */
+  trialUsed: boolean
   month: string
   tokens: number
   day: string
@@ -34,9 +36,10 @@ const thisMonth = () => today().slice(0, 7)
 
 function load(): DevPlanState {
   const fresh: DevPlanState = {
-    mode: 'trial',
+    mode: 'free',
     trialEndsAt: Date.now() + 7 * DAY,
     subscribed: false,
+    trialUsed: false,
     month: thisMonth(),
     tokens: 0,
     day: today(),
@@ -71,7 +74,15 @@ export function setDevPlanMode(mode: DevPlanMode) {
           ? Date.now() - 60_000
           : s.trialEndsAt,
     subscribed: s.subscribed || mode === 'pro',
+    trialUsed: s.trialUsed || mode !== 'free',
   })
+}
+
+/** The fake `begin_trial()`: once per account, never after a subscription. */
+export function devStartTrial() {
+  const s = load()
+  if (s.trialUsed || s.subscribed) throw new Error('trial_unavailable')
+  setDevPlanMode('trial')
 }
 
 /** The fake checkout: paying turns Pro on. */
@@ -82,9 +93,9 @@ export function endDevTrialSoon() {
   save({ ...load(), mode: 'trial', trialEndsAt: Date.now() + DAY - 60_000 })
 }
 
-/** Forget the payments (to see what an account that never paid is shown). */
-export function forgetDevPayments() {
-  save({ ...load(), subscribed: false })
+/** Back to a new account: Free, never paid, the trial still to take. */
+export function resetDevAccount() {
+  save({ ...load(), mode: 'free', subscribed: false, trialUsed: false })
 }
 
 /** Spends the whole month's AI allowance (to see what running out looks like). */
@@ -129,6 +140,7 @@ export function devMyPlan(storageUsed: number, notes: number): Record<string, un
     trial_ends_at: new Date(s.trialEndsAt).toISOString(),
     current_period_end: s.mode === 'pro' ? new Date(Date.now() + 30 * DAY).toISOString() : null,
     paid_before: s.subscribed,
+    trial_available: !s.trialUsed && !s.subscribed,
     files_delete_at: filesDeleteAt,
     ai: aiStatus(s),
     storage: {

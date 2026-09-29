@@ -74,6 +74,8 @@ export interface AccountBackend {
   plan(): Promise<Record<string, unknown>>
   /** A payment page for Pro (supabase/functions/billing); null when there is none to open. */
   checkout(plan: 'month' | 'year'): Promise<string | null>
+  /** Starts the account's 7 days of Pro (once; `trial_unavailable` otherwise). */
+  startTrial(): Promise<void>
   signOut(): Promise<void>
   getUserKeys(): Promise<UserKeysRow | null>
   createUserKeys(row: UserKeysRow): Promise<void>
@@ -158,6 +160,10 @@ export function supabaseBackend(
         throw status === 503 ? new Error('Payments are not set up yet') : toError(error)
       }
       return data?.url ?? null
+    },
+    async startTrial() {
+      const { error } = await client.rpc('begin_trial')
+      if (error) throw toError(error)
     },
     async plan() {
       const { data, error } = await client.rpc('my_plan')

@@ -16,6 +16,8 @@ export interface PlanInfo {
   periodEnd: number | null
   /** Paid at least once: its files are never removed from the server. */
   paidBefore: boolean
+  /** The 7 free days of Pro are still there to take (`begin_trial`). */
+  trialAvailable: boolean
   /** When the server copy of the files goes (Free, never paid, files on the server); else null. */
   filesDeleteAt: number | null
   /** What Pro did for the account (the note at the end of the trial). */
@@ -35,9 +37,14 @@ interface PlanState {
   info: PlanInfo | null
   /** A "this is part of Pro" dialog on screen. */
   prompt: ProFeature | null
+  /** The offer of the free trial on screen (`Paywall`). */
+  paywall: boolean
 }
 
-export const usePlan = create<PlanState>()(() => ({ info: null, prompt: null }))
+export const usePlan = create<PlanState>()(() => ({ info: null, prompt: null, paywall: false }))
+
+/** Shows the offer of the free trial. */
+export const showPaywall = () => usePlan.setState({ paywall: true, prompt: null })
 
 /** Signed in on Free (not signed out, not unknown). */
 export const isFree = () => usePlan.getState().info?.plan === 'free'
@@ -91,6 +98,7 @@ export function toPlanInfo(raw: Record<string, unknown>): PlanInfo {
     trialEndsAt: time(raw.trial_ends_at),
     periodEnd: time(raw.current_period_end),
     paidBefore: raw.paid_before === true,
+    trialAvailable: raw.trial_available === true,
     filesDeleteAt: time(raw.files_delete_at),
     usage: {
       notes: num(usage.notes),

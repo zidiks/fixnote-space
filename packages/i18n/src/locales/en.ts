@@ -228,7 +228,8 @@ const en = {
     checking: 'Checking…',
     latest: 'You have the latest version.',
     available: 'FixNote {{version}} is available',
-    availableBody: 'It installs in a minute; the app restarts by itself.',
+    availableBody:
+      'It takes a minute and the app restarts itself. If Claude or another app uses FixNote through MCP, restart it too.',
     install: 'Update',
     installVersion: 'Install {{version}}',
     downloading: 'Downloading FixNote {{version}}…',
@@ -521,6 +522,12 @@ const en = {
     aiDayLimit:
       'Today’s AI allowance is used up. Try again tomorrow, or use your own key or a local model.',
     aiPaused: 'The assistant is paused for a while. Try again later.',
+    paywallTitle: 'Try Pro for free',
+    paywallBody: '7 days, no card. Then Free unless you subscribe.',
+    tryFree: 'Try for free',
+    tryFreeDays: 'Try 7 days for free',
+    notNow: 'Not now',
+    trialFailed: 'Could not start the trial. Try again.',
     promptTitle: 'This is part of Pro',
     promptSync: 'Sync across all your devices, end-to-end encrypted.',
     promptAi: 'The built-in AI assistant: no keys, no setup.',
@@ -551,7 +558,7 @@ const en = {
     endedStayFree: 'Stay on Free',
     endedKeepPro: 'Keep Pro',
     devTrialEnding: 'Trial ends tomorrow',
-    devNeverPaid: 'Never paid',
+    devNewAccount: 'New account',
   },
   settings: {
     title: 'Settings',
@@ -601,9 +608,6 @@ const en = {
     unlock: 'Unlock',
     phraseInvalid: 'That is not a valid 12-word phrase.',
     phraseWrong: 'This phrase belongs to a different account.',
-    wrongAccountTitle: 'Another account owns this device',
-    wrongAccountBody:
-      'The notes on this device belong to {{email}}. Sign in to that account, or remove its notes from this device: they stay in the account.',
     signedInAs: 'Signed in as {{email}}',
     syncNow: 'Sync now',
     showPhrase: 'Show recovery phrase',
@@ -613,17 +617,9 @@ const en = {
     checkFailed: 'Could not check the code. Check your connection and try again.',
     signOut: 'Sign out',
     signOutTitle: 'Sign out?',
-    signOutChoice:
-      'You can keep your notes on this device or remove them from it. Either way they stay in your account.',
-    signOutForget: 'Sign out and remove from device',
     checkingSync: 'Checking that everything is on the server',
-    unsynced:
-      'Some changes are not on the server yet ({{count}}). Removing the notes from this device would lose them.',
+    unsynced: 'Some changes are not synced yet ({{count}}). Unbinding loses them.',
     signInAs: 'Sign in as {{email}}',
-    forgetOther: 'Remove notes from this device',
-    forgetOtherTitle: 'Remove the notes of {{email}} from this device?',
-    forgetOtherBody: 'They stay in the {{email}} account. Then your account opens here.',
-    forgetOtherConfirm: 'Remove and continue',
     status: {
       synced: 'Synced {{time}}',
       syncing: 'Syncing…',
@@ -633,6 +629,16 @@ const en = {
       never: 'Not synced yet',
     },
     signInToSync: 'Sign in to sync',
+    signOutBody: 'Your notes stay on this device.',
+    boundTitle: 'This device is bound to {{email}}',
+    boundSignedOut:
+      'You signed out; your notes stay here. To use another account, unbind the device.',
+    boundOther: 'To sign in to another account, unbind the device first.',
+    signIn: 'Sign in',
+    unbind: 'Unbind device',
+    unbindTitle: 'Unbind this device?',
+    unbindBody: 'Notes are removed from this device. They stay in your account, encrypted.',
+    unbindConfirm: 'Unbind',
   },
   data: {
     export: 'Export notes',

@@ -598,7 +598,7 @@ export function AiEditLayer({ editor, ai }: { editor: Editor; ai: AiEdit }) {
       ) : null}
 
       <Dialog open={s?.target === 'note'} onOpenChange={(o) => (o ? undefined : ai.close())}>
-        <DialogContent className="max-w-2xl" onEscapeKeyDown={(e) => e.preventDefault()}>
+        <DialogContent className="max-w-2xl p-0" onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogTitle className="sr-only">{t('ai.title')}</DialogTitle>
           <DialogDescription className="sr-only">{t('ai.hint')}</DialogDescription>
           <AiEditBody ai={ai} onNewNote={() => void newNote()} onDelete={deleteSelection} />

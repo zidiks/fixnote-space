@@ -230,7 +230,8 @@ const es: LocaleResource = {
     checking: 'Buscando…',
     latest: 'Tienes la última versión.',
     available: 'FixNote {{version}} está disponible',
-    availableBody: 'Se instala en un minuto; la app se reinicia sola.',
+    availableBody:
+      'Tarda un minuto y la app se reinicia sola. Si Claude u otra app usa FixNote por MCP, reiníciala también.',
     install: 'Actualizar',
     installVersion: 'Instalar {{version}}',
     downloading: 'Descargando FixNote {{version}}…',
@@ -527,6 +528,12 @@ const es: LocaleResource = {
     aiDayLimit:
       'Se agotó la IA de hoy. Vuelve a intentarlo mañana o usa tu propia clave o un modelo local.',
     aiPaused: 'El asistente está en pausa un rato. Inténtalo más tarde.',
+    paywallTitle: 'Prueba Pro gratis',
+    paywallBody: '7 días, sin tarjeta. Después Free si no te suscribes.',
+    tryFree: 'Probar gratis',
+    tryFreeDays: 'Probar 7 días gratis',
+    notNow: 'Ahora no',
+    trialFailed: 'No se pudo activar la prueba. Inténtalo de nuevo.',
     promptTitle: 'Esto es parte de Pro',
     promptSync: 'Sincronización en todos tus dispositivos, con cifrado de extremo a extremo.',
     promptAi: 'El asistente de IA integrado: sin claves ni configuración.',
@@ -558,7 +565,7 @@ const es: LocaleResource = {
     endedStayFree: 'Seguir en Free',
     endedKeepPro: 'Mantener Pro',
     devTrialEnding: 'La prueba acaba mañana',
-    devNeverPaid: 'Nunca pagó',
+    devNewAccount: 'Cuenta nueva',
   },
   settings: {
     title: 'Ajustes',
@@ -608,9 +615,6 @@ const es: LocaleResource = {
     unlock: 'Desbloquear',
     phraseInvalid: 'No es una frase válida de 12 palabras.',
     phraseWrong: 'Esta frase pertenece a otra cuenta.',
-    wrongAccountTitle: 'Otra cuenta usa este dispositivo',
-    wrongAccountBody:
-      'Las notas de este dispositivo pertenecen a {{email}}. Inicia sesión en esa cuenta o quita sus notas de este dispositivo: se quedan en la cuenta.',
     signedInAs: 'Sesión iniciada como {{email}}',
     syncNow: 'Sincronizar ahora',
     showPhrase: 'Mostrar frase de recuperación',
@@ -620,17 +624,9 @@ const es: LocaleResource = {
     checkFailed: 'No se pudo comprobar el código. Revisa la conexión e inténtalo de nuevo.',
     signOut: 'Cerrar sesión',
     signOutTitle: '¿Cerrar sesión?',
-    signOutChoice:
-      'Puedes dejar tus notas en este dispositivo o quitarlas de él. En tu cuenta se quedan de todos modos.',
-    signOutForget: 'Cerrar sesión y quitar del dispositivo',
     checkingSync: 'Comprobando que todo esté en el servidor',
-    unsynced:
-      'Algunos cambios aún no están en el servidor ({{count}}). Si quitas las notas de este dispositivo, se perderán.',
+    unsynced: 'Algunos cambios aún no están sincronizados ({{count}}). Al desvincular se pierden.',
     signInAs: 'Iniciar sesión como {{email}}',
-    forgetOther: 'Quitar notas del dispositivo',
-    forgetOtherTitle: '¿Quitar las notas de {{email}} de este dispositivo?',
-    forgetOtherBody: 'Se quedan en la cuenta {{email}}. Después se abrirá tu cuenta aquí.',
-    forgetOtherConfirm: 'Quitar y continuar',
     status: {
       synced: 'Sincronizado {{time}}',
       syncing: 'Sincronizando…',
@@ -640,6 +636,16 @@ const es: LocaleResource = {
       never: 'Aún sin sincronizar',
     },
     signInToSync: 'Entrar para sincronizar',
+    signOutBody: 'Tus notas se quedan en este dispositivo.',
+    boundTitle: 'Este dispositivo está vinculado a {{email}}',
+    boundSignedOut:
+      'Cerraste sesión; tus notas siguen aquí. Para usar otra cuenta, desvincula el dispositivo.',
+    boundOther: 'Para entrar en otra cuenta, primero desvincula el dispositivo.',
+    signIn: 'Iniciar sesión',
+    unbind: 'Desvincular dispositivo',
+    unbindTitle: '¿Desvincular este dispositivo?',
+    unbindBody: 'Las notas se quitan de este dispositivo. En tu cuenta se quedan, cifradas.',
+    unbindConfirm: 'Desvincular',
   },
   data: {
     export: 'Exportar notas',
