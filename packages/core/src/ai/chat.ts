@@ -23,6 +23,27 @@ export interface VoiceClip {
 /** Where a voice message's recording is kept (BlobStore). */
 export const voiceBlobKey = (id: string) => `voice/${id}`
 
+/** A change the assistant made while answering: its AI activity log entry and what it did. */
+export interface ChatAction {
+  id: string
+  label: string
+}
+
+/** The changes of one answer; `undone` once the user took them all back. */
+export interface ChatActions {
+  items: ChatAction[]
+  undone: boolean
+}
+
+/** What the start of a long thread was about, once it no longer fits the model (kv). */
+export const CHAT_SUMMARY_KEY = 'chat.summary'
+
+export interface ChatSummary {
+  text: string
+  /** Entries up to this time are in the summary. */
+  upTo: number
+}
+
 export interface ChatEntry {
   id: string
   kind: ChatMessageKind
@@ -33,6 +54,8 @@ export interface ChatEntry {
   citations: StoredCitation[]
   confidence: 'high' | 'medium' | 'low' | null
   status: ChatStatus | null
+  /** Changes the assistant made in this answer. */
+  actions?: ChatActions | null
   createdAt: number
 }
 
@@ -44,6 +67,7 @@ interface Row extends SqlRow {
   citations: string | null
   status: string | null
   voice: string | null
+  actions: string | null
   created_at: number
 }
 
@@ -60,6 +84,7 @@ const toEntry = (r: Row): ChatEntry => {
     confidence: extra?.confidence ?? null,
     status: (r.status as ChatStatus | null) ?? null,
     voice: r.voice ? (JSON.parse(r.voice) as VoiceClip) : null,
+    actions: r.actions ? (JSON.parse(r.actions) as ChatActions) : null,
     createdAt: Number(r.created_at),
   }
 }
@@ -136,10 +161,36 @@ export class ChatRepo {
     )
   }
 
+  async setActions(id: string, actions: ChatActions | null): Promise<void> {
+    await this.db.execute('UPDATE chat_messages SET actions = ? WHERE id = ?', [
+      actions?.items.length ? JSON.stringify(actions) : null,
+      id,
+    ])
+  }
+
+  async summary(): Promise<ChatSummary | null> {
+    const [row] = await this.db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
+      CHAT_SUMMARY_KEY,
+    ])
+    try {
+      return row ? (JSON.parse(row.value) as ChatSummary) : null
+    } catch {
+      return null
+    }
+  }
+
+  async setSummary(summary: ChatSummary): Promise<void> {
+    await this.db.execute(
+      'INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+      [CHAT_SUMMARY_KEY, JSON.stringify(summary)],
+    )
+  }
+
   /** Empties the thread; returns the BlobStore keys of its recordings, for the caller to remove. */
   async clear(): Promise<string[]> {
     const keys = await voiceKeys(this.db)
     await this.db.execute('DELETE FROM chat_messages')
+    await this.db.execute('DELETE FROM kv WHERE key = ?', [CHAT_SUMMARY_KEY])
     return keys
   }
 }

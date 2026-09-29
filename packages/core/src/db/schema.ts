@@ -249,6 +249,10 @@ export const MIGRATIONS: readonly string[] = [
   `
   ALTER TABLE chat_messages ADD COLUMN voice TEXT;
   `,
+  // 17: what the assistant changed while answering (AI activity log ids, for Undo all).
+  `
+  ALTER TABLE chat_messages ADD COLUMN actions TEXT;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

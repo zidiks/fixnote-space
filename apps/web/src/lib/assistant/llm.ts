@@ -179,6 +179,19 @@ export async function llm(): Promise<
   }
 }
 
+/** How many tokens the current model takes at once (roughly; small when unknown). */
+export function contextWindow(): number {
+  const s = useLlm.getState().settings
+  if (s.kind === 'fixnote') return 64_000
+  // Ollama runs with a short context unless its num_ctx is raised.
+  if (s.kind === 'ollama') return 8_000
+  const model = modelOf(s).toLowerCase()
+  if (/gpt-4o|gpt-4\.1|gpt-5|(^|\/)o\d|claude|gemini|llama-3\.[1-3]|qwen|mistral-large/.test(model))
+    return 128_000
+  if (model.includes('deepseek')) return 64_000
+  return 32_000
+}
+
 /** Who answers, for the AI activity log. */
 export function providerLabel(): string {
   const s = useLlm.getState().settings

@@ -1,4 +1,4 @@
-import { voiceKeys } from './ai/chat'
+import { CHAT_SUMMARY_KEY, voiceKeys } from './ai/chat'
 import type { BlobStore, SqlDriver } from './platform'
 
 /**
@@ -42,7 +42,7 @@ export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise
     ])
       await tx.execute(`DELETE FROM ${table}`)
     await tx.execute(
-      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key = 'mcp.scope'`,
+      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key IN ('mcp.scope', '${CHAT_SUMMARY_KEY}')`,
     )
   })
   for (const { id } of files) await blobs.delete(`att/${id}`).catch(() => undefined)

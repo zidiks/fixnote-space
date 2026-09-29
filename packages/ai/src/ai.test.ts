@@ -1,7 +1,15 @@
-import type { Fragment } from '@fixnote/core'
+import { type Fragment, NOTE_TOOL_SPECS } from '@fixnote/core'
 import { describe, expect, it } from 'vitest'
+import {
+  AGENT_MARKER,
+  buildAgentMessages,
+  buildSummaryMessages,
+  messagesTokens,
+  SUMMARY_MARKER,
+  toolDefs,
+} from './agent'
 import { confidence, parseCitations } from './citations'
-import { ChatError, streamChat } from './client'
+import { ChatError, streamChat, streamTurn, type TurnEvent } from './client'
 import { buildMessages } from './prompt'
 
 function sse(chunks: string[], status = 200): typeof fetch {
@@ -231,5 +239,83 @@ describe('tidy prompts', () => {
       { kind: 'title', note: 2, title: 'Партнёрства' },
     ])
     expect(parseTidyReply('not json', req)).toEqual([])
+  })
+})
+
+describe('agent turns', () => {
+  const chunk = (delta: object, extra: object = {}) =>
+    `data: ${JSON.stringify({ choices: [{ delta }], ...extra })}\n\n`
+
+  it('collects tool calls from their deltas', async () => {
+    const body = [
+      chunk({ content: 'Looking' }),
+      chunk({
+        tool_calls: [
+          { index: 0, id: 'c1', function: { name: 'search_notes', arguments: '{"que' } },
+        ],
+      }),
+      chunk({ tool_calls: [{ index: 0, function: { arguments: 'ry":"бот"}' } }] }),
+      chunk({ tool_calls: [{ index: 1, id: 'c2', function: { name: 'list_folders' } }] }),
+      chunk({}, { usage: { prompt_tokens: 120, completion_tokens: 9 } }),
+      'data: [DONE]\n\n',
+    ].join('')
+    const events: TurnEvent[] = []
+    for await (const e of streamTurn({
+      url: 'x',
+      model: 'm',
+      messages: [],
+      fetch: sse([body.slice(0, 40), body.slice(40)]),
+    })) {
+      events.push(e)
+    }
+    expect(events).toEqual([
+      { type: 'text', text: 'Looking' },
+      {
+        type: 'tool_calls',
+        calls: [
+          { id: 'c1', name: 'search_notes', arguments: '{"query":"бот"}' },
+          { id: 'c2', name: 'list_folders', arguments: '' },
+        ],
+      },
+      { type: 'usage', promptTokens: 120, completionTokens: 9 },
+    ])
+  })
+
+  it('sends the tools and keeps the whole conversation', async () => {
+    const got: { body?: { tools?: unknown[]; messages: { role: string; content: string }[] } } = {}
+    const f: typeof fetch = async (_url, init) => {
+      got.body = JSON.parse(String(init?.body))
+      return sse([delta('ok'), 'data: [DONE]\n\n'])('')
+    }
+    const history = Array.from({ length: 10 }, (_, i) => ({
+      role: i % 2 ? ('assistant' as const) : ('user' as const),
+      content: `turn ${i}`,
+    }))
+    const messages = buildAgentMessages({
+      question: 'Удали заметку про бота',
+      fragments: [frag({ title: 'Бот', noteId: 'n7' })],
+      scope: { kind: 'all' },
+      history,
+      summary: 'The user plans a Telegram bot.',
+    })
+    await collect(
+      streamChat({ url: 'x', model: 'm', messages, tools: toolDefs(NOTE_TOOL_SPECS), fetch: f }),
+    )
+    expect(got.body?.tools?.length).toBe(NOTE_TOOL_SPECS.length)
+    expect(got.body?.messages[0]?.content).toContain(AGENT_MARKER)
+    expect(got.body?.messages[0]?.content).toContain('The user plans a Telegram bot.')
+    expect(got.body?.messages).toHaveLength(12)
+    expect(got.body?.messages[11]?.content).toContain('[1] "Бот" (id: n7')
+    expect(messagesTokens(messages)).toBeGreaterThan(100)
+  })
+
+  it('asks for a summary of the turns that no longer fit', () => {
+    const [system, user] = buildSummaryMessages('Earlier: groceries.', [
+      { role: 'user', content: 'Add eggs' },
+      { role: 'assistant', content: 'Added eggs to "Shopping".' },
+    ])
+    expect(system?.content).toContain(SUMMARY_MARKER)
+    expect(user?.content).toContain('Earlier: groceries.')
+    expect(user?.content).toContain('Assistant: Added eggs')
   })
 })

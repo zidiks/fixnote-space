@@ -23,8 +23,8 @@ const KEY = 'fixnote.dev-plan'
 const DAY = 86_400_000
 /** Small, so "used up" is easy to reach while trying things. */
 const LIMITS = {
-  month: 20_000,
-  trial: 5_000,
+  month: 200_000,
+  trial: 50_000,
   dayRequests: 150,
   storage: 20 * 1024 ** 3,
   trialStorage: 1024 ** 3,
@@ -166,8 +166,8 @@ export function devAiRefusal(): Response | null {
   return null
 }
 
-/** The fake `ai_record()`. */
-export function devAiRecord(tokens: number) {
+/** The fake `ai_record()`; a step that only brings tool results back is not a new request. */
+export function devAiRecord(tokens: number, requests = 1) {
   const s = load()
-  save({ ...s, tokens: s.tokens + Math.max(tokens, 0), requests: s.requests + 1 })
+  save({ ...s, tokens: s.tokens + Math.max(tokens, 0), requests: s.requests + requests })
 }

@@ -38,6 +38,12 @@ export type AiActionKind =
   | 'mcp.move'
   | 'mcp.delete'
   | 'mcp.folder'
+  | 'chat.create'
+  | 'chat.append'
+  | 'chat.update'
+  | 'chat.move'
+  | 'chat.delete'
+  | 'chat.folder'
 
 export interface AiAction {
   id: string

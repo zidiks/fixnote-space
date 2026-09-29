@@ -1,4 +1,4 @@
-import type { BlobStore, SqlDriver } from '@fixnote/core'
+import { type BlobStore, noteToolSpec, type SqlDriver } from '@fixnote/core'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { NotesTools, type ToolContent } from './tools'
@@ -38,8 +38,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'search_notes',
     {
       title: 'Search notes',
-      description:
-        'Full-text search over the notes (Russian, English, Spanish; word forms and the other alphabet match too). Returns the best passage of each matching note with its id. Notes mix languages: if nothing matches, try translations and synonyms (e.g. "giveaway" for "розыгрыш").',
+      description: noteToolSpec('search_notes').description,
       inputSchema: {
         query: z.string().min(1).describe('Words to look for'),
         limit: z.number().int().min(1).max(20).optional().describe('How many notes (default 8)'),
@@ -52,8 +51,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'get_note',
     {
       title: 'Get a note',
-      description:
-        'The full Markdown of a note with its folder, dates and a list of its images and files (ids for get_attachment).',
+      description: `${noteToolSpec('get_note').description} Attachments are listed with ids for get_attachment.`,
       inputSchema: { id: z.string().min(1) },
       annotations: { readOnlyHint: true },
     },
@@ -63,7 +61,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'list_recent',
     {
       title: 'Recent notes',
-      description: 'Most recently edited notes with a short excerpt.',
+      description: noteToolSpec('list_recent').description,
       inputSchema: { limit: z.number().int().min(1).max(50).optional() },
       annotations: { readOnlyHint: true },
     },
@@ -73,7 +71,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'list_folders',
     {
       title: 'Folders',
-      description: 'Folders this app can use, with their ids and note counts.',
+      description: noteToolSpec('list_folders').description,
       inputSchema: {},
       annotations: { readOnlyHint: true },
     },
@@ -83,8 +81,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'create_note',
     {
       title: 'Create a note',
-      description:
-        'Saves a new note (Markdown; the first line becomes its title). Without a folder it lands on Home without a folder. The user sees it in FixNote and can undo it.',
+      description: noteToolSpec('create_note').description,
       inputSchema: {
         content: z.string().min(1),
         folder: z.string().optional().describe('Folder id, name or path ("Work / Projects")'),
@@ -96,17 +93,29 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'append_to_note',
     {
       title: 'Append to a note',
-      description: 'Adds Markdown to the end of an existing note.',
+      description: noteToolSpec('append_to_note').description,
       inputSchema: { id: z.string().min(1), content: z.string().min(1) },
     },
     ({ id, content }) => run(() => tools.append(id, content)),
   )
   server.registerTool(
+    'edit_note',
+    {
+      title: 'Edit part of a note',
+      description: noteToolSpec('edit_note').description,
+      inputSchema: {
+        id: z.string().min(1),
+        find: z.string().min(1).describe('The exact text to replace, copied from the note'),
+        replace: z.string().describe('The new text (empty to remove the passage)'),
+      },
+    },
+    ({ id, find, replace }) => run(() => tools.edit(id, find, replace)),
+  )
+  server.registerTool(
     'update_note',
     {
       title: 'Rewrite a note',
-      description:
-        'Replaces the whole Markdown of a note. Read it with get_note first and keep what the user did not ask to change.',
+      description: noteToolSpec('update_note').description,
       inputSchema: { id: z.string().min(1), content: z.string().min(1) },
     },
     ({ id, content }) => run(() => tools.update(id, content)),
@@ -142,7 +151,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'move_note',
     {
       title: 'Move a note',
-      description: 'Moves a note to a folder, or out of any folder when `folder` is omitted.',
+      description: noteToolSpec('move_note').description,
       inputSchema: {
         id: z.string().min(1),
         folder: z.string().optional().describe('Folder id, name or path'),
@@ -154,7 +163,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'delete_note',
     {
       title: 'Delete a note',
-      description: 'Deletes a note. The user can restore it from the AI activity log in FixNote.',
+      description: noteToolSpec('delete_note').description,
       inputSchema: { id: z.string().min(1) },
       annotations: { destructiveHint: true },
     },
@@ -164,7 +173,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'create_folder',
     {
       title: 'Create a folder',
-      description: 'Creates a folder, at the top level or inside `parent`.',
+      description: noteToolSpec('create_folder').description,
       inputSchema: {
         name: z.string().min(1),
         parent: z.string().optional().describe('Parent folder id, name or path'),
@@ -176,7 +185,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'rename_folder',
     {
       title: 'Rename a folder',
-      description: 'Gives a folder a new name.',
+      description: noteToolSpec('rename_folder').description,
       inputSchema: {
         folder: z.string().min(1).describe('Folder id, name or path'),
         name: z.string().min(1).describe('New name'),
@@ -188,8 +197,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'delete_folder',
     {
       title: 'Delete a folder',
-      description:
-        'Deletes a folder and the folders inside it. Their notes are kept and end up without a folder. The user can undo it in FixNote.',
+      description: noteToolSpec('delete_folder').description,
       inputSchema: { folder: z.string().min(1).describe('Folder id, name or path') },
       annotations: { destructiveHint: true },
     },
@@ -199,8 +207,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     'daily_note',
     {
       title: 'Daily note',
-      description:
-        "Reads the daily note of a date (default today). With `append`, first adds text to it, creating the day's note if needed.",
+      description: noteToolSpec('daily_note').description,
       inputSchema: {
         date: z.string().optional().describe('YYYY-MM-DD'),
         append: z.string().optional(),

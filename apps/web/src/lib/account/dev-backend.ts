@@ -1,4 +1,10 @@
-import { EDIT_MARKER, EXPANSION_MARKER, TIDY_MARKER } from '@fixnote/ai'
+import {
+  AGENT_MARKER,
+  EDIT_MARKER,
+  EXPANSION_MARKER,
+  SUMMARY_MARKER,
+  TIDY_MARKER,
+} from '@fixnote/ai'
 import {
   type InboxItem,
   type PushResult,
@@ -244,34 +250,116 @@ function devTidy(prompt: string): string {
   return JSON.stringify({ moves, titles })
 }
 
+interface DevMessage {
+  role: string
+  content: string | null
+}
+
+type DevCall = { name: string; args: Record<string, unknown> }
+
+/**
+ * The agent's moves, from the message: "create a note: …", "create 6 notes", "delete …" and
+ * "add to …: …" (about the first fragment); after tool results, a short report of them.
+ */
+function devAgent(messages: DevMessage[]): { text: string } | { calls: DevCall[] } {
+  const last = messages.at(-1)
+  if (last?.role === 'tool') {
+    const results = []
+    for (let i = messages.length - 1; messages[i]?.role === 'tool'; i--) {
+      results.unshift(messages[i]?.content ?? '')
+    }
+    return { text: `Done. ${results.map((r) => r.split('\n')[0]).join(' ')}` }
+  }
+  const prompt = last?.content ?? ''
+  const message = prompt.match(/Message: ([\s\S]*)$/)?.[1]?.trim() ?? ''
+  const rest = message.includes(':') ? message.slice(message.indexOf(':') + 1).trim() : ''
+  const first = prompt.match(/\[1\] "[^"]*" \(id: ([^,]+),/)?.[1]
+  const many = message.match(/(?:создай|create)\s+(\d+)/i)
+  if (many) {
+    const n = Math.min(Number(many[1]), 12)
+    return {
+      calls: Array.from({ length: n }, (_, i) => ({
+        name: 'create_note',
+        args: { content: `# Заметка ${i + 1}` },
+      })),
+    }
+  }
+  if (/^(создай|create)/i.test(message)) {
+    return { calls: [{ name: 'create_note', args: { content: `# ${rest || message}` } }] }
+  }
+  if (/^(удали|delete)/i.test(message) && first) {
+    return { calls: [{ name: 'delete_note', args: { id: first } }] }
+  }
+  if (/^(добавь|допиши|append|add)/i.test(message) && first) {
+    return { calls: [{ name: 'append_to_note', args: { id: first, content: rest || message } }] }
+  }
+  const found = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
+  return {
+    text: found
+      ? `From your note "${found[1]}": ${found[2]} [1]`
+      : "I couldn't find this in your notes. Try other words.",
+  }
+}
+
 const devLlm: typeof fetch = async (_url, init) => {
   const refusal = devAiRefusal()
   if (refusal) return refusal
-  const body = JSON.parse(String(init?.body)) as { messages: { role: string; content: string }[] }
+  const body = JSON.parse(String(init?.body)) as { messages: DevMessage[]; tools?: unknown[] }
   const prompt = body.messages.at(-1)?.content ?? ''
-  const expansion = body.messages[0]?.content.includes(EXPANSION_MARKER)
-  const edit = body.messages[0]?.content.includes(EDIT_MARKER)
-  const tidy = body.messages[0]?.content.includes(TIDY_MARKER)
+  const system = body.messages[0]?.content ?? ''
+  const expansion = system.includes(EXPANSION_MARKER)
+  const edit = system.includes(EDIT_MARKER)
+  const tidy = system.includes(TIDY_MARKER)
+  const summary = system.includes(SUMMARY_MARKER)
+  const agent = system.includes(AGENT_MARKER) ? devAgent(body.messages) : null
+  const calls = agent && 'calls' in agent && body.tools?.length ? agent.calls : []
   const first = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
-  const answer = tidy
-    ? devTidy(prompt)
-    : expansion
-      ? devKeywords(prompt)
-      : edit
-        ? devEdit(prompt)
-        : first
-          ? `From your note "${first[1]}": ${first[2]} [1]`
-          : "I couldn't find this in your notes. Try other words."
-  const words = expansion || tidy ? [answer] : answer.split(/(?<= )/)
+  const answer = calls.length
+    ? ''
+    : agent && 'text' in agent
+      ? agent.text
+      : summary
+        ? 'The user asked about their notes; nothing is pending.'
+        : tidy
+          ? devTidy(prompt)
+          : expansion
+            ? devKeywords(prompt)
+            : edit
+              ? devEdit(prompt)
+              : first
+                ? `From your note "${first[1]}": ${first[2]} [1]`
+                : "I couldn't find this in your notes. Try other words."
+  const words = expansion || tidy ? [answer] : answer.split(/(?<= )/).filter(Boolean)
   // What llm-proxy charges: about 3 characters per token, question and answer.
-  devAiRecord(Math.ceil((String(init?.body).length + answer.length) / 3))
+  devAiRecord(
+    Math.ceil((String(init?.body).length + answer.length) / 3),
+    body.messages.at(-1)?.role === 'tool' ? 0 : 1,
+  )
+  const send = (controller: ReadableStreamDefaultController<Uint8Array>, chunk: object) =>
+    controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`))
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       for (const w of words) {
         if (init?.signal?.aborted) break
         await new Promise((r) => setTimeout(r, 40))
-        const chunk = { choices: [{ delta: { content: w } }] }
-        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(chunk)}\n\n`))
+        send(controller, { choices: [{ delta: { content: w } }] })
+      }
+      if (calls.length) {
+        await new Promise((r) => setTimeout(r, 300))
+        send(controller, {
+          choices: [
+            {
+              delta: {
+                tool_calls: calls.map((c, index) => ({
+                  index,
+                  id: `dev_${Date.now()}_${index}`,
+                  type: 'function',
+                  function: { name: c.name, arguments: JSON.stringify(c.args) },
+                })),
+              },
+            },
+          ],
+        })
       }
       controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
       controller.close()
