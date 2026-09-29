@@ -321,9 +321,30 @@ export class MemorySharedServer {
         const r = folderRole(folderId)
         must(r === 'owner' || r === 'edit', 'read only')
         const owner = this.folders.get(folderId)?.owner as string
-        for (const [id, n] of this.notes)
-          if (n.owner === owner && n.origin === origin && n.folder === folderId && !n.deleted)
-            return id
+        // One record per note of an owner (unique owner + origin, as in SQL).
+        const found = [...this.notes].find(([, n]) => n.owner === owner && n.origin === origin)
+        if (found) {
+          const [id, n] = found
+          if (n.folder === folderId && !n.deleted) return id
+          // The same note again (back after a delete, put back, moved from another folder of the
+          // owner): its record starts over here, unless others still have it.
+          must(
+            n.deleted ||
+              ((!n.folder || folderRole(n.folder) === 'owner') &&
+                ![...n.members.values()].some((m) => m.role !== 'owner')),
+            'already shared',
+          )
+          Object.assign(n, {
+            folder: folderId,
+            folderKey,
+            deleted: false,
+            state: null,
+            version: 0,
+            createdBy: userId,
+            members: new Map(),
+          })
+          return id
+        }
         const id = `shared-${++this.seq}`
         this.notes.set(id, {
           owner,
