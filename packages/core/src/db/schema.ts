@@ -244,6 +244,11 @@ export const MIGRATIONS: readonly string[] = [
     PRIMARY KEY (shared_id, attachment_id)
   );
   `,
+  // 16: voice messages to the assistant. The recording stays on this device (BlobStore, key in
+  // the JSON); the message's content is its transcript.
+  `
+  ALTER TABLE chat_messages ADD COLUMN voice TEXT;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

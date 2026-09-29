@@ -321,6 +321,9 @@ const en = {
     hint: 'The note changes only when you accept.',
   },
   voice: {
+    message: 'Voice message',
+    play: 'Play',
+    pause: 'Pause',
     note: 'Voice note',
     dictate: 'Dictate',
     dictateHint: 'Dictate ({{keys}})',

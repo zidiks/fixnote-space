@@ -11,10 +11,24 @@ export interface StoredCitation {
   quote: string
 }
 
+/** A question asked by voice: the recording on this device and what its player draws. */
+export interface VoiceClip {
+  /** BlobStore key of the recording. */
+  key: string
+  durationMs: number
+  /** Loudness over time, 0..1, a few dozen values for the waveform. */
+  peaks: number[]
+}
+
+/** Where a voice message's recording is kept (BlobStore). */
+export const voiceBlobKey = (id: string) => `voice/${id}`
+
 export interface ChatEntry {
   id: string
   kind: ChatMessageKind
   content: string
+  /** Asked by voice: the recording (content is its transcript). */
+  voice?: VoiceClip | null
   scope: ChatScope
   citations: StoredCitation[]
   confidence: 'high' | 'medium' | 'low' | null
@@ -29,6 +43,7 @@ interface Row extends SqlRow {
   scope: string
   citations: string | null
   status: string | null
+  voice: string | null
   created_at: number
 }
 
@@ -44,6 +59,7 @@ const toEntry = (r: Row): ChatEntry => {
     citations: extra?.items ?? [],
     confidence: extra?.confidence ?? null,
     status: (r.status as ChatStatus | null) ?? null,
+    voice: r.voice ? (JSON.parse(r.voice) as VoiceClip) : null,
     createdAt: Number(r.created_at),
   }
 }
@@ -77,10 +93,11 @@ export class ChatRepo {
       citations: entry.citations ?? [],
       confidence: entry.confidence ?? null,
       status: entry.status ?? null,
+      voice: entry.voice ?? null,
       createdAt: entry.createdAt ?? this.now(),
     }
     await this.db.execute(
-      'INSERT INTO chat_messages (id, kind, content, scope, citations, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO chat_messages (id, kind, content, scope, citations, status, created_at, voice) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         full.id,
         full.kind,
@@ -91,6 +108,7 @@ export class ChatRepo {
           : null,
         full.status,
         full.createdAt,
+        full.voice ? JSON.stringify(full.voice) : null,
       ],
     )
     return full
@@ -118,7 +136,18 @@ export class ChatRepo {
     )
   }
 
-  async clear(): Promise<void> {
+  /** Empties the thread; returns the BlobStore keys of its recordings, for the caller to remove. */
+  async clear(): Promise<string[]> {
+    const keys = await voiceKeys(this.db)
     await this.db.execute('DELETE FROM chat_messages')
+    return keys
   }
+}
+
+/** BlobStore keys of every voice message's recording. */
+export async function voiceKeys(db: Pick<SqlDriver, 'query'>): Promise<string[]> {
+  const rows = await db.query<{ voice: string }>(
+    'SELECT voice FROM chat_messages WHERE voice IS NOT NULL',
+  )
+  return rows.map((r) => (JSON.parse(r.voice) as VoiceClip).key)
 }

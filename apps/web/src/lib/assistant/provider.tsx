@@ -16,7 +16,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void initLlm(kvStore(driver))
-    void initAssistant({ db: driver, embedder: () => platform.embedder() })
+    void initAssistant({ db: driver, embedder: () => platform.embedder(), blobs: platform.blobs })
     void refreshTidyCount(tidy)
   }, [driver, tidy])
 

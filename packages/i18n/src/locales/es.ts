@@ -323,6 +323,9 @@ const es: LocaleResource = {
     hint: 'La nota solo cambia cuando aceptas.',
   },
   voice: {
+    message: 'Mensaje de voz',
+    play: 'Reproducir',
+    pause: 'Pausa',
     note: 'Nota de voz',
     dictate: 'Dictar',
     dictateHint: 'Dictar ({{keys}})',

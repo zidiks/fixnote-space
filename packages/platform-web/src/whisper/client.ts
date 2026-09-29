@@ -85,12 +85,13 @@ export function createWhisperTranscriber(): Transcriber {
           op: 'transcribe',
           audio: samples,
           ...(opts?.language ? { language: opts.language } : {}),
+          ...(opts?.languages ? { languages: opts.languages } : {}),
         },
         [samples.buffer],
       )
       return {
         text: res.text ?? '',
-        language: opts?.language ?? 'auto',
+        language: res.language ?? opts?.language ?? 'auto',
         durationMs: Math.round(performance.now() - started),
       }
     },

@@ -57,7 +57,14 @@ export interface Transcriber {
   /** Always true today; false would mean audio is sent to a server and the UI must say so. */
   readonly local: boolean
   ready(onProgress?: ProgressListener): Promise<void>
-  transcribe(audio: Blob, opts?: { language?: string }): Promise<TranscriptionResult>
+  /**
+   * `language` fixes the language; otherwise it is detected among `languages` (the ones the
+   * person speaks, default en, ru and es), never taken from the interface or the keyboard.
+   */
+  transcribe(
+    audio: Blob,
+    opts?: { language?: string; languages?: string[] },
+  ): Promise<TranscriptionResult>
 }
 
 /**

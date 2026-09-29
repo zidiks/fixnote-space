@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { ChatRepo, voiceBlobKey } from './ai/chat'
 import { Attachments } from './attachments'
 import { prepareDatabase } from './db/migrate'
 import { forgetLocalNotes, unsyncedChanges } from './local-data'
@@ -26,6 +27,14 @@ describe('local notes of an account', () => {
     const folder = await repo.createFolder('Work')
     await repo.createNote({ content: 'Plan', folderId: folder.id })
     await new Attachments(db, blobs).add(new Blob(['x']), 'image/png')
+    const recording = voiceBlobKey('v1')
+    await blobs.put(recording, new Blob(['ogg']))
+    await new ChatRepo(db).add({
+      kind: 'user',
+      content: 'what is on my list?',
+      scope: { kind: 'all' },
+      voice: { key: recording, durationMs: 1200, peaks: [0.2, 0.8] },
+    })
     const kv = (key: string, value: string) =>
       db.execute('INSERT INTO kv (key, value) VALUES (?, ?)', [key, value])
     await kv('sync.notes.seq', '42')

@@ -2,6 +2,7 @@
 import { type AutomaticSpeechRecognitionPipeline, env, pipeline } from '@huggingface/transformers'
 import { ortPaths } from '../ort'
 import type { WhisperRequest, WhisperResponse } from './protocol'
+import { DEFAULT_LANGUAGES, transcribe } from './transcribe'
 
 declare const self: DedicatedWorkerGlobalScope
 
@@ -89,15 +90,19 @@ self.onmessage = async (event: MessageEvent<WhisperRequest>) => {
       self.postMessage({ kind: 'result', id: req.id, ok: true, device } satisfies WhisperResponse)
       return
     }
-    const output = await model(req.audio, {
-      task: 'transcribe',
-      // Unset: Whisper detects the language itself, so mixed ru/en/es dictation just works.
-      ...(req.language ? { language: req.language } : {}),
-      chunk_length_s: 30,
-      stride_length_s: 5,
-    })
-    const text = (Array.isArray(output) ? output.map((o) => o.text).join(' ') : output.text).trim()
-    self.postMessage({ kind: 'result', id: req.id, ok: true, text } satisfies WhisperResponse)
+    const { text, language } = await transcribe(
+      model,
+      req.audio,
+      req.language,
+      req.languages ?? DEFAULT_LANGUAGES,
+    )
+    self.postMessage({
+      kind: 'result',
+      id: req.id,
+      ok: true,
+      text,
+      language,
+    } satisfies WhisperResponse)
   } catch (err) {
     self.postMessage({
       kind: 'result',

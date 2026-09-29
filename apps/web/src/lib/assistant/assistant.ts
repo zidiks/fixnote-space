@@ -7,6 +7,7 @@ import {
   streamChat,
 } from '@fixnote/ai'
 import {
+  type BlobStore,
   type ChatEntry,
   ChatRepo,
   type ChatScope,
@@ -17,6 +18,7 @@ import {
   type SqlDriver,
   sameScope,
   similarNotes,
+  type VoiceClip,
 } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
@@ -58,6 +60,8 @@ const SEMANTIC_KEY = 'assistant.semantic'
 interface Deps {
   db: SqlDriver
   embedder: () => Promise<Embedder>
+  /** Recordings of voice messages. */
+  blobs: BlobStore
 }
 
 let deps: Deps | null = null
@@ -155,7 +159,11 @@ const errorText = (err: unknown) =>
   (err instanceof ChatError ? err.message : err instanceof Error ? err.message : String(err))
 
 /** Asks one question about the notes in `scope`, streaming the answer into the thread. */
-export async function ask(question: string, scope: ChatScope): Promise<'ok' | LlmUnavailable> {
+export async function ask(
+  question: string,
+  scope: ChatScope,
+  opts: { voice?: VoiceClip } = {},
+): Promise<'ok' | LlmUnavailable> {
   const repo = chat
   const d = deps
   if (!repo || !d || !question.trim()) return 'ok'
@@ -178,7 +186,14 @@ export async function ask(question: string, scope: ChatScope): Promise<'ok' | Ll
   if (lastQuestion ? !sameScope(lastQuestion.scope, scope) : scope.kind !== 'all') {
     added.push(await repo.add({ kind: 'divider', content: '', scope }))
   }
-  added.push(await repo.add({ kind: 'user', content: question.trim(), scope }))
+  added.push(
+    await repo.add({
+      kind: 'user',
+      content: question.trim(),
+      scope,
+      ...(opts.voice ? { voice: opts.voice } : {}),
+    }),
+  )
   const answer = await repo.add({ kind: 'assistant', content: '', scope, status: 'streaming' })
   added.push(answer)
   set((s) => ({ messages: [...s.messages, ...added], status: 'thinking', error: null }))
@@ -239,6 +254,7 @@ export function stop() {
 
 export async function clearChat() {
   stop()
-  await chat?.clear()
+  const recordings = (await chat?.clear()) ?? []
+  for (const key of recordings) await deps?.blobs.delete(key).catch(() => undefined)
   set({ messages: [], status: 'idle', error: null })
 }

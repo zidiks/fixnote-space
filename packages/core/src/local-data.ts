@@ -1,3 +1,4 @@
+import { voiceKeys } from './ai/chat'
 import type { BlobStore, SqlDriver } from './platform'
 
 /**
@@ -23,6 +24,7 @@ export async function unsyncedChanges(db: SqlDriver): Promise<number> {
  */
 export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise<void> {
   const files = await db.query<{ id: string }>('SELECT id FROM attachments')
+  const recordings = await voiceKeys(db)
   await db.transaction(async (tx) => {
     for (const table of [
       'notes',
@@ -44,4 +46,5 @@ export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise
     )
   })
   for (const { id } of files) await blobs.delete(`att/${id}`).catch(() => undefined)
+  for (const key of recordings) await blobs.delete(key).catch(() => undefined)
 }
