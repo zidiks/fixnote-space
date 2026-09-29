@@ -15,9 +15,14 @@ const key = new PluginKey<DecorationSet>('remoteFade')
  * typing reads smoothly although it comes in small batches. Only for changes from the room: the
  * sync plugin replaces the whole document then, so the new range is found by diffing it.
  */
-export const RemoteFade = Extension.create({
+export const RemoteFade = Extension.create<{
+  /** The assistant is writing: its text types in (ai-typing.ts) instead of fading. */
+  aiWriting: () => boolean
+}>({
   name: 'remoteFade',
+  addOptions: () => ({ aiWriting: () => false }),
   addProseMirrorPlugins() {
+    const { aiWriting } = this.options
     return [
       new Plugin<DecorationSet>({
         key,
@@ -30,7 +35,7 @@ export const RemoteFade = Extension.create({
               return next.remove(next.find(undefined, undefined, (spec) => spec.until <= now))
             }
             const remote = tr.getMeta(ySyncPluginKey)?.isChangeOrigin === true
-            if (!remote || !tr.docChanged) return next
+            if (!remote || !tr.docChanged || aiWriting()) return next
             const start = oldState.doc.content.findDiffStart(newState.doc.content)
             const end = oldState.doc.content.findDiffEnd(newState.doc.content)
             if (start == null || !end) return next

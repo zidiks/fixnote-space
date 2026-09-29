@@ -1,6 +1,7 @@
 import type { FetchedPage, Platform, WindowChrome } from '@fixnote/core'
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
 import { localModels } from '@fixnote/platform-web/models'
+import { createTesseractRecognizer } from '@fixnote/platform-web/ocr'
 import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
@@ -44,6 +45,7 @@ export function createTauriPlatform(): Platform {
   const chrome = detectChrome()
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
   let transcriber: ReturnType<typeof createWhisperTranscriber> | null = null
+  let ocr: ReturnType<typeof createTesseractRecognizer> | null = null
   return {
     kind: 'desktop',
     chrome,
@@ -66,6 +68,10 @@ export function createTauriPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     models: localModels,
+    ocr: () => {
+      ocr ??= createTesseractRecognizer()
+      return Promise.resolve(ocr)
+    },
     keyStore: osKeyStore,
     secrets: osSecretStore,
     httpFetch: tauriFetch,

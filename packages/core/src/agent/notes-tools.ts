@@ -1,6 +1,7 @@
 import type { AiAction, AiActionKind, AuditLog } from '../ai/audit'
 import { retrieve } from '../ai/retrieve'
 import { type AttachmentInfo, type Attachments, attachmentIds, attachmentUrl } from '../attachments'
+import { ImageTexts } from '../attachments/image-text'
 import { type McpScope, scopeFolderIds } from '../mcp'
 import type { NotesRepo } from '../notes/repo'
 import type { Folder, Note } from '../notes/types'
@@ -232,6 +233,9 @@ export class NoteTools {
           ? `- ${kind}, ${info.mime}, ${fileSize(info.size)} (id: ${id})`
           : `- ${kind} (id: ${id}), not on this computer yet`,
       )
+      // Text read from the image on this device (OCR), when there is some.
+      const read = named?.image ? await new ImageTexts(this.db).get(id) : null
+      if (read) lines.push(`  text in it: ${read.replace(/\s*\n\s*/g, ' / ').slice(0, 600)}`)
     }
     return lines.join('\n')
   }

@@ -1,15 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useEffect } from 'react'
-import { useAccount } from '../account/account'
+import { requestSync, useAccount } from '../account/account'
 import { useDb } from '../db'
 import { kvStore } from '../kv'
+import { initOcr } from '../ocr'
 import { platform } from '../platform'
 import { initAssistant, notifyNotesChanged } from './assistant'
 import { initLlm, useLlm } from './llm'
 import { acceptWithUndo, maybeRunScheduled, refreshTidyCount } from './tidy'
 
 export function AssistantProvider({ children }: { children: ReactNode }) {
-  const { driver, tidy, audit, repo } = useDb()
+  const { driver, tidy, audit, repo, attachments } = useDb()
   const qc = useQueryClient()
   const signedIn = useAccount((s) => s.phase === 'ready')
   const ownModel = useLlm((s) => s.settings.kind !== 'fixnote')
@@ -25,10 +26,14 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       onNotesChanged: () => {
         void qc.invalidateQueries()
         notifyNotesChanged()
+        // Other devices (and the people a note is shared with) get the change soon, not later.
+        requestSync()
       },
     })
     void refreshTidyCount(tidy)
-  }, [driver, tidy, repo, audit, qc])
+    // Text in images (OCR), read on this device in the background, for search and the assistant.
+    initOcr({ db: driver, attachments, onRead: () => void qc.invalidateQueries() })
+  }, [driver, tidy, repo, audit, qc, attachments])
 
   // Tidy looks for suggestions every few days, once the model is reachable.
   useEffect(() => {

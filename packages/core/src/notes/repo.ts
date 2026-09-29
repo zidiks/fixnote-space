@@ -1,3 +1,4 @@
+import { ImageTexts } from '../attachments/image-text'
 import type { SqlDriver, SqlRow, SqlValue } from '../platform'
 import { merge3, unionLines } from '../sync/merge'
 import { addTasks } from './daily'
@@ -349,7 +350,30 @@ export class NotesRepo {
         LIMIT ?`,
       [match, ...params, opts.limit ?? 20],
     )
-    return rows.map((row) => ({ note: toSummary(row), snippet: row.snip ?? '' }))
+    const hits = rows.map((row) => ({ note: toSummary(row), snippet: row.snip ?? '' }))
+    // Then notes whose images say it (text read on this device), after those that say it in words.
+    const limit = opts.limit ?? 20
+    if (hits.length >= limit) return hits
+    const seen = new Set(hits.map((h) => h.note.id))
+    const pictured = (
+      await new ImageTexts(this.db).matchNotes(match, {
+        limit,
+        mark: [MARK_START, MARK_END],
+      })
+    ).filter((m) => !seen.has(m.noteId))
+    if (!pictured.length) return hits
+    const extra = await this.db.query<NoteRow>(
+      `SELECT ${SUMMARY_COLUMNS}, substr(n.content, 1, ${PREVIEW_CHARS}) AS body
+         FROM notes n
+        WHERE n.id IN (${pictured.map(() => '?').join(',')}) AND ${where.join(' AND ')}`,
+      [...pictured.map((m) => m.noteId), ...params],
+    )
+    const byId = new Map(extra.map((r) => [r.id, r]))
+    for (const m of pictured) {
+      const row = byId.get(m.noteId)
+      if (row && hits.length < limit) hits.push({ note: toSummary(row), snippet: m.snippet })
+    }
+    return hits
   }
 
   /**

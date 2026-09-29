@@ -11,6 +11,25 @@ export class MicrophoneError extends Error {
   }
 }
 
+/** The microphone, with the browser's echo and noise filtering; a MicrophoneError if it can't. */
+export async function openMicrophone(): Promise<MediaStream> {
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
+    })
+  } catch (err) {
+    const name = err instanceof DOMException ? err.name : ''
+    throw new MicrophoneError(
+      name === 'NotAllowedError' || name === 'SecurityError'
+        ? 'denied'
+        : name === 'NotFoundError' || name === 'OverconstrainedError'
+          ? 'missing'
+          : 'other',
+      err instanceof Error ? err.message : String(err),
+    )
+  }
+}
+
 /**
  * Records the microphone with MediaRecorder (Opus) and reports a 0..1 input level for the meter.
  * The stream is released as soon as recording stops, so the OS "mic in use" indicator goes off.
@@ -23,21 +42,7 @@ export class Recorder {
   private frame = 0
 
   async start(onLevel: (level: number) => void): Promise<void> {
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
-      })
-    } catch (err) {
-      const name = err instanceof DOMException ? err.name : ''
-      throw new MicrophoneError(
-        name === 'NotAllowedError' || name === 'SecurityError'
-          ? 'denied'
-          : name === 'NotFoundError' || name === 'OverconstrainedError'
-            ? 'missing'
-            : 'other',
-        err instanceof Error ? err.message : String(err),
-      )
-    }
+    this.stream = await openMicrophone()
     const mimeType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find((t) =>
       MediaRecorder.isTypeSupported(t),
     )

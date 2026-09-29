@@ -3,6 +3,7 @@ import { opfsBlobStore } from './blobs'
 import { createTransformersEmbedder } from './embed/client'
 import { webKeyStore, webSecretStore } from './keys'
 import { localModels } from './models'
+import { createTesseractRecognizer } from './ocr/client'
 import { openWebSqlDriver } from './sqlite/client'
 import { createWhisperTranscriber } from './whisper/client'
 
@@ -15,6 +16,7 @@ export function createWebPlatform(): Platform {
   let sql: Promise<SqlDriver> | null = null
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
   let transcriber: ReturnType<typeof createWhisperTranscriber> | null = null
+  let ocr: ReturnType<typeof createTesseractRecognizer> | null = null
   return {
     kind: 'web',
     chrome: 'browser',
@@ -37,6 +39,10 @@ export function createWebPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     models: localModels,
+    ocr: () => {
+      ocr ??= createTesseractRecognizer()
+      return Promise.resolve(ocr)
+    },
     keyStore: webKeyStore,
     secrets: webSecretStore,
     openExternal: async (url) => {

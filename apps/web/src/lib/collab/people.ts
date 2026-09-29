@@ -89,3 +89,27 @@ export function othersIn(awareness: Awareness): (LiveUser & { clientId: number }
   }
   return out
 }
+
+/** The awareness field that says the assistant is writing in the note for this person. */
+export const AI_FIELD = 'ai'
+
+/** The assistant at work in the note: for whom (one entry per person who asked). */
+export interface AiAtWork {
+  clientId: number
+  /** The name of the person who asked. */
+  askedBy: string
+  self: boolean
+}
+
+/** Who has the assistant writing in the room now, this person included. */
+export function aiIn(awareness: Awareness): AiAtWork[] {
+  const seen = new Set<string>()
+  const out: AiAtWork[] = []
+  for (const [clientId, state] of awareness.getStates()) {
+    const ai = (state as { ai?: { by?: string } | null }).ai
+    if (!ai?.by || seen.has(ai.by)) continue
+    seen.add(ai.by)
+    out.push({ clientId, askedBy: ai.by, self: clientId === awareness.clientID })
+  }
+  return out
+}

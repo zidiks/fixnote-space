@@ -181,3 +181,5 @@ export class Attachments {
     return done
   }
 }
+
+export { ImageTexts } from './image-text'

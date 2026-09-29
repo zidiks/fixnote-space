@@ -143,6 +143,19 @@ export interface AppUpdater {
   check(): Promise<AvailableUpdate | null>
 }
 
+/**
+ * Reads the text in an image on the device (OCR), so photos of pages, receipts and whiteboards
+ * can be found by what they say. The language data downloads once, on first use.
+ */
+export interface TextRecognizer {
+  readonly modelId: string
+  ready(onProgress?: ProgressListener): Promise<void>
+  /** The text found in the image ('' when there is none). */
+  recognize(image: Blob): Promise<string>
+  /** Frees the model (after its files were removed); the next use loads it again. */
+  unload?(): void
+}
+
 /** The files of on-device models (`models.ts`), cached by the webview. */
 export interface LocalModels {
   /** Bytes of the model's files on this device; 0 when it is not downloaded. */
@@ -160,6 +173,8 @@ export interface Platform {
   readonly embedder: () => Promise<Embedder>
   readonly transcriber: () => Promise<Transcriber>
   readonly models?: LocalModels
+  /** Text from images, on the device (missing where it cannot run). */
+  readonly ocr?: () => Promise<TextRecognizer>
   readonly keyStore: KeyStore
   readonly secrets: SecretStore
   /**

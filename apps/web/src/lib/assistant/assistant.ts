@@ -38,6 +38,7 @@ import {
   TOOLS_TOKENS,
 } from './agent'
 import { contextWindow, type LlmUnavailable, llm as llmRoute, providerLabel, useLlm } from './llm'
+import { openNote } from './open-notes'
 
 export type AssistantStatus = 'idle' | 'thinking' | 'answering' | 'done' | 'error'
 export type SemanticState = 'off' | 'loading' | 'ready' | 'unavailable'
@@ -341,12 +342,19 @@ export async function ask(
   controller = ctrl
   let text = ''
   const done = actionCollector()
+  /** The note the assistant is changing now, if it is open. */
+  let editing: string | null = null
   const tools = new NoteTools(d.db, d.repo, d.audit, {
     gate: OPEN_GATE,
     provider: providerLabel,
     kinds: 'chat',
     onChange: (action) => {
       done.add(action.id)
+      // A note open on screen shows the change as it happens.
+      for (const c of action.changes) {
+        if (c.before && c.after && c.before.content !== c.after.content)
+          openNote(c.noteId)?.aiChanged(c.after.content)
+      }
       patchMessage(answer.id, { actions: { items: [...done.items], undone: false } })
       d.onNotesChanged()
     },
@@ -384,6 +392,15 @@ export async function ask(
           patchMessage(answer.id, { content: t })
         },
         onActivity: (activity) => set({ activity }),
+        onEditing: (id) => {
+          if (id) {
+            editing = id
+            openNote(id)?.aiStarts()
+          } else if (editing) {
+            openNote(editing)?.aiEnds()
+            editing = null
+          }
+        },
         confirm: (request) => askUser(request, ctrl.signal),
       },
       done.label,
