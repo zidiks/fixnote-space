@@ -209,6 +209,7 @@ export interface SharedSyncReport {
   roles: { sharedId: string; role: SharedRole }[]
   /** Invitations waiting for an answer (note and folder ids). */
   invites: string[]
+  /** Shared notes whose stored document changed (the server's edits, or edits made outside). */
   pulled: number
   pushed: number
 }
@@ -625,19 +626,32 @@ export class SharedNotes {
   // ── Editing ────────────────────────────────────────────────────────────────
 
   /**
-   * The editor's document changed: merges it into the stored state. `markdown` is what the editor
-   * wrote to the note for it, so later sync can tell edits made outside the editor.
+   * The editor saves a shared note: its document, and its Markdown into the note, in one step, so
+   * sync never sees one without the other. An edit made to the note outside the editor since the
+   * last save (MCP, Telegram) is taken into the document first; then the merged state is returned
+   * for the editor to take in, else null. `taken`: the editor already shows the note's current
+   * text (the assistant's change typed in), so there is nothing to take in.
    */
-  async saveDoc(sharedId: string, update: Uint8Array, markdown: string): Promise<void> {
-    await this.locked(async () => {
+  async saveDoc(
+    sharedId: string,
+    update: Uint8Array,
+    markdown: string,
+    opts: { taken?: boolean } = {},
+  ): Promise<Uint8Array | null> {
+    return this.locked(async () => {
       const doc = await this.doc(sharedId)
       // A viewer's copy comes from the server only (sync pulls it). That also keeps out edits an
       // editor made just before losing the right to edit, which were dropped then.
-      if (!doc || !canEdit(doc.role)) return
+      if (!doc || !canEdit(doc.role)) return null
+      const outside = opts.taken ? null : await this.absorbOutsideEdits(doc)
+      const state = merge(outside ?? doc.state, update)
+      const text = outside ? this.projector.toMarkdown(state) : markdown
+      await this.repo.updateContent(doc.noteId, text)
       await this.db.execute(
         'UPDATE shared_docs SET state = ?, projected = ?, dirty = 1 WHERE shared_id = ?',
-        [merge(doc.state, update), markdown, sharedId],
+        [state, text, sharedId],
       )
+      return outside ? state : null
     })
   }
 
@@ -1134,7 +1148,8 @@ export class SharedNotes {
 
   /**
    * Takes in edits made to the note outside the editor, then the server's state. Writes the merged
-   * Markdown to the note. Returns whether the server had something new.
+   * Markdown to the note. Returns whether the stored document changed (the server had something
+   * new, or there was an outside edit), so an open editor takes it in.
    */
   private async pull(sharedId: string): Promise<boolean> {
     const remote = await this.remote.state(sharedId)
@@ -1159,7 +1174,7 @@ export class SharedNotes {
         // two devices would keep sending each other the same edits).
         [state, serverVersion, markdown, absorbed ? 1 : 0, sharedId],
       )
-      return Boolean(newer)
+      return Boolean(newer) || Boolean(absorbed)
     })
   }
 

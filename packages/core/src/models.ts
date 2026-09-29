@@ -13,8 +13,12 @@ export const SEARCH_MODEL: ModelInfo = { id: 'Xenova/multilingual-e5-small', app
 /** Text from images (Tesseract, English, Russian and Spanish). */
 export const OCR_MODEL: ModelInfo = { id: '@tesseract.js-data', approxBytes: 7.8e6 }
 
-/** Speech to text: the fast one is the default, the accurate one handles mixed languages better. */
+/**
+ * Speech to text, lightest first: `fast` (standard) is the default, `light` is for weak computers
+ * (the app offers it when dictation is slow), `accurate` handles mixed languages better.
+ */
 export const SPEECH_MODELS = {
+  light: { id: 'onnx-community/whisper-tiny', approxBytes: 41e6 },
   fast: { id: 'onnx-community/whisper-base', approxBytes: 77e6 },
   accurate: { id: 'onnx-community/whisper-small', approxBytes: 245e6 },
 } as const satisfies Record<string, ModelInfo>

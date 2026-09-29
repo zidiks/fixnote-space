@@ -41,7 +41,14 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           if (await captureToDaily(driver, 'telegram')) await appendToToday(repo, content)
           else await repo.createNote({ content })
         },
-        transcribe: async (audio) => (await (await platform.transcriber()).transcribe(audio)).text,
+        transcribe: async (audio) =>
+          (
+            await (
+              await platform.transcriber()
+            ).transcribe(audio, {
+              prefer: i18n.language.slice(0, 2),
+            })
+          ).text,
         onCaptured: (count) => toast(i18n.t('capture.imported', { count })),
         onRemoteChange: () => {
           void qc.invalidateQueries()

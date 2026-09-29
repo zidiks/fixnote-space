@@ -720,6 +720,9 @@ export function NoteEditor({
           } finally {
             aiApplying.current = false
           }
+          // Stored with the note's new text at once, so it is not taken in a second time as an
+          // edit made outside the editor.
+          void lv.persist(e.getMarkdown(), { taken: true })
           if (start !== undefined) revealRange(e.view, start)
           return true
         }
@@ -746,10 +749,14 @@ export function NoteEditor({
   }, [note.id, readOnly])
 
   // Sync brought a newer version of this note: show it if there is no unsaved typing. (Live, the
-  // room is the source: the stored text is what the leading device wrote from it.)
+  // room is the source: the stored text is what the leading device wrote from it. A change made
+  // outside the editor (MCP, Telegram) comes in with a save, here at once when nothing is typed.)
   useEffect(() => {
-    if (liveRef.current) {
+    const lv = liveRef.current
+    if (lv) {
       base.current = note.content
+      if (!lv.readOnly && pending.current === null && note.content !== latest.current)
+        void lv.persist(latest.current)
       return
     }
     if (pending.current !== null || note.content === base.current) return

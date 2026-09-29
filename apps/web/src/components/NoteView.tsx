@@ -323,14 +323,17 @@ export function NoteView({ id }: { id: string }) {
               if (n.readOnly) return n
               let saved: Note
               try {
-                saved = await repo.updateContent(n.id, markdown, { base })
+                if (shared.live) {
+                  // A shared note: its document goes to the others (the Markdown is this device's
+                  // copy), saved with it in one step.
+                  await shared.live.persist(markdown)
+                  saved = (await repo.getNote(n.id)) ?? n
+                } else saved = await repo.updateContent(n.id, markdown, { base })
               } catch (err) {
                 // Made view only while open (the last save of the editor being closed).
                 if (err instanceof ReadOnlyError) return n
                 throw err
               }
-              // A shared note: its document goes to the others (the Markdown is this device's copy).
-              await shared.live?.persist(saved.content)
               qc.setQueryData(keys.note(n.id), saved)
               void invalidate()
               return saved

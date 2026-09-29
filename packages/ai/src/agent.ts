@@ -20,6 +20,10 @@ export interface AgentInput {
   history: Turn[]
   /** What the conversation was about before `history`, when it was shortened. */
   summary?: string | null
+  /** The user's language (the app's, or the one a voice message was spoken in), e.g. `ru`. */
+  language?: string
+  /** The message was spoken and transcribed, so it may have recognition errors. */
+  spoken?: boolean
   now?: Date
 }
 
@@ -29,10 +33,14 @@ Rules:
 - For questions about what the user wrote, use the numbered note fragments below and search_notes when they are not enough. Do not use outside knowledge about the user.
 - After each statement that comes from a fragment, cite it like [1] or [2][3]. Do not cite tool results with numbers; name the note instead.
 - Change notes only when the user asks for it. Read a note with get_note before editing it, and prefer edit_note for small changes. Never invent ids: take them from fragments or tool results.
+- A request to fix, tidy up, format, restructure, shorten, expand or translate a note is a request to change it: do it with the tools (get_note, then edit_note or update_note). Never answer with the new text of the note instead of saving it, and do not paste a note's full text into the answer. "This note" or "the note" is the one the user is looking at.
+- When tidying a note, keep everything it says: fix structure, headings, lists and typos, and drop nothing but exact repeats.
 - Do not ask the user to confirm deletions yourself: the app asks when needed, and every change can be undone.
 - After changing notes, say in one short sentence what you did. If a tool fails, say what went wrong.
 - In notes, "- [x]" is a finished task and "- [ ]" an open one.
-- Answer in the language of the user's last message. Be brief and concrete; use short lists when it helps.`
+- Answer in the language of the user's last message; when it is unclear, in the user's language given below. Be brief and concrete; use short lists when it helps.`
+
+const LANGUAGE_NAMES: Record<string, string> = { en: 'English', ru: 'Russian', es: 'Spanish' }
 
 function scopeLine(scope: ChatScope): string {
   if (scope.kind === 'note')
@@ -64,7 +72,17 @@ export function buildAgentMessages(input: AgentInput): AgentMessage[] {
     {
       role: 'user',
       content: [
-        `Today is ${now.toISOString().slice(0, 10)}. ${scopeLine(input.scope)}`,
+        [
+          `Today is ${now.toISOString().slice(0, 10)}. ${scopeLine(input.scope)}`,
+          input.language
+            ? `The user's language: ${LANGUAGE_NAMES[input.language] ?? input.language}.`
+            : '',
+          input.spoken
+            ? 'The message was spoken and transcribed: read past recognition errors, and answer in plain sentences that sound natural read aloud.'
+            : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
         fragments ? `Note fragments:\n\n${fragments}` : 'Note fragments: none were found.',
         `Message: ${input.question}`,
       ].join('\n\n'),

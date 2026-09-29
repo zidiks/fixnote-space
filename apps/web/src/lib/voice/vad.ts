@@ -1,6 +1,6 @@
 /**
- * Voice activity detection by loudness, for the spoken conversation: when a phrase starts and when
- * it is over. The noise floor adapts (a fan, a street), so speech is "clearly louder than the room".
+ * Voice activity detection by loudness, for cutting a dictation at its pauses: when a phrase starts
+ * and when it is over. The noise floor adapts (a fan, a street), so speech is "clearly louder than the room".
  */
 export interface VadOptions {
   /** Loud frames in a row that make speech (ignores clicks and taps). */

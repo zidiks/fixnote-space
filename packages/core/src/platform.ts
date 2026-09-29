@@ -61,11 +61,12 @@ export interface Transcriber {
   ready(onProgress?: ProgressListener): Promise<void>
   /**
    * `language` fixes the language; otherwise it is detected among `languages` (the ones the
-   * person speaks, default en, ru and es), never taken from the interface or the keyboard.
+   * person speaks, default en, ru and es). `prefer` (the app's language, or the one spoken last)
+   * wins unless detection clearly hears another one: short phrases are often misheard as English.
    */
   transcribe(
     audio: Blob,
-    opts?: { language?: string; languages?: string[] },
+    opts?: { language?: string; languages?: string[]; prefer?: string },
   ): Promise<TranscriptionResult>
   /** Switches the speech model (`SPEECH_MODELS`); it downloads on next use. Remembered. */
   setModel?(modelId: string): void

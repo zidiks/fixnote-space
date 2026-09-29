@@ -1,3 +1,5 @@
+import { downsample, RATE, Segmenter } from './segments'
+
 /** Longest recording we keep going; a dictated note, not a meeting. */
 export const MAX_RECORDING_MS = 10 * 60_000
 
@@ -32,6 +34,8 @@ export async function openMicrophone(): Promise<MediaStream> {
 
 /**
  * Records the microphone with MediaRecorder (Opus) and reports a 0..1 input level for the meter.
+ * With `onPiece`, the recording is also cut at pauses as it goes (16 kHz, see `Segmenter`), so it
+ * can be transcribed while the person speaks; stopping hands over the last piece before resolving.
  * The stream is released as soon as recording stops, so the OS "mic in use" indicator goes off.
  */
 export class Recorder {
@@ -40,8 +44,13 @@ export class Recorder {
   private chunks: Blob[] = []
   private audio: AudioContext | null = null
   private frame = 0
+  private segmenter: Segmenter | null = null
+  private onPiece: ((pcm: Float32Array) => void) | null = null
 
-  async start(onLevel: (level: number) => void): Promise<void> {
+  async start(
+    onLevel: (level: number) => void,
+    onPiece?: (pcm: Float32Array) => void,
+  ): Promise<void> {
     this.stream = await openMicrophone()
     const mimeType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find((t) =>
       MediaRecorder.isTypeSupported(t),
@@ -53,10 +62,32 @@ export class Recorder {
     }
     this.recorder.start(1000)
 
-    this.audio = new AudioContext()
-    const analyser = this.audio.createAnalyser()
+    const audio = new AudioContext()
+    this.audio = audio
+    const analyser = audio.createAnalyser()
     analyser.fftSize = 512
-    this.audio.createMediaStreamSource(this.stream).connect(analyser)
+    const source = audio.createMediaStreamSource(this.stream)
+    source.connect(analyser)
+    if (onPiece) {
+      const segmenter = new Segmenter()
+      this.segmenter = segmenter
+      this.onPiece = onPiece
+      const node = audio.createScriptProcessor(4096, 1, 1)
+      // It only runs when connected to the output: through a silent gain.
+      const mute = audio.createGain()
+      mute.gain.value = 0
+      source.connect(node)
+      node.connect(mute)
+      mute.connect(audio.destination)
+      node.onaudioprocess = (e) => {
+        const input = e.inputBuffer.getChannelData(0)
+        let sum = 0
+        for (const v of input) sum += v * v
+        const pcm = downsample(new Float32Array(input), audio.sampleRate, RATE)
+        const piece = segmenter.push(pcm, Math.sqrt(sum / input.length), audio.currentTime * 1000)
+        if (piece) onPiece(piece)
+      }
+    }
     const data = new Uint8Array(analyser.fftSize)
     const tick = () => {
       analyser.getByteTimeDomainData(data)
@@ -68,8 +99,11 @@ export class Recorder {
     tick()
   }
 
-  /** Stops and returns the recording. */
+  /** Stops and returns the recording (the last piece goes to `onPiece` first). */
   stop(): Promise<Blob> {
+    const rest = this.segmenter?.flush()
+    if (rest) this.onPiece?.(rest)
+    this.segmenter = null
     const rec = this.recorder
     if (!rec || rec.state === 'inactive') {
       this.release()
@@ -91,6 +125,7 @@ export class Recorder {
       this.recorder.stop()
     }
     this.chunks = []
+    this.segmenter = null
     this.release()
   }
 
