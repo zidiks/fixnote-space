@@ -30,7 +30,7 @@
         "font-src": "'self' data:",
         "img-src": "'self' data: blob: https:",
         "media-src": "'self' blob:",
-        "connect-src": "'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net",
+        "connect-src": "'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net https://voice.fixnote.space",
         "worker-src": "'self' blob:"
       }
     }

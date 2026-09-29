@@ -338,6 +338,7 @@ const en = {
     transcribing: 'Transcribing…',
     downloading: 'Downloading the speech model, once: {{percent}}%',
     local: 'Speech is recognized on this device.',
+    server: 'Speech is recognized on the FixNote voice server. Nothing is kept there.',
     noMic: 'No access to the microphone. Allow it in the system or browser settings.',
     missingMic: 'No microphone found.',
     failed: "Couldn't transcribe: {{message}}",
@@ -586,6 +587,12 @@ const en = {
     integrations: 'Integrations',
     plan: 'Plan',
     advanced: 'Advanced',
+  },
+  voiceServer: {
+    title: 'Voice through the FixNote server',
+    body: 'Faster speech recognition and a natural voice for the assistant. What you say and its answers pass through our server and are not kept.',
+    pro: 'On Pro. Until then everything runs on this device.',
+    localOnly: 'Off in Only on this device mode',
   },
   models: {
     title: 'Models on this device',

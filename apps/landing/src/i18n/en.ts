@@ -403,7 +403,7 @@ export const en: Dict = {
   privacyPage: {
     eyebrow: 'Privacy',
     title: 'Privacy policy',
-    updated: 'Updated September 28, 2026',
+    updated: 'Updated September 29, 2026',
     lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data FixNote has and why.',
     sections: [
       {
@@ -445,7 +445,10 @@ export const en: Dict = {
       },
       {
         title: 'Voice',
-        text: ['Speech is recognized on your device. The recording is not sent anywhere.'],
+        text: [
+          'Without Pro, speech is recognized on your device and the recording is not sent anywhere.',
+          'On Pro, while "Voice through the FixNote server" is on (Settings → Advanced), the recording of a phrase and the text of the assistant\'s answers pass through our voice server, which recognizes speech and reads the answers aloud. We keep neither recordings nor text and do not log them. Turn the setting off and everything runs on the device again.',
+        ],
       },
       {
         title: 'Telegram',

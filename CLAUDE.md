@@ -74,6 +74,12 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   the device, `ask()` as a voice message, and the answer read aloud by the system's speech synthesis
   (`speech.ts`) sentence by sentence as it streams, in the language the person spoke; a filler phrase
   when the answer is slow, yes/no aloud for changes that ask. The mic pauses while the app speaks.
+- Voice server (`services/voice`, Python: faster-whisper + Piper, Docker + Caddy on a VPS; see its
+  README): on Pro, with `VITE_VOICE_URL` set and not turned off (Settings → Advanced), speech is
+  recognized there and the assistant speaks with a Piper voice (`lib/voice/server.ts`:
+  `voiceTranscriber()`, `serverSpeech` for `Speaker`). It checks the Supabase session and
+  `my_plan()`, stores and logs nothing; anything failing falls back to the device. Tests: `pytest`
+  there. Voices must have a commercial-use license (see its README).
 - Text in images (OCR, on the device, Free): Tesseract via tesseract.js (`platform-web/src/ocr`; its
   language data is fetched into Cache Storage and handed over through tesseract.js's own idb cache,
   never downloaded by it). Read in the background (`lib/ocr.ts`) into `image_text` (+ FTS), which

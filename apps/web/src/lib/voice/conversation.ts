@@ -6,6 +6,7 @@ import { answerConfirm, ask, useAssistant } from '../assistant/assistant'
 import { platform } from '../platform'
 import { LiveMic, type Phrase } from './live-mic'
 import { MicrophoneError } from './recorder'
+import { serverSpeech, voiceTranscriber } from './server'
 import { fillerFor, Sentences, Speaker, yesNo, yesOrNo } from './speech'
 import { toPeaks } from './voice'
 
@@ -41,7 +42,7 @@ const FILLER_AFTER_MS = 1200
 let mic: LiveMic | null = null
 let transcriber: Transcriber | null = null
 let scopeOf: () => ChatScope = () => ({ kind: 'all' })
-const speaker = new Speaker()
+const speaker = new Speaker(serverSpeech)
 /** Changes when the conversation stops or is interrupted: late work from before then is dropped. */
 let generation = 0
 /** The language the person spoke last (the answer is read in it). */
@@ -63,7 +64,7 @@ export async function startTalk(scope: () => ChatScope): Promise<void> {
   lang = (i18n.language || 'en').slice(0, 2)
   set({ phase: 'starting', download: null, level: 0 })
   try {
-    transcriber = await platform.transcriber()
+    transcriber = await voiceTranscriber()
     await transcriber.ready((p) => set({ download: p < 1 ? p : null }))
     set({ download: null })
     mic = new LiveMic({
@@ -116,8 +117,12 @@ async function heard(phrase: Phrase, gen: number) {
   set({ phase: 'transcribing' })
   let text = ''
   try {
-    // The language spoken last stays unless a phrase is clearly in another one.
-    const result = await transcriber.transcribe(phrase.audio, { prefer: lang })
+    // The language spoken last stays unless a phrase is clearly in another one; a yes or no
+    // answers the question asked in the app's language.
+    const result = await transcriber.transcribe(
+      phrase.audio,
+      confirming ? { language: i18n.language.slice(0, 2) } : { prefer: lang },
+    )
     text = result.text.trim()
     if (text && !confirming) lang = result.language || lang
   } catch {

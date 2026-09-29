@@ -98,6 +98,8 @@ export interface AccountBackend {
   deletePairing(id: string): Promise<void>
   /** The default LLM route for the signed-in user, or null when signed out. */
   chatTransport(): Promise<ChatTransport | null>
+  /** The signed-in session's access token (for FixNote's own servers), or null. */
+  accessToken(): Promise<string | null>
   /** Reads a public page's <head> through the `unfurl` function; null when signed out. */
   fetchPage(url: string): Promise<FetchedPage | null>
   /** The signed-in user's shared links. */
@@ -212,6 +214,10 @@ export function supabaseBackend(
           return new Uint8Array(await data.arrayBuffer())
         },
       }
+    },
+    async accessToken() {
+      const { data } = await client.auth.getSession()
+      return data.session?.access_token ?? null
     },
     async chatTransport() {
       const { data } = await client.auth.getSession()

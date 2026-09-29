@@ -340,6 +340,7 @@ const es: LocaleResource = {
     transcribing: 'Transcribiendo…',
     downloading: 'Descargando el modelo de voz, solo una vez: {{percent}}%',
     local: 'La voz se reconoce en este dispositivo.',
+    server: 'La voz se reconoce en el servidor de voz de FixNote. Allí no se guarda nada.',
     noMic: 'No hay acceso al micrófono. Permítelo en la configuración del sistema o del navegador.',
     missingMic: 'No se encontró ningún micrófono.',
     failed: 'No se pudo transcribir: {{message}}',
@@ -593,6 +594,12 @@ const es: LocaleResource = {
     integrations: 'Integraciones',
     plan: 'Plan',
     advanced: 'Avanzado',
+  },
+  voiceServer: {
+    title: 'Voz a través del servidor de FixNote',
+    body: 'Reconoce la voz más rápido y el asistente habla con una voz natural. Lo que dices y sus respuestas pasan por nuestro servidor y no se guardan.',
+    pro: 'Con Pro. Hasta entonces todo funciona en este dispositivo.',
+    localOnly: 'Desactivado en el modo Solo en este dispositivo',
   },
   models: {
     title: 'Modelos en este dispositivo',

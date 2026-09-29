@@ -11,8 +11,12 @@ import { Button, cn } from '@fixnote/ui'
 import { Download, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { useLlm } from '../../lib/assistant/llm'
 import { fileSize } from '../../lib/attachments'
+import { env } from '../../lib/env'
+import { usePlan } from '../../lib/plan'
 import { usePlatform } from '../../lib/platform'
+import { setVoiceServerWanted, useVoiceServer } from '../../lib/voice/server'
 
 type Kind = 'search' | 'ocr' | SpeechModelKey
 
@@ -204,9 +208,36 @@ function ModelsSection() {
   )
 }
 
+/** Speech through FixNote's voice server (Pro): faster recognition and a better voice. */
+function VoiceServerOption() {
+  const { t } = useTranslation()
+  const wanted = useVoiceServer((s) => s.wanted)
+  const localOnly = useLlm((s) => s.localOnly)
+  const pro = usePlan((s) => s.info?.plan === 'pro')
+  if (!env.voiceUrl) return null
+  const note = localOnly ? t('voiceServer.localOnly') : pro ? null : t('voiceServer.pro')
+  return (
+    <label className="flex max-w-xl items-start gap-3">
+      <input
+        type="checkbox"
+        className="mt-1 size-4 accent-brand"
+        checked={wanted && !localOnly}
+        disabled={localOnly}
+        onChange={(e) => setVoiceServerWanted(e.target.checked)}
+      />
+      <span className="space-y-0.5">
+        <span className="block text-sm font-medium">{t('voiceServer.title')}</span>
+        <span className="block text-sm text-muted-foreground">{t('voiceServer.body')}</span>
+        {note ? <span className="block text-sm text-muted-foreground">{note}</span> : null}
+      </span>
+    </label>
+  )
+}
+
 export function AdvancedSection() {
   return (
     <div className="space-y-8">
+      <VoiceServerOption />
       <ModelsSection />
     </div>
   )

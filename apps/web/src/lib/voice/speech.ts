@@ -1,6 +1,7 @@
 /**
- * The assistant's voice in a spoken conversation: the system's speech synthesis (Web Speech API,
- * on the device in Chrome/Edge/WebView2 and Safari), in the language the person spoke.
+ * The assistant's voice in a spoken conversation, in the language the person spoke: a voice from
+ * FixNote's voice server when there is one (Piper, `server.ts`), else the system's speech synthesis
+ * (Web Speech API, on the device in Chrome/Edge/WebView2 and Safari).
  */
 
 /** Short phrases said while the answer is being prepared, in the language the person spoke. */
@@ -94,14 +95,28 @@ function voiceFor(lang: string): SpeechSynthesisVoice | null {
   return matching.sort((a, b) => score(b) - score(a))[0] ?? null
 }
 
+/** Speech for a sentence from elsewhere (a WAV or any format the browser decodes), or null. */
+export type VoiceSource = (
+  text: string,
+  lang: string,
+  signal: AbortSignal,
+) => Promise<ArrayBuffer | null>
+
 /**
  * Says the sentences one after another. Each resolves when it has been said, or after a safe time
- * (some engines never report the end); `cancel` stops at once.
+ * (some engines never report the end); `cancel` stops at once. With a `voice`, each sentence is
+ * fetched as soon as it is queued (so the next one is ready when this one ends) and played; when
+ * that fails, the system's voice says it.
  */
 export class Speaker {
   private queue: Promise<void> = Promise.resolve()
   private cancelled = 0
   private active = 0
+  private fetching = new Set<AbortController>()
+  private playing: AudioBufferSourceNode | null = null
+  private audio: AudioContext | null = null
+
+  constructor(private readonly voice?: VoiceSource) {}
 
   get speaking(): boolean {
     return this.active > 0
@@ -110,31 +125,72 @@ export class Speaker {
   say(text: string, lang: string): Promise<void> {
     const s = synth()
     const generation = this.cancelled
-    if (!s || !text.trim()) return this.queue
+    if ((!s && !this.voice) || !text.trim()) return this.queue
+    const abort = new AbortController()
+    this.fetching.add(abort)
+    const sound = this.voice
+      ? this.voice(text, lang, abort.signal).catch(() => null)
+      : Promise.resolve(null)
     this.active++
-    this.queue = this.queue.then(
-      () =>
-        new Promise<void>((resolve) => {
-          if (generation !== this.cancelled) return resolve()
-          const u = new SpeechSynthesisUtterance(text)
-          u.lang = lang
-          const voice = voiceFor(lang)
-          if (voice) u.voice = voice
-          const done = () => {
-            clearTimeout(timer)
-            resolve()
-          }
-          const timer = setTimeout(done, 2500 + text.length * 90)
-          u.onend = done
-          u.onerror = done
-          s.speak(u)
-        }),
-    )
-    const mine = this.queue.finally(() => {
-      this.active--
-    })
+    const mine = this.queue
+      .then(async () => {
+        const wav = await sound
+        if (generation !== this.cancelled) return
+        if (wav && (await this.play(wav, generation))) return
+        if (s) await this.system(s, text, lang, generation)
+      })
+      .finally(() => {
+        this.fetching.delete(abort)
+        this.active--
+      })
     this.queue = mine
     return mine
+  }
+
+  private system(s: SpeechSynthesis, text: string, lang: string, generation: number) {
+    return new Promise<void>((resolve) => {
+      if (generation !== this.cancelled) return resolve()
+      const u = new SpeechSynthesisUtterance(text)
+      u.lang = lang
+      const voice = voiceFor(lang)
+      if (voice) u.voice = voice
+      const done = () => {
+        clearTimeout(timer)
+        resolve()
+      }
+      const timer = setTimeout(done, 2500 + text.length * 90)
+      u.onend = done
+      u.onerror = done
+      s.speak(u)
+    })
+  }
+
+  /** Plays a fetched sentence; false when it cannot be decoded or played. */
+  private async play(data: ArrayBuffer, generation: number): Promise<boolean> {
+    try {
+      this.audio ??= new AudioContext()
+      const ctx = this.audio
+      if (ctx.state === 'suspended') await ctx.resume()
+      const buffer = await ctx.decodeAudioData(data)
+      if (generation !== this.cancelled) return true
+      await new Promise<void>((resolve) => {
+        const source = ctx.createBufferSource()
+        source.buffer = buffer
+        source.connect(ctx.destination)
+        const done = () => {
+          clearTimeout(timer)
+          if (this.playing === source) this.playing = null
+          resolve()
+        }
+        const timer = setTimeout(done, buffer.duration * 1000 + 1500)
+        source.onended = done
+        this.playing = source
+        source.start()
+      })
+      return true
+    } catch {
+      return false
+    }
   }
 
   /** Resolves once everything queued has been said. */
@@ -144,6 +200,14 @@ export class Speaker {
 
   cancel() {
     this.cancelled++
+    for (const f of this.fetching) f.abort()
+    this.fetching.clear()
+    try {
+      this.playing?.stop()
+    } catch {
+      // Already stopped.
+    }
+    this.playing = null
     synth()?.cancel()
   }
 }
