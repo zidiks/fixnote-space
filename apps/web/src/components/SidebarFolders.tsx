@@ -92,7 +92,10 @@ export function SidebarFolders() {
     e.preventDefault()
     edit()
   }
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  // Folded folders stay folded after a restart (kept with the other UI settings of this device).
+  const collapsedList = useUi((s) => s.collapsedFolders)
+  const toggle = useUi((s) => s.toggleFolder)
+  const collapsed = useMemo(() => new Set(collapsedList), [collapsedList])
   const [confirm, setConfirm] = useState<Folder | null>(null)
   const [sharing, setSharing] = useState<Folder | null>(null)
   // Sharing needs the account (keys and server).
@@ -112,14 +115,6 @@ export function SidebarFolders() {
     }
     return map
   }, [folders])
-
-  const toggle = (id: string) =>
-    setCollapsed((s) => {
-      const next = new Set(s)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
 
   const renderLevel = (parentId: string | null, depth: number): React.ReactNode => (
     <>
@@ -264,11 +259,8 @@ export function SidebarFolders() {
                 onDone={(name) => {
                   setCreatingIn(undefined)
                   if (name) {
-                    setCollapsed((s) => {
-                      const next = new Set(s)
-                      next.delete(f.id)
-                      return next
-                    })
+                    // The new subfolder shows: its parent unfolds.
+                    if (collapsed.has(f.id)) toggle(f.id)
                     create.mutate({ name, parentId: f.id })
                   }
                 }}

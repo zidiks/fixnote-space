@@ -29,11 +29,12 @@ export const PRESETS: Record<
     baseUrl: 'https://api.groq.com/openai/v1',
     model: 'llama-3.3-70b-versatile',
   },
-  deepseek: { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  deepseek: { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-flash' },
 }
 
 export const OLLAMA_URL = 'http://localhost:11434'
-const FIXNOTE_MODEL = 'deepseek-chat'
+/** What FixNote AI is called in requests; llm-proxy picks the real model from `level`. */
+const FIXNOTE_MODEL = 'fixnote'
 const SETTINGS_KEY = 'ai.provider'
 const LOCAL_ONLY_KEY = 'mode.localOnly'
 export const API_KEY_SECRET = 'llm-api-key'
@@ -49,19 +50,33 @@ export type AiMode = 'ask' | 'edits' | 'auto'
 export const AI_MODES: readonly AiMode[] = ['ask', 'edits', 'auto']
 const AI_MODE_KEY = 'ai.mode'
 
+/**
+ * How hard FixNote AI thinks in the chat. medium: the fast model, no reasoning; hard: the larger
+ * model reasoning before it answers, slower and using the monthly allowance several times faster
+ * (llm-proxy weighs its tokens).
+ */
+export type AiLevel = 'medium' | 'hard'
+export const AI_LEVELS: readonly AiLevel[] = ['medium', 'hard']
+const AI_LEVEL_KEY = 'ai.level'
+
 interface LlmState {
   mode: AiMode
+  level: AiLevel
   settings: ProviderSettings
   /** Desktop: nothing leaves the device (no sync, no server AI; Ollama only). */
   localOnly: boolean
   hasKey: boolean
+  /** The settings above were read from this device (until then they are defaults). */
+  loaded: boolean
 }
 
 export const useLlm = create<LlmState>()(() => ({
   mode: 'ask',
+  level: 'medium',
   settings: DEFAULTS,
   localOnly: false,
   hasKey: false,
+  loaded: false,
 }))
 
 interface Kv {
@@ -83,9 +98,11 @@ export async function initLlm(store: Kv) {
   }
   const saved = await store.get(AI_MODE_KEY)
   const mode = AI_MODES.find((m) => m === saved) ?? 'ask'
+  const savedLevel = await store.get(AI_LEVEL_KEY)
+  const level = AI_LEVELS.find((l) => l === savedLevel) ?? 'medium'
   const localOnly = platform.kind === 'desktop' && (await store.get(LOCAL_ONLY_KEY)) === 'on'
   const hasKey = Boolean(await platform.secrets.get(API_KEY_SECRET).catch(() => null))
-  useLlm.setState({ mode, settings, localOnly, hasKey })
+  useLlm.setState({ mode, level, settings, localOnly, hasKey, loaded: true })
 }
 
 export async function saveProvider(patch: Partial<ProviderSettings>) {
@@ -116,6 +133,8 @@ export interface LlmRoute {
   headers: Record<string, string>
   fetch?: typeof fetch
   model: string
+  /** More request fields this provider needs. */
+  body?: Record<string, unknown>
 }
 
 export type LlmUnavailable = 'signed-out' | 'no-key' | 'no-model' | 'local-only'
@@ -168,12 +187,16 @@ export async function llm(): Promise<
     headers['HTTP-Referer'] = 'https://fixnote.space'
     headers['X-Title'] = 'FixNote'
   }
+  // DeepSeek's models think by default, and with tools then want their reasoning back with every
+  // earlier answer, which the chat does not keep: plain answers, as with the other providers.
+  const deepseek = baseUrlOf(s).includes('api.deepseek.com')
   return {
     ok: true,
     route: {
       url: `${baseUrlOf(s)}/chat/completions`,
       headers,
       model,
+      ...(deepseek ? { body: { thinking: { type: 'disabled' } } } : {}),
       ...(viaApp ? { fetch: viaApp } : {}),
     },
   }
@@ -182,6 +205,7 @@ export async function llm(): Promise<
 /** How many tokens the current model takes at once (roughly; small when unknown). */
 export function contextWindow(): number {
   const s = useLlm.getState().settings
+  // FixNote AI's models take far more; this is how much of it a chat uses before it is shortened.
   if (s.kind === 'fixnote') return 64_000
   // Ollama runs with a short context unless its num_ctx is raised.
   if (s.kind === 'ollama') return 8_000
@@ -214,4 +238,9 @@ export async function ollamaModels(baseUrl: string): Promise<string[]> {
 export async function setAiMode(mode: AiMode) {
   useLlm.setState({ mode })
   await kv?.set(AI_MODE_KEY, mode)
+}
+
+export async function setAiLevel(level: AiLevel) {
+  useLlm.setState({ level })
+  await kv?.set(AI_LEVEL_KEY, level)
 }

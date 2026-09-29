@@ -22,6 +22,8 @@ export type AgentMessage =
       role: 'assistant'
       content: string | null
       tool_calls: { id: string; type: 'function'; function: { name: string; arguments: string } }[]
+      /** What a thinking model reasoned before these calls; it must get it back (DeepSeek). */
+      reasoning_content?: string
     }
   | { role: 'tool'; tool_call_id: string; content: string }
 
@@ -40,6 +42,8 @@ export interface ChatRequest {
   tools?: ToolDef[]
   temperature?: number
   maxTokens?: number
+  /** More fields for the request body, for one provider (FixNote AI's `level`). */
+  body?: Record<string, unknown>
   signal?: AbortSignal
   fetch?: typeof fetch
 }
@@ -61,6 +65,8 @@ export class ChatError extends Error {
 /** What a streamed turn brings: text as it arrives, then the tools to run (if any), then usage. */
 export type TurnEvent =
   | { type: 'text'; text: string }
+  /** A thinking model's reasoning, as it arrives (not shown; given back with tool calls). */
+  | { type: 'reasoning'; text: string }
   | { type: 'tool_calls'; calls: ToolCall[] }
   | { type: 'usage'; promptTokens: number; completionTokens: number }
 
@@ -85,6 +91,7 @@ export async function* streamTurn(req: ChatRequest): AsyncGenerator<TurnEvent, v
       temperature: req.temperature ?? 0.3,
       max_tokens: req.maxTokens ?? 1024,
       ...(req.tools?.length ? { tools: req.tools } : {}),
+      ...req.body,
     }),
     signal: req.signal,
   })
@@ -132,6 +139,7 @@ export async function* streamTurn(req: ChatRequest): AsyncGenerator<TurnEvent, v
         if (data === '[DONE]') break read
         const chunk = parseChunk(data)
         if (!chunk) continue
+        if (chunk.reasoning) yield { type: 'reasoning', text: chunk.reasoning }
         if (chunk.text) yield { type: 'text', text: chunk.text }
         for (const d of chunk.calls) {
           const call = calls.get(d.index) ?? { id: '', name: '', arguments: '' }
@@ -156,6 +164,7 @@ export async function* streamTurn(req: ChatRequest): AsyncGenerator<TurnEvent, v
 
 interface Chunk {
   text: string | null
+  reasoning: string | null
   calls: { index: number; id?: string; name?: string; arguments?: string }[]
   usage: { promptTokens: number; completionTokens: number } | null
 }
@@ -166,6 +175,7 @@ function parseChunk(data: string): Chunk | null {
       choices?: {
         delta?: {
           content?: string | null
+          reasoning_content?: string | null
           tool_calls?: {
             index?: number
             id?: string
@@ -180,6 +190,7 @@ function parseChunk(data: string): Chunk | null {
     const delta = json.choices?.[0]?.delta
     return {
       text: delta?.content || null,
+      reasoning: delta?.reasoning_content || null,
       calls: (delta?.tool_calls ?? []).map((c, i) => ({
         index: c.index ?? i,
         id: c.id,

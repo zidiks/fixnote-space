@@ -69,6 +69,19 @@ fn db_query(
     db::query(&conn, &sql, &params)
 }
 
+/// The window starts hidden (tauri.conf.json) and shows once the webview drew its first frame, in
+/// the person's theme: no blank or wrongly lit window while the app starts.
+#[tauri::command]
+fn window_ready(window: tauri::WebviewWindow) {
+    if !window.is_visible().unwrap_or(true) {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
+
+/// If the page never says it is ready (a script error), the window shows anyway.
+const SHOW_ANYWAY: std::time::Duration = std::time::Duration::from_secs(3);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -84,11 +97,16 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 webview::disable_browser_shortcuts(&window);
                 webview::grant_microphone(&window);
+                std::thread::spawn(move || {
+                    std::thread::sleep(SHOW_ANYWAY);
+                    window_ready(window);
+                });
             }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
+            window_ready,
             apple_notes::apple_notes_folders,
             apple_notes::apple_notes_read,
             db_execute,

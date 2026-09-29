@@ -255,6 +255,15 @@ const es: LocaleResource = {
     tooLarge: '{{name}} ocupa más de 20 MB',
     fileMissing: 'Este archivo aún no está disponible en este dispositivo.',
   },
+  aiLevel: {
+    title: 'Razonamiento',
+    body: 'Cuánto piensa FixNote AI una respuesta en el chat.',
+    medium: 'Estándar',
+    mediumBody: 'Una respuesta rápida. Sirve para la mayoría de las preguntas.',
+    hard: 'Profundo',
+    hardBody:
+      'Un modelo más potente que piensa antes. Mejor para tareas grandes con muchas notas. Responde más despacio y gasta el límite de AI unas 4 veces más rápido.',
+  },
   aiMode: {
     title: 'Modos de IA',
     body: 'Eliminar o cambiar muchas notas a la vez siempre pide permiso. Cualquier cambio se puede deshacer en el registro de abajo.',

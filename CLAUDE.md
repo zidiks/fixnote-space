@@ -46,7 +46,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   turns become a summary (`chat.summary` kv) near the context limit. Deleting, and more than a few
   changes in one answer, always ask; in "ask" mode every change asks. Each answer lists its changes
   (`chat_messages.actions`) with Undo all. llm-proxy takes tools; a step that only returns tool
-  results is not a new request, and cached prompt tokens count a tenth.
+  results is not a new request, and cached prompt tokens count a tenth. FixNote AI has two levels
+  (Settings → AI, `useLlm().level`): medium = `LLM_MODEL` (deepseek-flash, thinking off), hard =
+  `LLM_MODEL_HARD` (deepseek-v4-pro, thinking on; tokens weighed by `LLM_HARD_WEIGHT`). A thinking
+  model gets its `reasoning_content` back with its tool calls, and earlier turns go as text. Each
+  turn carries the folder list (`tools.folders()`); `search_notes` and `list_recent` take `folder`.
   A change to a note open on screen goes through `registerOpenNote` (`lib/assistant/open-notes.ts`):
   solo it is one editor step that types in (`editor/ai-typing.ts`); in a shared note it is written
   into the live Yjs document, and the awareness field `ai` shows "FixNote AI · asked by …" in LiveBar.
@@ -90,6 +94,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.
   Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
   placeholder otherwise).
+- The desktop window starts hidden (`visible: false`) and shows once the app drew its first frame
+  (`appShown()` in `lib/shown.ts` → `window_ready`; Rust shows it after 3 s anyway), so it never
+  opens blank or in the wrong theme. The last plan is kept on the device (`fixnote.plan`) and the Pro
+  card waits for the account to load.
 - Microsoft Store build: the same exe packed as MSIX by CI (`apps/desktop/msix`). When packaged
   (`store::packaged()` in Rust, `store` in `app_info`) the app never updates itself and MCP clients
   get the `fixnote-mcp` alias path instead of the exe next to the app. Folders the app shares with

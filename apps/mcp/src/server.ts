@@ -42,10 +42,14 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
       inputSchema: {
         query: z.string().min(1).describe('Words to look for'),
         limit: z.number().int().min(1).max(20).optional().describe('How many notes (default 8)'),
+        folder: z
+          .string()
+          .optional()
+          .describe('Only this folder and its subfolders (id, name or path)'),
       },
       annotations: { readOnlyHint: true },
     },
-    ({ query, limit }) => run(() => tools.search(query, limit)),
+    ({ query, limit, folder }) => run(() => tools.search(query, limit, folder)),
   )
   server.registerTool(
     'get_note',
@@ -62,10 +66,16 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     {
       title: 'Recent notes',
       description: noteToolSpec('list_recent').description,
-      inputSchema: { limit: z.number().int().min(1).max(50).optional() },
+      inputSchema: {
+        limit: z.number().int().min(1).max(50).optional(),
+        folder: z
+          .string()
+          .optional()
+          .describe('Only this folder and its subfolders (id, name or path)'),
+      },
       annotations: { readOnlyHint: true },
     },
-    ({ limit }) => run(() => tools.recent(limit)),
+    ({ limit, folder }) => run(() => tools.recent(limit, folder)),
   )
   server.registerTool(
     'list_folders',

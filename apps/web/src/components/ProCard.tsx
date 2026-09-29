@@ -46,6 +46,7 @@ export function ProCard() {
   const phase = useAccount((s) => s.phase)
   const info = usePlan((s) => s.info)
   const localOnly = useLlm((s) => s.localOnly)
+  const settingsLoaded = useLlm((s) => s.loaded)
   const openSettings = useUi((s) => s.openSettings)
   const [, setHidden] = useState(0)
 
@@ -74,6 +75,8 @@ export function ProCard() {
               body: info.trialAvailable ? t('plan.cardBody') : t('plan.cardBodyFree'),
             }
           : null
+  // Nothing while the app starts: the account and this device's settings are not known yet.
+  if (phase === 'loading' || !settingsLoaded) return null
   if (!card || localOnly || phase === 'disabled' || hiddenRecently(card.kind)) return null
 
   return (

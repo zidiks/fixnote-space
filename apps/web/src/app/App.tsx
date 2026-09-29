@@ -25,6 +25,7 @@ import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
+import { appShown } from '../lib/shown'
 import { useAutoUpdateCheck } from '../lib/updates'
 import { toggleVoice } from '../lib/voice/voice'
 import { applyTheme, useUi } from './store'
@@ -142,6 +143,9 @@ function AppShell() {
   )
   // Browsers reserve Ctrl/⌘+N for a new window; only the desktop app can take it.
   useHotkey(platform.kind === 'desktop' ? HK.newNote : NONE, newNote, isApple)
+
+  // The app is on screen: the desktop window may appear (it waits hidden until now).
+  useEffect(() => appShown(), [])
 
   useEffect(() => {
     applyTheme(theme)

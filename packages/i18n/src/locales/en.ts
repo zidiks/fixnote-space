@@ -253,6 +253,15 @@ const en = {
     tooLarge: '{{name}} is larger than 20 MB',
     fileMissing: 'This file is not available on this device yet.',
   },
+  aiLevel: {
+    title: 'Thinking',
+    body: 'How long FixNote AI thinks over an answer in the chat.',
+    medium: 'Standard',
+    mediumBody: 'A quick answer. Right for most questions.',
+    hard: 'Deep',
+    hardBody:
+      'A stronger model that thinks first. Better with big tasks across many notes. Answers more slowly and uses the AI allowance about 4 times faster.',
+  },
   aiMode: {
     title: 'AI modes',
     body: 'Deleting and changing many notes at once always ask first. Every change can be undone in the log below.',

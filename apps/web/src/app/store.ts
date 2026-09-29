@@ -58,6 +58,9 @@ interface UiState {
   setSpotlightOpen: (open: boolean) => void
   openSettings: (section: SettingsSection | null) => void
   setTheme: (theme: Theme) => void
+  /** Folders folded in the sidebar (ids), kept on this device. */
+  collapsedFolders: string[]
+  toggleFolder: (id: string) => void
   setNoteView: (noteView: NoteView) => void
   setNoteSort: (noteSort: NoteSort) => void
   setChatDraft: (text: string) => void
@@ -80,6 +83,7 @@ export const useUi = create<UiState>()(
       spotlightOpen: false,
       settings: null,
       theme: 'system',
+      collapsedFolders: [],
       noteView: 'cards',
       noteSort: 'edited',
       chatDraft: '',
@@ -94,6 +98,12 @@ export const useUi = create<UiState>()(
       setSpotlightOpen: (spotlightOpen) => set({ spotlightOpen }),
       openSettings: (settings) => set({ settings }),
       setTheme: (theme) => set({ theme }),
+      toggleFolder: (id) =>
+        set((s) => ({
+          collapsedFolders: s.collapsedFolders.includes(id)
+            ? s.collapsedFolders.filter((f) => f !== id)
+            : [...s.collapsedFolders, id],
+        })),
       setNoteView: (noteView) => set({ noteView }),
       setNoteSort: (noteSort) => set({ noteSort }),
       setChatDraft: (chatDraft) => set({ chatDraft }),
@@ -124,11 +134,12 @@ export const useUi = create<UiState>()(
     }),
     {
       name: 'fixnote.ui',
-      partialize: ({ sidebarOpen, theme, noteView, noteSort }) => ({
+      partialize: ({ sidebarOpen, theme, noteView, noteSort, collapsedFolders }) => ({
         sidebarOpen,
         theme,
         noteView,
         noteSort,
+        collapsedFolders,
       }),
     },
   ),

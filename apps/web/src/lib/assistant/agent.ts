@@ -135,6 +135,7 @@ export async function runAgent(run: AgentRun, label: { current: string }): Promi
   let toolsOk = true
   for (let step = 0; step < MAX_STEPS; step++) {
     let stepText = ''
+    let reasoning = ''
     let calls: ToolCall[] = []
     // The last round has no tools: the model has to answer with what it has.
     const withTools = toolsOk && step < MAX_STEPS - 1
@@ -143,9 +144,12 @@ export async function runAgent(run: AgentRun, label: { current: string }): Promi
         ...run.request,
         messages,
         ...(withTools ? { tools: AGENT_TOOLS } : {}),
-        maxTokens: 2048,
+        // A thinking model spends much of it on reasoning (FixNote AI caps it on the server).
+        maxTokens: run.request.body?.level === 'hard' ? 16_000 : 2048,
       })) {
-        if (event.type === 'text') {
+        if (event.type === 'reasoning') {
+          reasoning += event.text
+        } else if (event.type === 'text') {
           if (!stepText && text) text += '\n\n'
           stepText += event.text
           text += event.text
@@ -178,6 +182,8 @@ export async function runAgent(run: AgentRun, label: { current: string }): Promi
         type: 'function',
         function: { name: c.name, arguments: c.arguments },
       })),
+      // A thinking model goes on from its own reasoning (DeepSeek refuses the next step without).
+      ...(reasoning ? { reasoning_content: reasoning } : {}),
     })
     for (const call of calls) {
       const args = parseArgs(call)

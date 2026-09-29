@@ -41,7 +41,32 @@ interface PlanState {
   paywall: boolean
 }
 
-export const usePlan = create<PlanState>()(() => ({ info: null, prompt: null, paywall: false }))
+/** The last plan the server gave, kept on this device so the app starts knowing it. */
+const PLAN_KEY = 'fixnote.plan'
+
+function lastKnown(): PlanInfo | null {
+  try {
+    return JSON.parse(localStorage.getItem(PLAN_KEY) ?? 'null') as PlanInfo | null
+  } catch {
+    return null
+  }
+}
+
+export const usePlan = create<PlanState>()(() => ({
+  info: lastKnown(),
+  prompt: null,
+  paywall: false,
+}))
+
+usePlan.subscribe((s, prev) => {
+  if (s.info === prev.info) return
+  try {
+    if (s.info) localStorage.setItem(PLAN_KEY, JSON.stringify(s.info))
+    else localStorage.removeItem(PLAN_KEY)
+  } catch {
+    // Private window: it is fetched again next time.
+  }
+})
 
 /** Shows the offer of the free trial. */
 export const showPaywall = () => usePlan.setState({ paywall: true, prompt: null })

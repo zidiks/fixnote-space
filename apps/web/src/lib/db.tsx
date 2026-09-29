@@ -8,10 +8,11 @@ import {
   Tidy,
 } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button } from '@fixnote/ui'
+import { Button, Spinner } from '@fixnote/ui'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 import { conflictHeading } from './conflict'
 import { platform } from './platform'
+import { appShown } from './shown'
 
 interface DbContextValue {
   repo: NotesRepo
@@ -65,6 +66,7 @@ export function DbProvider({ children }: { children: ReactNode }) {
   useEffect(start, [start])
 
   if (error) {
+    appShown()
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
         <p className="font-medium">{t('storage.failed')}</p>
@@ -76,8 +78,10 @@ export function DbProvider({ children }: { children: ReactNode }) {
     )
   }
   if (!value) {
+    // Usually a blink; the desktop window is not shown yet. Something to see if it takes longer.
     return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Spinner />
         {t('common.loading')}
       </div>
     )

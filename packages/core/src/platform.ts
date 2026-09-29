@@ -203,6 +203,8 @@ export interface Platform {
   readonly kind: PlatformKind
   readonly chrome: WindowChrome
   readonly window?: WindowControls
+  /** The app drew its first real frame: the desktop window, hidden until then, may appear. */
+  readonly shown?: () => void
   readonly capabilities: PlatformCapabilities
   readonly sql: () => Promise<SqlDriver>
   readonly embedder: () => Promise<Embedder>
