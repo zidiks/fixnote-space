@@ -1,5 +1,6 @@
 import type { FetchedPage, Platform, WindowChrome } from '@fixnote/core'
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
+import { localModels } from '@fixnote/platform-web/models'
 import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
@@ -64,6 +65,7 @@ export function createTauriPlatform(): Platform {
       transcriber ??= createWhisperTranscriber()
       return Promise.resolve(transcriber)
     },
+    models: localModels,
     keyStore: osKeyStore,
     secrets: osSecretStore,
     httpFetch: tauriFetch,

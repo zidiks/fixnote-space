@@ -16,7 +16,14 @@ export type Route =
 /** How lists of notes look: cards in a grid, rows with a preview, or one line per note. */
 export type NoteView = 'cards' | 'list' | 'compact'
 
-export type SettingsSection = 'general' | 'account' | 'plan' | 'integrations' | 'ai' | 'data'
+export type SettingsSection =
+  | 'general'
+  | 'account'
+  | 'plan'
+  | 'integrations'
+  | 'ai'
+  | 'data'
+  | 'advanced'
 
 /** An AI edit a note should open as soon as it is on screen (e.g. "tidy up" after dictation). */
 export interface AiRequest {

@@ -56,7 +56,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   made on the device (`packages/core/src/capture`). The payload format lives in both places.
 - Speech and embeddings run in the webview on both platforms (transformers.js workers in
   `platform-web`); the Rust side only fetches pages, streams HTTP for the user's own LLM key,
-  stores files, holds keys and edits MCP client configs.
+  stores files, holds keys and edits MCP client configs. Every on-device model is listed in
+  `packages/core/src/models.ts` (Settings → Advanced shows size, download, remove); the speech model
+  the person picked is kept by the Whisper client (`setModel`).
 - Every AI change to a note goes through `AuditLog` (`packages/core/src/ai/audit.ts`), so it shows
   in Settings → AI and can be undone. LLM calls go through `llm()` in
   `apps/web/src/lib/assistant/llm.ts` (FixNote AI, the user's key, or Ollama). In local-only mode

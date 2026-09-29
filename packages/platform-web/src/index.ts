@@ -2,6 +2,7 @@ import type { Platform, SqlDriver } from '@fixnote/core'
 import { opfsBlobStore } from './blobs'
 import { createTransformersEmbedder } from './embed/client'
 import { webKeyStore, webSecretStore } from './keys'
+import { localModels } from './models'
 import { openWebSqlDriver } from './sqlite/client'
 import { createWhisperTranscriber } from './whisper/client'
 
@@ -35,6 +36,7 @@ export function createWebPlatform(): Platform {
       transcriber ??= createWhisperTranscriber()
       return Promise.resolve(transcriber)
     },
+    models: localModels,
     keyStore: webKeyStore,
     secrets: webSecretStore,
     openExternal: async (url) => {
@@ -50,3 +52,5 @@ export function createWebPlatform(): Platform {
     blobs: opfsBlobStore,
   }
 }
+
+export { localModels } from './models'

@@ -1,11 +1,24 @@
 export type WhisperRequest =
-  | { id: number; op: 'init' }
-  | { id: number; op: 'transcribe'; audio: Float32Array; language?: string; languages?: string[] }
+  | { id: number; op: 'init'; model: string }
+  | {
+      id: number
+      op: 'transcribe'
+      model: string
+      audio: Float32Array
+      language?: string
+      languages?: string[]
+    }
 
 /** Request without the id the client assigns. */
 export type WhisperBody =
-  | { op: 'init' }
-  | { op: 'transcribe'; audio: Float32Array; language?: string; languages?: string[] }
+  | { op: 'init'; model: string }
+  | {
+      op: 'transcribe'
+      model: string
+      audio: Float32Array
+      language?: string
+      languages?: string[]
+    }
 
 export type WhisperResponse =
   | {

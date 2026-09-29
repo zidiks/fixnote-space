@@ -40,6 +40,8 @@ export interface Embedder {
   readonly dimensions: number
   ready(onProgress?: ProgressListener): Promise<void>
   embed(texts: readonly string[], kind: 'passage' | 'query'): Promise<Float32Array[]>
+  /** Frees the model (after its files were removed); the next use loads it again. */
+  unload?(): void
 }
 
 export interface TranscriptionResult {
@@ -65,6 +67,10 @@ export interface Transcriber {
     audio: Blob,
     opts?: { language?: string; languages?: string[] },
   ): Promise<TranscriptionResult>
+  /** Switches the speech model (`SPEECH_MODELS`); it downloads on next use. Remembered. */
+  setModel?(modelId: string): void
+  /** Frees the model (after its files were removed); the next use loads it again. */
+  unload?(): void
 }
 
 /**
@@ -137,6 +143,14 @@ export interface AppUpdater {
   check(): Promise<AvailableUpdate | null>
 }
 
+/** The files of on-device models (`models.ts`), cached by the webview. */
+export interface LocalModels {
+  /** Bytes of the model's files on this device; 0 when it is not downloaded. */
+  size(modelId: string): Promise<number>
+  /** Removes the model's files; it downloads again when next needed. */
+  remove(modelId: string): Promise<void>
+}
+
 export interface Platform {
   readonly kind: PlatformKind
   readonly chrome: WindowChrome
@@ -145,6 +159,7 @@ export interface Platform {
   readonly sql: () => Promise<SqlDriver>
   readonly embedder: () => Promise<Embedder>
   readonly transcriber: () => Promise<Transcriber>
+  readonly models?: LocalModels
   readonly keyStore: KeyStore
   readonly secrets: SecretStore
   /**

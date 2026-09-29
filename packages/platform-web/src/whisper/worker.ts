@@ -6,9 +6,6 @@ import { DEFAULT_LANGUAGES, transcribe } from './transcribe'
 
 declare const self: DedicatedWorkerGlobalScope
 
-/** Multilingual (ru/en/es and more), ~80 MB quantized; small enough to download on first use. */
-export const MODEL = 'onnx-community/whisper-base'
-
 env.allowLocalModels = false
 env.useBrowserCache = true
 /**
@@ -22,7 +19,10 @@ const runtime = (async () => {
 
 type Device = 'webgpu' | 'wasm'
 
-let asr: Promise<{ model: AutomaticSpeechRecognitionPipeline; device: Device }> | null = null
+type Loaded = { model: AutomaticSpeechRecognitionPipeline; device: Device }
+
+/** The model in memory; one at a time (the other one is freed when the person switches). */
+let asr: { id: string; loaded: Promise<Loaded> } | null = null
 
 async function hasWebGpu(): Promise<boolean> {
   try {
@@ -53,8 +53,8 @@ function progressReporter() {
   }
 }
 
-async function create(device: Device) {
-  const model = (await pipeline('automatic-speech-recognition', MODEL, {
+async function create(id: string, device: Device) {
+  const model = (await pipeline('automatic-speech-recognition', id, {
     device,
     // The GPU path runs the encoder in full precision (quantized encoders lose too much there);
     // the CPU path uses 8-bit weights to stay fast without threads.
@@ -64,28 +64,35 @@ async function create(device: Device) {
   return { model, device }
 }
 
-function load() {
-  asr ??= (async () => {
+function load(id: string) {
+  if (asr?.id === id) return asr.loaded
+  if (asr) {
+    const previous = asr.loaded
+    previous.then(({ model }) => model.dispose()).catch(() => {})
+  }
+  const loaded = (async () => {
     await runtime
     if (await hasWebGpu()) {
       try {
-        return await create('webgpu')
+        return await create(id, 'webgpu')
       } catch {
         // Driver or adapter trouble: the CPU path is slower but works everywhere.
       }
     }
-    return create('wasm')
+    return create(id, 'wasm')
   })()
-  asr.catch(() => {
-    asr = null
+  const current = { id, loaded }
+  asr = current
+  loaded.catch(() => {
+    if (asr === current) asr = null
   })
-  return asr
+  return loaded
 }
 
 self.onmessage = async (event: MessageEvent<WhisperRequest>) => {
   const req = event.data
   try {
-    const { model, device } = await load()
+    const { model, device } = await load(req.model)
     if (req.op === 'init') {
       self.postMessage({ kind: 'result', id: req.id, ok: true, device } satisfies WhisperResponse)
       return
