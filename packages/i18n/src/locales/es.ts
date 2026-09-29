@@ -91,8 +91,8 @@ const es: LocaleResource = {
     later: 'Día siguiente',
     toToday: 'Hoy',
     toTomorrow: 'Mañana',
-    toDaily: 'Voz y Telegram a la nota del día',
-    toDailyBody: 'Lo nuevo se añade a la nota del día en vez de crear notas aparte.',
+    voiceToDaily: 'Notas de voz a la nota del día',
+    voiceToDailyBody: 'Lo dictado se añade a la nota del día en vez de crear notas aparte.',
     savedToDaily: 'Añadido a la nota del día',
     tasks: 'Tareas',
     notes: 'Notas',
@@ -213,7 +213,7 @@ const es: LocaleResource = {
     open: 'Abrir asistente',
     close: 'Cerrar asistente',
     scope: {
-      label: 'Contexto',
+      pick: 'Dónde busca el asistente',
       all: 'Todas las notas',
       folder: 'Carpeta: {{name}}',
       note: 'Nota: {{name}}',
@@ -348,6 +348,8 @@ const es: LocaleResource = {
     tidy: 'Ordenar',
   },
   capture: {
+    toDaily: 'Mensajes a la nota del día',
+    toDailyBody: 'Los mensajes nuevos de Telegram se añaden a la nota del día.',
     imported: 'Notas nuevas de Telegram: {{count}}',
     title: 'Telegram',
     body: 'Envía al bot texto, audios y fotos. Se convierten en notas cifradas con tu clave.',

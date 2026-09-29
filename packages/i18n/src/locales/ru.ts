@@ -91,8 +91,8 @@ const ru: LocaleResource = {
     later: 'Следующий день',
     toToday: 'Сегодня',
     toTomorrow: 'Завтра',
-    toDaily: 'Голосовые и Telegram в заметку дня',
-    toDailyBody: 'Новые записи дописываются в заметку дня, а не создаются отдельно.',
+    voiceToDaily: 'Голосовые в заметку дня',
+    voiceToDailyBody: 'Надиктованное дописывается в заметку дня, а не создаётся отдельно.',
     savedToDaily: 'Добавлено в заметку дня',
     tasks: 'Задачи',
     notes: 'Заметки',
@@ -213,7 +213,7 @@ const ru: LocaleResource = {
     open: 'Открыть ассистента',
     close: 'Закрыть ассистента',
     scope: {
-      label: 'Контекст',
+      pick: 'Где ищет ассистент',
       all: 'Все заметки',
       folder: 'Папка: {{name}}',
       note: 'Заметка: {{name}}',
@@ -348,6 +348,8 @@ const ru: LocaleResource = {
     tidy: 'Оформить',
   },
   capture: {
+    toDaily: 'Сообщения в заметку дня',
+    toDailyBody: 'Новые сообщения из Telegram дописываются в заметку дня.',
     imported: 'Новых заметок из Telegram: {{count}}',
     title: 'Telegram',
     body: 'Отправляйте боту текст, голосовые и фото. Они станут заметками, зашифрованными вашим ключом.',

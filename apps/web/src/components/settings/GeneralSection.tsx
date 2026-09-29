@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { type Theme, useUi } from '../../app/store'
-import { CAPTURE_TO_DAILY } from '../../lib/daily'
+import { captureToDaily, VOICE_TO_DAILY } from '../../lib/daily'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
 import { UpdatesSection } from './UpdatesSection'
@@ -23,8 +23,8 @@ export function GeneralSection() {
   const { driver } = useDb()
   const qc = useQueryClient()
   const toDaily = useQuery({
-    queryKey: ['kv', CAPTURE_TO_DAILY],
-    queryFn: async () => (await kvStore(driver).get(CAPTURE_TO_DAILY)) === '1',
+    queryKey: ['kv', VOICE_TO_DAILY],
+    queryFn: () => captureToDaily(driver, 'voice'),
   }).data
 
   return (
@@ -74,13 +74,13 @@ export function GeneralSection() {
           checked={toDaily ?? false}
           onChange={(e) => {
             const on = e.target.checked
-            qc.setQueryData(['kv', CAPTURE_TO_DAILY], on)
-            void kvStore(driver).set(CAPTURE_TO_DAILY, on ? '1' : '0')
+            qc.setQueryData(['kv', VOICE_TO_DAILY], on)
+            void kvStore(driver).set(VOICE_TO_DAILY, on ? '1' : '0')
           }}
         />
         <span className="space-y-0.5">
-          <span className="block text-sm">{t('daily.toDaily')}</span>
-          <span className="block text-sm text-muted-foreground">{t('daily.toDailyBody')}</span>
+          <span className="block text-sm">{t('daily.voiceToDaily')}</span>
+          <span className="block text-sm text-muted-foreground">{t('daily.voiceToDailyBody')}</span>
         </span>
       </label>
       <UpdatesSection />

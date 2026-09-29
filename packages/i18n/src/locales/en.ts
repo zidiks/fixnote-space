@@ -89,8 +89,8 @@ const en = {
     later: 'Next day',
     toToday: 'Today',
     toTomorrow: 'Tomorrow',
-    toDaily: 'Voice notes and Telegram go to today’s note',
-    toDailyBody: 'New entries are added to today’s note instead of separate notes.',
+    voiceToDaily: 'Voice notes go to today’s note',
+    voiceToDailyBody: 'Dictated notes are added to today’s note instead of separate notes.',
     savedToDaily: 'Added to today’s note',
     tasks: 'Tasks',
     notes: 'Notes',
@@ -211,7 +211,7 @@ const en = {
     open: 'Open assistant',
     close: 'Close assistant',
     scope: {
-      label: 'Context',
+      pick: 'Where the assistant looks',
       all: 'All notes',
       folder: 'Folder: {{name}}',
       note: 'Note: {{name}}',
@@ -346,6 +346,8 @@ const en = {
     tidy: 'Tidy up',
   },
   capture: {
+    toDaily: 'Messages go to today’s note',
+    toDailyBody: 'New messages from Telegram are added to today’s note.',
     imported: 'New notes from Telegram: {{count}}',
     title: 'Telegram',
     body: 'Send the bot text, voice messages and photos. They become notes, encrypted with your key.',

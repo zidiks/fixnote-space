@@ -3,11 +3,21 @@ import { i18n } from '@fixnote/i18n'
 import { kvStore } from './kv'
 import { dailyTemplate, localDate } from './queries'
 
-/** Setting: dictated notes and Telegram messages go into today's note instead of new notes. */
+/** Settings: Telegram messages (Integrations) and dictated notes (General) go into today's note. */
 export const CAPTURE_TO_DAILY = 'capture.toDaily'
+export const VOICE_TO_DAILY = 'voice.toDaily'
 
-export async function captureToDaily(db: SqlDriver): Promise<boolean> {
-  return (await kvStore(db).get(CAPTURE_TO_DAILY)) === '1'
+/**
+ * Whether new entries from `source` go into today's note. Dictation had no setting of its own
+ * before: until it is set, it follows the old shared one (kept by Telegram).
+ */
+export async function captureToDaily(
+  db: SqlDriver,
+  source: 'telegram' | 'voice',
+): Promise<boolean> {
+  const kv = kvStore(db)
+  const own = source === 'voice' ? await kv.get(VOICE_TO_DAILY) : null
+  return (own ?? (await kv.get(CAPTURE_TO_DAILY))) === '1'
 }
 
 /** Adds text to today's note (created from the template if needed), stamped with the time. */

@@ -128,7 +128,7 @@ export function ContextRing() {
       <TooltipTrigger asChild>
         <button
           type="button"
-          className="ml-auto flex items-center gap-1 rounded-full px-1 tabular-nums"
+          className="ml-auto flex shrink-0 items-center gap-1 rounded-full pr-0.5 pl-1 tabular-nums"
           aria-label={t('agent.context', { percent })}
         >
           <svg viewBox="0 0 16 16" className="size-4 -rotate-90" aria-hidden>
@@ -147,7 +147,11 @@ export function ContextRing() {
           {percent}%
         </button>
       </TooltipTrigger>
-      <TooltipContent className="max-w-60">
+      <TooltipContent
+        side="top"
+        align="end"
+        className="max-w-64 flex-col items-start gap-0.5 px-2.5 py-2"
+      >
         <p className="font-medium">{t('agent.context', { percent })}</p>
         <p className="opacity-80">{t('agent.contextHint')}</p>
       </TooltipContent>

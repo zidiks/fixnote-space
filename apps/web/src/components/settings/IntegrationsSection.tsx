@@ -7,7 +7,10 @@ import { toast } from 'sonner'
 import { useUi } from '../../app/store'
 import { captureBackend, useAccount } from '../../lib/account/account'
 import { useLlm } from '../../lib/assistant/llm'
+import { CAPTURE_TO_DAILY, captureToDaily } from '../../lib/daily'
+import { useDb } from '../../lib/db'
 import { env } from '../../lib/env'
+import { kvStore } from '../../lib/kv'
 import { withPro } from '../../lib/plan'
 import { usePlatform } from '../../lib/platform'
 
@@ -29,11 +32,14 @@ function IntegrationCard({
   name,
   body,
   children,
+  settings,
 }: {
   icon: ReactNode
   name: string
   body: string
   children: ReactNode
+  /** Options of the connected service, under the card's row. */
+  settings?: ReactNode
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border p-4">
@@ -45,6 +51,7 @@ function IntegrationCard({
         <p className="text-sm text-muted-foreground">{body}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">{children}</div>
+      {settings ? <div className="basis-full border-t pt-3">{settings}</div> : null}
     </div>
   )
 }
@@ -69,6 +76,11 @@ function TelegramCard() {
   })
   const bot = env.telegramBot ?? (import.meta.env.DEV ? 'fixnote_dev_bot' : undefined)
   const localOnly = useLlm((s) => s.localOnly)
+  const { driver } = useDb()
+  const toDaily = useQuery({
+    queryKey: ['kv', CAPTURE_TO_DAILY],
+    queryFn: () => captureToDaily(driver, 'telegram'),
+  }).data
   if (!bot || phase === 'disabled') return null
   const list = links.data ?? []
 
@@ -135,6 +147,28 @@ function TelegramCard() {
         list.length
           ? t('capture.linked', { label: list.map((l) => l.label || 'Telegram').join(', ') })
           : t('capture.body')
+      }
+      settings={
+        list.length ? (
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 size-4 accent-brand"
+              checked={toDaily ?? false}
+              onChange={(e) => {
+                const on = e.target.checked
+                qc.setQueryData(['kv', CAPTURE_TO_DAILY], on)
+                void kvStore(driver).set(CAPTURE_TO_DAILY, on ? '1' : '0')
+              }}
+            />
+            <span className="space-y-0.5">
+              <span className="block text-sm">{t('capture.toDaily')}</span>
+              <span className="block text-sm text-muted-foreground">
+                {t('capture.toDailyBody')}
+              </span>
+            </span>
+          </label>
+        ) : undefined
       }
     >
       {action}
