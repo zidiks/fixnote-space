@@ -1,11 +1,11 @@
 import { useTranslation } from '@fixnote/i18n'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@fixnote/ui'
-import { Users } from 'lucide-react'
+import { Bot, Users } from 'lucide-react'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { onSharedSync, useAccount } from '../lib/account/account'
 import { type LiveEditing, openShared } from '../lib/collab/live'
-import { initials, type LiveUser, othersIn } from '../lib/collab/people'
+import { aiIn, initials, type LiveUser, othersIn } from '../lib/collab/people'
 
 /**
  * A shared note's live editing while it is open: the room is joined when the note opens (and the
@@ -90,6 +90,8 @@ export function LiveBar({ live }: { live: LiveEditing }) {
     ...othersIn(live.session.awareness),
     { ...live.user, clientId: live.session.doc.clientID, self: true },
   ]
+  // The assistant writing for someone shows as one more face, with who asked it.
+  const ai = aiIn(live.session.awareness)
   const shown = people.slice(-MAX_FACES)
   const rest = people.slice(0, -MAX_FACES)
   const who = (u: LiveUser & { self?: boolean }) =>
@@ -128,6 +130,25 @@ export function LiveBar({ live }: { live: LiveEditing }) {
             </HoverCardContent>
           </HoverCard>
         ) : null}
+        {ai.map((a) => (
+          <HoverCard key={`ai-${a.clientId}`}>
+            <HoverCardTrigger asChild>
+              <span
+                role="img"
+                aria-label={t('people.ai')}
+                className="flex size-7 cursor-default items-center justify-center rounded-full bg-foreground text-background ring-2 ring-card"
+              >
+                <Bot className="size-4 animate-pulse" />
+              </span>
+            </HoverCardTrigger>
+            <HoverCardContent side="bottom" align="end">
+              <p className="font-medium">{t('people.ai')}</p>
+              <p className="text-xs text-muted-foreground">
+                {a.self ? t('people.aiForYou') : t('people.aiFor', { name: a.askedBy })}
+              </p>
+            </HoverCardContent>
+          </HoverCard>
+        ))}
         {shown.map((u) => (
           <HoverCard key={u.clientId}>
             <HoverCardTrigger asChild>

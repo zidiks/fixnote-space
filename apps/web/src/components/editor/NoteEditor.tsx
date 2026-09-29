@@ -14,6 +14,7 @@ import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { Placeholder } from '@tiptap/extensions'
 import { type Editor, EditorContent, useEditor, useEditorState } from '@tiptap/react'
+import { updateYFragment } from '@tiptap/y-tiptap'
 import {
   Bold,
   Clipboard,
@@ -36,6 +37,7 @@ import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState
 import { toast } from 'sonner'
 import { useAccount } from '../../lib/account/account'
 import { providerLabel } from '../../lib/assistant/assistant'
+import { registerOpenNote } from '../../lib/assistant/open-notes'
 import {
   attachmentObjectUrl,
   ImageTooLargeError,
@@ -43,6 +45,7 @@ import {
   storeImage,
 } from '../../lib/attachments'
 import { LIVE_FIELD, type LiveEditing } from '../../lib/collab/live'
+import { AI_FIELD, aiIn } from '../../lib/collab/people'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
@@ -60,6 +63,7 @@ export interface NoteEditorHandle {
 }
 
 import { AiRangeExtension } from './ai-range'
+import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
 import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
@@ -357,6 +361,8 @@ export function NoteEditor({
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
   const liveRef = useRef(live)
+  /** This device is writing the assistant's change into the live document right now. */
+  const aiApplying = useRef(false)
   // Shared with this account to view only: nothing here may change the note.
   const readOnly = Boolean(live?.readOnly || note.readOnly)
   const readOnlyRef = useRef(readOnly)
@@ -428,6 +434,11 @@ export function NoteEditor({
       }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       AiRangeExtension,
+      AiTyping.configure({
+        // A shared note: the assistant's text types in for everyone in it.
+        aiWriting: () =>
+          aiApplying.current || Boolean(live && aiIn(live.session.awareness).some((a) => !a.self)),
+      }),
       RecurringTasks,
       LinkCards.configure({
         load: (url) => links.current.load(url),
@@ -448,7 +459,10 @@ export function NoteEditor({
                 return el
               },
             }),
-            RemoteFade,
+            RemoteFade.configure({
+              aiWriting: () =>
+                aiApplying.current || aiIn(live.session.awareness).some((a) => !a.self),
+            }),
           ]
         : []),
       Extension.create({
@@ -657,6 +671,69 @@ export function NoteEditor({
   useEffect(() => {
     if (accountPhase === 'ready' && editor && !editor.isDestroyed) retryLinkCards(editor.view)
   }, [accountPhase, editor])
+
+  // The assistant changes this note: the change types in where it happens. Solo, it is one step of
+  // the editor (not saved again: it is stored already); in a shared note it goes into the live
+  // document, so the others get it at once and nothing typed meanwhile overwrites it.
+  useEffect(() => {
+    if (readOnly) return
+    let idle: ReturnType<typeof setTimeout> | undefined
+    const awareness = () => liveRef.current?.session.awareness
+    const unregister = registerOpenNote(note.id, {
+      aiStarts: () => {
+        clearTimeout(idle)
+        const lv = liveRef.current
+        lv?.session.awareness.setLocalStateField(AI_FIELD, { by: lv.user.name })
+      },
+      aiEnds: () => {
+        clearTimeout(idle)
+        // A moment longer, so the others see who wrote what they just saw appear.
+        idle = setTimeout(() => awareness()?.setLocalStateField(AI_FIELD, null), 2500)
+      },
+      aiChanged: (after) => {
+        const e = editorRef.current
+        if (!e || e.isDestroyed) return false
+        const parsed = e.markdown?.parse(after)
+        if (!parsed) return false
+        const next = e.schema.nodeFromJSON(parsed)
+        const lv = liveRef.current
+        if (lv) {
+          const start = changedRange(e.state.doc, next)?.from
+          aiApplying.current = true
+          try {
+            lv.session.doc.transact(() => {
+              updateYFragment(lv.session.doc, lv.session.doc.getXmlFragment(LIVE_FIELD), next, {
+                mapping: new Map(),
+                isOMark: new Map(),
+              })
+            }, 'ai')
+          } finally {
+            aiApplying.current = false
+          }
+          if (start !== undefined) revealRange(e.view, start)
+          return true
+        }
+        // Unsaved typing: the save merges the change in, as with any other.
+        if (pending.current !== null) return false
+        const range = changedRange(e.state.doc, next)
+        base.current = after
+        latest.current = after
+        if (!range) return true
+        const tr = e.state.tr
+          .replace(range.from, range.toBefore, next.slice(range.from, range.toAfter))
+          .setMeta('preventUpdate', true)
+          .setMeta(aiTypingKey, { start: { from: range.from, to: range.toAfter } })
+        e.view.dispatch(tr)
+        revealRange(e.view, range.from)
+        return true
+      },
+    })
+    return () => {
+      unregister()
+      clearTimeout(idle)
+      awareness()?.setLocalStateField(AI_FIELD, null)
+    }
+  }, [note.id, readOnly])
 
   // Sync brought a newer version of this note: show it if there is no unsaved typing. (Live, the
   // room is the source: the stored text is what the leading device wrote from it.)

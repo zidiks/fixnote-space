@@ -48,6 +48,8 @@ export interface AgentRun {
   mode: AiMode
   onText(text: string): void
   onActivity(label: string | null): void
+  /** The note the next change is about (null once it is made), to show the assistant at work. */
+  onEditing?(noteId: string | null): void
   confirm(request: ConfirmRequest): Promise<ConfirmAnswer>
 }
 
@@ -211,11 +213,15 @@ export async function runAgent(run: AgentRun, label: { current: string }): Promi
           result = 'The user declined this change. Do not retry it; say what was not done.'
         } else {
           label.current = doneLabel(call.name, title)
+          const target = changing && typeof args.id === 'string' ? args.id : null
+          if (target) run.onEditing?.(target)
           try {
             result = await runNoteTool(run.tools, call.name, args)
             if (changing) changes++
           } catch (err) {
             result = `Error: ${err instanceof Error ? err.message : String(err)}`
+          } finally {
+            if (target) run.onEditing?.(null)
           }
         }
       }

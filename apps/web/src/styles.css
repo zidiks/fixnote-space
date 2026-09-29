@@ -517,6 +517,26 @@
     opacity: 0.15;
   }
 }
+/* Text the assistant writes into the open note types itself in, then fades out (ai-typing.ts). */
+.fixnote-editor .ai-untyped {
+  color: transparent;
+}
+.fixnote-editor .ai-typing {
+  background: color-mix(in oklch, var(--color-brand) 16%, transparent);
+  border-radius: 2px;
+}
+.fixnote-editor .ai-typed {
+  border-radius: 2px;
+  animation: ai-typed 1600ms ease-in forwards;
+}
+@keyframes ai-typed {
+  from {
+    background: color-mix(in oklch, var(--color-brand) 16%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .live-caret {
     transition: none;

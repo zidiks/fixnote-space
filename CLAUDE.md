@@ -47,6 +47,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   changes in one answer, always ask; in "ask" mode every change asks. Each answer lists its changes
   (`chat_messages.actions`) with Undo all. llm-proxy takes tools; a step that only returns tool
   results is not a new request, and cached prompt tokens count a tenth.
+  A change to a note open on screen goes through `registerOpenNote` (`lib/assistant/open-notes.ts`):
+  solo it is one editor step that types in (`editor/ai-typing.ts`); in a shared note it is written
+  into the live Yjs document, and the awareness field `ai` shows "FixNote AI · asked by …" in LiveBar.
 - `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
   its numbers, update by copying from upstream (see its README).
 - AI never changes a note without an explicit accept unless the user picked "Accept edits" or "Auto"

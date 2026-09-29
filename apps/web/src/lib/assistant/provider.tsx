@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useEffect } from 'react'
-import { useAccount } from '../account/account'
+import { requestSync, useAccount } from '../account/account'
 import { useDb } from '../db'
 import { kvStore } from '../kv'
 import { platform } from '../platform'
@@ -25,6 +25,8 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       onNotesChanged: () => {
         void qc.invalidateQueries()
         notifyNotesChanged()
+        // Other devices (and the people a note is shared with) get the change soon, not later.
+        requestSync()
       },
     })
     void refreshTidyCount(tidy)
