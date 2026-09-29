@@ -4,6 +4,7 @@
 //! cannot do well: the local SQLite database, the OS keychain, native file dialogs and fetching
 //! pages for link cards (no CORS). Embeddings and speech run in the webview (transformers.js).
 
+mod apple_notes;
 mod blobs;
 mod db;
 mod files;
@@ -88,6 +89,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
+            apple_notes::apple_notes_folders,
+            apple_notes::apple_notes_read,
             db_execute,
             db_query,
             keys::key_load,

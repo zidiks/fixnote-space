@@ -5,5 +5,8 @@
   <!-- Merged into the app's Info.plist by Tauri. macOS asks before the first dictation. -->
   <key>NSMicrophoneUsageDescription</key>
   <string>FixNote uses the microphone for dictation. Speech is recognized on this Mac; audio never leaves it.</string>
+  <!-- Import from Apple Notes (Settings → Data): macOS asks before FixNote reads them. -->
+  <key>NSAppleEventsUsageDescription</key>
+  <string>FixNote reads your Apple Notes to import them. Nothing is changed in Notes, and the notes stay on this Mac.</string>
 </dict>
 </plist>

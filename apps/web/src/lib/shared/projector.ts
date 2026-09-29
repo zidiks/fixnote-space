@@ -1,17 +1,8 @@
 import type { DocProjector } from '@fixnote/core'
-import { Editor } from '@tiptap/core'
 import { updateYFragment, yXmlFragmentToProsemirrorJSON } from '@tiptap/y-tiptap'
 import * as Y from 'yjs'
-import { noteSchema } from '../../components/editor/schema'
+import { schemaEditor } from '../../components/editor/headless'
 import { LIVE_FIELD } from '../collab/live'
-
-let headless: Editor | null = null
-
-/** An editor that is never shown: the note schema and its Markdown parser and serializer. */
-function schemaEditor(): Editor {
-  headless ??= new Editor({ element: null, extensions: noteSchema() })
-  return headless
-}
 
 /**
  * Markdown ⇄ a shared note's Yjs document, with the editor's own schema. Going to Yjs changes as

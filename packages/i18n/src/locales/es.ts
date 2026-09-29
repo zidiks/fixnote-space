@@ -758,6 +758,7 @@ const es: LocaleResource = {
       notion: 'Exportación de Notion',
       bear: 'Copia de Bear',
       markdown: 'Archivos Markdown',
+      apple: 'Notas de Apple',
     },
     found: 'Notas: {{notes}} · carpetas: {{folders}} · imágenes: {{images}}',
     skipped: 'Otros archivos no se importan: {{count}} (tablas, PDF…)',
@@ -768,6 +769,19 @@ const es: LocaleResource = {
     duplicates: 'Ya estaban en FixNote, omitidas: {{count}}',
     importFailed: 'La importación falló: {{error}}',
     undone: 'Importación deshecha',
+    apple: {
+      button: 'Notas de Apple',
+      opening: 'Abriendo Notas de Apple… macOS puede preguntar si FixNote puede usar Notas.',
+      pick: 'Elige las carpetas que quieres importar. En Notas de Apple no cambia nada.',
+      chosen: 'Notas elegidas: {{count}}',
+      empty: 'No hay notas en Notas de Apple.',
+      denied:
+        'FixNote no tiene acceso a Notas. Activa Notas para FixNote en Ajustes del Sistema, Privacidad y seguridad, Automatización, y vuelve a intentarlo.',
+      openSettings: 'Abrir Ajustes del Sistema',
+      retry: 'Reintentar',
+      locked: 'Notas con contraseña omitidas: {{count}}',
+      lost: 'Adjuntos no traspasados: {{count}} (PDF, escaneos, dibujos)',
+    },
   },
   share: {
     button: 'Compartir',

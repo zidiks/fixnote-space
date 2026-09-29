@@ -11,7 +11,7 @@ export interface ImportFile {
   modified?: number
 }
 
-export type ImportSource = 'fixnote' | 'notion' | 'bear' | 'markdown'
+export type ImportSource = 'fixnote' | 'notion' | 'bear' | 'markdown' | 'apple'
 
 interface PlannedImage {
   /** Exact Markdown to replace, e.g. `![alt](img/a.png)`. */
@@ -486,4 +486,72 @@ export async function runImport(
     deps.onProgress?.(++done, plan.notes.length)
   }
   return result
+}
+
+/** A note already turned into Markdown by the app (Apple Notes), its images as `![](img:<key>)`. */
+export interface ConvertedNote {
+  folder: string[]
+  markdown: string
+  created?: number
+  updated?: number
+  images: { key: string; data: Uint8Array; mime: string }[]
+}
+
+const EXT: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+  'image/avif': 'avif',
+  'image/bmp': 'bmp',
+}
+
+/**
+ * A plan (and its image files) for notes converted elsewhere, so they go through `runImport` like
+ * any other: folders by path, dates kept, images stored, duplicates skipped. Blank notes are left
+ * out; an image the note does not show is ignored.
+ */
+export function planConverted(
+  source: ImportSource,
+  converted: ConvertedNote[],
+): { plan: ImportPlan; files: ImportFile[] } {
+  const files: ImportFile[] = []
+  const notes: PlannedNote[] = []
+  const folders = new Set<string>()
+  for (const [i, n] of converted.entries()) {
+    const content = n.markdown.trim()
+    if (!content) continue
+    const images: PlannedImage[] = []
+    for (const img of n.images) {
+      const key = img.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const re = new RegExp(String.raw`!\[[^\]]*\]\(img:${key}\)`, 'g')
+      const matches = [...content.matchAll(re)]
+      if (!matches.length) continue
+      // No folder: `runImport` drops a directory that wraps every file.
+      const file = `image-${i}-${img.key}.${EXT[img.mime] ?? 'png'}`
+      files.push({ path: file, data: img.data })
+      for (const m of new Set(matches.map((x) => x[0])))
+        images.push({ match: m, alt: m.match(/^!\[([^\]]*)\]/)?.[1] ?? '', file })
+    }
+    for (let d = 1; d <= n.folder.length; d++) folders.add(n.folder.slice(0, d).join('/'))
+    notes.push({
+      file: `note-${i}`,
+      folder: n.folder,
+      content,
+      ...(n.created ? { created: n.created } : {}),
+      ...(n.updated ? { updated: n.updated } : {}),
+      images,
+    })
+  }
+  return {
+    plan: {
+      source,
+      notes,
+      folders: folders.size,
+      images: notes.reduce((sum, n) => sum + n.images.length, 0),
+      skipped: [],
+    },
+    files,
+  }
 }

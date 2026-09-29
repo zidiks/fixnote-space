@@ -1,4 +1,4 @@
-import type { Platform, TextRecognizer, Transcriber } from '@fixnote/core'
+import type { AppleNotesSource, Platform, TextRecognizer, Transcriber } from '@fixnote/core'
 import { createTauriPlatform, isTauri } from '@fixnote/platform-tauri'
 import { createWebPlatform } from '@fixnote/platform-web'
 import { createContext, type ReactNode, useContext } from 'react'
@@ -7,8 +7,16 @@ const base: Platform = isTauri() ? createTauriPlatform() : createWebPlatform()
 const devTranscriber = () => import('./voice/dev-transcriber').then((m) => m.devTranscriber)
 let dev: Promise<Transcriber> | null = null
 let devOcr: Promise<TextRecognizer> | null = null
+let devApple: Promise<AppleNotesSource> | null = null
+const appleDev = () => {
+  devApple ??= import('./apple-notes-dev').then((m) => m.devAppleNotes())
+  return devApple
+}
 
-/** `?dev-backend` in `pnpm dev` also fakes speech and text recognition (dev-transcriber.ts, ocr-dev.ts). */
+/**
+ * `?dev-backend` in `pnpm dev` also fakes speech, text recognition and Apple Notes
+ * (dev-transcriber.ts, ocr-dev.ts, apple-notes-dev.ts).
+ */
 export const platform: Platform =
   import.meta.env.DEV && new URLSearchParams(location.search).has('dev-backend')
     ? {
@@ -20,6 +28,10 @@ export const platform: Platform =
         ocr: () => {
           devOcr ??= import('./ocr-dev').then((m) => m.devRecognizer())
           return devOcr
+        },
+        appleNotes: base.appleNotes ?? {
+          folders: async () => (await appleDev()).folders(),
+          read: async (folder, from, count) => (await appleDev()).read(folder, from, count),
         },
       }
     : base

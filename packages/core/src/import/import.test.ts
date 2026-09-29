@@ -10,6 +10,7 @@ import {
   detectSource,
   type ImportFile,
   parseFrontMatter,
+  planConverted,
   planImport,
   runImport,
 } from './index'
@@ -227,5 +228,48 @@ describe('runImport', () => {
     expect(byContent.get('# Plan\n![pic](attachment:img1)')?.folderId).toBe(folders[0]?.id)
     expect(byContent.get('# Friday')).toMatchObject({ type: 'daily', dailyDate: '2026-09-25' })
     expect(byContent.get('loose #tag')?.folderId).toBeNull()
+  })
+})
+
+describe('planConverted', () => {
+  it('imports converted notes with folders, dates and images, and skips them the second time', async () => {
+    const converted = [
+      {
+        folder: ['Work', 'Q3'],
+        markdown: '# Plan\n\n![](img:a1) and ![](img:a1)',
+        created: 5000,
+        updated: 6000,
+        images: [
+          { key: 'a1', data: PNG, mime: 'image/png' },
+          { key: 'unused', data: PNG, mime: 'image/png' },
+        ],
+      },
+      { folder: [], markdown: 'Loose note', images: [] },
+      { folder: ['Work'], markdown: '  \n ', images: [] },
+    ]
+    const { plan, files } = planConverted('apple', converted)
+    expect(plan.notes).toHaveLength(2)
+    expect(plan.folders).toBe(2)
+    expect(plan.images).toBe(1)
+    expect(files.map((f) => f.path)).toEqual(['image-0-a1.png'])
+
+    const images = imageStore()
+    const result = await runImport(plan, files, { repo, addImage: images.addImage })
+    expect(result.noteIds).toHaveLength(2)
+    expect(result.images).toBe(1)
+    expect(images.added).toEqual([{ path: 'image-0-a1.png', mime: 'image/png' }])
+    const note = await repo.getNote(result.noteIds[0] as string)
+    expect(note?.content).toBe('# Plan\n\n![](attachment:img1) and ![](attachment:img1)')
+    expect(note?.createdAt).toBe(5000)
+    expect(note?.updatedAt).toBe(6000)
+    const folders = await repo.listFolders()
+    const q3 = folders.find((f) => f.name === 'Q3')
+    expect(folders.find((f) => f.id === q3?.parentId)?.name).toBe('Work')
+    expect(note?.folderId).toBe(q3?.id)
+
+    const again = planConverted('apple', converted)
+    const second = await runImport(again.plan, again.files, { repo, addImage: images.addImage })
+    expect(second.noteIds).toHaveLength(0)
+    expect(second.duplicates).toBe(2)
   })
 })

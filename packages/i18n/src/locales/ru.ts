@@ -757,6 +757,7 @@ const ru: LocaleResource = {
       notion: 'Экспорт Notion',
       bear: 'Резервная копия Bear',
       markdown: 'Файлы Markdown',
+      apple: 'Apple Заметки',
     },
     found: 'Заметок: {{notes}} · папок: {{folders}} · картинок: {{images}}',
     skipped: 'Другие файлы не переносятся: {{count}} (таблицы, PDF…)',
@@ -767,6 +768,20 @@ const ru: LocaleResource = {
     duplicates: 'Уже есть в FixNote, пропущено: {{count}}',
     importFailed: 'Импорт не удался: {{error}}',
     undone: 'Импорт отменён',
+    apple: {
+      button: 'Apple Заметки',
+      opening:
+        'Открываем Apple Заметки… macOS может спросить, можно ли FixNote работать с Заметками.',
+      pick: 'Выберите папки для импорта. В Apple Заметках ничего не изменится.',
+      chosen: 'Выбрано заметок: {{count}}',
+      empty: 'В Apple Заметках нет заметок.',
+      denied:
+        'У FixNote нет доступа к Заметкам. Включите Заметки для FixNote в Системных настройках: Конфиденциальность и безопасность, Автоматизация. Затем попробуйте снова.',
+      openSettings: 'Открыть настройки macOS',
+      retry: 'Попробовать снова',
+      locked: 'Заметки с паролем пропущены: {{count}}',
+      lost: 'Вложения не перенесены: {{count}} (PDF, сканы, рисунки)',
+    },
   },
   share: {
     button: 'Поделиться',

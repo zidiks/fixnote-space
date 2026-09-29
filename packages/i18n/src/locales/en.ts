@@ -751,6 +751,7 @@ const en = {
       notion: 'Notion export',
       bear: 'Bear backup',
       markdown: 'Markdown files',
+      apple: 'Apple Notes',
     },
     found: 'Notes: {{notes}} · folders: {{folders}} · images: {{images}}',
     skipped: 'Other files are left out: {{count}} (tables, PDFs…)',
@@ -761,6 +762,19 @@ const en = {
     duplicates: 'Already in FixNote, skipped: {{count}}',
     importFailed: 'Import failed: {{error}}',
     undone: 'Import undone',
+    apple: {
+      button: 'Apple Notes',
+      opening: 'Opening Apple Notes… macOS may ask whether FixNote can use Notes.',
+      pick: 'Choose the folders to import. Nothing changes in Apple Notes.',
+      chosen: 'Notes chosen: {{count}}',
+      empty: 'There are no notes in Apple Notes.',
+      denied:
+        'FixNote has no access to Notes. Turn on Notes for FixNote in System Settings, Privacy & Security, Automation, then try again.',
+      openSettings: 'Open System Settings',
+      retry: 'Try again',
+      locked: 'Locked notes skipped: {{count}}',
+      lost: 'Attachments not moved: {{count}} (PDFs, scans, drawings)',
+    },
   },
   share: {
     button: 'Share',
