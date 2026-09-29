@@ -969,7 +969,14 @@ export class SharedNotes {
     for (const n of candidates) {
       if (!n.shared_id) {
         // An empty new note may still be thrown away; it joins once something is written.
-        if (n.content.trim()) await this.shareIntoFolder(row, n.id, n.content)
+        if (!n.content.trim()) continue
+        try {
+          await this.shareIntoFolder(row, n.id, n.content)
+        } catch (err) {
+          // Still shared with people on its own: it stays out of the folder rather than stopping
+          // the sync of everything else.
+          if (!/already shared/.test(err instanceof Error ? err.message : String(err))) throw err
+        }
         continue
       }
       const doc = await this.doc(n.shared_id)

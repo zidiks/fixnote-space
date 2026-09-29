@@ -91,8 +91,8 @@ const ru: LocaleResource = {
     later: 'Следующий день',
     toToday: 'Сегодня',
     toTomorrow: 'Завтра',
-    toDaily: 'Голосовые и Telegram в заметку дня',
-    toDailyBody: 'Новые записи дописываются в заметку дня, а не создаются отдельно.',
+    voiceToDaily: 'Голосовые в заметку дня',
+    voiceToDailyBody: 'Надиктованное дописывается в заметку дня, а не создаётся отдельно.',
     savedToDaily: 'Добавлено в заметку дня',
     tasks: 'Задачи',
     notes: 'Заметки',
@@ -213,7 +213,7 @@ const ru: LocaleResource = {
     open: 'Открыть ассистента',
     close: 'Закрыть ассистента',
     scope: {
-      label: 'Контекст',
+      pick: 'Где ищет ассистент',
       all: 'Все заметки',
       folder: 'Папка: {{name}}',
       note: 'Заметка: {{name}}',
@@ -348,6 +348,8 @@ const ru: LocaleResource = {
     tidy: 'Оформить',
   },
   capture: {
+    toDaily: 'Сообщения в заметку дня',
+    toDailyBody: 'Новые сообщения из Telegram дописываются в заметку дня.',
     imported: 'Новых заметок из Telegram: {{count}}',
     title: 'Telegram',
     body: 'Отправляйте боту текст, голосовые и фото. Они станут заметками, зашифрованными вашим ключом.',
@@ -755,6 +757,7 @@ const ru: LocaleResource = {
       notion: 'Экспорт Notion',
       bear: 'Резервная копия Bear',
       markdown: 'Файлы Markdown',
+      apple: 'Apple Заметки',
     },
     found: 'Заметок: {{notes}} · папок: {{folders}} · картинок: {{images}}',
     skipped: 'Другие файлы не переносятся: {{count}} (таблицы, PDF…)',
@@ -765,6 +768,20 @@ const ru: LocaleResource = {
     duplicates: 'Уже есть в FixNote, пропущено: {{count}}',
     importFailed: 'Импорт не удался: {{error}}',
     undone: 'Импорт отменён',
+    apple: {
+      button: 'Apple Заметки',
+      opening:
+        'Открываем Apple Заметки… macOS может спросить, можно ли FixNote работать с Заметками.',
+      pick: 'Выберите папки для импорта. В Apple Заметках ничего не изменится.',
+      chosen: 'Выбрано заметок: {{count}}',
+      empty: 'В Apple Заметках нет заметок.',
+      denied:
+        'У FixNote нет доступа к Заметкам. Включите Заметки для FixNote в Системных настройках: Конфиденциальность и безопасность, Автоматизация. Затем попробуйте снова.',
+      openSettings: 'Открыть настройки macOS',
+      retry: 'Попробовать снова',
+      locked: 'Заметки с паролем пропущены: {{count}}',
+      lost: 'Вложения не перенесены: {{count}} (PDF, сканы, рисунки)',
+    },
   },
   share: {
     button: 'Поделиться',

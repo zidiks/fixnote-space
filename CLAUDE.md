@@ -94,6 +94,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`store::packaged()` in Rust, `store` in `app_info`) the app never updates itself and MCP clients
   get the `fixnote-mcp` alias path instead of the exe next to the app. Folders the app shares with
   other programs must be listed in the manifest's `ExcludedDirectories`, or Windows virtualizes them.
+- Apple Notes import (macOS desktop): `apple_notes.rs` asks the Notes app over JXA (`osascript`,
+  `NSAppleEventsUsageDescription`; "denied" when Automation is off) for folders and batches of
+  notes as HTML; `lib/apple-notes.ts` turns them into Markdown with the note schema, then core
+  `planConverted` + `runImport`. Try it with `?dev-backend` (`apple-notes-dev.ts`, `&apple-denied`).
 - Repeating tasks live in the task line (`- [ ] Call mom 🔁 weekly:mon`, rules in
   `packages/core/src/notes/recurrence.ts`); a new daily note gets the tasks due that day
   (`getOrCreateDaily`), and a changed rule reaches existing later days via `applyRecurrence`.

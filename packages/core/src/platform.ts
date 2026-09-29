@@ -156,6 +156,40 @@ export interface TextRecognizer {
   unload?(): void
 }
 
+/** A folder of Apple Notes (macOS), for the import. */
+export interface AppleNotesFolder {
+  id: string
+  /** Its name and the names of the folders around it, outermost first. */
+  path: string[]
+  account: string
+  count: number
+  /** The account's default folder ("Notes"): its notes come in without a folder. */
+  home: boolean
+}
+
+/** A note of Apple Notes as the Notes app gives it: HTML, with images inline as data URIs. */
+export interface AppleNote {
+  id: string
+  title: string
+  /** Empty for a locked note. */
+  html: string
+  created: number
+  modified: number
+  locked: boolean
+  /** Attachments of the note (images, scans, files, drawings). */
+  files: number
+}
+
+/**
+ * Apple Notes on this Mac (desktop app on macOS only). Errors with "denied" when the user has not
+ * let FixNote control Notes (System Settings → Privacy & Security → Automation).
+ */
+export interface AppleNotesSource {
+  folders(): Promise<AppleNotesFolder[]>
+  /** Notes `from`..`from + count` of a folder. */
+  read(folderId: string, from: number, count: number): Promise<AppleNote[]>
+}
+
 /** The files of on-device models (`models.ts`), cached by the webview. */
 export interface LocalModels {
   /** Bytes of the model's files on this device; 0 when it is not downloaded. */
@@ -173,6 +207,8 @@ export interface Platform {
   readonly embedder: () => Promise<Embedder>
   readonly transcriber: () => Promise<Transcriber>
   readonly models?: LocalModels
+  /** Apple Notes to import from (the desktop app on macOS). */
+  readonly appleNotes?: AppleNotesSource
   /** Text from images, on the device (missing where it cannot run). */
   readonly ocr?: () => Promise<TextRecognizer>
   readonly keyStore: KeyStore

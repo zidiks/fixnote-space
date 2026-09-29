@@ -484,6 +484,37 @@ describe('shared folders', () => {
     expect(await inFolder(bob, bobTrip)).toEqual(['Hotel Roma'])
   })
 
+  it('a note deleted in the folder and brought back joins it again', async () => {
+    const { ann, bob, trip, plan, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    await ann.repo.deleteNote(plan.id)
+    offset = 20_000
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect(await inFolder(bob, bobTrip)).toEqual(['Hotel Roma'])
+    // Undone later (the AI activity log, the trash): the same note, the same server record.
+    await ann.repo.restoreNote(plan.id)
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect(await inFolder(ann, trip.id)).toEqual(['Hotel Roma', 'Plan'])
+    expect(await inFolder(bob, bobTrip)).toEqual(['Hotel Roma', 'Plan'])
+  })
+
+  it('a note moves from one shared folder of the owner to another', async () => {
+    const { ann, bob, plan, id } = await setUp()
+    const bobTrip = await bob.shared.acceptFolder(id)
+    const work = await ann.repo.createFolder('Work')
+    const workId = await ann.shared.shareFolder(work.id)
+    await ann.shared.inviteToFolder(workId, 'bob@x.io', 'edit')
+    const bobWork = await bob.shared.acceptFolder(workId)
+    await ann.repo.moveNote(plan.id, work.id)
+    await ann.shared.sync()
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect(await inFolder(bob, bobTrip)).toEqual(['Hotel Roma'])
+    expect(await inFolder(bob, bobWork)).toEqual(['Plan'])
+  })
+
   it('the owner moves a note out: members lose it, the owner keeps it', async () => {
     const { ann, bob, hotel, id } = await setUp()
     const bobTrip = await bob.shared.acceptFolder(id)

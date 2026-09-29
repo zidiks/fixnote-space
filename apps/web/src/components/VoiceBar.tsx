@@ -53,7 +53,7 @@ export function VoiceBar() {
     setVoiceDeps({
       transcriber: platform.transcriber,
       createNote: async (text) => {
-        if (await captureToDaily(driver)) {
+        if (await captureToDaily(driver, 'voice')) {
           const daily = await appendToToday(repo, text)
           await invalidate()
           useUi.getState().navigate({ kind: 'note', id: daily.id })

@@ -1,4 +1,11 @@
-import type { FetchedPage, Platform, WindowChrome } from '@fixnote/core'
+import type {
+  AppleNote,
+  AppleNotesFolder,
+  AppleNotesSource,
+  FetchedPage,
+  Platform,
+  WindowChrome,
+} from '@fixnote/core'
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
 import { localModels } from '@fixnote/platform-web/models'
 import { createTesseractRecognizer } from '@fixnote/platform-web/ocr'
@@ -40,6 +47,14 @@ function detectChrome(): WindowChrome {
   return 'native'
 }
 
+/** Apple Notes through the Notes app's scripting (apple_notes.rs); JSON comes back as text. */
+const appleNotes: AppleNotesSource = {
+  folders: async () =>
+    JSON.parse(await invoke<string>('apple_notes_folders')) as AppleNotesFolder[],
+  read: async (folder, from, count) =>
+    JSON.parse(await invoke<string>('apple_notes_read', { folder, from, count })) as AppleNote[],
+}
+
 export function createTauriPlatform(): Platform {
   const sql = openTauriSqlDriver()
   const chrome = detectChrome()
@@ -68,6 +83,7 @@ export function createTauriPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     models: localModels,
+    ...(chrome === 'mac-overlay' ? { appleNotes } : {}),
     ocr: () => {
       ocr ??= createTesseractRecognizer()
       return Promise.resolve(ocr)

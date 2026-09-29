@@ -28,7 +28,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { type KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import {
@@ -260,6 +260,10 @@ function IndexStatus() {
  * Single app-wide assistant thread. The scope badge shows which notes answers draw from; a scope
  * change leaves a divider in the thread.
  */
+/** The input grows up to this many lines of text (leading-5: 20 px each), then scrolls. */
+const MAX_INPUT_LINES = 7
+const INPUT_LINE_PX = 20
+
 export function ChatPanel() {
   const { t } = useTranslation()
   const platform = usePlatform()
@@ -314,6 +318,17 @@ export function ChatPanel() {
 
   // Closing the assistant ends a spoken conversation.
   useEffect(() => stopTalk, [])
+
+  // The input grows with what is typed, up to MAX_INPUT_LINES; then it scrolls.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the text changes
+  useLayoutEffect(() => {
+    const el = input.current
+    if (!el) return
+    el.style.height = 'auto'
+    const max = MAX_INPUT_LINES * INPUT_LINE_PX + 8
+    el.style.height = `${Math.min(el.scrollHeight, max)}px`
+    el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden'
+  }, [draft, talking])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-run to follow new messages and streamed text
   useEffect(() => {
@@ -425,12 +440,12 @@ export function ChatPanel() {
             ) : null}
             <AgentConfirm />
             <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{t('chat.scope.label')}</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex max-w-[260px] items-center gap-1 rounded-full border bg-card px-2 py-0.5 font-medium text-foreground hover:bg-accent [&_svg]:size-3"
+                    aria-label={t('chat.scope.pick')}
+                    className="flex max-w-[260px] min-w-0 items-center gap-1 rounded-full border bg-card px-2 py-0.5 font-medium text-foreground hover:bg-accent [&_svg]:size-3 [&_svg]:shrink-0"
                   >
                     <ScopeIcon scope={scope} />
                     <span className="truncate">{label(scope)}</span>
@@ -469,7 +484,7 @@ export function ChatPanel() {
                 onKeyDown={onKey}
                 placeholder={t('chat.placeholder')}
                 aria-label={t('chat.placeholder')}
-                className="max-h-40 flex-1 resize-none bg-transparent px-1.5 py-1 text-sm outline-none placeholder:text-muted-foreground"
+                className="flex-1 resize-none overflow-y-hidden bg-transparent px-1.5 py-1 text-sm leading-5 outline-none placeholder:text-muted-foreground"
               />
               <Button
                 size="icon-xs"
