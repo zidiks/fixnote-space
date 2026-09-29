@@ -3,7 +3,9 @@
  * check it is present too). The provider key never leaves the server. Requests are bounded and the
  * model is fixed server-side. Message content is never logged. Each account has an AI allowance
  * (supabase/migrations/*_plans.sql): asked before the request, charged with the tokens the
- * provider reports when the answer ends (an estimate when the reader stops early).
+ * provider reports when the answer ends (an estimate when the reader stops early). The assistant
+ * may pass tools (function calling); a request that only brings tool results back is a step of the
+ * same question and does not count as a new request.
  */
 
 import { CORS, jsonError, rateLimiter, userId } from '../_shared/auth.ts'
@@ -28,7 +30,8 @@ export interface Allowance {
 /** The account's AI allowance and what each answer cost (the database in production). */
 export interface Meter {
   allowance(user: string): Promise<Allowance>
-  record(user: string, tokens: number): Promise<void>
+  /** `requests`: 1 for a question, 0 for a step that only brings tool results back. */
+  record(user: string, tokens: number, requests: number): Promise<void>
 }
 
 /** No accounting (tests of the proxy itself, or no database). */
@@ -54,31 +57,90 @@ export function envFromDeno(): ProxyEnv {
   }
 }
 
-const MAX_BODY = 256 * 1024
-const MAX_MESSAGES = 40
+const MAX_BODY = 512 * 1024
+const MAX_MESSAGES = 120
+const MAX_TOOLS = 32
+const MAX_CALLS = 16
 
 const json = jsonError
 const allow = rateLimiter()
 
 interface Incoming {
   messages?: unknown
+  tools?: unknown
   temperature?: unknown
   max_tokens?: unknown
 }
 
-function validMessages(v: unknown): v is { role: string; content: string }[] {
-  return (
-    Array.isArray(v) &&
-    v.length > 0 &&
-    v.length <= MAX_MESSAGES &&
-    v.every(
-      (m) =>
-        m &&
-        typeof m === 'object' &&
-        ['system', 'user', 'assistant'].includes((m as { role?: string }).role ?? '') &&
-        typeof (m as { content?: unknown }).content === 'string',
-    )
-  )
+type Message =
+  | { role: 'system' | 'user'; content: string }
+  | { role: 'assistant'; content: string | null; tool_calls?: Call[] }
+  | { role: 'tool'; tool_call_id: string; content: string }
+
+interface Call {
+  id: string
+  type: 'function'
+  function: { name: string; arguments: string }
+}
+
+interface Tool {
+  type: 'function'
+  function: { name: string; description: string; parameters: Record<string, unknown> }
+}
+
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+const NAME = /^[A-Za-z0-9_-]{1,64}$/
+
+function call(v: unknown): Call | null {
+  if (!isObject(v) || typeof v.id !== 'string' || !isObject(v.function)) return null
+  const { name, arguments: args } = v.function
+  if (typeof name !== 'string' || !NAME.test(name) || typeof args !== 'string') return null
+  return { id: v.id, type: 'function', function: { name, arguments: args } }
+}
+
+/** The messages rebuilt with only the fields the provider needs, or null when one is wrong. */
+function messages(v: unknown): Message[] | null {
+  if (!Array.isArray(v) || !v.length || v.length > MAX_MESSAGES) return null
+  const out: Message[] = []
+  for (const m of v) {
+    if (!isObject(m)) return null
+    const { role, content } = m
+    if ((role === 'system' || role === 'user') && typeof content === 'string') {
+      out.push({ role, content })
+    } else if (role === 'assistant' && Array.isArray(m.tool_calls) && m.tool_calls.length) {
+      if (m.tool_calls.length > MAX_CALLS) return null
+      const calls = m.tool_calls.map(call)
+      if (calls.some((c) => !c) || (content !== null && typeof content !== 'string')) return null
+      out.push({ role, content: content ?? null, tool_calls: calls as Call[] })
+    } else if (role === 'assistant' && typeof content === 'string') {
+      out.push({ role, content })
+    } else if (
+      role === 'tool' &&
+      typeof m.tool_call_id === 'string' &&
+      typeof content === 'string'
+    ) {
+      out.push({ role, tool_call_id: m.tool_call_id, content })
+    } else {
+      return null
+    }
+  }
+  return out
+}
+
+/** The tools rebuilt with only name, description and parameters; undefined = none; null = wrong. */
+function tools(v: unknown): Tool[] | undefined | null {
+  if (v === undefined) return undefined
+  if (!Array.isArray(v) || v.length > MAX_TOOLS) return null
+  const out: Tool[] = []
+  for (const t of v) {
+    if (!isObject(t) || t.type !== 'function' || !isObject(t.function)) return null
+    const { name, description, parameters } = t.function
+    if (typeof name !== 'string' || !NAME.test(name)) return null
+    if (typeof description !== 'string' || !isObject(parameters)) return null
+    out.push({ type: 'function', function: { name, description, parameters } })
+  }
+  return out.length ? out : undefined
 }
 
 export async function handle(
@@ -93,7 +155,6 @@ export async function handle(
 
   const user = userId(req)
   if (!user) return json(401, 'Sign in to use the assistant')
-  if (!allow(user, env.perMinute, now)) return json(429, 'Too many requests, try again in a minute')
 
   const raw = await req.text()
   if (raw.length > MAX_BODY) return json(413, 'Request too large')
@@ -103,7 +164,15 @@ export async function handle(
   } catch {
     return json(400, 'Invalid JSON')
   }
-  if (!validMessages(body.messages)) return json(400, 'Invalid messages')
+  const sent = messages(body.messages)
+  if (!sent) return json(400, 'Invalid messages')
+  const toolList = tools(body.tools)
+  if (toolList === null) return json(400, 'Invalid tools')
+  // Tool results going back: the same question, a few steps of it.
+  const step = sent[sent.length - 1]?.role === 'tool'
+  if (!allow(user, step ? env.perMinute * 3 : env.perMinute, now)) {
+    return json(429, 'Too many requests, try again in a minute')
+  }
 
   const allowance = await meter.allowance(user)
   if (!allowance.ok) {
@@ -117,7 +186,8 @@ export async function handle(
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.apiKey}` },
     body: JSON.stringify({
       model: env.model,
-      messages: body.messages,
+      messages: sent,
+      ...(toolList ? { tools: toolList } : {}),
       stream: true,
       // The last chunk then carries the tokens used, which the allowance is charged with.
       stream_options: { include_usage: true },
@@ -145,9 +215,7 @@ export async function handle(
   }
 
   return new Response(
-    metered(upstream.body, JSON.stringify(body.messages).length, (tokens) =>
-      meter.record(user, tokens),
-    ),
+    metered(upstream.body, raw.length, (tokens) => meter.record(user, tokens, step ? 0 : 1)),
     {
       status: 200,
       headers: {
@@ -188,9 +256,17 @@ function metered(
       if (!line.startsWith('data:')) continue
       if (line.includes('"usage"')) {
         try {
-          const total = (JSON.parse(line.slice(5)) as { usage?: { total_tokens?: number } }).usage
-            ?.total_tokens
-          if (typeof total === 'number') reported = total
+          const usage = (
+            JSON.parse(line.slice(5)) as {
+              usage?: { total_tokens?: number; prompt_cache_hit_tokens?: number }
+            }
+          ).usage
+          // The provider's cache serves a repeated start of the prompt (the rules and the tools,
+          // sent on every step) for a tenth of the price; the allowance counts it the same way.
+          if (typeof usage?.total_tokens === 'number') {
+            const cached = usage.prompt_cache_hit_tokens ?? 0
+            reported = usage.total_tokens - Math.floor(cached * 0.9)
+          }
         } catch {
           // not JSON: count it as text
         }

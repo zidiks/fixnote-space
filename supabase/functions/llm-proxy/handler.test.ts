@@ -16,9 +16,20 @@ const upstream = Deno.serve({ port: 0, onListen() {} }, async (req) => {
       { status: 402 },
     )
   }
+  const cached = JSON.stringify(seen.body.messages).includes('cached')
   const stream = new ReadableStream({
     start(c) {
       c.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\n'))
+      if (cached) {
+        c.enqueue(
+          new TextEncoder().encode(
+            'data: {"choices":[],"usage":{"prompt_tokens":1000,"prompt_cache_hit_tokens":800,"completion_tokens":20,"total_tokens":1020}}\n\n',
+          ),
+        )
+        c.enqueue(new TextEncoder().encode('data: [DONE]\n\n'))
+        c.close()
+        return
+      }
       // Split mid-line, as networks do: the usage line must still be read whole.
       c.enqueue(new TextEncoder().encode('data: {"choices":[],"usage":{"prompt_tokens":40,'))
       c.enqueue(new TextEncoder().encode('"completion_tokens":2,"total_tokens":42}}\n\n'))
@@ -63,7 +74,7 @@ Deno.test('rejects anonymous callers and bad input', async () => {
     400,
   )
   assertEquals((await handle(post({ messages: [] }, auth('u2')), env())).status, 400)
-  const big = { messages: [{ role: 'user', content: 'x'.repeat(300_000) }] }
+  const big = { messages: [{ role: 'user', content: 'x'.repeat(600_000) }] }
   assertEquals((await handle(post(big, auth('u2')), env())).status, 413)
   assertEquals((await handle(new Request('http://fn', { method: 'GET' }), env())).status, 405)
   assertEquals((await handle(new Request('http://fn', { method: 'OPTIONS' }), env())).status, 200)
@@ -96,13 +107,15 @@ Deno.test('maps provider errors without leaking their body', async () => {
 
 function meter(allowance: Allowance) {
   const charged: [string, number][] = []
+  const requests: number[] = []
   const m: Meter = {
     allowance: async () => allowance,
-    record: async (user, tokens) => {
+    record: async (user, tokens, count) => {
       charged.push([user, tokens])
+      requests.push(count)
     },
   }
-  return { m, charged }
+  return { m, charged, requests }
 }
 
 Deno.test('charges the tokens the provider reports, once the answer is read', async () => {
@@ -112,6 +125,18 @@ Deno.test('charges the tokens the provider reports, once the answer is read', as
   assertEquals(charged, [])
   assertStringIncludes(await res.text(), '"total_tokens":42')
   assertEquals(charged, [['m1', 42]])
+})
+
+Deno.test('charges cached prompt tokens at a tenth', async () => {
+  const { m, charged } = meter({ ok: true })
+  const res = await handle(
+    post({ messages: [{ role: 'user', content: 'cached rules' }] }, auth('m5')),
+    env(),
+    Date.now(),
+    m,
+  )
+  await res.text()
+  assertEquals(charged, [['m5', 1020 - 720]])
 })
 
 Deno.test('charges an estimate when the reader stops early', async () => {
@@ -141,6 +166,79 @@ Deno.test('refuses when the allowance says no, with the reason and the renewal d
     resetsAt: '2026-10-01',
   })
   assertEquals(spent.charged, [])
+})
+
+const TOOL = {
+  type: 'function',
+  function: {
+    name: 'search_notes',
+    description: 'Search',
+    parameters: { type: 'object', properties: { query: { type: 'string' } } },
+    strict: 'dropped',
+  },
+}
+
+Deno.test('passes tools and tool steps on; a step is not a new request', async () => {
+  const first = meter({ ok: true })
+  const res = await handle(post({ ...ok, tools: [TOOL] }, auth('t1')), env(), Date.now(), first.m)
+  await res.text()
+  assertEquals(seen?.body.tools, [
+    {
+      type: 'function',
+      function: {
+        name: 'search_notes',
+        description: 'Search',
+        parameters: { type: 'object', properties: { query: { type: 'string' } } },
+      },
+    },
+  ])
+  assertEquals(first.requests, [1])
+  const steps = {
+    tools: [TOOL],
+    messages: [
+      { role: 'user', content: 'find the bot note' },
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: 'c1',
+            type: 'function',
+            function: { name: 'search_notes', arguments: '{"query":"bot"}' },
+            extra: 1,
+          },
+        ],
+      },
+      { role: 'tool', tool_call_id: 'c1', content: '1. Bot (id: n1)' },
+    ],
+  }
+  const next = meter({ ok: true })
+  await (await handle(post(steps, auth('t1')), env(), Date.now(), next.m)).text()
+  assertEquals(next.requests, [0])
+  assertEquals((seen?.body.messages as unknown[] | undefined)?.[1], {
+    role: 'assistant',
+    content: null,
+    tool_calls: [
+      {
+        id: 'c1',
+        type: 'function',
+        function: { name: 'search_notes', arguments: '{"query":"bot"}' },
+      },
+    ],
+  })
+})
+
+Deno.test('rejects malformed tools and tool messages', async () => {
+  const bad = (body: unknown) => handle(post(body, auth('t2')), env()).then((r) => r.status)
+  assertEquals(await bad({ ...ok, tools: [{ type: 'function', function: { name: 'x y' } }] }), 400)
+  assertEquals(await bad({ ...ok, tools: 'all' }), 400)
+  assertEquals(await bad({ messages: [{ role: 'tool', content: 'no id' }] }), 400)
+  assertEquals(
+    await bad({
+      messages: [{ role: 'assistant', content: null, tool_calls: [{ id: 'c', function: {} }] }],
+    }),
+    400,
+  )
 })
 
 Deno.test({

@@ -6,9 +6,19 @@ import type { Transcriber } from '@fixnote/core'
  */
 export function devTranscriber(): Transcriber {
   let loaded = false
+  let model = 'onnx-community/whisper-base'
   return {
-    modelId: 'dev-whisper',
+    get modelId() {
+      return model
+    },
     local: true,
+    setModel(id) {
+      if (id !== model) loaded = false
+      model = id
+    },
+    unload() {
+      loaded = false
+    },
     async ready(onProgress) {
       if (loaded) return
       for (const p of [0.2, 0.6, 1]) {

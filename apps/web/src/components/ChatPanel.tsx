@@ -1,4 +1,4 @@
-import type { ChatEntry, ChatScope, StoredCitation } from '@fixnote/core'
+import { type ChatEntry, type ChatScope, type StoredCitation, voiceBlobKey } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -43,7 +43,9 @@ import { usePlatform } from '../lib/platform'
 import { useFolders, useNote } from '../lib/queries'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
+import { AgentActivity, AgentConfirm, AnswerChanges, ContextRing } from './chat/AgentParts'
 import { AnswerText } from './chat/AnswerText'
+import { VoiceMessage } from './chat/VoiceMessage'
 import { VOICE_KEYS } from './VoiceBar'
 import { WindowControls } from './WindowControls'
 
@@ -110,6 +112,7 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
   const label = useScopeLabel()
   const error = useAssistant((s) => s.error)
   const refused = useAssistant((s) => s.refused)
+  const activity = useAssistant((s) => s.activity)
 
   if (m.kind === 'divider') {
     return (
@@ -124,6 +127,7 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
     )
   }
   if (m.kind === 'user') {
+    if (m.voice) return <VoiceMessage voice={m.voice} transcript={m.content} />
     return (
       <div
         data-selectable
@@ -137,18 +141,22 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
   return (
     <div className="max-w-full">
       {streaming && !m.content ? (
-        <p className="animate-pulse text-sm text-muted-foreground">{t('chat.thinking')}</p>
+        activity ? null : (
+          <p className="animate-pulse text-sm text-muted-foreground">{t('chat.thinking')}</p>
+        )
       ) : (
         <AnswerText
-          text={m.content + (streaming ? ' ▍' : '')}
+          text={m.content + (streaming && !activity ? ' ▍' : '')}
           citations={m.citations}
           onCite={(c) => navigate({ kind: 'note', id: c.noteId })}
         />
       )}
+      {streaming ? <AgentActivity /> : null}
+      <AnswerChanges m={m} />
       {m.status === 'done' ? (
         <>
           <Sources citations={m.citations} />
-          {m.confidence ? (
+          {m.confidence && !m.actions?.items.length ? (
             <p
               className={cn(
                 'mt-2 text-[11px]',
@@ -274,15 +282,24 @@ export function ChatPanel() {
   const last = messages.at(-1)
   const voice = useVoice((s) => s.status)
 
-  // Dictated questions land in the input, to check and send.
+  // A question asked by voice goes out right away, as a voice message: the recording stays on
+  // this device, the assistant answers what was heard.
+  const scopeRef = useRef(scope)
+  scopeRef.current = scope
   useEffect(
     () =>
-      registerVoiceSink('chat', (text) => {
-        const current = useUi.getState().chatDraft
-        setDraft(current.trim() ? `${current.trimEnd()} ${text}` : text)
-        input.current?.focus()
+      registerVoiceSink('chat', (d) => {
+        const key = voiceBlobKey(crypto.randomUUID())
+        void platform.blobs
+          .put(key, d.audio)
+          .then(() =>
+            ask(d.text, scopeRef.current, {
+              voice: { key, durationMs: d.durationMs, peaks: d.peaks },
+            }),
+          )
+          .catch(() => ask(d.text, scopeRef.current))
       }),
-    [setDraft],
+    [platform],
   )
 
   // Opening the assistant is the moment to prepare search by meaning (first time: model download).
@@ -295,7 +312,7 @@ export function ChatPanel() {
   useEffect(() => {
     const el = list.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [messages.length, last?.content])
+  }, [messages.length, last?.content, last?.actions?.items.length])
 
   const send = () => {
     const q = draft.trim()
@@ -399,6 +416,7 @@ export function ChatPanel() {
                 {error}
               </p>
             ) : null}
+            <AgentConfirm />
             <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>{t('chat.scope.label')}</span>
               <DropdownMenu>
@@ -428,6 +446,7 @@ export function ChatPanel() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <ContextRing />
             </div>
             <div
               data-voice-target="chat"
@@ -448,7 +467,7 @@ export function ChatPanel() {
                 variant="ghost"
                 className={cn('rounded-lg', voice === 'recording' && 'text-destructive')}
                 onClick={() => void toggleVoice('chat')}
-                aria-label={t('voice.dictate')}
+                aria-label={t('voice.message')}
                 aria-pressed={voice === 'recording'}
                 title={t('voice.dictateHint', { keys: VOICE_KEYS })}
               >

@@ -88,7 +88,7 @@ export function NoteView({ id }: { id: string }) {
   const canShare = hasServer && !localOnly
 
   // While this note is open, dictation goes into it.
-  useEffect(() => registerVoiceSink('note', (text) => editor.current?.insertText(text)), [])
+  useEffect(() => registerVoiceSink('note', (d) => editor.current?.insertText(d.text)), [])
   // Anything dropped onto the window goes into this note.
   useEffect(
     () =>

@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./embed": "./src/embed/client.ts",
+    "./models": "./src/models.ts",
     "./whisper": "./src/whisper/client.ts"
   },
   "scripts": {

@@ -40,12 +40,19 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   app wiring in `apps/web/src/lib/assistant`. Query expansion (`expandQuery`) only adds FTS keywords;
   embeddings always use the question as typed. Model output is rendered as React elements only
   (`AnswerText`), never as HTML. The LLM key stays in the `llm-proxy` edge function.
+- The assistant is an agent: it calls the note tools of `packages/core/src/agent` (`NoteTools`,
+  `NOTE_TOOL_SPECS`; the MCP server uses the same ones, so a tool added there reaches both) in a
+  loop (`apps/web/src/lib/assistant/agent.ts`). It remembers the thread until "new chat"; older
+  turns become a summary (`chat.summary` kv) near the context limit. Deleting, and more than a few
+  changes in one answer, always ask; in "ask" mode every change asks. Each answer lists its changes
+  (`chat_messages.actions`) with Undo all. llm-proxy takes tools; a step that only returns tool
+  results is not a new request, and cached prompt tokens count a tenth.
 - `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
   its numbers, update by copying from upstream (see its README).
 - AI never changes a note without an explicit accept unless the user picked "Accept edits" or "Auto"
   in Settings → AI (`useLlm().mode`); then the change applies with an Undo toast and still goes to
-  `AuditLog`. Changes are shown as diffs (`AiEdit.tsx`, prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit and expansion
-  requests by the markers exported from `@fixnote/ai`; keep them in the prompts.
+  `AuditLog`. Changes are shown as diffs (`AiEdit.tsx`, prompts in `packages/ai/src/edit.ts`). The dev backend's fake LLM recognizes edit, expansion,
+  agent and summary requests by the markers exported from `@fixnote/ai`; keep them in the prompts.
 - Attachments: Markdown `![](attachment:<id>)` (images) or `[name](attachment:<id> "1.2 MB")` (other
   files; the title is the size, so id regexes must allow a title),
   bytes in the platform `BlobStore`, one encrypted blob per file in Storage
@@ -56,13 +63,15 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   made on the device (`packages/core/src/capture`). The payload format lives in both places.
 - Speech and embeddings run in the webview on both platforms (transformers.js workers in
   `platform-web`); the Rust side only fetches pages, streams HTTP for the user's own LLM key,
-  stores files, holds keys and edits MCP client configs.
+  stores files, holds keys and edits MCP client configs. Every on-device model is listed in
+  `packages/core/src/models.ts` (Settings → Advanced shows size, download, remove); the speech model
+  the person picked is kept by the Whisper client (`setModel`).
 - Every AI change to a note goes through `AuditLog` (`packages/core/src/ai/audit.ts`), so it shows
   in Settings → AI and can be undone. LLM calls go through `llm()` in
   `apps/web/src/lib/assistant/llm.ts` (FixNote AI, the user's key, or Ollama). In local-only mode
   nothing may reach our server: no sync, Telegram, sharing or FixNote AI.
-- MCP server: `apps/mcp`; it writes only through `NotesRepo` and logs every change in `AuditLog`
-  (folders too). Images and files: it reads and writes the desktop app's `blobs/` folder
+- MCP server: `apps/mcp`; its tools are `NoteTools` from core (writes only through `NotesRepo`, every
+  change in `AuditLog`, folders too) behind a gate that reads the user's settings. Images and files: it reads and writes the desktop app's `blobs/` folder
   (`apps/mcp/src/blobs.ts` names files exactly like `blobs.rs`); an attachment is visible only
   through a note the client may see. Each call checks the `mcp.access` level and the `mcp.scope` kv (see
   `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.

@@ -1,13 +1,34 @@
 export type WhisperRequest =
-  | { id: number; op: 'init' }
-  | { id: number; op: 'transcribe'; audio: Float32Array; language?: string }
+  | { id: number; op: 'init'; model: string }
+  | {
+      id: number
+      op: 'transcribe'
+      model: string
+      audio: Float32Array
+      language?: string
+      languages?: string[]
+    }
 
 /** Request without the id the client assigns. */
 export type WhisperBody =
-  | { op: 'init' }
-  | { op: 'transcribe'; audio: Float32Array; language?: string }
+  | { op: 'init'; model: string }
+  | {
+      op: 'transcribe'
+      model: string
+      audio: Float32Array
+      language?: string
+      languages?: string[]
+    }
 
 export type WhisperResponse =
-  | { kind: 'result'; id: number; ok: true; text?: string; device?: string }
+  | {
+      kind: 'result'
+      id: number
+      ok: true
+      text?: string
+      /** The language the speech was taken as (detected, or the one asked for). */
+      language?: string
+      device?: string
+    }
   | { kind: 'result'; id: number; ok: false; error: string }
   | { kind: 'progress'; progress: number }

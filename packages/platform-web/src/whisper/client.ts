@@ -1,4 +1,4 @@
-import type { ProgressListener, Transcriber } from '@fixnote/core'
+import { type ProgressListener, SPEECH_MODELS, type Transcriber } from '@fixnote/core'
 import type { WhisperBody, WhisperResponse } from './protocol'
 
 type Result = Extract<WhisperResponse, { kind: 'result'; ok: true }>
@@ -19,6 +19,20 @@ export async function decodeAudio(audio: Blob): Promise<Float32Array> {
   return out
 }
 
+const MODEL_KEY = 'fixnote.speech-model'
+const MODEL_IDS: string[] = Object.values(SPEECH_MODELS).map((m) => m.id)
+
+/** The speech model the person picked in Settings (the fast one until then). */
+function storedModel(): string {
+  try {
+    const id = localStorage.getItem(MODEL_KEY)
+    if (id && MODEL_IDS.includes(id)) return id
+  } catch {
+    // no storage (private window): the default
+  }
+  return SPEECH_MODELS.fast.id
+}
+
 /**
  * Whisper in a dedicated worker, shared by the web and desktop apps. Nothing leaves the device;
  * the model is fetched once and then served from the browser cache.
@@ -29,6 +43,7 @@ export function createWhisperTranscriber(): Transcriber {
   const pending = new Map<number, { resolve: (v: Result) => void; reject: (e: Error) => void }>()
   const listeners = new Set<ProgressListener>()
   let ready: Promise<void> | null = null
+  let model = storedModel()
 
   const start = () => {
     if (worker) return worker
@@ -48,14 +63,17 @@ export function createWhisperTranscriber(): Transcriber {
       if (msg.ok) p.resolve(msg)
       else p.reject(new Error(msg.error))
     }
-    worker.onerror = (e) => {
-      for (const p of pending.values()) p.reject(new Error(e.message || 'Speech worker failed'))
-      pending.clear()
-      worker?.terminate()
-      worker = null
-      ready = null
-    }
+    worker.onerror = (e) => fail(new Error(e.message || 'Speech worker failed'))
     return worker
+  }
+
+  /** Every open request fails and the next one starts a fresh worker. */
+  const fail = (error: Error) => {
+    for (const p of pending.values()) p.reject(error)
+    pending.clear()
+    worker?.terminate()
+    worker = null
+    ready = null
   }
 
   const call = (body: WhisperBody, transfer: Transferable[] = []) =>
@@ -66,15 +84,39 @@ export function createWhisperTranscriber(): Transcriber {
     })
 
   const transcriber: Transcriber = {
-    modelId: 'onnx-community/whisper-base',
+    get modelId() {
+      return model
+    },
     local: true,
     ready(onProgress) {
-      if (onProgress) listeners.add(onProgress)
-      ready ??= call({ op: 'init' }).then(() => undefined)
-      ready.catch(() => {
-        ready = null
-      })
+      if (!ready) {
+        const current = call({ op: 'init', model }).then(() => undefined)
+        ready = current
+        current.catch(() => {
+          if (ready === current) ready = null
+        })
+      }
+      if (onProgress) {
+        listeners.add(onProgress)
+        ready.then(
+          () => listeners.delete(onProgress),
+          () => listeners.delete(onProgress),
+        )
+      }
       return ready
+    },
+    setModel(id) {
+      if (id === model || !MODEL_IDS.includes(id)) return
+      model = id
+      ready = null
+      try {
+        localStorage.setItem(MODEL_KEY, id)
+      } catch {
+        // the choice lasts until the app closes
+      }
+    },
+    unload() {
+      fail(new Error('The speech model was removed'))
     },
     async transcribe(audio, opts) {
       const samples = await decodeAudio(audio)
@@ -83,14 +125,16 @@ export function createWhisperTranscriber(): Transcriber {
       const res = await call(
         {
           op: 'transcribe',
+          model,
           audio: samples,
           ...(opts?.language ? { language: opts.language } : {}),
+          ...(opts?.languages ? { languages: opts.languages } : {}),
         },
         [samples.buffer],
       )
       return {
         text: res.text ?? '',
-        language: opts?.language ?? 'auto',
+        language: res.language ?? opts?.language ?? 'auto',
         durationMs: Math.round(performance.now() - started),
       }
     },

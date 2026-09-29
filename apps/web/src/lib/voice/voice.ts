@@ -32,7 +32,34 @@ export const useVoice = create<VoiceState>()(() => ({
 
 const set = useVoice.setState
 
-type Sink = (text: string) => void
+/** What a recording became: its transcript, and the recording itself for those who keep it. */
+export interface Dictation {
+  text: string
+  audio: Blob
+  durationMs: number
+  /** Loudness over time, 0..1, for a waveform. */
+  peaks: number[]
+  language: string
+}
+
+type Sink = (dictation: Dictation) => void
+
+/** How many bars a voice message's waveform has. */
+const PEAKS = 36
+
+/** Loudness samples taken while recording, squeezed into `PEAKS` bars. */
+function toPeaks(levels: number[]): number[] {
+  if (!levels.length) return []
+  const out: number[] = []
+  for (let i = 0; i < PEAKS; i++) {
+    const from = Math.floor((i * levels.length) / PEAKS)
+    const to = Math.max(from + 1, Math.floor(((i + 1) * levels.length) / PEAKS))
+    out.push(Math.min(1, Math.max(...levels.slice(from, to))))
+  }
+  return out
+}
+
+let levels: number[] = []
 
 interface Deps {
   transcriber: () => Promise<Transcriber>
@@ -45,8 +72,31 @@ const sinks: { note?: Sink; chat?: Sink } = {}
 let recorder: Recorder | null = null
 let limitTimer: ReturnType<typeof setTimeout> | undefined
 
+const USED_KEY = 'fixnote.voice-used'
+const WARM_AFTER_MS = 3000
+
 export function setVoiceDeps(d: Deps) {
   deps = d
+  prewarm(d)
+}
+
+/**
+ * Someone who dictated before will likely again: load the model a few seconds after start, so
+ * the first phrase does not wait for it. Nobody else downloads anything.
+ */
+function prewarm(d: Deps) {
+  try {
+    if (!localStorage.getItem(USED_KEY)) return
+  } catch {
+    return
+  }
+  setTimeout(() => {
+    if (useVoice.getState().status !== 'idle') return
+    void d
+      .transcriber()
+      .then((tr) => tr.ready())
+      .catch(() => undefined)
+  }, WARM_AFTER_MS)
 }
 
 /** The open note (or the chat) takes transcripts while mounted. */
@@ -66,8 +116,12 @@ export async function toggleVoice(target: VoiceTarget = 'auto') {
   const rec = new Recorder()
   recorder = rec
   set({ status: 'recording', target, level: 0, startedAt: Date.now() })
+  levels = []
   try {
-    await rec.start((level) => set({ level }))
+    await rec.start((level) => {
+      levels.push(level)
+      set({ level })
+    })
   } catch (err) {
     recorder = null
     set({ status: 'idle' })
@@ -97,14 +151,21 @@ export async function stopVoice() {
   const d = deps
   recorder = null
   clearTimeout(limitTimer)
-  const { target } = useVoice.getState()
+  const { target, startedAt } = useVoice.getState()
+  const durationMs = Date.now() - startedAt
+  const peaks = toPeaks(levels)
   set({ status: 'transcribing', level: 0 })
   try {
     const audio = await rec.stop()
     const transcriber = await d.transcriber()
-    const { text } = await transcriber.transcribe(audio)
+    const { text, language } = await transcriber.transcribe(audio)
     set({ status: 'idle', download: null })
-    await deliver(text.trim(), target, d)
+    try {
+      localStorage.setItem(USED_KEY, '1')
+    } catch {
+      // private window: no warm start next time, nothing else changes
+    }
+    await deliver({ text: text.trim(), audio, durationMs, peaks, language }, target, d)
   } catch (err) {
     set({ status: 'idle', download: null })
     toast.error(
@@ -120,13 +181,13 @@ export function cancelVoice() {
   set({ status: 'idle', level: 0 })
 }
 
-async function deliver(text: string, target: VoiceTarget, d: Deps) {
-  if (!text) {
+async function deliver(dictation: Dictation, target: VoiceTarget, d: Deps) {
+  if (!dictation.text) {
     toast(i18n.t('voice.empty'))
     return
   }
   const sink =
     target === 'chat' ? sinks.chat : target === 'note' || target === 'auto' ? sinks.note : undefined
-  if (sink) sink(text)
-  else await d.createNote(text)
+  if (sink) sink(dictation)
+  else await d.createNote(dictation.text)
 }

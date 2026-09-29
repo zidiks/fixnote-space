@@ -1,3 +1,4 @@
+export * from './agent'
 export * from './citations'
 export * from './client'
 export * from './edit'

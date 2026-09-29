@@ -27,6 +27,7 @@ it('serves the notes tools over MCP', async () => {
     'daily_note',
     'delete_folder',
     'delete_note',
+    'edit_note',
     'get_attachment',
     'get_note',
     'list_folders',
@@ -48,6 +49,12 @@ it('serves the notes tools over MCP', async () => {
   ])
   const found = await client.callTool({ name: 'search_notes', arguments: { query: 'встреча бот' } })
   expect(JSON.stringify(found.content)).toContain('Встреча')
+  const [first] = await db.query<{ id: string }>('SELECT id FROM notes')
+  const edited = await client.callTool({
+    name: 'edit_note',
+    arguments: { id: first?.id, find: 'обсудить бота', replace: 'обсудить бота и сайт' },
+  })
+  expect(edited.content).toEqual([{ type: 'text', text: 'Edited "Встреча".' }])
   const bad = await client.callTool({ name: 'search_notes', arguments: {} })
   expect(bad.isError).toBe(true)
   const [log] = await db.query<{ provider: string }>('SELECT provider FROM ai_actions')

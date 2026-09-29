@@ -72,11 +72,20 @@ export function createTransformersEmbedder(): Embedder {
     modelId: 'Xenova/multilingual-e5-small@q8',
     dimensions: 384,
     ready(onProgress) {
-      if (onProgress) listeners.add(onProgress)
-      ready ??= call({ op: 'init' }).then(() => undefined)
-      ready.catch(() => {
-        ready = null
-      })
+      if (!ready) {
+        const current = call({ op: 'init' }).then(() => undefined)
+        ready = current
+        current.catch(() => {
+          if (ready === current) ready = null
+        })
+      }
+      if (onProgress) {
+        listeners.add(onProgress)
+        ready.then(
+          () => listeners.delete(onProgress),
+          () => listeners.delete(onProgress),
+        )
+      }
       return ready
     },
     async embed(texts, kind) {
@@ -89,6 +98,9 @@ export function createTransformersEmbedder(): Embedder {
         )
       }
       return out
+    },
+    unload() {
+      fail(new Error('The search model was removed'))
     },
   }
   return embedder

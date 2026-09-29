@@ -4,21 +4,31 @@ import { useAccount } from '../account/account'
 import { useDb } from '../db'
 import { kvStore } from '../kv'
 import { platform } from '../platform'
-import { initAssistant } from './assistant'
+import { initAssistant, notifyNotesChanged } from './assistant'
 import { initLlm, useLlm } from './llm'
 import { acceptWithUndo, maybeRunScheduled, refreshTidyCount } from './tidy'
 
 export function AssistantProvider({ children }: { children: ReactNode }) {
-  const { driver, tidy, audit } = useDb()
+  const { driver, tidy, audit, repo } = useDb()
   const qc = useQueryClient()
   const signedIn = useAccount((s) => s.phase === 'ready')
   const ownModel = useLlm((s) => s.settings.kind !== 'fixnote')
 
   useEffect(() => {
     void initLlm(kvStore(driver))
-    void initAssistant({ db: driver, embedder: () => platform.embedder() })
+    void initAssistant({
+      db: driver,
+      embedder: () => platform.embedder(),
+      blobs: platform.blobs,
+      repo,
+      audit,
+      onNotesChanged: () => {
+        void qc.invalidateQueries()
+        notifyNotesChanged()
+      },
+    })
     void refreshTidyCount(tidy)
-  }, [driver, tidy])
+  }, [driver, tidy, repo, audit, qc])
 
   // Tidy looks for suggestions every few days, once the model is reachable.
   useEffect(() => {
