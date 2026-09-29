@@ -1,4 +1,0 @@
-{$VOICE_DOMAIN} {
-	# Requests are not logged: they carry what people said.
-	reverse_proxy voice:8000
-}

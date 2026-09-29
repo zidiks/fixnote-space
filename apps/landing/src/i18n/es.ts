@@ -421,7 +421,7 @@ export const es: Dict = {
   privacyPage: {
     eyebrow: 'Privacidad',
     title: 'Política de privacidad',
-    updated: 'Actualizada el 29 de septiembre de 2026',
+    updated: 'Actualizada el 28 de septiembre de 2026',
     lead: 'En resumen: no podemos leer tus notas, no vendemos datos y no mostramos anuncios. A continuación, qué datos tiene FixNote y para qué.',
     sections: [
       {
@@ -463,10 +463,7 @@ export const es: Dict = {
       },
       {
         title: 'Voz',
-        text: [
-          'Sin Pro, la voz se reconoce en tu dispositivo y la grabación no se envía a ninguna parte.',
-          'Con Pro, mientras «Voz a través del servidor de FixNote» esté activado (Ajustes → Avanzado), la grabación de una frase y el texto de las respuestas del asistente pasan por nuestro servidor de voz, que reconoce la voz y lee las respuestas en voz alta. No guardamos grabaciones ni texto y no los registramos. Desactiva el ajuste y todo vuelve a funcionar en el dispositivo.',
-        ],
+        text: ['La voz se reconoce en tu dispositivo. La grabación no se envía a ninguna parte.'],
       },
       {
         title: 'Telegram',

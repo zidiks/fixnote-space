@@ -69,17 +69,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   stores files, holds keys and edits MCP client configs. Every on-device model is listed in
   `packages/core/src/models.ts` (Settings → Advanced shows size, download, remove); the speech model
   the person picked is kept by the Whisper client (`setModel`).
-- Spoken conversation with the assistant (the button left of the mic in the chat,
-  `lib/voice/conversation.ts`): an open mic with a loudness VAD (`vad.ts`, `live-mic.ts`), Whisper on
-  the device, `ask()` as a voice message, and the answer read aloud by the system's speech synthesis
-  (`speech.ts`) sentence by sentence as it streams, in the language the person spoke; a filler phrase
-  when the answer is slow, yes/no aloud for changes that ask. The mic pauses while the app speaks.
-- Voice server (`services/voice`, Python: faster-whisper + Piper, Docker + Caddy on a VPS; see its
-  README): on Pro, with `VITE_VOICE_URL` set and not turned off (Settings → Advanced), speech is
-  recognized there and the assistant speaks with a Piper voice (`lib/voice/server.ts`:
-  `voiceTranscriber()`, `serverSpeech` for `Speaker`). It checks the Supabase session and
-  `my_plan()`, stores and logs nothing; anything failing falls back to the device. Tests: `pytest`
-  there. Voices must have a commercial-use license (see its README).
+- Dictation is cut at pauses while recording (`Segmenter` in `lib/voice/segments.ts`, fed by
+  `Recorder`) and each piece is transcribed right away, so only the last one is left when the person
+  stops. Speech never leaves the device, and there is no spoken reply (decided: CONCEPT.md §10). The
+  default model is `fast`; after two slow dictations out of three the app offers the next lighter one
+  once (`noteSpeed` in `voice.ts`).
 - Text in images (OCR, on the device, Free): Tesseract via tesseract.js (`platform-web/src/ocr`; its
   language data is fetched into Cache Storage and handed over through tesseract.js's own idb cache,
   never downloaded by it). Read in the background (`lib/ocr.ts`) into `image_text` (+ FTS), which

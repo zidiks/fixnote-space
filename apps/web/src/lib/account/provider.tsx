@@ -7,7 +7,6 @@ import { notifyNotesChanged } from '../assistant/assistant'
 import { appendToToday, captureToDaily } from '../daily'
 import { useDb } from '../db'
 import { platform } from '../platform'
-import { voiceTranscriber } from '../voice/server'
 import { initAccount, onSharedSync } from './account'
 import { pickBackend } from './pick'
 
@@ -45,7 +44,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         transcribe: async (audio) =>
           (
             await (
-              await voiceTranscriber()
+              await platform.transcriber()
             ).transcribe(audio, {
               prefer: i18n.language.slice(0, 2),
             })

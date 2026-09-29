@@ -440,8 +440,6 @@ export const devBackend: AccountBackend = {
   },
   chatTransport: async () =>
     load().session ? { url: 'dev://llm', headers: {}, fetch: devLlm } : null,
-  // A local voice server runs with VOICE_AUTH=off, so any token does.
-  accessToken: async () => (load().session ? 'dev' : null),
   inbox: {
     list: async () => {
       const userId = load().session?.userId

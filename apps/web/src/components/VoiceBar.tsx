@@ -6,8 +6,8 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { appendToToday, captureToDaily } from '../lib/daily'
 import { useDb, useRepo } from '../lib/db'
+import { usePlatform } from '../lib/platform'
 import { useInvalidateNotes, writableFolder } from '../lib/queries'
-import { voiceServerAvailable, voiceTranscriber } from '../lib/voice/server'
 import { cancelVoice, setVoiceDeps, stopVoice, useVoice } from '../lib/voice/voice'
 
 export const VOICE_KEYS = `${isApple ? '⌘' : 'Ctrl'}+Shift+Space`
@@ -39,6 +39,7 @@ function Meter({ level }: { level: number }) {
  */
 export function VoiceBar() {
   const { t } = useTranslation()
+  const platform = usePlatform()
   const repo = useRepo()
   const { driver } = useDb()
   const invalidate = useInvalidateNotes()
@@ -50,7 +51,7 @@ export function VoiceBar() {
 
   useEffect(() => {
     setVoiceDeps({
-      transcriber: voiceTranscriber,
+      transcriber: platform.transcriber,
       createNote: async (text) => {
         if (await captureToDaily(driver, 'voice')) {
           const daily = await appendToToday(repo, text)
@@ -74,7 +75,7 @@ export function VoiceBar() {
         })
       },
     })
-  }, [repo, driver, invalidate, t])
+  }, [platform, repo, driver, invalidate, t])
 
   useEffect(() => {
     if (status !== 'recording') return
@@ -98,7 +99,7 @@ export function VoiceBar() {
   return (
     <div
       role="status"
-      title={voiceServerAvailable() ? t('voice.server') : t('voice.local')}
+      title={t('voice.local')}
       className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border bg-popover py-1.5 pr-1.5 pl-4 text-sm text-popover-foreground shadow-float animate-in fade-in-0 slide-in-from-bottom-2"
     >
       {status === 'recording' ? (

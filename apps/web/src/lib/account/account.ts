@@ -686,11 +686,6 @@ export async function fetchPageViaServer(url: string) {
   return b ? b.fetchPage(url) : null
 }
 
-/** The session's access token for FixNote's own servers, or null when signed out. */
-export async function accessToken(): Promise<string | null> {
-  return (await deps?.backend?.accessToken()) ?? null
-}
-
 /** Endpoint for the assistant, or null when signed out / not configured. */
 export async function chatTransport() {
   const b = deps?.backend
