@@ -20,6 +20,12 @@ describe('deriveExcerpt', () => {
       'First line second third',
     )
   })
+
+  it('reads a folded section as its title and text', () => {
+    expect(
+      deriveExcerpt('# Call\n\n<details>\n<summary>Transcript</summary>\n\nHello\n\n</details>'),
+    ).toBe('Transcript Hello')
+  })
 })
 
 describe('taskProgress', () => {

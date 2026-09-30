@@ -1,5 +1,6 @@
 import {
   AGENT_MARKER,
+  CALL_MARKER,
   EDIT_MARKER,
   EXPANSION_MARKER,
   SUMMARY_MARKER,
@@ -301,6 +302,13 @@ function devAgent(messages: DevMessage[]): { text: string } | { calls: DevCall[]
   }
 }
 
+/** A call write-up with no decisions: the note should have no empty "Decisions" section. */
+const DEV_CALL = JSON.stringify({
+  summary: 'Обсудили покупки на выходные и звонок маме.',
+  decisions: [],
+  tasks: ['Я: купить молоко и хлеб', 'Я: позвонить маме в пятницу'],
+})
+
 const devLlm: typeof fetch = async (_url, init) => {
   const refusal = devAiRefusal()
   if (refusal) return refusal
@@ -311,6 +319,7 @@ const devLlm: typeof fetch = async (_url, init) => {
   const edit = system.includes(EDIT_MARKER)
   const tidy = system.includes(TIDY_MARKER)
   const summary = system.includes(SUMMARY_MARKER)
+  const call = system.includes(CALL_MARKER)
   const agent = system.includes(AGENT_MARKER) ? devAgent(body.messages) : null
   const calls = agent && 'calls' in agent && body.tools?.length ? agent.calls : []
   const first = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
@@ -318,18 +327,20 @@ const devLlm: typeof fetch = async (_url, init) => {
     ? ''
     : agent && 'text' in agent
       ? agent.text
-      : summary
-        ? 'The user asked about their notes; nothing is pending.'
-        : tidy
-          ? devTidy(prompt)
-          : expansion
-            ? devKeywords(prompt)
-            : edit
-              ? devEdit(prompt)
-              : first
-                ? `From your note "${first[1]}": ${first[2]} [1]`
-                : "I couldn't find this in your notes. Try other words."
-  const words = expansion || tidy ? [answer] : answer.split(/(?<= )/).filter(Boolean)
+      : call
+        ? DEV_CALL
+        : summary
+          ? 'The user asked about their notes; nothing is pending.'
+          : tidy
+            ? devTidy(prompt)
+            : expansion
+              ? devKeywords(prompt)
+              : edit
+                ? devEdit(prompt)
+                : first
+                  ? `From your note "${first[1]}": ${first[2]} [1]`
+                  : "I couldn't find this in your notes. Try other words."
+  const words = expansion || tidy || call ? [answer] : answer.split(/(?<= )/).filter(Boolean)
   // What llm-proxy charges: about 3 characters per token, question and answer.
   devAiRecord(
     Math.ceil((String(init?.body).length + answer.length) / 3),

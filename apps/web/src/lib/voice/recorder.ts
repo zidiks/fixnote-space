@@ -37,6 +37,7 @@ export async function openMicrophone(): Promise<MediaStream> {
  * With `onPiece`, the recording is also cut at pauses as it goes (16 kHz, see `Segmenter`), so it
  * can be transcribed while the person speaks; stopping hands over the last piece before resolving.
  * The stream is released as soon as recording stops, so the OS "mic in use" indicator goes off.
+ * A call keeps no recording (`keep: false`) and drops pieces nobody spoke in (`dropSilent`).
  */
 export class Recorder {
   private stream: MediaStream | null = null
@@ -50,17 +51,20 @@ export class Recorder {
   async start(
     onLevel: (level: number) => void,
     onPiece?: (pcm: Float32Array) => void,
+    opts: { keep?: boolean; dropSilent?: boolean } = {},
   ): Promise<void> {
     this.stream = await openMicrophone()
-    const mimeType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find((t) =>
-      MediaRecorder.isTypeSupported(t),
-    )
-    this.recorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined)
     this.chunks = []
-    this.recorder.ondataavailable = (e) => {
-      if (e.data.size) this.chunks.push(e.data)
+    if (opts.keep !== false) {
+      const mimeType = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/webm'].find((t) =>
+        MediaRecorder.isTypeSupported(t),
+      )
+      this.recorder = new MediaRecorder(this.stream, mimeType ? { mimeType } : undefined)
+      this.recorder.ondataavailable = (e) => {
+        if (e.data.size) this.chunks.push(e.data)
+      }
+      this.recorder.start(1000)
     }
-    this.recorder.start(1000)
 
     const audio = new AudioContext()
     this.audio = audio
@@ -69,7 +73,7 @@ export class Recorder {
     const source = audio.createMediaStreamSource(this.stream)
     source.connect(analyser)
     if (onPiece) {
-      const segmenter = new Segmenter()
+      const segmenter = new Segmenter({ dropSilent: opts.dropSilent ?? false })
       this.segmenter = segmenter
       this.onPiece = onPiece
       const node = audio.createScriptProcessor(4096, 1, 1)

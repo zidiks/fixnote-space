@@ -42,6 +42,7 @@
     input:not([type="checkbox"], [type="radio"], [type="range"]),
     textarea,
     select {
+      /* biome-ignore lint/complexity/noImportantStyles: must beat the text-sm utilities on fields */
       font-size: 16px !important;
     }
   }
@@ -200,6 +201,65 @@
 .fixnote-editor ul[data-type="taskList"] li[data-checked="true"] > div {
   color: var(--color-muted-foreground);
   text-decoration: line-through;
+}
+/* A folded section (`details.ts`): a chevron, the title, and the body when open. */
+.fixnote-editor [data-type="details"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35em;
+}
+.fixnote-editor > [data-type="details"] {
+  margin-top: 1.2em;
+}
+.fixnote-editor [data-type="details"] summary {
+  display: block;
+  list-style: none;
+  font-weight: 600;
+}
+/* Wide enough: the chevron hangs in the margin, so the title lines up with the text above. */
+@media (min-width: 640px) {
+  .fixnote-editor > [data-type="details"] {
+    margin-left: -1.75em;
+  }
+}
+.fixnote-editor [data-type="details"] > button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.75em;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+}
+.fixnote-editor [data-type="details"] > button::before {
+  content: "";
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 150ms;
+}
+.fixnote-editor [data-type="details"].is-open > button::before {
+  transform: rotate(45deg);
+}
+.fixnote-editor [data-type="details"] > button:hover {
+  color: var(--color-foreground);
+}
+/* The title and the body, beside the chevron. */
+.fixnote-editor [data-type="details"] > :not(button) {
+  flex: 1;
+  min-width: 0;
+}
+.fixnote-editor [data-type="detailsContent"] > * + * {
+  margin-top: 0.6em;
+}
+.fixnote-editor [data-type="detailsContent"] {
+  margin-top: 0.4em;
+}
+.fixnote-editor [data-type="detailsContent"][hidden] {
+  display: none;
 }
 .fixnote-editor blockquote {
   border-left: 3px solid var(--color-border);

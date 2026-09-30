@@ -2,6 +2,7 @@ import { type ModelInfo, SPEECH_MODELS, type Transcriber } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
 import { create } from 'zustand'
+import { useCall } from './call'
 import { MAX_RECORDING_MS, MicrophoneError, Recorder } from './recorder'
 import { RATE, wav } from './segments'
 
@@ -209,7 +210,8 @@ export function registerVoiceSink(kind: 'note' | 'chat', sink: Sink): () => void
 export async function toggleVoice(target: VoiceTarget = 'auto') {
   const { status } = useVoice.getState()
   if (status === 'recording') return stopVoice()
-  if (status !== 'idle' || !deps) return
+  // A call is being recorded: the microphone is taken.
+  if (status !== 'idle' || !deps || useCall.getState().status !== 'idle') return
   const d = deps
   const rec = new Recorder()
   recorder = rec

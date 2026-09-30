@@ -4,8 +4,8 @@ import { RATE, Segmenter } from './segments'
 const FRAME = RATE / 10
 
 /** Feeds 100 ms frames at each loudness for `ms`; returns the pieces cut and what stop leaves. */
-function record(parts: [level: number, ms: number][]) {
-  const s = new Segmenter()
+function record(parts: [level: number, ms: number][], opts?: { dropSilent?: boolean }) {
+  const s = new Segmenter(opts)
   const pieces: number[] = []
   let t = 0
   let total = 0
@@ -51,5 +51,23 @@ describe('Segmenter', () => {
     const { pieces } = record([[0.1, 60_000]])
     expect(pieces.length).toBeGreaterThanOrEqual(2)
     expect(Math.max(...pieces)).toBeLessThanOrEqual(25.1)
+  })
+
+  it('on a call, drops pieces in which nobody spoke', () => {
+    const { pieces, rest } = record(
+      [
+        [0.005, 40_000], // the other side talks for a while: silence here
+        [0.1, 3000],
+        [0.005, 1000],
+        [0.005, 2000],
+      ],
+      { dropSilent: true },
+    )
+    // The piece is the speech with a second of lead-in, not the forty seconds before it.
+    expect(pieces).toHaveLength(1)
+    expect(pieces[0]).toBeGreaterThan(3)
+    expect(pieces[0]).toBeLessThan(6)
+    expect(rest).toBeNull()
+    expect(record([[0.005, 2000]], { dropSilent: true }).rest).toBeNull()
   })
 })

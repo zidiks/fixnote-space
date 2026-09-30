@@ -8,16 +8,74 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@fixnote/ui'
-import { Check, ChevronDown, MessageCircle, Mic, Search, SquarePen } from 'lucide-react'
+import { Check, ChevronDown, MessageCircle, Mic, PhoneCall, Search, SquarePen } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useUi } from '../app/store'
+import { usePlatform } from '../lib/platform'
 import { useCounts, useCreateNote, useFolders } from '../lib/queries'
 import { startOfDay } from '../lib/time'
+import { startCall } from '../lib/voice/call'
 import { toggleVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { EmptyState, NoteGrid, ViewMenu } from './NoteGrid'
 
 type Period = 'any' | 'today' | 'week' | 'month'
+
+/**
+ * "Voice note", with a chevron that opens the other way to record: a call summary (the desktop
+ * app records the others through the computer's sound; elsewhere the item says where it works).
+ */
+function VoiceButton() {
+  const { t } = useTranslation()
+  const platform = usePlatform()
+  const canCall = !!platform.systemAudio
+  return (
+    <div className="flex">
+      <Button
+        variant="outline"
+        className="rounded-l-full rounded-r-none border-r-0 pr-3"
+        onClick={() => void toggleVoice('new-note')}
+      >
+        <Mic />
+        {t('voice.note')}
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className="rounded-l-none rounded-r-full pr-3 pl-2.5 text-muted-foreground"
+            aria-label={t('call.more')}
+          >
+            <ChevronDown />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-72">
+          <DropdownMenuItem onSelect={() => void toggleVoice('new-note')}>
+            <Mic />
+            {t('voice.note')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!canCall}
+            onSelect={() => void startCall()}
+            className="items-start"
+          >
+            <PhoneCall className="mt-0.5" />
+            <span className="flex flex-col gap-0.5">
+              {t('call.item')}
+              <span className="text-xs text-muted-foreground">
+                {canCall
+                  ? t('call.itemHint')
+                  : platform.kind === 'web'
+                    ? t('call.desktopOnly')
+                    : t('call.windowsOnly')}
+              </span>
+            </span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
 
 const DAY = 24 * 3600 * 1000
 
@@ -127,14 +185,7 @@ export function Home() {
             <SquarePen />
             {t('sidebar.newNote')}
           </Button>
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={() => void toggleVoice('new-note')}
-          >
-            <Mic />
-            {t('voice.note')}
-          </Button>
+          <VoiceButton />
           <Button variant="outline" className="rounded-full" onClick={() => setChatOpen(true)}>
             <MessageCircle />
             {t('home.ask')}

@@ -20,24 +20,39 @@ export class Segmenter {
   private speech = false
   private readonly vad = new Vad({ endSilenceMs: 700 })
 
+  /**
+   * `dropSilent`: a piece in which nobody spoke is dropped, not returned (a call, where one side
+   * is often quiet for minutes; Whisper makes up words in silence).
+   */
+  constructor(private readonly opts: { dropSilent?: boolean } = {}) {}
+
   /** A frame at 16 kHz with its loudness; returns a finished piece when a pause ends one. */
   push(samples: Float32Array, rms: number, timeMs: number): Float32Array | null {
     this.parts.push(samples)
     this.length += samples.length
     const event = this.vad.push(rms, timeMs)
     if (event === 'start') this.speech = true
+    // Nobody speaks on this side yet: keep only the last second, the lead-in to what comes.
+    if (this.opts.dropSilent && !this.speech && !this.vad.speaking) this.keepLast(RATE)
     if (
       (event === 'end' && this.length >= MIN_SEGMENT_S * RATE) ||
       this.length >= MAX_SEGMENT_S * RATE
     ) {
       const piece = concat(this.parts)
+      const heard = this.speech || this.vad.speaking
       this.parts = []
       this.length = 0
       this.cuts++
       this.speech = this.vad.speaking
-      return piece
+      return heard || !this.opts.dropSilent ? piece : null
     }
     return null
+  }
+
+  private keepLast(samples: number) {
+    while (this.parts.length > 1 && this.length - (this.parts[0]?.length ?? 0) >= samples) {
+      this.length -= this.parts.shift()?.length ?? 0
+    }
   }
 
   /**
@@ -46,7 +61,7 @@ export class Segmenter {
    */
   flush(): Float32Array | null {
     if (!this.length) return null
-    const heard = this.speech || this.vad.speaking || this.cuts === 0
+    const heard = this.speech || this.vad.speaking || (this.cuts === 0 && !this.opts.dropSilent)
     const rest = concat(this.parts)
     this.parts = []
     this.length = 0
