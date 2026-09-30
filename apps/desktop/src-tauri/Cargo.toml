@@ -14,7 +14,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2.11", features = [] }
+# The tray icon (src/tray.rs); PNG for its macOS template image.
+tauri = { version = "2.11", features = ["tray-icon", "image-png"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Bundled SQLite (with FTS5) so every OS runs the same engine as the web build.
@@ -51,6 +52,10 @@ cpal = "0.18"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "3.6", features = ["apple-native"] }
+# Call notes: the Core Audio tap for what the Mac plays (src/system_audio.rs). Already in the
+# dependency tree through Tauri.
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSString", "NSValue"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 keyring = { version = "3.6", features = ["linux-native"] }

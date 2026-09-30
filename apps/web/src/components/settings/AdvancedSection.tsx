@@ -7,7 +7,7 @@ import {
   type SpeechModelKey,
 } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button, cn } from '@fixnote/ui'
+import { Button, cn, Spinner } from '@fixnote/ui'
 import { Download, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -55,16 +55,20 @@ function ModelsSection() {
   const { t } = useTranslation()
   const platform = usePlatform()
   const models = platform.models
+  /** Bytes on disk per model; a model not in it yet is still being measured. */
   const [sizes, setSizes] = useState<Record<string, number>>({})
   const [speech, setSpeech] = useState<string | null>(null)
   const [busy, setBusy] = useState<{ kind: Kind; progress: number | null } | null>(null)
 
   const refresh = useCallback(async () => {
     if (!models) return
-    const entries = await Promise.all(
-      ROWS.map(async ({ model }) => [model.id, await models.size(model.id)] as const),
+    // Each row shows its size as soon as it is known: big files take a moment to measure.
+    await Promise.all(
+      ROWS.map(async ({ model }) => {
+        const size = await models.size(model.id)
+        setSizes((s) => ({ ...s, [model.id]: size }))
+      }),
     )
-    setSizes(Object.fromEntries(entries))
   }, [models])
 
   useEffect(() => {
@@ -106,6 +110,13 @@ function ModelsSection() {
   const row = (kind: Kind, model: ModelInfo) => {
     const size = sizes[model.id] ?? 0
     const mine = busy?.kind === kind
+    if (!(model.id in sizes) && models) {
+      return (
+        <span className="flex h-8 items-center px-2 text-muted-foreground">
+          <Spinner />
+        </span>
+      )
+    }
     return (
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground tabular-nums">

@@ -1,5 +1,6 @@
-import type { SystemAudio } from '@fixnote/core'
+import type { DesktopTray, SystemAudio } from '@fixnote/core'
 import { Channel, invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
 
 type Event = { kind: 'chunk'; data: string } | { kind: 'error'; message: string }
 
@@ -12,8 +13,9 @@ export function decodePcm(base64: string): Float32Array {
   return out
 }
 
-/** Loopback recording of the default output device (system_audio.rs). */
+/** What the computer plays: loopback on Windows, a Core Audio tap on macOS (system_audio.rs). */
 export const systemAudio: SystemAudio = {
+  supported: () => invoke<boolean>('system_audio_supported'),
   start: async (onAudio, onError) => {
     const events = new Channel<Event>()
     events.onmessage = (e) => {
@@ -23,4 +25,11 @@ export const systemAudio: SystemAudio = {
     await invoke('system_audio_start', { events })
   },
   stop: () => invoke('system_audio_stop'),
+}
+
+/** The tray icon (tray.rs). */
+export const tray: DesktopTray = {
+  labels: (open, quit) => invoke('tray_labels', { open, quit }),
+  onQuitRequested: (cb) => listen('quit-requested', () => cb()),
+  quit: () => invoke('app_quit'),
 }

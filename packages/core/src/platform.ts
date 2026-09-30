@@ -192,16 +192,30 @@ export interface AppleNotesSource {
 }
 
 /**
- * What the computer plays: the other people on a call, for call notes. Desktop only (Windows
- * today). Nothing is stored; the audio is transcribed on the device like dictation.
+ * What the computer plays: the other people on a call, for call notes. Desktop only (Windows, and
+ * macOS 14.2 or later). Nothing is stored; the audio is transcribed on the device like dictation.
  */
 export interface SystemAudio {
+  /** This computer can record what it plays (false on an older macOS). */
+  supported(): Promise<boolean>
   /**
    * Starts recording; resolves once it runs. `onAudio` gets 16 kHz mono PCM as it comes, with
    * pauses kept (up to a second each); `onError` when recording stops on its own.
    */
   start(onAudio: (pcm: Float32Array) => void, onError: (message: string) => void): Promise<void>
   stop(): Promise<void>
+}
+
+/**
+ * The desktop app's tray (menu bar) icon: closing the window hides the app there, and it quits
+ * from the icon's menu, which asks first while a call is being recorded.
+ */
+export interface DesktopTray {
+  /** The menu's labels in the app's language. */
+  labels(open: string, quit: string): Promise<void>
+  /** Quitting was asked for during a call; returns the unsubscribe. */
+  onQuitRequested(cb: () => void): Promise<() => void>
+  quit(): Promise<void>
 }
 
 /** The files of on-device models (`models.ts`), cached by the webview. */
@@ -225,8 +239,9 @@ export interface Platform {
   readonly models?: LocalModels
   /** Apple Notes to import from (the desktop app on macOS). */
   readonly appleNotes?: AppleNotesSource
-  /** The sound the computer plays, for call notes (the desktop app on Windows). */
+  /** The sound the computer plays, for call notes (the desktop app on Windows and macOS). */
   readonly systemAudio?: SystemAudio
+  readonly tray?: DesktopTray
   /** Text from images, on the device (missing where it cannot run). */
   readonly ocr?: () => Promise<TextRecognizer>
   readonly keyStore: KeyStore
