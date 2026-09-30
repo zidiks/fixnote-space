@@ -1,35 +1,31 @@
 //! The tray (Windows) or menu bar (macOS) icon. Closing the window only hides it: a call being
-//! recorded goes on, and the app keeps syncing. Quitting is in the icon's menu; while a call is
-//! being recorded the app asks first (the webview shows the question, see `QuitDialog`).
+//! recorded goes on, and the app keeps syncing. The icon's menu opens the app, has quick actions
+//! (a new note, dictation, today's note, search, a call summary) and quits; while a call is being
+//! recorded, quitting asks first (the webview shows the question, see `DesktopTray`). The webview
+//! sends the menu in the app's language and with the call's state (`tray_menu`), and gets the
+//! chosen action back as a `tray-action` event.
 
-use tauri::menu::{MenuBuilder, MenuItem};
+use serde::Deserialize;
+use tauri::menu::{Menu, MenuBuilder, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Emitter, Manager, State, Wry};
+use tauri::{AppHandle, Emitter, Manager, Wry};
 
-/// The menu items, relabeled in the app's language once the webview knows it.
-pub struct TrayItems {
-    open: MenuItem<Wry>,
-    quit: MenuItem<Wry>,
-}
+const ID: &str = "main";
 
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
-    let open_item = MenuItem::with_id(app, "open", "Open FixNote", true, None::<&str>)?;
-    let quit_item = MenuItem::with_id(app, "quit", "Quit FixNote", true, None::<&str>)?;
+    let open = MenuItem::with_id(app, "open", "Open FixNote", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit FixNote", true, None::<&str>)?;
     let menu = MenuBuilder::new(app)
-        .item(&open_item)
+        .item(&open)
         .separator()
-        .item(&quit_item)
+        .item(&quit)
         .build()?;
-    let mut tray = TrayIconBuilder::with_id("main")
+    let mut tray = TrayIconBuilder::with_id(ID)
         .tooltip("FixNote")
         .menu(&menu)
         // On macOS a menu bar icon opens its menu; on Windows a click opens the app.
         .show_menu_on_left_click(cfg!(target_os = "macos"))
-        .on_menu_event(|app, event| match event.id().as_ref() {
-            "open" => show(app),
-            "quit" => quit(app),
-            _ => {}
-        })
+        .on_menu_event(|app, event| chosen(app, event.id().as_ref()))
         .on_tray_icon_event(|tray, event| {
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
@@ -53,14 +49,25 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
         tray = tray.icon(icon.clone());
     }
     tray.build(app)?;
-    app.manage(TrayItems {
-        open: open_item,
-        quit: quit_item,
-    });
     Ok(())
 }
 
-/// Brings the window back (from the tray, the Dock, or minimized).
+fn chosen(app: &AppHandle, id: &str) {
+    match id {
+        "open" => show(app),
+        "quit" => quit(app),
+        action => {
+            // A call starts in the background (the person is in the call app); everything else,
+            // ending a call included, shows the window where it happens.
+            if action != "call" || crate::system_audio::recording() {
+                show(app);
+            }
+            let _ = app.emit("tray-action", action);
+        }
+    }
+}
+
+/// Brings the window back (from the tray, the Dock, minimized, or a second launch).
 pub fn show(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
@@ -83,10 +90,44 @@ pub fn ask_to_quit(app: &AppHandle) {
     let _ = app.emit("quit-requested", ());
 }
 
+/// One line of the menu, as the webview describes it; no `id` is a separator.
+#[derive(Deserialize)]
+pub struct Item {
+    id: Option<String>,
+    #[serde(default)]
+    text: String,
+    #[serde(default = "enabled")]
+    enabled: bool,
+}
+
+fn enabled() -> bool {
+    true
+}
+
+fn build(app: &AppHandle, items: &[Item]) -> tauri::Result<Menu<Wry>> {
+    let mut menu = MenuBuilder::new(app);
+    for item in items {
+        menu = match &item.id {
+            Some(id) => menu.item(&MenuItem::with_id(
+                app,
+                id,
+                &item.text,
+                item.enabled,
+                None::<&str>,
+            )?),
+            None => menu.item(&PredefinedMenuItem::separator(app)?),
+        };
+    }
+    menu.build()
+}
+
+/// The menu in the app's language, with the call's state; the tooltip says what is going on.
 #[tauri::command]
-pub fn tray_labels(items: State<'_, TrayItems>, open: String, quit: String) {
-    let _ = items.open.set_text(open);
-    let _ = items.quit.set_text(quit);
+pub fn tray_menu(app: AppHandle, items: Vec<Item>, tooltip: String) -> Result<(), String> {
+    let tray = app.tray_by_id(ID).ok_or("no tray")?;
+    let menu = build(&app, &items).map_err(|e| e.to_string())?;
+    tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    tray.set_tooltip(Some(tooltip)).map_err(|e| e.to_string())
 }
 
 /// The person confirmed quitting during a call.

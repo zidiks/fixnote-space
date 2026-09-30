@@ -107,8 +107,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   Radix dialogs and menus are closed by back with an Escape. The app is sized to `visualViewport`
   (`lib/viewport.ts`, the iOS keyboard) inside the safe areas; inputs are 16px on touch (iOS zoom).
   Hover-only controls need a `pointer-coarse:` variant; `isTouch()` for behaviour.
-- Closing the desktop window hides it to the tray / menu bar (`tray.rs`); Quit is in the icon's menu
-  and, while a call records, asks first (`quit-requested` → `QuitDialog`).
+- Closing the desktop window hides it to the tray / menu bar (`tray.rs`); a second launch only shows
+  the running app (single-instance plugin, registered first). The icon's menu comes from the
+  webview (`DesktopTray`: language, dictation and call state → `tray_menu`; actions come back as
+  `tray-action`): open, new note, voice note, today, search, record/finish a call, quit. Quit asks
+  first while a call records (`quit-requested`).
 - The desktop window starts hidden (`visible: false`) and shows once the app drew its first frame
   (`appShown()` in `lib/shown.ts` → `window_ready`; Rust shows it after 3 s anyway), so it never
   opens blank or in the wrong theme. The last plan is kept on the device (`fixnote.plan`) and the Pro

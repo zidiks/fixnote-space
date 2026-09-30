@@ -29,7 +29,8 @@ export const systemAudio: SystemAudio = {
 
 /** The tray icon (tray.rs). */
 export const tray: DesktopTray = {
-  labels: (open, quit) => invoke('tray_labels', { open, quit }),
+  menu: (items, tooltip) => invoke('tray_menu', { items, tooltip }),
+  onAction: (cb) => listen<string>('tray-action', (e) => cb(e.payload)),
   onQuitRequested: (cb) => listen('quit-requested', () => cb()),
   quit: () => invoke('app_quit'),
 }

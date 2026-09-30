@@ -9,34 +9,18 @@ import {
   DropdownMenuTrigger,
 } from '@fixnote/ui'
 import { Check, ChevronDown, MessageCircle, Mic, PhoneCall, Search, SquarePen } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useUi } from '../app/store'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useCreateNote, useFolders } from '../lib/queries'
 import { startOfDay } from '../lib/time'
 import { startCall } from '../lib/voice/call'
+import { useCallSupport } from '../lib/voice/call-support'
 import { toggleVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { EmptyState, NoteGrid, ViewMenu } from './NoteGrid'
 
 type Period = 'any' | 'today' | 'week' | 'month'
-
-/** Whether this computer can record a call (the desktop app; macOS 14.2 or later). */
-function useCallSupport(): boolean {
-  const platform = usePlatform()
-  const [supported, setSupported] = useState(false)
-  useEffect(() => {
-    let live = true
-    void platform.systemAudio
-      ?.supported()
-      .then((s) => live && setSupported(s))
-      .catch(() => undefined)
-    return () => {
-      live = false
-    }
-  }, [platform])
-  return supported
-}
 
 /**
  * "Voice note", with a chevron that opens the other way to record: a call summary (the desktop

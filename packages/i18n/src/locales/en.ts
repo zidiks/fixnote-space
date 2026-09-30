@@ -340,6 +340,15 @@ const en = {
   },
   tray: {
     open: 'Open FixNote',
+    newNote: 'New note',
+    voice: 'Voice note',
+    stopVoice: 'Finish dictation',
+    today: 'Today’s note',
+    search: 'Search…',
+    call: 'Record a call',
+    stopCall: 'Finish the call',
+    writingUp: 'Writing up the call…',
+    recording: 'FixNote · recording a call',
     quit: 'Quit FixNote',
   },
   call: {

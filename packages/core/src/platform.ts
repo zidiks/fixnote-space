@@ -206,13 +206,18 @@ export interface SystemAudio {
   stop(): Promise<void>
 }
 
+/** A line of the tray menu; one without `id` is a separator. */
+export type TrayMenuItem = { id: string; text: string; enabled?: boolean } | { id?: undefined }
+
 /**
- * The desktop app's tray (menu bar) icon: closing the window hides the app there, and it quits
- * from the icon's menu, which asks first while a call is being recorded.
+ * The desktop app's tray (menu bar) icon: closing the window hides the app there. Its menu opens
+ * the app, has quick actions and quits, asking first while a call is being recorded.
  */
 export interface DesktopTray {
-  /** The menu's labels in the app's language. */
-  labels(open: string, quit: string): Promise<void>
+  /** The menu in the app's language ("open" and "quit" are handled by the app shell). */
+  menu(items: TrayMenuItem[], tooltip: string): Promise<void>
+  /** Another item was chosen; returns the unsubscribe. */
+  onAction(cb: (id: string) => void): Promise<() => void>
   /** Quitting was asked for during a call; returns the unsubscribe. */
   onQuitRequested(cb: () => void): Promise<() => void>
   quit(): Promise<void>
