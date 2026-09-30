@@ -113,5 +113,11 @@ pub async fn apple_notes_folders() -> Result<String, String> {
 /// Notes `from`..`from + count` of a folder, with their HTML (JSON).
 #[tauri::command]
 pub async fn apple_notes_read(folder: String, from: u32, count: u32) -> Result<String, String> {
-    run_blocking(vec!["notes".into(), folder, from.to_string(), count.to_string()]).await
+    run_blocking(vec![
+        "notes".into(),
+        folder,
+        from.to_string(),
+        count.to_string(),
+    ])
+    .await
 }
