@@ -52,7 +52,8 @@ export function SharePage({ id, linkKey }: { id: string; linkKey: string }) {
   }, [note, t])
 
   return (
-    <div className="min-h-full bg-background text-foreground">
+    // A page to read, not the app: its text can be selected and copied.
+    <div data-selectable className="min-h-full cursor-auto bg-background text-foreground">
       <main className="mx-auto w-full max-w-3xl px-6 pt-8 pb-24 sm:px-10">
         <header className="mb-8 flex items-center justify-between text-[13px] text-muted-foreground">
           <a href="/" className="font-semibold text-foreground">
