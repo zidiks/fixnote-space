@@ -2,6 +2,7 @@ import { useTranslation } from '@fixnote/i18n'
 import { Button, cn, Dialog, DialogContent, DialogTitle } from '@fixnote/ui'
 import { Blocks, Cpu, Database, Gem, Settings2, Sparkles, UserRound, X } from 'lucide-react'
 import { type SettingsSection, useUi } from '../../app/store'
+import { useBackLayer } from '../../lib/nav-history'
 import { AccountSection } from './AccountSection'
 import { AdvancedSection } from './AdvancedSection'
 import { AiSection } from './AiSection'
@@ -24,25 +25,35 @@ export function SettingsDialog() {
   const { t } = useTranslation()
   const section = useUi((s) => s.settings)
   const open = useUi((s) => s.openSettings)
+  useBackLayer(section !== null, () => open(null))
 
   return (
     <Dialog open={section !== null} onOpenChange={(o) => !o && open(null)}>
       <DialogContent
+        data-back-layer
         aria-describedby={undefined}
-        className="top-[12%] flex h-[min(560px,76vh)] max-w-3xl p-0"
+        className={cn(
+          'top-[12%] flex h-[min(560px,76vh)] max-w-3xl p-0',
+          // A phone: the whole screen, sections as a row of tabs above.
+          'max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:flex-col max-sm:rounded-none max-sm:border-0 max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)]',
+        )}
       >
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2 sm:w-60">
-          <DialogTitle className="px-2.5 pt-1.5 pb-3 text-sm font-semibold">
+        <nav className="flex w-44 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2 max-sm:w-full max-sm:flex-row max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b max-sm:pr-12 sm:w-60">
+          <DialogTitle className="px-2.5 pt-1.5 pb-3 text-sm font-semibold max-sm:sr-only">
             {t('settings.title')}
           </DialogTitle>
           {SECTIONS.map(({ id, icon: Icon }) => (
             <button
               key={id}
               type="button"
-              onClick={() => open(id)}
+              onClick={(e) => {
+                open(id)
+                // A phone: a tab half off the row comes into view.
+                e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+              }}
               aria-current={section === id ? 'page' : undefined}
               className={cn(
-                'flex min-h-8 items-center gap-2.5 rounded-md px-2.5 py-1 text-left text-[13.5px] leading-tight text-sidebar-foreground hover:bg-sidebar-accent',
+                'flex min-h-8 items-center gap-2.5 rounded-md px-2.5 py-1 text-left text-[13.5px] leading-tight text-sidebar-foreground hover:bg-sidebar-accent max-sm:min-h-9 max-sm:shrink-0 max-sm:whitespace-nowrap',
                 section === id && 'bg-sidebar-accent font-medium text-foreground',
               )}
             >
@@ -55,7 +66,7 @@ export function SettingsDialog() {
           <Button
             variant="ghost"
             size="icon-xs"
-            className="absolute top-3 right-3"
+            className="absolute top-3 right-3 max-sm:fixed max-sm:top-[calc(env(safe-area-inset-top)+0.625rem)] max-sm:right-2 max-sm:z-10 max-sm:size-9 max-sm:bg-sidebar"
             onClick={() => open(null)}
             aria-label={t('window.close')}
           >

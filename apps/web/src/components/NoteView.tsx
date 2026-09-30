@@ -130,7 +130,7 @@ export function NoteView({ id }: { id: string }) {
         <div className="flex min-w-0 flex-1 basis-40 items-center gap-2">
           <button
             type="button"
-            className="flex max-w-[40%] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 py-1 hover:bg-accent hover:text-foreground"
+            className="flex max-w-[40%] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 py-1 pointer-coarse:py-2 hover:bg-accent hover:text-foreground"
             onClick={() =>
               navigate(
                 folder ? { kind: 'folder', id: folder.id } : { kind: 'home', filter: 'inbox' },

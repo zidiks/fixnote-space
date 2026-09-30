@@ -12,6 +12,7 @@ import { useUi } from '../app/store'
 import { requestSync, sharedContext } from './account/account'
 import { findSimilar, notifyNotesChanged, useAssistant } from './assistant/assistant'
 import { useRepo } from './db'
+import { navBack } from './nav-history'
 
 export const keys = {
   notes: ['notes'] as const,
@@ -139,7 +140,7 @@ export function useDeleteWithUndo() {
     }
     await repo.deleteNote(id)
     await invalidate()
-    if (route.kind === 'note' && route.id === id) useUi.getState().goBack()
+    if (route.kind === 'note' && route.id === id) navBack()
     toast(i18n.t('note.deleted'), {
       action: {
         label: i18n.t('common.undo'),

@@ -1,4 +1,10 @@
-import { type ChatEntry, type ChatScope, type StoredCitation, voiceBlobKey } from '@fixnote/core'
+import {
+  type ChatEntry,
+  type ChatScope,
+  SEARCH_MODEL,
+  type StoredCitation,
+  voiceBlobKey,
+} from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -39,8 +45,10 @@ import {
   useAssistant,
 } from '../lib/assistant/assistant'
 import { useLlm } from '../lib/assistant/llm'
+import { fileSize } from '../lib/attachments'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote } from '../lib/queries'
+import { isTouch } from '../lib/touch'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { AgentActivity, AgentConfirm, AnswerChanges, ContextRing } from './chat/AgentParts'
@@ -211,8 +219,11 @@ function IndexStatus() {
   const progress = useAssistant((s) => s.modelProgress)
   const pending = useAssistant((s) => s.pending)
   const downloading = semantic === 'loading' && progress > 0 && progress < 1
-  const text =
-    semantic === 'loading'
+  // A phone does not download the model on its own (mobile data, memory): it offers to.
+  const offer = semantic === 'off' && isTouch()
+  const text = offer
+    ? t('chat.index.off', { size: fileSize(SEARCH_MODEL.approxBytes) })
+    : semantic === 'loading'
       ? downloading
         ? t('chat.index.preparing', { percent: Math.round(progress * 100) })
         : t('chat.index.starting')
@@ -227,13 +238,13 @@ function IndexStatus() {
     <div className="relative shrink-0 border-b bg-card px-4 py-1.5 text-[11px] text-muted-foreground tabular-nums">
       <div className="flex items-center gap-2">
         <p className="min-w-0 flex-1 truncate">{text}</p>
-        {semantic === 'unavailable' ? (
+        {semantic === 'unavailable' || offer ? (
           <button
             type="button"
-            className="shrink-0 text-foreground underline-offset-2 hover:underline"
+            className="shrink-0 py-1 text-foreground underline-offset-2 hover:underline"
             onClick={() => void enableSemantic()}
           >
-            {t('common.retry')}
+            {offer ? t('chat.index.enable') : t('common.retry')}
           </button>
         ) : null}
       </div>
@@ -308,7 +319,9 @@ export function ChatPanel() {
   )
 
   // Opening the assistant is the moment to prepare search by meaning (first time: model download).
+  // On a phone the keyboard would cover half the screen, and the download waits for a tap.
   useEffect(() => {
+    if (isTouch()) return
     void enableSemantic()
     input.current?.focus()
   }, [])
@@ -358,6 +371,8 @@ export function ChatPanel() {
       className={cn(
         'mr-2 mb-2 ml-1.5 flex min-h-0 w-[380px] flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm',
         !platform.window && 'mt-2',
+        // A phone: the whole screen.
+        'max-sm:m-0 max-sm:w-full max-sm:rounded-none max-sm:border-0',
       )}
       aria-label={t('chat.title')}
     >
@@ -529,7 +544,7 @@ export function ChatPanel() {
 
   // The panel runs the full height of the window, so on Windows it carries the caption buttons.
   return (
-    <div {...drag} className="flex h-full shrink-0 flex-col">
+    <div {...drag} className="flex h-full shrink-0 flex-col max-sm:w-full">
       {platform.window ? (
         <div {...drag} className="flex h-11 shrink-0 justify-end">
           <WindowControls controls={platform.window} />

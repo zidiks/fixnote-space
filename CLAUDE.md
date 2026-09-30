@@ -94,6 +94,12 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.
   Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
   placeholder otherwise).
+- Phones (web): the browser/OS back button drives the in-app history (`lib/nav-history.ts`, web
+  only); in-app back goes through `navBack()`, never `goBack()` directly. An overlay that back should
+  close uses `useBackLayer(open, close)` (and `data-back-layer` on Radix dialog content); other
+  Radix dialogs and menus are closed by back with an Escape. The app is sized to `visualViewport`
+  (`lib/viewport.ts`, the iOS keyboard) inside the safe areas; inputs are 16px on touch (iOS zoom).
+  Hover-only controls need a `pointer-coarse:` variant; `isTouch()` for behaviour.
 - The desktop window starts hidden (`visible: false`) and shows once the app drew its first frame
   (`appShown()` in `lib/shown.ts` → `window_ready`; Rust shows it after 3 s anyway), so it never
   opens blank or in the wrong theme. The last plan is kept on the device (`fixnote.plan`) and the Pro

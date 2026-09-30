@@ -125,7 +125,7 @@ function SyncIndicator() {
       <button
         type="button"
         onClick={() => openSettings('ai')}
-        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground"
+        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground pointer-coarse:py-2"
       >
         <HardDrive className="size-3.5" />
         {t('aiProvider.localOnly')}
@@ -138,7 +138,7 @@ function SyncIndicator() {
       <button
         type="button"
         onClick={() => openSettings('account')}
-        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground"
+        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground pointer-coarse:py-2"
       >
         <CloudOff className="size-3.5" />
         {t('account.signInToSync')}
@@ -150,7 +150,7 @@ function SyncIndicator() {
       <button
         type="button"
         onClick={() => openSettings('plan')}
-        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground"
+        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground pointer-coarse:py-2"
       >
         <CloudOff className="size-3.5" />
         {t('plan.syncInPro')}

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { type Route, useUi } from '../app/store'
+import { navBack, navForward } from '../lib/nav-history'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote, useRecents } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
@@ -169,7 +170,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
             <Button
               variant="ghost"
               size="icon-xs"
-              onClick={ui.goBack}
+              onClick={navBack}
               disabled={!ui.back.length}
               aria-label={t('nav.back')}
             >
@@ -180,7 +181,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
             <Button
               variant="ghost"
               size="icon-xs"
-              onClick={ui.goForward}
+              onClick={navForward}
               disabled={!ui.forward.length}
               aria-label={t('nav.forward')}
             >
