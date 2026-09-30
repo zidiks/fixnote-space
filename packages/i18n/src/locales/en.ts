@@ -338,12 +338,20 @@ const en = {
     title: 'Edit with AI',
     hint: 'The note changes only when you accept.',
   },
+  tray: {
+    open: 'Open FixNote',
+    quit: 'Quit FixNote',
+  },
   call: {
     more: 'More ways to record',
     item: 'Call summary',
     itemHint: 'Records you and the others. The note gets the summary and tasks.',
     desktopOnly: 'In the desktop app',
-    windowsOnly: 'On Windows for now',
+    olderMac: 'Needs macOS 14.2 or later',
+    quitTitle: 'A call is being recorded',
+    quitBody: 'If you quit now, the call will not be saved.',
+    quitConfirm: 'Quit without saving',
+    stay: 'Stay',
     recording: 'Call',
     started:
       'Recording the call. Let the others know. Headphones work best: without them, their words may be heard twice.',

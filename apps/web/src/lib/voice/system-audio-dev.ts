@@ -7,6 +7,7 @@ import type { SystemAudio } from '@fixnote/core'
 export function devSystemAudio(): SystemAudio {
   let timer: ReturnType<typeof setInterval> | undefined
   return {
+    supported: async () => true,
     async start(onAudio) {
       let t = 0
       timer = setInterval(() => {

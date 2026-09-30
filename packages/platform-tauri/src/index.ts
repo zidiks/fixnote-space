@@ -16,7 +16,7 @@ import { appDataBlobStore } from './blobs'
 import { tauriFetch } from './http'
 import { osKeyStore, osSecretStore } from './keys'
 import { openTauriSqlDriver } from './sql'
-import { systemAudio } from './system-audio'
+import { systemAudio, tray } from './system-audio'
 import { tauriUpdater } from './updater'
 import { windowControls } from './window'
 
@@ -86,8 +86,9 @@ export function createTauriPlatform(): Platform {
     },
     models: localModels,
     ...(chrome === 'mac-overlay' ? { appleNotes } : {}),
-    // Loopback recording is Windows-only for now (system_audio.rs).
-    ...(chrome === 'custom' ? { systemAudio } : {}),
+    // Windows and macOS record what the computer plays (system_audio.rs); Linux does not.
+    ...(chrome === 'native' ? {} : { systemAudio }),
+    tray,
     ocr: () => {
       ocr ??= createTesseractRecognizer()
       return Promise.resolve(ocr)

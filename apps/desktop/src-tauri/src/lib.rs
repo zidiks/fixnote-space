@@ -14,6 +14,7 @@ mod links;
 mod mcp;
 mod store;
 mod system_audio;
+mod tray;
 mod webview;
 
 use std::sync::Mutex;
@@ -103,7 +104,16 @@ pub fn run() {
                     window_ready(window);
                 });
             }
+            tray::create(app.handle())?;
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            // Closing hides the window to the tray: a call being recorded goes on. Quit is in
+            // the tray menu.
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
@@ -127,9 +137,25 @@ pub fn run() {
             keys::secret_load,
             keys::secret_save,
             keys::secret_clear,
+            system_audio::system_audio_supported,
             system_audio::system_audio_start,
-            system_audio::system_audio_stop
+            system_audio::system_audio_stop,
+            tray::tray_labels,
+            tray::app_quit
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running FixNote");
+        .build(tauri::generate_context!())
+        .expect("error while running FixNote")
+        .run(|app, event| match event {
+            // Quitting from the OS (⌘Q) while a call is being recorded: ask first.
+            tauri::RunEvent::ExitRequested {
+                code: None, api, ..
+            } if system_audio::recording() => {
+                api.prevent_exit();
+                tray::ask_to_quit(app);
+            }
+            // The Dock icon was clicked while the window was hidden.
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Reopen { .. } => tray::show(app),
+            _ => {}
+        });
 }

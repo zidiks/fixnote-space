@@ -21,14 +21,17 @@ export const localModels: LocalModels = {
   async size(modelId) {
     const found = await filesOf(modelId)
     if (!found) return 0
-    let total = 0
-    for (const { cache, request } of found) {
-      const response = await cache.match(request)
-      if (!response) continue
-      const length = Number(response.headers.get('content-length'))
-      total += length > 0 ? length : (await response.blob()).size
-    }
-    return total
+    // In parallel: a file cached without its length is measured by reading it, which takes a
+    // moment for hundreds of megabytes.
+    const sizes = await Promise.all(
+      found.map(async ({ cache, request }) => {
+        const response = await cache.match(request)
+        if (!response) return 0
+        const length = Number(response.headers.get('content-length'))
+        return length > 0 ? length : (await response.blob()).size
+      }),
+    )
+    return sizes.reduce((a, b) => a + b, 0)
   },
   async remove(modelId) {
     for (const { cache, request } of (await filesOf(modelId)) ?? []) await cache.delete(request)

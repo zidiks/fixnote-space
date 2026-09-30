@@ -78,9 +78,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   stops. Speech never leaves the device, and there is no spoken reply (decided: CONCEPT.md §10). The
   default model is `fast`; after two slow dictations out of three the app offers the next lighter one
   once (`noteSpeed` in `voice.ts`).
-- Call notes (desktop, Windows for now): the chevron on "Voice note" → "Call summary". The mic
-  (`Recorder`, "me") and what the computer plays (`platform.systemAudio`: WASAPI loopback in
-  `system_audio.rs`, 16 kHz PCM over a Channel, pauses put back) are cut at pauses and transcribed
+- Call notes (desktop: Windows, macOS 14.2+): the chevron on "Voice note" → "Call summary". The mic
+  (`Recorder`, "me") and what the computer plays (`platform.systemAudio`, `system_audio.rs`: WASAPI
+  loopback on Windows; on macOS a Core Audio tap whose API is looked up with `dlsym`, never linked,
+  so the app still starts on older macOS; 16 kHz PCM over a Channel, pauses put back) are cut at pauses and transcribed
   on the device during the call (`lib/voice/call.ts`); `dropEcho`, turns and the note's Markdown are
   in core `calls/`, the prompt in `packages/ai/src/call.ts`. The note has only the parts the call
   had; the transcript is folded in `<details>` (`editor/details.ts`). No audio is kept.
@@ -106,6 +107,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   Radix dialogs and menus are closed by back with an Escape. The app is sized to `visualViewport`
   (`lib/viewport.ts`, the iOS keyboard) inside the safe areas; inputs are 16px on touch (iOS zoom).
   Hover-only controls need a `pointer-coarse:` variant; `isTouch()` for behaviour.
+- Closing the desktop window hides it to the tray / menu bar (`tray.rs`); Quit is in the icon's menu
+  and, while a call records, asks first (`quit-requested` → `QuitDialog`).
 - The desktop window starts hidden (`visible: false`) and shows once the app drew its first frame
   (`appShown()` in `lib/shown.ts` → `window_ready`; Rust shows it after 3 s anyway), so it never
   opens blank or in the wrong theme. The last plan is kept on the device (`fixnote.plan`) and the Pro

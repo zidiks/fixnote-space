@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@fixnote/ui'
 import { Check, ChevronDown, MessageCircle, Mic, PhoneCall, Search, SquarePen } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useUi } from '../app/store'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useCreateNote, useFolders } from '../lib/queries'
@@ -21,6 +21,23 @@ import { EmptyState, NoteGrid, ViewMenu } from './NoteGrid'
 
 type Period = 'any' | 'today' | 'week' | 'month'
 
+/** Whether this computer can record a call (the desktop app; macOS 14.2 or later). */
+function useCallSupport(): boolean {
+  const platform = usePlatform()
+  const [supported, setSupported] = useState(false)
+  useEffect(() => {
+    let live = true
+    void platform.systemAudio
+      ?.supported()
+      .then((s) => live && setSupported(s))
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [platform])
+  return supported
+}
+
 /**
  * "Voice note", with a chevron that opens the other way to record: a call summary (the desktop
  * app records the others through the computer's sound; elsewhere the item says where it works).
@@ -28,7 +45,7 @@ type Period = 'any' | 'today' | 'week' | 'month'
 function VoiceButton() {
   const { t } = useTranslation()
   const platform = usePlatform()
-  const canCall = !!platform.systemAudio
+  const canCall = useCallSupport()
   return (
     <div className="flex">
       <Button
@@ -59,15 +76,15 @@ function VoiceButton() {
             onSelect={() => void startCall()}
             className="items-start"
           >
-            <PhoneCall className="mt-0.5" />
+            <PhoneCall className="mt-0.5 shrink-0" />
             <span className="flex flex-col gap-0.5">
               {t('call.item')}
               <span className="text-xs text-muted-foreground">
                 {canCall
                   ? t('call.itemHint')
-                  : platform.kind === 'web'
-                    ? t('call.desktopOnly')
-                    : t('call.windowsOnly')}
+                  : platform.systemAudio
+                    ? t('call.olderMac')
+                    : t('call.desktopOnly')}
               </span>
             </span>
           </DropdownMenuItem>

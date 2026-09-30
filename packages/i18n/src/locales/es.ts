@@ -340,12 +340,20 @@ const es: LocaleResource = {
     title: 'Editar con IA',
     hint: 'La nota solo cambia cuando aceptas.',
   },
+  tray: {
+    open: 'Abrir FixNote',
+    quit: 'Salir de FixNote',
+  },
   call: {
     more: 'Otras formas de grabar',
     item: 'Resumen de llamada',
     itemHint: 'Graba tu voz y la de los demás. La nota recibe el resumen y las tareas.',
     desktopOnly: 'En la app de escritorio',
-    windowsOnly: 'Por ahora solo en Windows',
+    olderMac: 'Requiere macOS 14.2 o posterior',
+    quitTitle: 'Se está grabando una llamada',
+    quitBody: 'Si sales ahora, la llamada no se guardará.',
+    quitConfirm: 'Salir sin guardar',
+    stay: 'Quedarme',
     recording: 'Llamada',
     started:
       'Grabando la llamada. Avisa a los demás. Mejor con auriculares: sin ellos, sus palabras pueden oírse dos veces.',
