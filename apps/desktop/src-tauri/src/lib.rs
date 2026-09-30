@@ -87,6 +87,11 @@ const SHOW_ANYWAY: std::time::Duration = std::time::Duration::from_secs(3);
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // First, so a second launch (the shortcut clicked while the app sits in the tray) only
+        // brings this window back.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            tray::show(app)
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -140,7 +145,7 @@ pub fn run() {
             system_audio::system_audio_supported,
             system_audio::system_audio_start,
             system_audio::system_audio_stop,
-            tray::tray_labels,
+            tray::tray_menu,
             tray::app_quit
         ])
         .build(tauri::generate_context!())

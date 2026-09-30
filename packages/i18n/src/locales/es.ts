@@ -342,6 +342,15 @@ const es: LocaleResource = {
   },
   tray: {
     open: 'Abrir FixNote',
+    newNote: 'Nueva nota',
+    voice: 'Nota de voz',
+    stopVoice: 'Terminar el dictado',
+    today: 'Nota de hoy',
+    search: 'Buscar…',
+    call: 'Grabar una llamada',
+    stopCall: 'Terminar la llamada',
+    writingUp: 'Resumiendo la llamada…',
+    recording: 'FixNote · grabando una llamada',
     quit: 'Salir de FixNote',
   },
   call: {

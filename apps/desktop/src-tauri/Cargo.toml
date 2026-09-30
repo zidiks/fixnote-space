@@ -63,4 +63,6 @@ keyring = { version = "3.6", features = ["linux-native"] }
 # Auto-update from signed GitHub releases (see README → Releases); system TLS like reqwest above.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-process = "2"
+# A second launch shows the running app instead of starting another one.
+tauri-plugin-single-instance = "2"
 tauri-plugin-updater = { version = "2", default-features = false, features = ["native-tls", "system-proxy", "zip"] }

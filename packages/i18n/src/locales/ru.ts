@@ -342,6 +342,15 @@ const ru: LocaleResource = {
   },
   tray: {
     open: 'Открыть FixNote',
+    newNote: 'Новая заметка',
+    voice: 'Голосовая заметка',
+    stopVoice: 'Закончить диктовку',
+    today: 'Заметка на сегодня',
+    search: 'Поиск…',
+    call: 'Записать созвон',
+    stopCall: 'Завершить созвон',
+    writingUp: 'Подвожу итоги созвона…',
+    recording: 'FixNote · идёт запись созвона',
     quit: 'Выйти из FixNote',
   },
   call: {
