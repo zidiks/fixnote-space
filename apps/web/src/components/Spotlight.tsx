@@ -5,6 +5,7 @@ import { Command } from 'cmdk'
 import { CalendarDays, FileText, Search, Sparkles, SquarePen } from 'lucide-react'
 import { type ReactNode, useDeferredValue, useState } from 'react'
 import { useUi } from '../app/store'
+import { useBackLayer } from '../lib/nav-history'
 import { useCreateNote, useOpenDaily, useRecents, useSearch, useSimilar } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
 
@@ -57,6 +58,7 @@ export function Spotlight() {
     setOpen(false)
     setQ('')
   }
+  useBackLayer(open, close)
   const openNote = (n: { id: string }) => {
     close()
     navigate({ kind: 'note', id: n.id })
@@ -92,7 +94,7 @@ export function Spotlight() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-      <DialogContent aria-describedby={undefined} className="p-0">
+      <DialogContent data-back-layer aria-describedby={undefined} className="p-0">
         <DialogTitle className="sr-only">{t('sidebar.search')}</DialogTitle>
         <Command shouldFilter={false} loop className="flex max-h-[min(70vh,520px)] flex-col">
           <div className="flex items-center gap-3 border-b px-4">

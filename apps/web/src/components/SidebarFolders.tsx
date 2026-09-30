@@ -149,7 +149,7 @@ export function SidebarFolders() {
                       type="button"
                       onClick={() => navigate({ kind: 'folder', id: f.id })}
                       onDoubleClick={() => f.access !== 'view' && setRenaming(f.id)}
-                      className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left pointer-coarse:py-2"
                     >
                       <FolderIcon className="size-4 shrink-0 opacity-70" />
                       <span className="truncate">{f.name}</span>
@@ -166,14 +166,14 @@ export function SidebarFolders() {
                         aria-label={f.name}
                         aria-expanded={open}
                         onClick={() => toggle(f.id)}
-                        className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                        className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground pointer-coarse:size-8"
                       >
                         <ChevronRight
                           className={cn('size-3.5 transition-transform', open && 'rotate-90')}
                         />
                       </button>
                     ) : null}
-                    <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden">
+                    <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden pointer-coarse:hidden">
                       {totals.get(f.id) || ''}
                     </span>
                     <DropdownMenu>
@@ -181,7 +181,7 @@ export function SidebarFolders() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          className="hidden size-6 group-hover:inline-flex data-[state=open]:inline-flex"
+                          className="hidden size-6 group-hover:inline-flex data-[state=open]:inline-flex pointer-coarse:inline-flex pointer-coarse:size-8"
                           aria-label={t('sidebar.folderActions')}
                         >
                           <MoreHorizontal />
@@ -281,7 +281,7 @@ export function SidebarFolders() {
         <Button
           variant="ghost"
           size="icon-xs"
-          className="size-6"
+          className="size-6 pointer-coarse:size-8"
           aria-label={t('sidebar.newFolder')}
           onClick={() => setCreatingIn(null)}
         >

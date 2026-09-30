@@ -207,6 +207,8 @@ const es: LocaleResource = {
       starting: 'Iniciando la búsqueda por significado…',
       indexing: 'Indexando notas: quedan {{count}}',
       unavailable: 'La búsqueda por significado no está disponible; respondo por palabras clave.',
+      off: 'Respondo por palabras clave. La búsqueda por significado necesita descargar {{size}}.',
+      enable: 'Descargar',
     },
     title: 'Asistente',
     send: 'Enviar',

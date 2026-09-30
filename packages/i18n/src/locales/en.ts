@@ -205,6 +205,8 @@ const en = {
       starting: 'Starting search by meaning…',
       indexing: 'Indexing notes: {{count}} left',
       unavailable: 'Search by meaning is unavailable; answering by keywords.',
+      off: 'Answering by keywords. Search by meaning needs a {{size}} download.',
+      enable: 'Download',
     },
     title: 'Assistant',
     send: 'Send',

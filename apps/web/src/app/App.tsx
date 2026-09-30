@@ -23,10 +23,12 @@ import { DbProvider } from '../lib/db'
 import { useExternalChanges } from '../lib/external-changes'
 import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
+import { navBack, navForward, useBackLayer, useNavHistory } from '../lib/nav-history'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
 import { appShown } from '../lib/shown'
 import { useAutoUpdateCheck } from '../lib/updates'
+import { useVisualViewport } from '../lib/viewport'
 import { toggleVoice } from '../lib/voice/voice'
 import { applyTheme, useUi } from './store'
 
@@ -86,7 +88,7 @@ function AppShell() {
     const billing = url.searchParams.get('billing')
     if (!billing) return
     url.searchParams.delete('billing')
-    history.replaceState(null, '', url)
+    history.replaceState(history.state, '', url)
     if (billing === 'success') {
       toast.success(t('plan.thanks'))
       paymentReturned()
@@ -111,21 +113,26 @@ function AppShell() {
   }
   const nativeActions = useMemo(
     () => ({
-      back: () => useUi.getState().goBack(),
-      forward: () => useUi.getState().goForward(),
+      back: navBack,
+      forward: navForward,
       search: () => useUi.getState().setSpotlightOpen(true),
     }),
     [],
   )
 
+  useNavHistory(platform.kind === 'web')
+  useVisualViewport(platform.kind === 'web')
+  // On a phone, back closes the panels that open over the content.
+  useBackLayer(narrow && drawerOpen, () => useUi.setState({ drawerOpen: false }))
+  useBackLayer(narrow && chatOpen, () => useUi.getState().setChatOpen(false))
   useNativeFeel(platform, isApple, nativeActions)
   useExternalChanges()
   useAutoUpdateCheck()
   useHotkey(HK.chat, ui.toggleChat, isApple)
   useHotkey(HK.sidebar, ui.toggleSidebar, isApple)
   useHotkey(HK.spotlight, () => ui.setSpotlightOpen(!ui.spotlightOpen), isApple)
-  useHotkey(HK.back, ui.goBack, isApple)
-  useHotkey(HK.forward, ui.goForward, isApple)
+  useHotkey(HK.back, navBack, isApple)
+  useHotkey(HK.forward, navForward, isApple)
   useHotkey(
     HK.daily,
     () =>
@@ -196,7 +203,7 @@ function AppShell() {
             className="absolute inset-0 z-30 bg-black/30"
             onClick={() => ui.setChatOpen(false)}
           />
-          <div className="absolute inset-y-0 right-0 z-40 flex max-w-full">
+          <div className="absolute inset-y-0 right-0 z-40 flex max-w-full max-sm:left-0">
             <ChatPanel />
           </div>
         </>
@@ -214,6 +221,8 @@ function AppShell() {
       <Toaster
         theme={theme}
         position="bottom-right"
+        // Above the iPhone's home bar.
+        mobileOffset={{ bottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
         toastOptions={{
           className: '!rounded-lg !border !bg-popover !text-popover-foreground !shadow-float',
         }}

@@ -25,6 +25,28 @@
   }
 
   /*
+   * Phones: the app fills what is visible, above the on-screen keyboard (--vv-* from
+   * lib/viewport.ts; iOS keeps the layout viewport and only pans), clear of the notch and the
+   * home bar. Not on the shared-link page, which scrolls like any page.
+   */
+  .fx-vv #root {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--vv-top, 0px);
+    height: var(--vv-height, 100%);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+  /* iOS zooms into a field whose text is under 16px, and stays zoomed. */
+  @media (pointer: coarse) {
+    input:not([type="checkbox"], [type="radio"], [type="range"]),
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+
+  /*
    * Checkboxes drawn by hand: with `accent-color` the browser picks a black check on the lighter
    * dark-theme orange. Here the check is always `brand-foreground` (white) on `brand`.
    */
