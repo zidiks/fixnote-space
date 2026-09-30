@@ -191,6 +191,19 @@ export interface AppleNotesSource {
   read(folderId: string, from: number, count: number): Promise<AppleNote[]>
 }
 
+/**
+ * What the computer plays: the other people on a call, for call notes. Desktop only (Windows
+ * today). Nothing is stored; the audio is transcribed on the device like dictation.
+ */
+export interface SystemAudio {
+  /**
+   * Starts recording; resolves once it runs. `onAudio` gets 16 kHz mono PCM as it comes, with
+   * pauses kept (up to a second each); `onError` when recording stops on its own.
+   */
+  start(onAudio: (pcm: Float32Array) => void, onError: (message: string) => void): Promise<void>
+  stop(): Promise<void>
+}
+
 /** The files of on-device models (`models.ts`), cached by the webview. */
 export interface LocalModels {
   /** Bytes of the model's files on this device; 0 when it is not downloaded. */
@@ -212,6 +225,8 @@ export interface Platform {
   readonly models?: LocalModels
   /** Apple Notes to import from (the desktop app on macOS). */
   readonly appleNotes?: AppleNotesSource
+  /** The sound the computer plays, for call notes (the desktop app on Windows). */
+  readonly systemAudio?: SystemAudio
   /** Text from images, on the device (missing where it cannot run). */
   readonly ocr?: () => Promise<TextRecognizer>
   readonly keyStore: KeyStore

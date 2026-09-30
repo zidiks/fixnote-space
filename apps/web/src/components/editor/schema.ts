@@ -4,6 +4,7 @@ import { TableKit } from '@tiptap/extension-table'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
 import { AttachmentImage } from './attachment-image'
+import { NoteDetails, NoteDetailsContent, NoteDetailsSummary } from './details'
 import { ImageAwareParagraph } from './paragraph'
 
 /**
@@ -37,6 +38,10 @@ export function noteSchema(
     TaskItem.configure({ nested: true }),
     // Markdown (GFM) tables, read and written as `| a | b |`.
     TableKit.configure({ table: { resizable: false } }),
+    // Folded sections, `<details>` in Markdown (a call's transcript).
+    NoteDetails,
+    NoteDetailsSummary,
+    NoteDetailsContent,
     Markdown,
     AttachmentImage.configure(opts.resolveImage ? { resolve: opts.resolveImage } : {}),
   ]

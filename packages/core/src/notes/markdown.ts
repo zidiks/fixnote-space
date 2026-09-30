@@ -49,6 +49,8 @@ function stripBlock(line: string, tasks: boolean): string {
   const row = tasks ? null : line.match(TABLE_ROW)
   if (row) return cells(row[1] as string).join(' · ')
   return line
+    .replace(/^\s*<\/?details(?:\s+open)?>\s*$/, '') // a folded section (a call's transcript)
+    .replace(/^\s*<summary>(.*)<\/summary>\s*$/, '$1')
     .replace(/^\s{0,3}#{1,6}\s+/, '') // headings
     .replace(/^\s*>\s?/, '') // quotes
     .replace(/^\s*(?:[-*+]|\d+[.)])\s+(?:\[([ xX])\]\s+)?/, (_, box?: string) =>

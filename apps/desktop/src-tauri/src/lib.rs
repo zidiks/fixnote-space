@@ -13,6 +13,7 @@ mod keys;
 mod links;
 mod mcp;
 mod store;
+mod system_audio;
 mod webview;
 
 use std::sync::Mutex;
@@ -125,7 +126,9 @@ pub fn run() {
             http::http_cancel,
             keys::secret_load,
             keys::secret_save,
-            keys::secret_clear
+            keys::secret_clear,
+            system_audio::system_audio_start,
+            system_audio::system_audio_stop
         ])
         .run(tauri::generate_context!())
         .expect("error while running FixNote");

@@ -78,6 +78,12 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   stops. Speech never leaves the device, and there is no spoken reply (decided: CONCEPT.md §10). The
   default model is `fast`; after two slow dictations out of three the app offers the next lighter one
   once (`noteSpeed` in `voice.ts`).
+- Call notes (desktop, Windows for now): the chevron on "Voice note" → "Call summary". The mic
+  (`Recorder`, "me") and what the computer plays (`platform.systemAudio`: WASAPI loopback in
+  `system_audio.rs`, 16 kHz PCM over a Channel, pauses put back) are cut at pauses and transcribed
+  on the device during the call (`lib/voice/call.ts`); `dropEcho`, turns and the note's Markdown are
+  in core `calls/`, the prompt in `packages/ai/src/call.ts`. The note has only the parts the call
+  had; the transcript is folded in `<details>` (`editor/details.ts`). No audio is kept.
 - Text in images (OCR, on the device, Free): Tesseract via tesseract.js (`platform-web/src/ocr`; its
   language data is fetched into Cache Storage and handed over through tesseract.js's own idb cache,
   never downloaded by it). Read in the background (`lib/ocr.ts`) into `image_text` (+ FTS), which

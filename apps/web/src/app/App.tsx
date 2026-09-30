@@ -3,6 +3,7 @@ import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo } from 'react'
 import { Toaster, toast } from 'sonner'
+import { CallBar } from '../components/CallBar'
 import { ChatPanel } from '../components/ChatPanel'
 import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
@@ -216,6 +217,7 @@ function AppShell() {
       <TrialEndedDialog />
       <Paywall />
       <VoiceBar />
+      <CallBar />
       <DropLayer />
       <PairingRequestDialog />
       <Toaster
