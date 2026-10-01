@@ -60,6 +60,15 @@ Deno.test('opens a Suby checkout for the plan, with the account email and id', a
   })
 })
 
+Deno.test('from the desktop app, the buyer comes back to the page that opens the app', async () => {
+  const { suby, calls } = fakeSuby()
+  const res = await handle(post({ plan: 'month', app: true }), env, suby)
+  assertEquals(res.status, 200)
+  const body = calls[0]?.body as { successUrl: string; cancelUrl: string }
+  assertEquals(body.successUrl, 'https://app.fixnote.space/?billing=success&to=app')
+  assertEquals(body.cancelUrl, 'https://app.fixnote.space/?billing=cancel&to=app')
+})
+
 Deno.test('needs a signed-in account, a known plan and the payment setup', async () => {
   const { suby } = fakeSuby()
   assertEquals((await handle(post({ plan: 'year' }, {}), env, suby)).status, 401)

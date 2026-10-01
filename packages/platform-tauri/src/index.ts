@@ -13,6 +13,7 @@ import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { appDataBlobStore } from './blobs'
+import { deepLinks } from './deep-link'
 import { tauriFetch } from './http'
 import { osKeyStore, osSecretStore } from './keys'
 import { openTauriSqlDriver } from './sql'
@@ -89,6 +90,7 @@ export function createTauriPlatform(): Platform {
     // Windows and macOS record what the computer plays (system_audio.rs); Linux does not.
     ...(chrome === 'native' ? {} : { systemAudio }),
     tray,
+    deepLinks,
     ocr: () => {
       ocr ??= createTesseractRecognizer()
       return Promise.resolve(ocr)

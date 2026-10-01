@@ -589,7 +589,9 @@ const es: LocaleResource = {
     statusTrial: 'Prueba de Pro hasta el {{date}}. Después, Free: tus notas se quedan contigo.',
     statusActive: 'Se renueva el {{date}}.',
     statusCanceled: 'Pro hasta el {{date}}, luego Free.',
-    statusPastDue: 'El último pago falló. Actualiza tu tarjeta para mantener Pro.',
+    statusPastDue: 'La suscripción no se renovó. Paga la renovación para mantener Pro.',
+    payCrypto:
+      'Pago en cripto: USDC, USDT, ETH, SOL o BNB. La renovación es manual: Suby te envía un enlace de pago 2 días antes de que termine el periodo.',
     statusFree: 'Todo en este dispositivo, gratis para siempre.',
     signedOut: 'Inicia sesión para probar Pro gratis 7 días. Sin tarjeta.',
     signIn: 'Iniciar sesión',
@@ -605,7 +607,23 @@ const es: LocaleResource = {
     yearly: '$60 al año',
     yearlySave: 'ahorra un 28%',
     checkoutFailed: 'No se pudo abrir la página de pago. Inténtalo en un minuto.',
-    thanks: '¡Gracias! Pro se activa en un momento.',
+    paidTitle: 'Pago recibido',
+    paidBackToApp:
+      'Te llevamos de vuelta a FixNote. Si la app no se abrió, pulsa el botón o simplemente vuelve a ella: Pro se activa solo.',
+    paidCloseTab: 'Puedes cerrar esta pestaña.',
+    canceledTitle: 'Pago cancelado',
+    canceledBody: 'No se cobró nada. Vuelve a FixNote para intentarlo de nuevo.',
+    openApp: 'Abrir FixNote',
+    welcomeTitle: 'Te damos la bienvenida a Pro',
+    welcomeBody: 'El pago se completó. Todo esto ya funciona en todos tus dispositivos.',
+    paidUntil: 'Pagado hasta el {{date}}.',
+    renewHint: 'Dos días antes, Suby te enviará un correo con un enlace para renovar.',
+    checkingTitle: 'Comprobando el pago',
+    checkingBody:
+      'Un pago en cripto lo confirma la red, normalmente en un minuto o dos. Pro se activa solo.',
+    checkingLate:
+      'El pago aún se está confirmando. Puedes cerrar esta ventana: Pro se activa solo cuando Suby lo confirme.',
+    great: 'Genial',
     paymentOpened: 'Termina el pago en el navegador. Pro se activa aquí solo.',
     aiNeedsPro:
       'El asistente integrado es parte de Pro. Puedes usar tu propia clave o un modelo local en Ajustes → IA.',

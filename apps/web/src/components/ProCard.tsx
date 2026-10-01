@@ -1,22 +1,12 @@
 import { useTranslation } from '@fixnote/i18n'
 import { Button, Dialog, DialogContent, DialogDescription, DialogTitle } from '@fixnote/ui'
 import { ArrowUpRight, Check, X } from 'lucide-react'
-import { type CSSProperties, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useUi } from '../app/store'
 import { startTrial, useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { type ProFeature, showPaywall, usePlan } from '../lib/plan'
-
-/** Arcs of the brand colour, like the waves on the Pro card of the site. */
-const ART: CSSProperties = {
-  background: [
-    'radial-gradient(70% 120% at 104% -8%, color-mix(in oklch, var(--color-brand) 80%, black) 0 30%, transparent 31%)',
-    'radial-gradient(85% 140% at 104% -8%, var(--color-brand) 0 43%, transparent 44%)',
-    'radial-gradient(100% 160% at 104% -8%, color-mix(in oklch, var(--color-brand) 75%, white) 0 56%, transparent 57%)',
-    'radial-gradient(118% 185% at 104% -8%, color-mix(in oklch, var(--color-brand) 45%, white) 0 69%, transparent 70%)',
-    'color-mix(in oklch, var(--color-brand) 14%, var(--color-card))',
-  ].join(', '),
-}
+import { ART, PRO_BENEFITS } from './pro-look'
 
 const HIDDEN_KEY = 'fixnote.pro-card-hidden'
 const HIDE_FOR = 14 * 86_400_000
@@ -205,14 +195,6 @@ export function TrialButton({
 }
 
 const PAYWALL_SEEN = 'fixnote.paywall-seen.'
-const BENEFITS = [
-  'plan.promptSync',
-  'plan.promptAi',
-  'plan.promptShare',
-  'plan.promptIntegrations',
-  'plan.promptFiles',
-  'plan.promptLink',
-] as const
 
 /**
  * The offer of the free trial: once by itself after signing in on Free with the trial still to
@@ -250,7 +232,7 @@ export function Paywall() {
             <DialogDescription className="text-sm">{t('plan.paywallBody')}</DialogDescription>
           </div>
           <ul className="space-y-2 text-sm">
-            {BENEFITS.map((key) => (
+            {PRO_BENEFITS.map((key) => (
               <li key={key} className="flex gap-2.5">
                 <Check className="mt-0.5 size-4 shrink-0 text-brand" />
                 {t(key)}

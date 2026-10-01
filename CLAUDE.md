@@ -170,6 +170,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `lib/account/dev-plan.ts` mirror the rules: change them together with the SQL. Payments: Suby
   (`functions/billing` opens the checkout, `functions/suby-webhook` sets `subscriptions` from the
   subscription Suby reports; `_shared/suby.ts`). The Suby key never leaves the edge functions.
+  After paying, Suby sends the browser back to the web app (`?billing=success`) or, when bought in
+  the desktop app, to `?billing=…&to=app` (`PaidPage`: no local DB, no account), which opens the
+  app with `fixnote://billing/…` (deep-link plugin, `deep_link.rs`; the scheme is in
+  tauri.conf.json and the MSIX manifest). Only the device that started the payment shows
+  `PaymentDialog` (`lib/payment.ts`); any page can open a fixnote:// link, so it only ever checks.
   The beta is only a label (`my_plan().beta`); nothing depends on it (`*_beta_label.sql`).
   The trial is the account's choice, no card (`begin_trial()` in `*_trial_on_request.sql`; the
   `Paywall` offer once after sign-in, the Pro card, Settings → Plan); none for `disposable_domains`,

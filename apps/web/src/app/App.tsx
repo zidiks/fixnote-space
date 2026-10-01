@@ -2,7 +2,7 @@ import { useTranslation } from '@fixnote/i18n'
 import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo } from 'react'
-import { Toaster, toast } from 'sonner'
+import { Toaster } from 'sonner'
 import { CallBar } from '../components/CallBar'
 import { ChatPanel } from '../components/ChatPanel'
 import { DesktopTray } from '../components/DesktopTray'
@@ -10,6 +10,7 @@ import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
 import { ListView } from '../components/ListView'
 import { PairingRequestDialog } from '../components/PairingRequestDialog'
+import { PaymentDialog } from '../components/PaymentDialog'
 import { Paywall, ProDialog, TrialEndedDialog } from '../components/ProCard'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
@@ -26,6 +27,7 @@ import { useExternalChanges } from '../lib/external-changes'
 import { useHotkey } from '../lib/hotkeys'
 import { useNativeFeel } from '../lib/native'
 import { navBack, navForward, useBackLayer, useNavHistory } from '../lib/nav-history'
+import { billingLink } from '../lib/payment'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
 import { appShown } from '../lib/shown'
@@ -84,18 +86,35 @@ function AppShell() {
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const { sidebarOpen, chatOpen, theme, narrow, drawerOpen } = ui
-  // Back from Suby's payment page (supabase/functions/billing): thank, then look for Pro.
+  // Back from Suby's payment page (supabase/functions/billing): the dialog, then Pro.
   useEffect(() => {
     const url = new URL(location.href)
     const billing = url.searchParams.get('billing')
     if (!billing) return
     url.searchParams.delete('billing')
     history.replaceState(history.state, '', url)
-    if (billing === 'success') {
-      toast.success(t('plan.thanks'))
-      paymentReturned()
+    if (billing === 'success' || billing === 'cancel') paymentReturned(billing)
+  }, [])
+  // The desktop app: the page after paying hands back with fixnote://billing/….
+  useEffect(() => {
+    const links = platform.deepLinks
+    if (!links) return
+    let off: (() => void) | undefined
+    let gone = false
+    void links
+      .listen((link) => {
+        const result = billingLink(link)
+        if (result) paymentReturned(result)
+      })
+      .then((unlisten) => {
+        if (gone) unlisten()
+        else off = unlisten
+      })
+    return () => {
+      gone = true
+      off?.()
     }
-  }, [t])
+  }, [platform])
 
   // Half a laptop screen or less: panels open over the content instead of squeezing it.
   useEffect(() => {
@@ -217,6 +236,7 @@ function AppShell() {
       <ProDialog />
       <TrialEndedDialog />
       <Paywall />
+      <PaymentDialog />
       <VoiceBar />
       <CallBar />
       <DesktopTray />
