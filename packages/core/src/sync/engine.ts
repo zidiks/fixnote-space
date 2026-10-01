@@ -28,6 +28,7 @@ interface LocalNote extends SqlRow {
   base_content: string | null
   created_at: number
   updated_at: number
+  edited_at: number | null
   deleted_at: number | null
   pinned_at: number | null
   pin_updated_at: number | null
@@ -37,6 +38,9 @@ interface LocalNote extends SqlRow {
   /** Set when the note is shared with other people: it syncs as a shared note instead. */
   shared_id: string | null
 }
+
+/** When a remote note's text last changed; older apps only sent `updatedAt`. */
+const editedOf = (r: RemoteNote) => Number(r.editedAt ?? r.updatedAt)
 
 interface LocalFolder extends SqlRow {
   id: string
@@ -213,9 +217,9 @@ export class SyncEngine {
       const deletedAt = daily.lost ? this.now() : r.deletedAt
       await tx.execute(
         `INSERT INTO notes (id, folder_id, type, daily_date, title, content, search_text,
-                            created_at, updated_at, deleted_at, pinned_at, pin_updated_at,
-                            sync_version, dirty, local_rev, base_content)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+                            created_at, updated_at, edited_at, deleted_at, pinned_at,
+                            pin_updated_at, sync_version, dirty, local_rev, base_content)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
         [
           r.id,
           folderId,
@@ -226,6 +230,8 @@ export class SyncEngine {
           toPlainText(content),
           r.createdAt,
           daily.lost ? (deletedAt as number) : r.updatedAt,
+          // When its text last changed, not when it was last moved or synced.
+          content === theirs ? editedOf(r) : this.now(),
           deletedAt,
           r.pinnedAt ?? null,
           r.pinUpdatedAt ?? null,
@@ -284,10 +290,20 @@ export class SyncEngine {
       dirty = 1
     }
 
+    // The text's time moves only with the text: theirs when their text came in, the later of the
+    // two when both texts were joined, unchanged when the text stayed the same.
+    const localEdited = Number(local.edited_at ?? local.updated_at)
+    const editedAt =
+      content === local.content
+        ? localEdited
+        : content === theirs
+          ? editedOf(r)
+          : Math.max(localEdited, editedOf(r))
+
     await tx.execute(
       `UPDATE notes SET folder_id = ?, type = ?, daily_date = ?, title = ?, content = ?, search_text = ?,
-              updated_at = ?, deleted_at = ?, pinned_at = ?, pin_updated_at = ?, sync_version = ?,
-              base_content = ?, dirty = ?
+              updated_at = ?, edited_at = ?, deleted_at = ?, pinned_at = ?, pin_updated_at = ?,
+              sync_version = ?, base_content = ?, dirty = ?
         WHERE id = ?`,
       [
         meta.folderId,
@@ -297,6 +313,7 @@ export class SyncEngine {
         content,
         toPlainText(content),
         meta.updatedAt,
+        editedAt,
         meta.deletedAt,
         pin.pinnedAt,
         pin.pinUpdatedAt,
@@ -435,6 +452,7 @@ export class SyncEngine {
             ciphertext: sealed.ciphertext,
             createdAt: Number(local.created_at),
             updatedAt: Number(local.updated_at),
+            editedAt: Number(local.edited_at ?? local.updated_at),
             deletedAt: local.deleted_at === null ? null : Number(local.deleted_at),
             pinnedAt: local.pinned_at === null ? null : Number(local.pinned_at),
             pinUpdatedAt: local.pin_updated_at === null ? null : Number(local.pin_updated_at),

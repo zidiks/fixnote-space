@@ -10,6 +10,11 @@ export interface RemoteNote {
   ciphertext: string
   createdAt: number
   updatedAt: number
+  /**
+   * When the text last changed (`updatedAt` moves with any change: a move, a delete). Null from an
+   * older app or server, which only knew `updatedAt`.
+   */
+  editedAt?: number | null
   deletedAt: number | null
   /** When the note was pinned (null = not pinned) and when that last changed. */
   pinnedAt: number | null

@@ -71,6 +71,36 @@ describe('SyncEngine', () => {
     expect((await b.repo.search('план')).length).toBe(1)
   })
 
+  it('keeps when the text was written, whatever moves or syncs the note later', async () => {
+    const a = await device('a')
+    const b = await device('b')
+    const note = await a.repo.createNote({
+      content: 'старый текст',
+      createdAt: 100,
+      updatedAt: 200,
+    })
+    const folder = await a.repo.createFolder('Архив')
+    await a.repo.moveNote(note.id, folder.id)
+    await a.engine.sync()
+    await b.engine.sync()
+    expect(await b.repo.getNote(note.id)).toMatchObject({ createdAt: 100, updatedAt: 200 })
+
+    // A text change on one device reaches the other with the time it was made.
+    await b.repo.updateContent(note.id, 'новый текст')
+    const edited = (await b.repo.getNote(note.id))?.updatedAt
+    expect(edited).toBeGreaterThan(200)
+    await b.engine.sync()
+    clock += 1000
+    await a.engine.sync()
+    expect((await a.repo.getNote(note.id))?.updatedAt).toBe(edited)
+
+    // A move on the other device brings no new text time.
+    await b.repo.moveNote(note.id, null)
+    await b.engine.sync()
+    await a.engine.sync()
+    expect(await a.repo.getNote(note.id)).toMatchObject({ folderId: null, updatedAt: edited })
+  })
+
   it('only downloads when told not to push, and sends the waiting changes later', async () => {
     const a = await device('a')
     const b = await device('b')

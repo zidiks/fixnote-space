@@ -23,6 +23,8 @@ interface NoteRow {
   /** Absent until the server has the pinned-notes migration. */
   pinned_at?: number | null
   pin_updated_at?: number | null
+  /** Absent until the server has the note-edited-at migration. */
+  edited_at?: number | null
   version: number
   seq: number
 }
@@ -57,6 +59,7 @@ const toNote = (r: NoteRow): RemoteNote => ({
   ciphertext: r.ciphertext,
   createdAt: Number(r.created_at),
   updatedAt: Number(r.updated_at),
+  editedAt: n(r.edited_at ?? null),
   deletedAt: n(r.deleted_at),
   pinnedAt: n(r.pinned_at ?? null),
   pinUpdatedAt: n(r.pin_updated_at ?? null),
@@ -119,6 +122,7 @@ export function supabaseRemote(client: SupabaseClient): SyncRemote {
           deleted_at: row.deletedAt,
           pinned_at: row.pinnedAt,
           pin_updated_at: row.pinUpdatedAt,
+          edited_at: row.editedAt ?? row.updatedAt,
         },
         p_base_version: baseVersion,
       })

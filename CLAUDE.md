@@ -30,7 +30,13 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   that sync applied meanwhile is merged, not overwritten. Server schema changes = new file in
   `supabase/migrations/`; test RLS and RPCs on a local Postgres before pushing.
 - A note's time (`updatedAt` in the app, `edited_at` in SQL) moves only when its text changes;
-  `updated_at` moves with any change and settles moves and deletes in sync. Triggers keep `edited_at`.
+  `updated_at` moves with any change and settles moves and deletes in sync. Triggers keep `edited_at`
+  unless a writer sets it; sync carries it (`editedAt`, server `notes.edited_at`), so a moved or
+  pulled note keeps its time. Lists join their pages with `joinPages` (each note once, re-sorted):
+  pages refetched after a sync can overlap.
+- Picking notes in a list (`lib/selection.ts`, `SelectionBar`): a long press or Ctrl/⌘+click
+  starts it, clicks then check and uncheck; bulk pin, move, tidy up, delete (Undo; shared notes
+  are left out). Back and Escape stop it.
 - Sync conflicts: an edit in the same lines on two devices keeps the server version and makes a copy;
   the copy is recorded in the local `sync_conflicts` table and settled with `repo.settleConflict`
   (banner and compare dialog: `ConflictBanner`). Two daily notes for one date are merged

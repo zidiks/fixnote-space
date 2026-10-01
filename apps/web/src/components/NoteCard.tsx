@@ -31,6 +31,7 @@ import { useUi } from '../app/store'
 import { attachmentObjectUrl } from '../lib/attachments'
 import { useDb } from '../lib/db'
 import { useDeleteWithUndo, useFolders, useMoveNote, useSetPinned } from '../lib/queries'
+import { useNotePress } from '../lib/selection'
 import { formatCardDate } from '../lib/time'
 
 /** The note's first image: attachments resolve to a local object URL, web images load as is. */
@@ -191,22 +192,45 @@ function Tasks({ tasks }: { tasks: NoteSummary['tasks'] }) {
 }
 
 const itemClass =
-  'outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset data-[state=open]:bg-accent/60'
+  'outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset data-[state=open]:bg-accent/60 data-[selected]:bg-brand/10 [-webkit-touch-callout:none]'
+
+/** While picking notes: an empty circle, or a checked one. */
+function SelectMark({ selected, className }: { selected: boolean; className?: string }) {
+  const { t } = useTranslation()
+  return (
+    <span
+      role="img"
+      aria-label={selected ? t('select.selected') : t('select.notSelected')}
+      className={cn(
+        'flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+        selected
+          ? 'border-brand bg-brand text-brand-foreground'
+          : 'border-muted-foreground/50 bg-card',
+        className,
+      )}
+    >
+      {selected ? <Check className="size-3.5" strokeWidth={3} /> : null}
+    </span>
+  )
+}
 
 /** Cards view: a card with the first image, the title and a long excerpt. */
 export function NoteCard({ note, inFolder, date = 'edited' }: ItemProps) {
   const { t, i18n } = useTranslation()
-  const navigate = useUi((s) => s.navigate)
   const marks = useMarks(note, inFolder)
+  const press = useNotePress(note)
   const Icon = note.type === 'daily' ? CalendarDays : FileText
 
   return (
     <NoteMenu note={note}>
       <button
         type="button"
-        onClick={() => navigate({ kind: 'note', id: note.id })}
-        className="group flex h-full min-h-32 w-full flex-col overflow-hidden rounded-xl border bg-card p-4 text-left shadow-xs transition-shadow outline-none hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
+        {...press.props}
+        className="group relative flex h-full min-h-32 w-full flex-col overflow-hidden rounded-xl border bg-card p-4 text-left shadow-xs transition-shadow outline-none [-webkit-touch-callout:none] hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[selected]:border-brand data-[selected]:ring-2 data-[selected]:ring-brand/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
       >
+        {press.selecting ? (
+          <SelectMark selected={press.selected} className="absolute top-3 right-3 z-10" />
+        ) : null}
         {note.cover ? <Cover src={note.cover} /> : null}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Icon className="size-3.5" />
@@ -244,16 +268,17 @@ export function NoteCard({ note, inFolder, date = 'edited' }: ItemProps) {
 /** List view: a row with the title, two lines of the text, the date and a thumbnail. */
 export function NoteRow({ note, inFolder, date = 'edited' }: ItemProps) {
   const { t, i18n } = useTranslation()
-  const navigate = useUi((s) => s.navigate)
   const marks = useMarks(note, inFolder)
+  const press = useNotePress(note)
 
   return (
     <NoteMenu note={note}>
       <button
         type="button"
-        onClick={() => navigate({ kind: 'note', id: note.id })}
+        {...press.props}
         className={cn('flex w-full gap-4 px-4 py-3 text-left hover:bg-accent/40', itemClass)}
       >
+        {press.selecting ? <SelectMark selected={press.selected} className="self-center" /> : null}
         <span className="min-w-0 flex-1">
           <span
             className={cn('block truncate font-medium', !note.title && 'text-muted-foreground')}
@@ -286,21 +311,25 @@ export function NoteRow({ note, inFolder, date = 'edited' }: ItemProps) {
 /** Compact view: one line per note, for long lists. */
 export function NoteLine({ note, inFolder, date = 'edited' }: ItemProps) {
   const { t, i18n } = useTranslation()
-  const navigate = useUi((s) => s.navigate)
   const marks = useMarks(note, inFolder)
+  const press = useNotePress(note)
   const Icon = note.type === 'daily' ? CalendarDays : FileText
 
   return (
     <NoteMenu note={note}>
       <button
         type="button"
-        onClick={() => navigate({ kind: 'note', id: note.id })}
+        {...press.props}
         className={cn(
           'flex h-10 w-full items-center gap-2.5 px-3 text-left text-sm hover:bg-accent/40',
           itemClass,
         )}
       >
-        <Icon className="size-4 shrink-0 text-muted-foreground" />
+        {press.selecting ? (
+          <SelectMark selected={press.selected} />
+        ) : (
+          <Icon className="size-4 shrink-0 text-muted-foreground" />
+        )}
         <span className={cn('shrink truncate font-medium', !note.title && 'text-muted-foreground')}>
           {note.title || t('common.untitled')}
         </span>

@@ -1,4 +1,4 @@
-import type { NoteFilter, NoteSort, NoteSummary } from '@fixnote/core'
+import { joinPages, type NoteFilter, type NoteSort, type NoteSummary } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -27,6 +27,7 @@ import { type NoteView, useUi } from '../app/store'
 import { useNotesInfinite, usePinnedNotes } from '../lib/queries'
 import { type DateGroup, dateGroup, dateGroupKey } from '../lib/time'
 import { NoteCard, NoteLine, NoteRow } from './NoteCard'
+import { SelectionBar } from './SelectionBar'
 
 interface Section {
   key: string
@@ -170,8 +171,17 @@ export function NoteGrid({
     return () => io.disconnect()
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  const notes = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data])
+  // Each note once and in order, also when pages refetched after a sync overlap.
+  const notes = useMemo(
+    () => joinPages(query.data?.pages.map((p) => p.items) ?? [], sort),
+    [query.data, sort],
+  )
   const groups = useMemo(() => sections(notes, sort, new Date()), [notes, sort])
+  // What "Select all" picks: every note on screen, the pinned ones too.
+  const pickable = useMemo(
+    () => (pinnedFirst ? [...pinned, ...notes] : notes),
+    [pinnedFirst, pinned, notes],
+  )
   const label = useGroupLabel()
   const date = sort === 'created' ? 'created' : 'edited'
   const Item = view === 'cards' ? NoteCard : view === 'list' ? NoteRow : NoteLine
@@ -244,6 +254,7 @@ export function NoteGrid({
         </section>
       ))}
       <div ref={sentinel} aria-hidden className="h-px" />
+      <SelectionBar notes={pickable} />
       {isFetchingNextPage ? (
         <p className="mt-4 text-center text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : null}

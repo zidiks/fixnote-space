@@ -1,6 +1,7 @@
 export * from './daily'
 export * from './diff'
 export * from './markdown'
+export * from './order'
 export * from './recurrence'
 export * from './repo'
 export * from './search'
