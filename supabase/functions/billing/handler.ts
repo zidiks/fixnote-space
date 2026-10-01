@@ -2,6 +2,8 @@
  * billing: opens a Suby checkout for FixNote Pro (monthly or yearly) for the signed-in account.
  * The checkout carries the account's email (Suby's customer, and its self-serve portal) and id
  * (metadata), which suby-webhook uses to give the account Pro once the payment goes through.
+ * Bought in the desktop app (`app: true`), the buyer comes back to a page that hands over to the
+ * app (`?billing=success&to=app`, which opens fixnote://) instead of to the web app.
  */
 
 import { CORS, jsonError, userEmail, userId } from '../_shared/auth.ts'
@@ -9,7 +11,7 @@ import type { Suby } from '../_shared/suby.ts'
 
 export interface BillingEnv {
   products: { month: string | undefined; year: string | undefined }
-  /** Where Suby sends the buyer back to (the web app). */
+  /** Where Suby sends the buyer back to (the web app, or its page that opens the desktop app). */
   returnUrl: string
 }
 
@@ -33,9 +35,9 @@ export async function handle(req: Request, env: BillingEnv, suby: Suby | null): 
   const email = userEmail(req)
   if (!user || !email) return jsonError(401, 'Sign in first')
 
-  let body: { plan?: unknown }
+  let body: { plan?: unknown; app?: unknown }
   try {
-    body = (await req.json()) as { plan?: unknown }
+    body = (await req.json()) as { plan?: unknown; app?: unknown }
   } catch {
     return jsonError(400, 'Invalid JSON')
   }
@@ -45,13 +47,14 @@ export async function handle(req: Request, env: BillingEnv, suby: Suby | null): 
   if (!suby || !productId) return jsonError(503, 'Payments are not set up yet')
 
   const back = new URL(env.returnUrl)
+  const to = body.app === true ? '&to=app' : ''
   const url = await suby
     .checkout({
       productId,
       email,
       userId: user,
-      successUrl: new URL('?billing=success', back).toString(),
-      cancelUrl: new URL('?billing=cancel', back).toString(),
+      successUrl: new URL(`?billing=success${to}`, back).toString(),
+      cancelUrl: new URL(`?billing=cancel${to}`, back).toString(),
     })
     .catch((err: unknown) => {
       console.error('checkout failed', err instanceof Error ? err.message : err)

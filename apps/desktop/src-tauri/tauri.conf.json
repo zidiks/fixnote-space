@@ -37,6 +37,9 @@
     }
   },
   "plugins": {
+    "deep-link": {
+      "desktop": { "schemes": ["fixnote"] }
+    },
     "updater": {
       "pubkey": "",
       "endpoints": ["https://fixnote.space/download/latest.json"],

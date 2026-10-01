@@ -183,7 +183,7 @@ function Upgrade() {
     setBusy(plan)
     setNote(null)
     try {
-      await startCheckout(plan, (url) => platform.openExternal(url))
+      await startCheckout(plan, (url) => platform.openExternal(url), platform.kind === 'desktop')
       setNote({ text: t('plan.paymentOpened'), error: false })
     } catch (err) {
       const unset = /not set up|503/i.test(err instanceof Error ? err.message : String(err))

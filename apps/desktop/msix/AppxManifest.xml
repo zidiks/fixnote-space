@@ -4,6 +4,7 @@
   Partner Center (Product management > Product identity), the version from tauri.conf.json.
   - FixNote.exe is the app; fixnote-mcp.exe is the MCP server, reachable as the `fixnote-mcp`
     command (alias) so MCP clients can start it whatever version is installed (src-tauri/src/store.rs).
+  - fixnote:// links start FixNote.exe with the link as its argument (src-tauri/src/deep_link.rs).
   - The app's data folders and Claude's config folder are excluded from AppData virtualization, so
     the Store build, the installer build and the MCP server all see the same notes, and connecting
     Claude writes the config Claude reads (needs unvirtualizedResources).
@@ -11,11 +12,12 @@
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:virtualization="http://schemas.microsoft.com/appx/manifest/virtualization/windows10"
-  IgnorableNamespaces="uap uap5 desktop4 rescap virtualization">
+  IgnorableNamespaces="uap uap3 uap5 desktop4 rescap virtualization">
 
   <Identity
     Name="{{IDENTITY_NAME}}"
@@ -56,6 +58,13 @@
         Square44x44Logo="Assets\Square44x44Logo.png">
         <uap:DefaultTile Square71x71Logo="Assets\Square71x71Logo.png" />
       </uap:VisualElements>
+      <Extensions>
+        <uap3:Extension Category="windows.protocol">
+          <uap3:Protocol Name="fixnote" Parameters="&quot;%1&quot;">
+            <uap:DisplayName>FixNote</uap:DisplayName>
+          </uap3:Protocol>
+        </uap3:Extension>
+      </Extensions>
     </Application>
 
     <!-- One copy per MCP client: Claude, Cursor and Codex can each run their own at once. -->

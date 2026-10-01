@@ -1,12 +1,14 @@
 //! Desktop shell for FixNote.
 //!
 //! The UI and all domain logic live in apps/web and packages/core. Rust hosts only what the browser
-//! cannot do well: the local SQLite database, the OS keychain, native file dialogs and fetching
-//! pages for link cards (no CORS). Embeddings and speech run in the webview (transformers.js).
+//! cannot do well: the local SQLite database, the OS keychain, native file dialogs, fetching
+//! pages for link cards (no CORS) and fixnote:// links. Embeddings and speech run in the webview
+//! (transformers.js).
 
 mod apple_notes;
 mod blobs;
 mod db;
+mod deep_link;
 mod files;
 mod http;
 mod keys;
@@ -87,11 +89,12 @@ const SHOW_ANYWAY: std::time::Duration = std::time::Duration::from_secs(3);
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        // First, so a second launch (the shortcut clicked while the app sits in the tray) only
-        // brings this window back.
+        // First, so a second launch (the shortcut clicked while the app sits in the tray, or a
+        // fixnote:// link) only brings this window back; its link goes to the deep-link plugin.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             tray::show(app)
         }))
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -110,6 +113,7 @@ pub fn run() {
                 });
             }
             tray::create(app.handle())?;
+            deep_link::setup(app)?;
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -127,6 +131,7 @@ pub fn run() {
             apple_notes::apple_notes_read,
             db_execute,
             db_query,
+            deep_link::deep_links_take,
             keys::key_load,
             keys::key_save,
             keys::key_clear,

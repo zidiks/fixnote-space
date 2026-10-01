@@ -30,8 +30,10 @@ import {
   verifyKeyCheck,
 } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
+import { toast } from 'sonner'
 import { create } from 'zustand'
 import { conflictHeading } from '../conflict'
+import { paid, paymentPending, paymentStarted, showPaymentDialog } from '../payment'
 import { isProRequired, toPlanInfo, usePlan } from '../plan'
 import { projector } from '../shared/projector'
 import type { AccountBackend, PairingRequest, Session } from './backend'
@@ -525,12 +527,6 @@ async function keepFilesHere() {
   }
 }
 
-let paymentStartedAt = 0
-
-/**
- * Opens the payment page for Pro. The plan is then read again whenever the app comes back to the
- * front (for an hour), so Pro shows up as soon as Suby has told the server.
- */
 /** Starts the free trial; Pro is on right away, and this device starts sending its notes. */
 export async function startTrial() {
   await backend().startTrial()
@@ -538,25 +534,40 @@ export async function startTrial() {
   void runSync()
 }
 
-export async function startCheckout(plan: 'month' | 'year', open: (url: string) => Promise<void>) {
-  const url = await backend().checkout(plan)
-  paymentStartedAt = Date.now()
+/**
+ * Opens the payment page for Pro in the browser. From the desktop app (`app`), Suby sends the
+ * browser back to a page that opens the app again (lib/payment.ts). While the payment may still
+ * come through, the plan is read again whenever the app comes back to the front.
+ */
+export async function startCheckout(
+  plan: 'month' | 'year',
+  open: (url: string) => Promise<void>,
+  app: boolean,
+) {
+  const url = await backend().checkout(plan, app)
+  paymentStarted()
   if (url) await open(url)
   await refreshPlan(true)
 }
 
 if (typeof window !== 'undefined') {
   window.addEventListener('focus', () => {
-    const waiting = Date.now() - paymentStartedAt < 3_600_000
-    if (waiting && usePlan.getState().info?.plan !== 'pro') void refreshPlan(true)
-    else if (waiting) paymentStartedAt = 0
+    if (paymentPending() && !paid()) void refreshPlan(true)
   })
 }
 
-/** Back from the payment page on the web (`?billing=success`): look for Pro a few times. */
-export function paymentReturned() {
-  paymentStartedAt = Date.now()
-  for (const delay of [1500, 5000, 15000]) setTimeout(() => void refreshPlan(true), delay)
+/**
+ * Back from the payment page: `?billing=…` on the web, `fixnote://billing/…` in the desktop app.
+ * A payment started here shows the dialog (checking, then the welcome); any other return only
+ * reads the plan again.
+ */
+export function paymentReturned(result: 'success' | 'cancel') {
+  if (result === 'cancel') {
+    if (paymentPending()) toast(i18n.t('plan.canceledTitle'))
+    return
+  }
+  if (paymentPending()) showPaymentDialog()
+  for (const delay of [0, 1500, 5000]) setTimeout(() => void refreshPlan(true), delay)
 }
 
 export async function runSync() {

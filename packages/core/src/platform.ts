@@ -223,6 +223,15 @@ export interface DesktopTray {
   quit(): Promise<void>
 }
 
+/**
+ * fixnote:// links that reached the desktop app: after paying, the browser hands back to it with
+ * `fixnote://billing/success`. Any page can open such a link, so it only ever triggers a check.
+ */
+export interface DeepLinks {
+  /** Calls `cb` with each link, also those that came before (the one that started the app). */
+  listen(cb: (url: string) => void): Promise<() => void>
+}
+
 /** The files of on-device models (`models.ts`), cached by the webview. */
 export interface LocalModels {
   /** Bytes of the model's files on this device; 0 when it is not downloaded. */
@@ -247,6 +256,7 @@ export interface Platform {
   /** The sound the computer plays, for call notes (the desktop app on Windows and macOS). */
   readonly systemAudio?: SystemAudio
   readonly tray?: DesktopTray
+  readonly deepLinks?: DeepLinks
   /** Text from images, on the device (missing where it cannot run). */
   readonly ocr?: () => Promise<TextRecognizer>
   readonly keyStore: KeyStore

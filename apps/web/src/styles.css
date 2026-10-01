@@ -619,7 +619,31 @@
     background: transparent;
   }
 }
+/* The welcome to Pro (PaymentDialog): specks fly out of the badge once. */
+.pro-burst > span {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  opacity: 0;
+  animation: pro-burst 900ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+@keyframes pro-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) - 50%), calc(var(--dy) - 50%)) rotate(var(--r)) scale(1);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
+  .pro-burst {
+    display: none;
+  }
   .live-caret {
     transition: none;
   }

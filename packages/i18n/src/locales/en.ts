@@ -601,7 +601,23 @@ const en = {
     yearly: '$60 / year',
     yearlySave: 'save 28%',
     checkoutFailed: 'Could not open the payment page. Try again in a minute.',
-    thanks: 'Thank you! Pro turns on in a moment.',
+    paidTitle: 'Payment received',
+    paidBackToApp:
+      'Taking you back to FixNote. If the app did not open, click the button or just switch to it: Pro turns on by itself.',
+    paidCloseTab: 'You can close this tab.',
+    canceledTitle: 'Payment canceled',
+    canceledBody: 'Nothing was charged. Go back to FixNote to try again.',
+    openApp: 'Open FixNote',
+    welcomeTitle: 'Welcome to Pro',
+    welcomeBody: 'The payment went through. All of this already works on every device of yours.',
+    paidUntil: 'Paid until {{date}}.',
+    renewHint: 'Two days before that, Suby will email you a link to renew.',
+    checkingTitle: 'Checking the payment',
+    checkingBody:
+      'A crypto payment is confirmed by the network, usually within a minute or two. Pro turns on by itself.',
+    checkingLate:
+      'The payment is still being confirmed. You can close this window: Pro turns on by itself once Suby confirms it.',
+    great: 'Great',
     paymentOpened: 'Finish the payment in the browser. Pro turns on here by itself.',
     aiNeedsPro:
       'The built-in assistant is part of Pro. You can use your own key or a local model in Settings → AI.',

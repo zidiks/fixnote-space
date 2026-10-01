@@ -72,8 +72,11 @@ export interface AccountBackend {
   checkCode(email: string, code: string): Promise<boolean>
   /** The signed-in account's plan (`my_plan()`), raw; see lib/plan.ts. */
   plan(): Promise<Record<string, unknown>>
-  /** A payment page for Pro (supabase/functions/billing); null when there is none to open. */
-  checkout(plan: 'month' | 'year'): Promise<string | null>
+  /**
+   * A payment page for Pro (supabase/functions/billing); null when there is none to open. From the
+   * desktop app (`app`), the page sends the browser back to the app instead of the web app.
+   */
+  checkout(plan: 'month' | 'year', app: boolean): Promise<string | null>
   /** Starts the account's 7 days of Pro (once; `trial_unavailable` otherwise). */
   startTrial(): Promise<void>
   signOut(): Promise<void>
@@ -150,9 +153,9 @@ export function supabaseBackend(
       if (error.status && error.status < 500) return false
       throw toError(error)
     },
-    async checkout(plan) {
+    async checkout(plan, app) {
       const { data, error } = await client.functions.invoke<{ url?: string }>('billing', {
-        body: { plan },
+        body: { plan, app },
       })
       if (error) {
         // 503: the payment keys are not on the server yet.
