@@ -292,6 +292,13 @@ the sidebar card, "This is part of Pro", the note at the end of the trial).
      (optional `BILLING_RETURN_URL`, default `https://app.fixnote.space/`), then `pnpm sb:migrate`
      and `pnpm sb:functions`.
   Test in sandbox with the card 4242 4242 4242 4242; the account should turn Pro within seconds.
+  Going live: the same three secrets with the live values (`sk_live_…` key, the live products'
+  `pro_…` ids, the live webhook's `whsec_…`); the key's prefix picks Suby's environment, nothing
+  else changes. Payment methods are set per product in the Suby dashboard. Until card payments are
+  approved, live checkout takes stablecoins only (USDC, USDT, ETH, SOL, BNB, straight to the
+  wallet set in Suby): such subscriptions are renewed by hand from Suby's reminder email, a
+  renewal not paid by the due date turns into `PAST_DUE` (Pro off, back on when paid), and crypto
+  payments cannot be refunded. Settings → Plan says so under the buttons (`plan.payCrypto`).
 - Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
   (trial, pro, free, "use up AI", "trial ends tomorrow", "new account"); switching to free
   ends the trial, and the fake checkout turns Pro on.

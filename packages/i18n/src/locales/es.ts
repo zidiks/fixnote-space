@@ -589,7 +589,9 @@ const es: LocaleResource = {
     statusTrial: 'Prueba de Pro hasta el {{date}}. Después, Free: tus notas se quedan contigo.',
     statusActive: 'Se renueva el {{date}}.',
     statusCanceled: 'Pro hasta el {{date}}, luego Free.',
-    statusPastDue: 'El último pago falló. Actualiza tu tarjeta para mantener Pro.',
+    statusPastDue: 'La suscripción no se renovó. Paga la renovación para mantener Pro.',
+    payCrypto:
+      'Pago en cripto: USDC, USDT, ETH, SOL o BNB. La renovación es manual: Suby te envía un enlace de pago 2 días antes de que termine el periodo.',
     statusFree: 'Todo en este dispositivo, gratis para siempre.',
     signedOut: 'Inicia sesión para probar Pro gratis 7 días. Sin tarjeta.',
     signIn: 'Iniciar sesión',

@@ -583,7 +583,9 @@ const en = {
     statusTrial: 'Pro trial until {{date}}. After that, Free: your notes stay with you.',
     statusActive: 'Renews {{date}}.',
     statusCanceled: 'Pro until {{date}}, then Free.',
-    statusPastDue: 'The last payment failed. Update your card to keep Pro.',
+    statusPastDue: 'The subscription was not renewed. Pay for the renewal to keep Pro.',
+    payCrypto:
+      'Paid in crypto: USDC, USDT, ETH, SOL or BNB. Renewal is manual: Suby emails you a payment link 2 days before the period ends.',
     statusFree: 'Everything on this device, free forever.',
     signedOut: 'Sign in to try Pro free for 7 days. No card needed.',
     signIn: 'Sign in',

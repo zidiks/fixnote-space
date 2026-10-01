@@ -211,6 +211,8 @@ function Upgrade() {
           {t('plan.monthly')}
         </Button>
       </div>
+      {/* Suby takes stablecoins for now (cards need a company): no automatic renewal. */}
+      <p className="max-w-md text-xs text-muted-foreground">{t('plan.payCrypto')}</p>
       {note ? (
         <p className={cn('text-xs', note.error ? 'text-destructive' : 'text-muted-foreground')}>
           {note.text}
