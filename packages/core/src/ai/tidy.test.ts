@@ -132,4 +132,22 @@ describe('Tidy', () => {
     await tidy.reject(t.id)
     expect((await tidy.candidates()).notes.map((x) => x.id)).not.toContain(n.id)
   })
+
+  it('rejects all at once, and can bring them back', async () => {
+    await repo.createNote({ content: 'Первая длинная строка без заголовка, просто мысль вслух' })
+    await repo.createNote({ content: 'Вторая длинная строка без заголовка, тоже просто мысль' })
+    const c = await tidy.candidates()
+    const saved = await tidy.save(
+      suggestionsFromProposals(
+        c,
+        c.notes.map((n) => ({ kind: 'title' as const, note: n.ref, title: `T${n.ref}` })),
+      ),
+    )
+    expect(saved).toHaveLength(2)
+    const ids = saved.map((s) => s.id)
+    await tidy.rejectAll(ids)
+    expect(await tidy.pendingCount()).toBe(0)
+    await tidy.unreject(ids)
+    expect(await tidy.pendingCount()).toBe(2)
+  })
 })

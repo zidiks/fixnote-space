@@ -255,7 +255,26 @@ export class Tidy {
   }
 
   async reject(id: string): Promise<void> {
-    await this.db.execute(`UPDATE tidy_suggestions SET status = 'rejected' WHERE id = ?`, [id])
+    await this.rejectAll([id])
+  }
+
+  /** Rejects these suggestions at once ("Reject all"). */
+  async rejectAll(ids: readonly string[]): Promise<void> {
+    if (!ids.length) return
+    await this.db.execute(
+      `UPDATE tidy_suggestions SET status = 'rejected' WHERE id IN (${ids.map(() => '?').join(', ')})`,
+      [...ids],
+    )
+  }
+
+  /** Brings rejected suggestions back (Undo of "Reject all"). */
+  async unreject(ids: readonly string[]): Promise<void> {
+    if (!ids.length) return
+    await this.db.execute(
+      `UPDATE tidy_suggestions SET status = 'pending'
+        WHERE status = 'rejected' AND id IN (${ids.map(() => '?').join(', ')})`,
+      [...ids],
+    )
   }
 
   /** Applies one suggestion; returns the audit action id (for Undo), or null if nothing changed. */

@@ -277,6 +277,16 @@ export const MIGRATIONS: readonly string[] = [
     INSERT INTO image_text_fts(rowid, text) VALUES (new.rowid, new.text);
   END;
   `,
+  // 19: sync brings each note's `edited_at` from the device that changed the text and sets it with
+  // the text; the trigger only fills it in when a writer leaves it as it was.
+  `
+  DROP TRIGGER notes_edited_content;
+  CREATE TRIGGER notes_edited_content AFTER UPDATE OF content ON notes
+    WHEN NEW.content IS NOT OLD.content AND NEW.edited_at IS OLD.edited_at
+  BEGIN
+    UPDATE notes SET edited_at = NEW.updated_at WHERE id = NEW.id;
+  END;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

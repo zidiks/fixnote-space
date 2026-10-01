@@ -4,6 +4,7 @@ import { Button } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, FileText, LoaderCircle, WandSparkles, X } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useLlm } from '../lib/assistant/llm'
 import {
@@ -66,6 +67,24 @@ export function TidyView() {
       await qc.invalidateQueries({ queryKey: TIDY_KEY })
       await refreshTidyCount(tidy)
     })
+  // Undo goes through the store directly: the toast may outlive this view.
+  const rejectAll = () =>
+    act('reject-all', async () => {
+      const ids = list.map((s) => s.id)
+      await tidy.rejectAll(ids)
+      await qc.invalidateQueries({ queryKey: TIDY_KEY })
+      await refreshTidyCount(tidy)
+      toast(t('tidy.rejectedAll', { count: ids.length }), {
+        action: {
+          label: t('common.undo'),
+          onClick: () =>
+            void tidy
+              .unreject(ids)
+              .then(() => qc.invalidateQueries({ queryKey: TIDY_KEY }))
+              .then(() => refreshTidyCount(tidy)),
+        },
+      })
+    })
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 pt-8 pb-24 sm:px-10">
@@ -101,6 +120,17 @@ export function TidyView() {
           >
             <Check />
             {t('tidy.acceptAll')}
+          </Button>
+        ) : null}
+        {list.length > 1 ? (
+          <Button
+            variant="ghost"
+            disabled={busy !== null}
+            loading={busy === 'reject-all'}
+            onClick={() => void rejectAll()}
+          >
+            <X />
+            {t('tidy.rejectAll')}
           </Button>
         ) : null}
       </div>
