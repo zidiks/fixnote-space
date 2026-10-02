@@ -140,8 +140,13 @@ export function PlanSection() {
   // A subscription that still runs (also one cancelled, until its period ends): no new checkout.
   const live =
     sub && (sub.status === 'active' || sub.status === 'past_due' || sub.status === 'trialing')
-  const paying =
-    info.status === 'active' || info.status === 'past_due' || info.status === 'canceled'
+  // Our server says Pro is paid for: active, waiting for its renewal, or cancelled with time left.
+  // No checkout then, even when Suby does not know the subscription (test data, a manual grant):
+  // the buttons show only when both sides agree there is none, so nobody pays twice.
+  const paid =
+    info.status === 'active' ||
+    info.status === 'past_due' ||
+    (info.status === 'canceled' && (info.periodEnd ?? 0) > Date.now())
 
   return (
     <div className="space-y-6">
@@ -196,7 +201,7 @@ export function PlanSection() {
         </div>
       ) : null}
       {sub && live ? <Subscription sub={sub} onChange={changed} /> : null}
-      {!live && !(paying && billing !== 'ready') ? <Upgrade /> : null}
+      {!live && !paid ? <Upgrade /> : null}
       <History overview={overview} state={billing} onRetry={loadBilling} />
       {sub && live && !sub.cancelAtPeriodEnd ? (
         <CancelSubscription periodEnd={sub.periodEnd} onChange={changed} />
