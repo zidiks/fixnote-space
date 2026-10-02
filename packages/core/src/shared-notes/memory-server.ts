@@ -53,6 +53,8 @@ export class MemorySharedServer {
   /** Files of shared notes (`<shared id>/<file id>`), sealed, as base64. */
   readonly files = new Map<string, string>()
   private seq = 0
+  /** How often documents were read: syncs must not fetch the ones that did not change. */
+  readonly calls = { state: 0, versions: 0, folderLayout: 0 }
   /** The server's clock, for invitations that expire. */
   now = () => Date.now()
   /**
@@ -156,8 +158,16 @@ export class MemorySharedServer {
             : []
         }),
       state: async (id) => {
+        this.calls.state++
         const n = this.notes.get(id)
         return n && role(id) ? { state: n.state, version: n.version } : null
+      },
+      versions: async (ids) => {
+        this.calls.versions++
+        return ids.flatMap((id) => {
+          const n = this.notes.get(id)
+          return n && role(id) ? [{ sharedId: id, version: n.version }] : []
+        })
       },
       share: async (origin, wrappedKey) => {
         for (const [id, n] of this.notes) if (n.owner === userId && n.origin === origin) return id
@@ -233,12 +243,18 @@ export class MemorySharedServer {
                   accepted: m.accepted,
                   invitedAt: m.invitedAt,
                   name: f.name,
-                  layout: f.layout ?? null,
                   layoutVersion: f.layoutVersion ?? 0,
                 },
               ]
             : []
         }),
+      folderLayout: async (id) => {
+        this.calls.folderLayout++
+        const f = this.folders.get(id)
+        return f && folderRole(id)
+          ? { state: f.layout ?? null, version: f.layoutVersion ?? 0 }
+          : null
+      },
       folderNotes: async (ids) =>
         [...this.notes.entries()].flatMap(([sharedId, n]): FolderNote[] =>
           n.folder && ids.includes(n.folder) && folderRole(n.folder)

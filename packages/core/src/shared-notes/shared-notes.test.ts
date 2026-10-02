@@ -1,7 +1,14 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
 import { Attachments, attachmentUrl } from '../attachments'
-import { cryptoReady, deriveKeys, newRecoverySecret, publicKeyB64 } from '../crypto'
+import {
+  cryptoReady,
+  deriveKeys,
+  newNoteKey,
+  newRecoverySecret,
+  publicKeyB64,
+  sealSharedState,
+} from '../crypto'
 import { prepareDatabase } from '../db/migrate'
 import { NotesRepo, ReadOnlyError } from '../notes/repo'
 import type { BlobStore, SqlDriver } from '../platform'
@@ -220,6 +227,81 @@ describe('SharedNotes', () => {
     await ann.shared.sync()
     await bob.shared.sync()
     expect(server.notes.get(id)?.version).toBe(before)
+  })
+
+  it('a sync fetches a document only when someone saved it since', async () => {
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    const note = await ann.repo.createNote({ content: 'Plan' })
+    const id = await ann.shared.share(note.id)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    const bobNote = await bob.shared.accept(id)
+    await bob.shared.sync()
+    await ann.shared.sync()
+
+    server.calls.state = 0
+    await bob.shared.sync()
+    await bob.shared.sync()
+    expect(server.calls.state).toBe(0)
+
+    await typeInEditor(ann, id, (t) => t.insert(t.length, '!'))
+    await ann.shared.sync()
+    await bob.shared.sync()
+    expect(server.calls.state).toBe(1)
+    expect(await content(bob, bobNote)).toBe('Plan!')
+  })
+
+  it('a note sealed with a wrong key is set right by the owner; other notes keep syncing', async () => {
+    const annAccount = await account('ann', 'ann@x.io')
+    const ann = await annAccount.device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    const cat = await (await account('cat', 'cat@x.io')).device()
+    const note = await ann.repo.createNote({ content: 'Plan' })
+    const other = await ann.repo.createNote({ content: 'Other' })
+    const id = await ann.shared.share(note.id)
+    const otherId = await ann.shared.share(other.id)
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+    await ann.shared.invite(otherId, 'bob@x.io', 'edit')
+    const bobNote = await bob.shared.accept(id)
+    const bobOther = await bob.shared.accept(otherId)
+    await bob.shared.sync()
+
+    await typeInEditor(ann, otherId, (t) => t.insert(t.length, '!'))
+    await ann.shared.sync()
+    // A device that went wrong saved the note sealed with a key of its own.
+    const y = new Y.Doc()
+    y.getText('t').insert(0, 'garbled')
+    const version = (await server.remoteFor('ann').state(id))?.version ?? 0
+    await server
+      .remoteFor('ann')
+      .saveState(id, sealSharedState(newNoteKey(), id, Y.encodeStateAsUpdate(y)), version)
+    // Bob cannot open it, and still gets the other note.
+    const report = await bob.shared.sync()
+    expect(report.unreadable).toEqual([id])
+    expect(await content(bob, bobOther)).toBe('Other!')
+
+    // This device of Ann's kept a key of its own and invited Cat with it.
+    await ann.db.execute('UPDATE shared_docs SET note_key = ? WHERE shared_id = ?', [
+      newNoteKey(),
+      id,
+    ])
+    await ann.shared.invite(id, 'cat@x.io', 'view')
+    const catNote = await cat.shared.accept(id)
+    await typeInEditor(ann, id, (t) => t.insert(t.length, ' v2'))
+    // Ann's sync takes the note's key back, saves over what nobody could open and gives every
+    // member the key again; then everyone reads the same note.
+    expect((await ann.shared.sync()).unreadable).toEqual([])
+    expect((await bob.shared.sync()).unreadable).toEqual([])
+    expect((await cat.shared.sync()).unreadable).toEqual([])
+    expect(await content(bob, bobNote)).toBe('Plan v2')
+    expect(await content(cat, catNote)).toBe('Plan v2')
+
+    // Sharing it again from another device of Ann's keeps the note's key.
+    const again = await annAccount.device()
+    const copy = await again.repo.createNote({ content: 'Plan v2' })
+    await again.db.execute('UPDATE notes SET id = ? WHERE id = ?', [note.id, copy.id])
+    expect(await again.shared.share(note.id)).toBe(id)
+    expect((await again.shared.doc(id))?.noteKey).toBe((await ann.shared.doc(id))?.noteKey)
   })
 
   it('takes in edits made to the note outside the editor (MCP, AI)', async () => {

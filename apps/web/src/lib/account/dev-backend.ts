@@ -572,7 +572,8 @@ export const devBackend: AccountBackend = {
   },
   collab: (sharedId) => broadcastChannelTransport(sharedId),
   shared: (userId) => devSharedRemote(userId),
-  subscribe: (_userId, onChange) => {
+  subscribe: (_userId, onChange, onLive) => {
+    onLive?.(true)
     const listener = () => onChange()
     channel.addEventListener('message', listener)
     localListeners.add(listener)
