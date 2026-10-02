@@ -1,6 +1,6 @@
 import { assertEquals } from 'jsr:@std/assert@1'
-import type { Suby, SubySubscription } from '../_shared/suby.ts'
-import { type BillingStore, handle, type SubscriptionRow } from './handler.ts'
+import type { SubySubscription } from '../_shared/suby.ts'
+import { type BillingStore, handle, type SubscriptionRow, type WebhookDeps } from './handler.ts'
 
 const SECRET = 'whsec_test'
 const NOW = Date.parse('2026-10-01T12:00:00Z')
@@ -59,8 +59,7 @@ function setup(sub: Partial<SubySubscription> = {}) {
     userByEmail: async (email) => (email === 'ann@x.io' ? 'user-ann' : null),
     save: async (user, row) => void rows.set(user, row),
   }
-  const suby: Suby = {
-    checkout: async () => 'https://checkout',
+  const suby: WebhookDeps['suby'] = {
     subscription: async (id) => (id === subscription.id ? subscription : null),
     paymentSubscription: async (id) => (id === 'pay_1' ? 'sub_1' : null),
   }

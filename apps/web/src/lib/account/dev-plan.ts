@@ -1,3 +1,5 @@
+import type { BillingApi, BillingOverview } from '../billing'
+
 /**
  * `?dev-backend`: the account's plan on the fake server, with the rules of the real one
  * (supabase/migrations/*_plans.sql) and a switch in Settings → Plan to try every state. Kept in
@@ -15,6 +17,14 @@ interface DevPlanState {
   trialUsed: boolean
   month: string
   tokens: number
+  /** The paid plan, a switch waiting for the period end, cancelled, and what was paid. */
+  billing?: {
+    plan: 'month' | 'year'
+    next: 'month' | 'year' | null
+    canceled: boolean
+    periodEnd: number
+    payments: { id: string; at: number; plan: 'month' | 'year' }[]
+  }
   day: string
   requests: number
 }
@@ -85,8 +95,90 @@ export function devStartTrial() {
   setDevPlanMode('trial')
 }
 
-/** The fake checkout: paying turns Pro on. */
-export const devCheckout = () => setDevPlanMode('pro')
+/** The fake checkout: paying turns Pro on, and it is a payment in the history. */
+export function devCheckout(plan: 'month' | 'year' = 'month') {
+  setDevPlanMode('pro')
+  const s = load()
+  const now = Date.now()
+  const payments = s.billing?.payments ?? []
+  save({
+    ...s,
+    billing: {
+      plan,
+      next: null,
+      canceled: false,
+      periodEnd: now + (plan === 'year' ? 365 : 30) * DAY,
+      payments: [{ id: `pay_dev_${now}`, at: now, plan }, ...payments],
+    },
+  })
+}
+
+const PRICE = { month: 700, year: 6000 }
+
+/** The fake `billing` function (supabase/functions/billing). */
+export const devBilling: BillingApi = {
+  overview: async () => devOverview(),
+  receipt: async (id) => {
+    if (!load().billing?.payments.some((p) => p.id === id)) throw new Error('No such payment')
+    // A tiny real PDF, so saving and opening it works.
+    return new TextEncoder().encode(DEV_PDF)
+  },
+  switchPlan: async (plan) => {
+    const s = load()
+    if (s.billing)
+      save({ ...s, billing: { ...s.billing, next: plan === s.billing.plan ? null : plan } })
+    return devOverview()
+  },
+  keepPlan: async () => {
+    const s = load()
+    if (s.billing) save({ ...s, billing: { ...s.billing, next: null } })
+    return devOverview()
+  },
+  cancel: async () => {
+    const s = load()
+    if (s.billing) save({ ...s, billing: { ...s.billing, canceled: true, next: null } })
+    return devOverview()
+  },
+}
+
+function devOverview(): BillingOverview {
+  const b = load().billing
+  return {
+    subscription:
+      b && load().mode === 'pro'
+        ? {
+            plan: b.plan,
+            status: 'active',
+            cancelAtPeriodEnd: b.canceled,
+            periodEnd: new Date(b.periodEnd).toISOString(),
+            priceCents: PRICE[b.plan],
+            currency: 'USD',
+            next: b.next ? { plan: b.next, at: new Date(b.periodEnd).toISOString() } : null,
+          }
+        : null,
+    payments: (b?.payments ?? []).map((p) => ({
+      id: p.id,
+      at: new Date(p.at).toISOString(),
+      amountCents: PRICE[p.plan],
+      currency: 'USD',
+      status: 'paid',
+      method: 'crypto',
+      plan: p.plan,
+    })),
+  }
+}
+
+const DEV_PDF = `%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 120]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj
+4 0 obj<</Length 52>>stream
+BT /F1 14 Tf 20 60 Td (FixNote Pro receipt, dev) Tj ET
+endstream endobj
+5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
+trailer<</Root 1 0 R>>
+%%EOF
+`
 
 /** The last day of the trial (to see the reminder). */
 export function endDevTrialSoon() {
@@ -135,10 +227,20 @@ export function devMyPlan(storageUsed: number, notes: number): Record<string, un
       : null
   return {
     plan: s.mode === 'free' ? 'free' : 'pro',
-    status: s.mode === 'trial' ? 'trialing' : s.mode === 'pro' ? 'active' : 'free',
+    status:
+      s.mode === 'trial'
+        ? 'trialing'
+        : s.mode === 'pro'
+          ? s.billing?.canceled
+            ? 'canceled'
+            : 'active'
+          : 'free',
     beta: true,
     trial_ends_at: new Date(s.trialEndsAt).toISOString(),
-    current_period_end: s.mode === 'pro' ? new Date(Date.now() + 30 * DAY).toISOString() : null,
+    current_period_end:
+      s.mode === 'pro'
+        ? new Date(s.billing?.periodEnd ?? Date.now() + 30 * DAY).toISOString()
+        : null,
     paid_before: s.subscribed,
     trial_available: !s.trialUsed && !s.subscribed,
     files_delete_at: filesDeleteAt,

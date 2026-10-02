@@ -29,6 +29,7 @@ import type {
 import {
   devAiRecord,
   devAiRefusal,
+  devBilling,
   devCheckout,
   devIsPro,
   devMyPlan,
@@ -392,11 +393,12 @@ export const devBackend: AccountBackend = {
   sendCheckCode: async () => undefined,
   checkCode: async (_email, code) => code === '123456',
   // No payment page on the fake server: "paying" starts the trial, or Pro after one.
-  checkout: async () => {
+  checkout: async (plan) => {
     signedIn()
-    devCheckout()
+    devCheckout(plan)
     return null
   },
+  billing: devBilling,
   startTrial: async () => {
     signedIn()
     devStartTrial()
