@@ -81,6 +81,15 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
       if (error) throw toError(error)
       return data ? { state: data.state as string | null, version: Number(data.version) } : null
     },
+    async versions(ids) {
+      if (!ids.length) return []
+      const { data, error } = await client.from('shared_notes').select('id, version').in('id', ids)
+      if (error) throw toError(error)
+      return ((data ?? []) as { id: string; version: number }[]).map((r) => ({
+        sharedId: r.id,
+        version: Number(r.version),
+      }))
+    },
     share: (origin, wrappedKey) =>
       rpc<string>('share_note', { p_origin: origin, p_wrapped_key: wrappedKey, p_state: null }),
     accept: (id) => rpc('accept_shared_note', { p_note: id }),
@@ -109,7 +118,7 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
       const { data, error } = await client
         .from('shared_folder_members')
         .select(
-          'folder_id, role, wrapped_key, accepted, invited_at, shared_folders!inner(origin_folder_id, owner_id, name, layout, layout_version)',
+          'folder_id, role, wrapped_key, accepted, invited_at, shared_folders!inner(origin_folder_id, owner_id, name, layout_version)',
         )
         .eq('user_id', userId)
       if (error) throw toError(error)
@@ -123,7 +132,6 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
           origin_folder_id: string
           owner_id: string
           name: string
-          layout: string | null
           layout_version: number
         }
       }
@@ -137,10 +145,20 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
           accepted: r.accepted,
           invitedAt: Date.parse(r.invited_at),
           name: r.shared_folders.name,
-          layout: r.shared_folders.layout,
           layoutVersion: Number(r.shared_folders.layout_version),
         }),
       )
+    },
+    async folderLayout(id) {
+      const { data, error } = await client
+        .from('shared_folders')
+        .select('layout, layout_version')
+        .eq('id', id)
+        .maybeSingle()
+      if (error) throw toError(error)
+      return data
+        ? { state: data.layout as string | null, version: Number(data.layout_version) }
+        : null
     },
     async folderNotes(folderIds) {
       if (!folderIds.length) return []

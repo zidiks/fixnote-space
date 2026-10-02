@@ -2,6 +2,7 @@ import * as Y from 'yjs'
 import { type AttachmentSource, type Attachments, attachmentIds } from '../attachments'
 import {
   type AccountKeys,
+  DecryptionError,
   decryptSharedAttachment,
   encryptSharedAttachment,
   newNoteKey,
@@ -74,8 +75,7 @@ export interface SharedFolderMembership {
   invitedAt: number
   /** The folder's name, sealed with the folder key. */
   name: string
-  /** Its subfolders and where each note is: a Yjs document sealed with the folder key. */
-  layout: string | null
+  /** The version of its layout (`folderLayout`); the layout itself is fetched when newer. */
   layoutVersion: number
 }
 
@@ -121,6 +121,11 @@ export type SaveResult =
 export interface SharedRemote {
   memberships(): Promise<SharedMembership[]>
   state(sharedId: string): Promise<{ state: string | null; version: number } | null>
+  /**
+   * The versions of these shared notes, without their documents: a sync fetches a document only
+   * when its version moved (documents keep their whole history and grow).
+   */
+  versions(sharedIds: string[]): Promise<{ sharedId: string; version: number }[]>
   /** Shares a note (or returns the id it already has); the caller is its owner. */
   share(originNoteId: string, wrappedKey: string): Promise<string>
   /** The invited account accepts; declining is removeMember on oneself. */
@@ -134,6 +139,8 @@ export interface SharedRemote {
   members(sharedId: string): Promise<SharedMember[]>
 
   folderMemberships(): Promise<SharedFolderMembership[]>
+  /** A shared folder's layout: its subfolders and where each note is, sealed with the folder key. */
+  folderLayout(folderId: string): Promise<{ state: string | null; version: number } | null>
   /** The notes of shared folders this account is in (deleted ones as tombstones). */
   folderNotes(folderIds: string[]): Promise<FolderNote[]>
   /** Shares a folder (or returns the id it already has); the caller is its owner. */
@@ -212,6 +219,11 @@ export interface SharedSyncReport {
   /** Shared notes whose stored document changed (the server's edits, or edits made outside). */
   pulled: number
   pushed: number
+  /**
+   * Shared notes that could not be opened with any key this account has (sealed with another
+   * key by a device that went wrong). The rest of the sync goes on; the owner's devices repair it.
+   */
+  unreadable: string[]
 }
 
 /** No account with that email (or it has not set up its keys yet). */
@@ -423,11 +435,14 @@ export class SharedNotes {
     const note = await this.repo.getNote(noteId)
     if (!note) throw new Error(`Note ${noteId} not found`)
     if (note.sharedId) return note.sharedId
-    const noteKey = newNoteKey()
     const state = this.projector.fromMarkdown(null, note.content)
-    const wrapped = sealToPublicKey(publicKeyB64(this.keys), noteKey)
+    const wrapped = sealToPublicKey(publicKeyB64(this.keys), newNoteKey())
     // The server's copy is filled by the first push (it merges with one another device may have made).
     const sharedId = await this.remote.share(noteId, wrapped)
+    // The server may have had it already (shared from another device, or an earlier answer was
+    // lost): its key is the note's, not the one made here.
+    const mine = (await this.remote.memberships()).find((m) => m.sharedId === sharedId)
+    const noteKey = openSealedBox(this.keys, mine?.wrappedKey ?? wrapped)
     await this.locked(async () => {
       await this.db.execute(
         `INSERT OR REPLACE INTO shared_docs
@@ -677,6 +692,7 @@ export class SharedNotes {
       invites: [],
       pulled: 0,
       pushed: 0,
+      unreadable: [],
     }
     const [notes, allFolders] = await Promise.all([
       this.remote.memberships(),
@@ -736,11 +752,18 @@ export class SharedNotes {
     }
 
     for (const a of access.values()) {
-      const before = await this.doc(a.sharedId)
-      const added = await this.link(a)
-      if (added) report.added.push(added)
-      if (before && before.role !== a.role)
-        report.roles.push({ sharedId: a.sharedId, role: a.role })
+      try {
+        const before = await this.doc(a.sharedId)
+        const added = await this.link(a)
+        if (added) report.added.push(added)
+        if (before && before.role !== a.role)
+          report.roles.push({ sharedId: a.sharedId, role: a.role })
+        if (before) await this.checkKey(a, before)
+      } catch (err) {
+        // One note that cannot be opened does not stop the others.
+        if (!(err instanceof DecryptionError)) throw err
+        report.unreadable.push(a.sharedId)
+      }
     }
     for (const row of await this.db.query<DocRow>('SELECT shared_id, role FROM shared_docs')) {
       if (access.has(row.shared_id)) continue
@@ -764,9 +787,23 @@ export class SharedNotes {
       await this.syncLayout(f, report)
     }
 
-    for (const { shared_id } of await this.db.query<DocRow>('SELECT shared_id FROM shared_docs')) {
-      if (await this.pull(shared_id)) report.pulled++
-      if (await this.push(shared_id)) report.pushed++
+    // Versions first: a document is fetched only when someone saved it since.
+    const docs = await this.db.query<DocRow>('SELECT shared_id FROM shared_docs')
+    const versions = new Map(
+      (await this.remote.versions(docs.map((d) => d.shared_id))).map((v) => [
+        v.sharedId,
+        v.version,
+      ]),
+    )
+    for (const { shared_id } of docs) {
+      if (report.unreadable.includes(shared_id)) continue
+      try {
+        if (await this.pull(shared_id, versions.get(shared_id) ?? 0)) report.pulled++
+        if (await this.push(shared_id)) report.pushed++
+      } catch (err) {
+        if (!(err instanceof DecryptionError)) throw err
+        report.unreadable.push(shared_id)
+      }
     }
     return report
   }
@@ -778,8 +815,16 @@ export class SharedNotes {
   private async syncLayout(f: SharedFolderMembership, report: SharedSyncReport) {
     const own = f.ownerId === this.userId
     const id = `layout:${f.folderId}`
-    let server =
-      f.layoutVersion > 0 && f.layout ? { state: f.layout, version: f.layoutVersion } : null
+    const [stored] = await this.db.query<FolderRow>(
+      'SELECT layout_version FROM shared_folders WHERE shared_id = ?',
+      [f.folderId],
+    )
+    // Fetched only when someone saved it since this device last did.
+    const fresh =
+      stored && f.layoutVersion > Number(stored.layout_version)
+        ? await this.remote.folderLayout(f.folderId)
+        : null
+    let server = fresh?.state ? { state: fresh.state, version: fresh.version } : null
     for (let attempt = 0; attempt < MAX_SAVE_ATTEMPTS; attempt++) {
       const [row] = await this.db.query<FolderRow>(
         'SELECT * FROM shared_folders WHERE shared_id = ?',
@@ -1151,18 +1196,29 @@ export class SharedNotes {
    * Markdown to the note. Returns whether the stored document changed (the server had something
    * new, or there was an outside edit), so an open editor takes it in.
    */
-  private async pull(sharedId: string): Promise<boolean> {
-    const remote = await this.remote.state(sharedId)
-    return this.locked(async () => {
+  private async pull(sharedId: string, serverVersion?: number): Promise<boolean> {
+    // Known not to have moved (the sync read the versions): only outside edits to take in.
+    const known = await this.doc(sharedId)
+    const fetch = serverVersion === undefined || !known || serverVersion > known.serverVersion
+    const remote = fetch ? await this.remote.state(sharedId) : null
+    let unreadable = false
+    const pulled = await this.locked(async () => {
       const doc = await this.doc(sharedId)
       if (!doc) return false
       const absorbed = await this.absorbOutsideEdits(doc)
       let state = absorbed ?? doc.state
-      let serverVersion = doc.serverVersion
+      let version = doc.serverVersion
       const newer = remote && remote.version > doc.serverVersion && remote.state
       if (newer && remote.state) {
-        state = merge(state, openSharedState(doc.noteKey, sharedId, remote.state))
-        serverVersion = remote.version
+        try {
+          state = merge(state, openSharedState(doc.noteKey, sharedId, remote.state))
+        } catch (err) {
+          // Sealed with a key that is not the note's (a device that went wrong): only the owner
+          // may set it right, by saving its copy over it and giving the members the key again.
+          if (!(err instanceof DecryptionError) || doc.role !== 'owner') throw err
+          unreadable = true
+        }
+        version = remote.version
       }
       if (!state) return false
       const markdown = await this.writeNote(doc.noteId, state)
@@ -1172,10 +1228,62 @@ export class SharedNotes {
           WHERE shared_id = ?`,
         // Only this device's own changes make it dirty: taking in the server's state does not (or
         // two devices would keep sending each other the same edits).
-        [state, serverVersion, markdown, absorbed ? 1 : 0, sharedId],
+        [state, version, markdown, absorbed || unreadable ? 1 : 0, sharedId],
       )
       return Boolean(newer) || Boolean(absorbed)
     })
+    if (unreadable) await this.rewrap(sharedId)
+    return pulled
+  }
+
+  /**
+   * A device that shared a note the server already had (another device of the account shared it
+   * first, or the answer to sharing was lost and it asked again) kept a key of its own and sealed
+   * the note with it, which nobody else can open. The key the server gives this account is the
+   * note's: this device takes it, keeps what it wrote, and saves the note sealed with it. The
+   * owner also gives every member the key again (some may have been given the wrong one).
+   */
+  private async checkKey(a: Access, doc: SharedDoc) {
+    let key: string
+    try {
+      key = a.noteKey()
+    } catch {
+      return
+    }
+    if (key === doc.noteKey) return
+    const remote = await this.remote.state(a.sharedId)
+    await this.locked(async () => {
+      const now = await this.doc(a.sharedId)
+      if (!now) return
+      let state = now.state
+      if (remote?.state) {
+        const theirs = tryOpenState([key, now.noteKey], a.sharedId, remote.state)
+        if (theirs) state = merge(state, theirs)
+      }
+      await this.db.execute(
+        `UPDATE shared_docs SET note_key = ?, state = ?, server_version = ?, dirty = 1
+          WHERE shared_id = ?`,
+        [key, state, remote?.version ?? now.serverVersion, a.sharedId],
+      )
+    })
+    if (doc.role === 'owner') await this.rewrap(a.sharedId)
+  }
+
+  /** The owner: every member gets the note's key again, sealed to them. */
+  private async rewrap(sharedId: string) {
+    const doc = await this.doc(sharedId)
+    if (doc?.role !== 'owner') return
+    for (const m of await this.remote.members(sharedId)) {
+      if (m.role === 'owner') continue
+      const person = await this.remote.findUser(m.email)
+      if (!person) continue
+      await this.remote.addMember(
+        sharedId,
+        person.userId,
+        m.role,
+        sealToPublicKey(person.publicKey, doc.noteKey),
+      )
+    }
   }
 
   /**
@@ -1238,6 +1346,18 @@ export class SharedNotes {
     }
     return false
   }
+}
+
+/** The document sealed with the first of these keys that opens it; null if none does. */
+function tryOpenState(keys: string[], sharedId: string, sealed: string): Uint8Array | null {
+  for (const key of keys) {
+    try {
+      return openSharedState(key, sharedId, sealed)
+    } catch {
+      // the next key
+    }
+  }
+  return null
 }
 
 const ownerOf = (members: SharedMember[]) => members.find((m) => m.role === 'owner')?.email ?? ''

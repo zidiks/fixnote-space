@@ -125,7 +125,17 @@ let debounce: ReturnType<typeof setTimeout> | undefined
 const OWNER = 'account.owner'
 const OWNER_EMAIL = 'account.email'
 const SYNC_DELAY = 1200
-const SYNC_INTERVAL = 60_000
+/**
+ * Changes from other devices arrive by themselves (Realtime), so a sync of its own is only a
+ * safety net, and rarer still while the app is out of sight (tray, another tab); it catches up
+ * when shown. Without Realtime the app asks every minute. Every sync is requests, log lines and
+ * traffic on the server, times every open device.
+ */
+const SYNC_SAFETY = 10 * 60_000
+const SYNC_POLL = 60_000
+const SYNC_HIDDEN = 15 * 60_000
+let lastSyncAt = 0
+let live = false
 
 async function kvGet(key: string): Promise<string | null> {
   const [row] = await need().db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
@@ -245,14 +255,36 @@ async function becomeReady(k: AccountKeys) {
 
 function startWatching() {
   stopWatching?.()
-  const unsubscribe = session ? backend().subscribe(session.userId, requestSync) : () => undefined
-  const interval = setInterval(requestSync, SYNC_INTERVAL)
+  live = false
+  const unsubscribe = session
+    ? backend().subscribe(
+        session.userId,
+        () => requestSync(),
+        (on) => {
+          // Back after a break: what was missed meanwhile.
+          if (on && !live) requestSync()
+          live = on
+        },
+      )
+    : () => undefined
+  const tick = () => {
+    const every = document.hidden ? SYNC_HIDDEN : live ? SYNC_SAFETY : SYNC_POLL
+    if (Date.now() - lastSyncAt >= every) requestSync()
+  }
+  const interval = setInterval(tick, 30_000)
   const online = () => requestSync()
+  const shown = () => {
+    if (!document.hidden && Date.now() - lastSyncAt >= SYNC_POLL) requestSync()
+  }
   window.addEventListener('online', online)
+  window.addEventListener('focus', shown)
+  document.addEventListener('visibilitychange', shown)
   stopWatching = () => {
     unsubscribe()
     clearInterval(interval)
     window.removeEventListener('online', online)
+    window.removeEventListener('focus', shown)
+    document.removeEventListener('visibilitychange', shown)
   }
 }
 
@@ -478,10 +510,11 @@ export function setLocalOnlyCheck(check: () => boolean) {
 }
 
 /** Local data changed: sync soon, batching bursts of edits. */
-export function requestSync() {
+/** Syncs soon: changes made within `delay` of each other go in one sync. */
+export function requestSync(delay = SYNC_DELAY) {
   if (!engine) return
   clearTimeout(debounce)
-  debounce = setTimeout(() => void runSync(), SYNC_DELAY)
+  debounce = setTimeout(() => void runSync(), delay)
 }
 
 const PLAN_EVERY = 5 * 60_000
@@ -573,6 +606,7 @@ export function paymentReturned(result: 'success' | 'cancel') {
 export async function runSync() {
   const e = engine
   if (!e) return
+  lastSyncAt = Date.now()
   // "Only on this device": nothing is sent or fetched, the account just stays signed in.
   if (localOnly()) {
     setSync({ status: 'idle', error: null })

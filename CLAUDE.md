@@ -37,6 +37,17 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Picking notes in a list (`lib/selection.ts`, `SelectionBar`): a long press or Ctrl/⌘+click
   starts it, clicks then check and uncheck; bulk pin, move, tidy up, delete (Undo; shared notes
   are left out). Back and Escape stop it.
+- Server traffic: changes from other devices arrive over Realtime, so the app's own sync is a
+  safety net (`SYNC_SAFETY` 10 min, `SYNC_HIDDEN` 15 min out of sight, every minute only without
+  Realtime; `account.ts`). Never put a table with big rows (sealed documents) in the Realtime
+  publication: shared notes and folders signal through `sync_pulses` (`*_sync_pulses.sql`), and a
+  shared sync reads `versions()` first and fetches a document (`state`, `folderLayout`) only when
+  its version moved. Typing in a shared note saves its server copy after a pause (`SAVE_PAUSE`).
+- Shared note keys: the key the server gives an account (its member row, or the folder's) is the
+  note's. `share()` takes the server's key when the note was already shared; a device whose key
+  differs takes the right one and re-seals (`checkKey`), and the owner saves over a document nobody
+  can open and gives every member the key again (`rewrap`). A note that cannot be opened is
+  reported (`unreadable`) and never stops the sync of the others.
 - Sync conflicts: an edit in the same lines on two devices keeps the server version and makes a copy;
   the copy is recorded in the local `sync_conflicts` table and settled with `repo.settleConflict`
   (banner and compare dialog: `ConflictBanner`). Two daily notes for one date are merged

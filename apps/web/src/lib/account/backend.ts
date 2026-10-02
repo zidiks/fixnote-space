@@ -107,8 +107,11 @@ export interface AccountBackend {
   shares: ShareRemote
   /** Anyone: a shared note's sealed copy by link id; null when the link was revoked. */
   getShare(id: string): Promise<{ payload: string; updatedAt: string } | null>
-  /** Calls back when another device changed something. Returns an unsubscribe. */
-  subscribe(userId: string, onChange: () => void): () => void
+  /**
+   * Calls back when another device changed something; `onLive` says whether changes arrive by
+   * themselves right now (otherwise the app asks more often). Returns an unsubscribe.
+   */
+  subscribe(userId: string, onChange: () => void, onLive?: (live: boolean) => void): () => void
   /** A shared note's live-editing channel (sealed messages only; members only). */
   collab(sharedId: string): CollabTransport
   /** Notes shared with other people, as this user. */
@@ -362,7 +365,7 @@ export function supabaseBackend(
     },
     collab: (sharedId) => realtimeTransport(client, sharedId),
     shared: (userId) => supabaseSharedRemote(client, userId),
-    subscribe(userId, onChange) {
+    subscribe(userId, onChange, onLive) {
       const channel = client
         .channel(`sync:${userId}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, onChange)
@@ -377,21 +380,25 @@ export function supabaseBackend(
           { event: '*', schema: 'public', table: 'device_pairings' },
           onChange,
         )
-        // Shared notes and folders: someone shared one, changed a role, renamed a folder, added a
-        // note to one, or saved (members only, by RLS).
+        // Shared notes and folders: someone shared one, changed a role or left (members only, by
+        // RLS); a save, a rename or a note added to a folder only touches this account's pulse
+        // (*_sync_pulses.sql), not the whole sealed document.
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'shared_note_members' },
           onChange,
         )
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'shared_notes' }, onChange)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'shared_folder_members' },
           onChange,
         )
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'shared_folders' }, onChange)
-        .subscribe()
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'sync_pulses', filter: `user_id=eq.${userId}` },
+          onChange,
+        )
+        .subscribe((status) => onLive?.(status === 'SUBSCRIBED'))
       return () => void client.removeChannel(channel)
     },
   }

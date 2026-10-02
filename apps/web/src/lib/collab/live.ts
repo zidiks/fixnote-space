@@ -3,6 +3,9 @@ import * as Y from 'yjs'
 import { requestSync, sharedContext } from '../account/account'
 import { assignColors, colorFor, type LiveUser } from './people'
 
+/** How long typing in a shared note pauses before its server copy is saved. */
+const SAVE_PAUSE = 4000
+
 /** A shared note open in the editor: its live room, and how this person shows up to the others. */
 export interface LiveEditing {
   session: CollabSession
@@ -76,7 +79,8 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     persist: async (markdown, opts) => {
       const outside = await ctx.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(doc), markdown, opts)
       if (outside) Y.applyUpdate(doc, outside, 'stored')
-      requestSync()
+      // People in the note get each keystroke live; the server copy can wait for a pause.
+      requestSync(SAVE_PAUSE)
     },
     refresh: async () => {
       const now = await ctx.shared.doc(sharedId)
