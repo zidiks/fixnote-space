@@ -7,6 +7,7 @@ import type {
   SyncRemote,
 } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { BillingApi, BillingOverview } from '../billing'
 import { realtimeTransport } from '../collab/transport'
 import { toError } from '../errors'
 import { supabaseSharedRemote } from '../sync/shared-remote'
@@ -77,6 +78,8 @@ export interface AccountBackend {
    * desktop app (`app`), the page sends the browser back to the app instead of the web app.
    */
   checkout(plan: 'month' | 'year', app: boolean): Promise<string | null>
+  /** The subscription, its payments and what can be done with it (Settings → Billing). */
+  billing: BillingApi
   /** Starts the account's 7 days of Pro (once; `trial_unavailable` otherwise). */
   startTrial(): Promise<void>
   signOut(): Promise<void>
@@ -116,6 +119,12 @@ export interface AccountBackend {
   collab(sharedId: string): CollabTransport
   /** Notes shared with other people, as this user. */
   shared(userId: string): SharedRemote
+}
+
+async function billingCall<T>(client: SupabaseClient, body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await client.functions.invoke<T>('billing', { body })
+  if (error || data === null) throw error ? toError(error) : new Error('No answer')
+  return data
 }
 
 export function supabaseBackend(
@@ -166,6 +175,16 @@ export function supabaseBackend(
         throw status === 503 ? new Error('Payments are not set up yet') : toError(error)
       }
       return data?.url ?? null
+    },
+    billing: {
+      overview: () => billingCall<BillingOverview>(client, { action: 'overview' }),
+      async receipt(paymentId) {
+        const { pdf } = await billingCall<{ pdf: string }>(client, { action: 'receipt', paymentId })
+        return Uint8Array.from(atob(pdf), (c) => c.charCodeAt(0))
+      },
+      switchPlan: (plan) => billingCall<BillingOverview>(client, { action: 'switch', plan }),
+      keepPlan: () => billingCall<BillingOverview>(client, { action: 'keep-plan' }),
+      cancel: () => billingCall<BillingOverview>(client, { action: 'cancel' }),
     },
     async startTrial() {
       const { error } = await client.rpc('begin_trial')

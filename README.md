@@ -279,8 +279,9 @@ the sidebar card, "This is part of Pro", the note at the end of the trial).
 - Payments go through [Suby](https://docs.suby.fi/v3-beta): Settings → Plan opens a Suby checkout
   for the account's email (`supabase/functions/billing`), and Suby's signed webhooks set
   `subscriptions` (`supabase/functions/suby-webhook`: reads the subscription back from Suby, Pro
-  until the paid period ends, taken away on a refund or chargeback). "Manage subscription" opens
-  Suby's customer portal (customer.suby.fi) for cancelling and changing the card. Set up once:
+  until the paid period ends, taken away on a refund or chargeback). Settings → Billing shows the
+  subscription and its payments with PDF receipts, switches monthly to yearly from the period end
+  and cancels, all through the `billing` function (the Suby key stays there). Set up once:
   1. Suby dashboard → Products → Create: Recurring payments, "FixNote Pro, monthly" ($7 USD,
      Monthly) and "FixNote Pro, yearly" ($60 USD, Yearly). Leave Access & delivery, the discount,
      custom fields and the After payment URLs empty: the app sets where the buyer returns. Note

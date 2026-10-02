@@ -181,6 +181,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `lib/account/dev-plan.ts` mirror the rules: change them together with the SQL. Payments: Suby
   (`functions/billing` opens the checkout, `functions/suby-webhook` sets `subscriptions` from the
   subscription Suby reports; `_shared/suby.ts`). The Suby key never leaves the edge functions.
+  Settings → Billing (`PlanSection`, `lib/billing.ts`) manages it through `billing` actions:
+  `overview` (subscription and payments as Suby has them), `receipt` (PDF, own payments only),
+  `switch`/`keep-plan` (the other plan from the period end: crypto has no card to charge now) and
+  `cancel` (Pro until the period end; cannot be undone, only subscribed again). `devBilling` in
+  `dev-plan.ts` fakes it for `?dev-backend`.
   After paying, Suby sends the browser back to the web app (`?billing=success`) or, when bought in
   the desktop app, to `?billing=…&to=app` (`PaidPage`: no local DB, no account), which opens the
   app with `fixnote://billing/…` (deep-link plugin, `deep_link.rs`; the scheme is in

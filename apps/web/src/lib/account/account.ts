@@ -690,6 +690,11 @@ export async function runSync() {
 }
 
 /** Capture channel settings (Telegram), when signed in and unlocked. */
+/** Settings → Billing: the subscription through the server, when signed in. */
+export function billingApi() {
+  return session ? (deps?.backend?.billing ?? null) : null
+}
+
 export function captureBackend() {
   return engine ? (deps?.backend ?? null) : null
 }

@@ -31,7 +31,8 @@ export interface BillingStore {
 
 export interface WebhookDeps {
   secret: string | undefined
-  suby: Suby | null
+  /** Only reads: what a subscription and a payment are now. */
+  suby: Pick<Suby, 'subscription' | 'paymentSubscription'> | null
   store: BillingStore
   now?: () => number
 }
