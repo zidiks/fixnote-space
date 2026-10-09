@@ -1,0 +1,14 @@
+---
+import type { GetStaticPaths } from 'astro'
+import { getComparisons } from '../../lib/pages'
+import VsPage from '../../views/VsPage.astro'
+
+export const getStaticPaths = (async () =>
+  (await getComparisons('en')).map(({ rival, entry }) => ({
+    params: { slug: rival },
+    props: { entry, rival },
+  }))) satisfies GetStaticPaths
+const { entry, rival } = Astro.props
+---
+
+<VsPage lang="en" entry={entry} rival={rival} />

@@ -1,0 +1,29 @@
+---
+import { APPS, type AppId } from '../data/apps'
+
+/**
+ * An app's square: FixNote's own icon, or for other apps a tinted square with the first letter (we
+ * don't copy other companies' icons).
+ */
+interface Props {
+  app: AppId
+  size?: number
+  class?: string
+}
+const { app, size = 48, class: className } = Astro.props
+const info = APPS[app]
+---
+
+{
+  app === 'fixnote' ? (
+    <img src="/favicon.svg" alt="" width={size} height={size} class={className} style={`width:${size}px;height:${size}px`} />
+  ) : (
+    <span
+      aria-hidden="true"
+      class:list={['flex shrink-0 items-center justify-center font-display font-semibold text-white', className]}
+      style={`width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.23)}px;background:${info.tint};font-size:${Math.round(size * 0.46)}px`}
+    >
+      {info.name.charAt(0)}
+    </span>
+  )
+}

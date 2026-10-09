@@ -1,0 +1,167 @@
+---
+import { render } from 'astro:content'
+import AppIcon from '../components/AppIcon.astro'
+import Article from '../components/Article.astro'
+import CompareTable from '../components/CompareTable.astro'
+import More from '../components/More.astro'
+import QA from '../components/QA.astro'
+import Steps from '../components/Steps.astro'
+import { APPS, type Rival } from '../data/apps'
+import { APP_URL, type Lang, localePath, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import { topicHref } from '../lib/blog'
+import { fill, getComparisons, type Vs, vsPath } from '../lib/pages'
+
+/**
+ * FixNote next to one other app: the two side by side, the table, how to choose, the longer
+ * sections from Markdown, both sides' reasons, a verdict, questions and the other comparisons.
+ */
+interface Props {
+  lang: Lang
+  entry: Vs
+  rival: Rival
+}
+const { lang, entry, rival } = Astro.props
+const d = t(lang)
+const u = d.vsPage
+const c = d.compare
+const v = entry.data
+const name = APPS[rival].name
+const { Content } = await render(entry)
+const others = (await getComparisons(lang)).filter((x) => x.rival !== rival)
+const guide = await topicHref(lang, 'best-ai-note-apps', '/blog/')
+const price = (paid: string | null) => (paid ? fill(c.perMonth, { price: paid }) : c.free)
+const site = Astro.site ?? new URL('https://fixnote.space')
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: v.faq.map((x) => ({
+      '@type': 'Question',
+      name: x.q,
+      acceptedAnswer: { '@type': 'Answer', text: x.a },
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'FixNote',
+        item: new URL(localePath(lang, '/'), site).href,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: v.title,
+        item: new URL(vsPath(lang, rival), site).href,
+      },
+    ],
+  },
+]
+---
+
+<Base
+  lang={lang}
+  title={v.metaTitle}
+  description={v.description}
+  path={`/vs/${rival}/`}
+  crumb={u.eyebrow}
+  jsonLd={jsonLd}
+>
+  <Article lang={lang} eyebrow={u.eyebrow} title={v.title} intro={v.intro} cta={false}>
+    <div class="mt-10 flex flex-wrap items-center gap-6">
+      <div class="flex items-center gap-3">
+        <AppIcon app="fixnote" size={48} />
+        <div>
+          <p class="typo-body font-semibold text-brand">FixNote</p>
+          <p class="typo-caption text-muted">{c.free} · {price(APPS.fixnote.paid)}</p>
+        </div>
+      </div>
+      <span class="typo-caption text-faint">vs</span>
+      <div class="flex items-center gap-3">
+        <AppIcon app={rival} size={48} />
+        <div>
+          <p class="typo-body font-semibold text-ink">{name}</p>
+          <p class="typo-caption text-muted">{APPS[rival].paid ? `${c.free} · ${price(APPS[rival].paid)}` : c.free}</p>
+        </div>
+      </div>
+    </div>
+    <div class="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
+      <a href={localePath(lang, '/download/')} class="btn btn-primary btn-lg">{d.cta.download}</a>
+      <More href={APP_URL}>{d.cta.open}</More>
+    </div>
+    <section class="mt-16">
+      <h2 class="typo-subhead text-ink">{u.differ}</h2>
+      <div class="mt-6">
+        <CompareTable lang={lang} apps={['fixnote', rival]} compact />
+      </div>
+      <p class="typo-caption mt-4 border-t border-line pt-4 text-muted">{c.footnote}</p>
+    </section>
+    <section class="mt-14">
+      <h2 class="typo-subhead text-ink">{u.choose}</h2>
+      <Steps items={v.steps} class="mt-6" />
+    </section>
+    <div class="prose-note prose-page mt-14 text-ink">
+      <Content />
+    </div>
+    <section class="mt-14 grid gap-10 small:grid-cols-2">
+      <div>
+        <h2 class="typo-card-headline text-ink">{u.why}</h2>
+        <ul class="mt-5 space-y-3">
+          {
+            v.why.map((line) => (
+              <li class="typo-body flex gap-3 text-ink">
+                <span class="mt-2.5 h-1.5 w-1.5 flex-none rounded-full bg-brand" />
+                {line}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div>
+        <h2 class="typo-card-headline text-ink">{fill(u.still, { name })}</h2>
+        <ul class="mt-5 space-y-3">
+          {
+            v.still.map((line) => (
+              <li class="typo-body flex gap-3 text-ink">
+                <span class="mt-2.5 h-1.5 w-1.5 flex-none rounded-full bg-faint" />
+                {line}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+    <section class="mt-14 rounded-[18px] bg-panel p-7 small:p-10">
+      <h2 class="typo-card-headline text-ink">{u.verdict}</h2>
+      <p class="typo-body mt-3 text-ink">{v.verdict}</p>
+      <div class="mt-6 flex flex-wrap items-center gap-x-7 gap-y-4">
+        <a href={localePath(lang, '/download/')} class="btn btn-primary btn-lg">{d.cta.download}</a>
+        <More href={APP_URL}>{d.cta.open}</More>
+      </div>
+    </section>
+    <section class="mt-14">
+      <h2 class="typo-subhead text-ink">{u.faq}</h2>
+      <QA items={v.faq} />
+    </section>
+    <nav class="mt-16 border-t border-line pt-8" aria-label={u.more}>
+      <p class="typo-caption font-semibold text-muted">{u.more}</p>
+      <ul class="mt-4 space-y-2.5">
+        {
+          others.map((x) => (
+            <li>
+              <a class="link typo-body" href={vsPath(lang, x.rival)}>
+                {x.entry.data.title}
+              </a>
+            </li>
+          ))
+        }
+        <li><a class="link typo-body" href={guide}>{c.more}</a></li>
+        <li><a class="link typo-body" href={`${localePath(lang, '/')}#compare`}>{u.matrix}</a></li>
+      </ul>
+    </nav>
+  </Article>
+</Base>

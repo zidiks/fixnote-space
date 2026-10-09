@@ -3,7 +3,7 @@ import Demo from '../../components/Demo.astro'
 import Gallery from '../../components/Gallery.astro'
 import Lines from '../../components/Lines.astro'
 import More from '../../components/More.astro'
-import { type Lang, t } from '../../i18n'
+import { type Lang, localePath, t } from '../../i18n'
 
 /** Short cards: a picture of the app on top, a name, one line and a caption. */
 interface Props {
@@ -26,7 +26,10 @@ const shots: Record<string, string> = {
 <section id="tools" class="section-pad bg-panel !pt-0">
   <header class="section-header">
     <h2 class="typo-section-headline"><Lines text={tl.headline} wide /></h2>
-    <More href="#compare" class="typo-intro mt-4 inline-block">{tl.compare}</More>
+    <p class="mt-4 flex flex-wrap justify-center gap-x-7 gap-y-2">
+      <More href={localePath(lang, '/features/')} class="typo-intro">{d.featurePage.all}</More>
+      <More href="#compare" class="typo-intro">{tl.compare}</More>
+    </p>
   </header>
   <Gallery label={tl.label} prev={d.reasons.prev} next={d.reasons.next}>
     {

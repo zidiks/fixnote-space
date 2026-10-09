@@ -26,6 +26,10 @@ const jsonLd = [
     operatingSystem: 'Windows, macOS, Web',
     url: site.href,
     inLanguage: lang,
+    offers: [
+      { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD' },
+      { '@type': 'Offer', name: 'Pro', price: '7', priceCurrency: 'USD' },
+    ],
   },
   {
     '@context': 'https://schema.org',

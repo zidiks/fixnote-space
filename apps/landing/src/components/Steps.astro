@@ -1,0 +1,23 @@
+---
+/** A numbered list: a grey circle with the number, a bold lead-in and the sentence after it. */
+interface Props {
+  items: readonly { title: string; text: string }[]
+  class?: string
+}
+const { items, class: className } = Astro.props
+---
+
+<ol class:list={['space-y-5', className]}>
+  {
+    items.map((item, i) => (
+      <li class="flex gap-4">
+        <span class="typo-caption flex h-7 w-7 flex-none items-center justify-center rounded-full bg-panel font-semibold text-ink tabular-nums">
+          {i + 1}
+        </span>
+        <p class="typo-body text-ink">
+          <span class="font-semibold">{item.title}.</span> {item.text}
+        </p>
+      </li>
+    ))
+  }
+</ol>

@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content'
 import Chevron from '../components/Chevron.astro'
+import QA from '../components/QA.astro'
 import TryCard from '../components/TryCard.astro'
 import { LANG_NAMES, LANGS, localePath, t } from '../i18n'
 import Base from '../layouts/Base.astro'
@@ -64,12 +65,26 @@ const jsonLd = [
       { '@type': 'ListItem', position: 3, name: post.data.title, item: url },
     ],
   },
+  ...(post.data.faq.length
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: post.data.faq.map((x) => ({
+            '@type': 'Question',
+            name: x.q,
+            acceptedAnswer: { '@type': 'Answer', text: x.a },
+          })),
+        },
+      ]
+    : []),
 ]
+const title = post.data.title.includes('FixNote') ? post.data.title : `${post.data.title} · FixNote`
 ---
 
 <Base
   lang={lang}
-  title={`${post.data.title} · FixNote`}
+  title={title}
   description={post.data.description}
   path={`/blog/${slug}/`}
   alternates={alternates}
@@ -91,6 +106,14 @@ const jsonLd = [
       <div class="prose-note mt-14">
         <Content />
       </div>
+      {
+        post.data.faq.length > 0 && (
+          <section class="mt-14">
+            <h2 class="typo-subhead text-ink">{d.featurePage.faq}</h2>
+            <QA items={post.data.faq} />
+          </section>
+        )
+      }
       {
         others.length > 0 && (
           <p class="typo-caption mt-12 text-muted">

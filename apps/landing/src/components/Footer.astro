@@ -1,6 +1,8 @@
 ---
+import { APPS, RIVALS } from '../data/apps'
 import { APP_URL, CONTACT_EMAIL, type Lang, localePath, t } from '../i18n'
-import { getPosts, postPath } from '../lib/blog'
+import { getPosts, postPath, topicHref } from '../lib/blog'
+import { fill, vsPath } from '../lib/pages'
 import Chevron from './Chevron.astro'
 import LangMenu from './LangMenu.astro'
 
@@ -20,6 +22,7 @@ const d = t(lang)
 const f = d.footer
 const home = localePath(lang, '/')
 const posts = (await getPosts(lang)).slice(0, 4)
+const guide = await topicHref(lang, 'best-ai-note-apps', '/blog/')
 const columns = [
   {
     title: f.explore,
@@ -37,7 +40,19 @@ const columns = [
     links: [
       { label: d.nav.features, href: localePath(lang, '/features/') },
       { label: d.nav.security, href: localePath(lang, '/security/') },
+      { label: d.nav.releaseNotes, href: localePath(lang, '/release-notes/') },
+      { label: d.nav.setup, href: localePath(lang, '/setup/') },
       { label: f.webApp, href: APP_URL },
+    ],
+  },
+  {
+    title: f.compare,
+    links: [
+      ...RIVALS.map((rival) => ({
+        label: fill(d.compare.vsLink, { name: APPS[rival].name }),
+        href: vsPath(lang, rival),
+      })),
+      { label: f.guide, href: guide },
     ],
   },
   {
@@ -105,7 +120,7 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
     </nav>
     <nav
       aria-label={f.directory}
-      class="grid grid-cols-2 gap-x-5 gap-y-7 pt-5 pb-6 small:grid-cols-3 medium:grid-cols-5"
+      class="grid grid-cols-2 gap-x-5 gap-y-7 pt-5 pb-6 small:grid-cols-3 medium:grid-cols-6"
     >
       {
         columns.map((column) => (

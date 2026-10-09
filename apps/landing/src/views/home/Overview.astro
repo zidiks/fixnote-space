@@ -4,7 +4,7 @@ import Lines from '../../components/Lines.astro'
 import More from '../../components/More.astro'
 import Sup from '../../components/Sup.astro'
 import { DOWNLOADS, type Lang, localePath, t } from '../../i18n'
-import { topicHref } from '../../lib/blog'
+import { featurePath } from '../../lib/pages'
 
 /** The big first tile with the app, and four half tiles, the first one dark. */
 interface Props {
@@ -14,11 +14,11 @@ const { lang } = Astro.props
 const d = t(lang)
 const h = d.hero
 const downloadPage = localePath(lang, '/download/')
-const topics: Record<string, [string, string]> = {
-  ai: ['assistant-agent', '/features/'],
-  calls: ['call-notes', '/features/'],
-  daily: ['daily-note', '/features/'],
-  search: ['search', '/features/'],
+const pages: Record<string, string> = {
+  ai: 'ask-your-notes',
+  calls: 'call-summaries',
+  daily: 'daily-notes',
+  search: 'search',
 }
 const shots: Record<string, string> = {
   ai: 'ai-dark',
@@ -27,12 +27,11 @@ const shots: Record<string, string> = {
   search: 'search',
 }
 const notes: Record<string, number> = { calls: 3 }
-const tiles = await Promise.all(
-  d.tiles.map(async (tile) => {
-    const [key, fallback] = topics[tile.id] ?? ['', '/features/']
-    return { ...tile, href: await topicHref(lang, key, fallback), shot: shots[tile.id] ?? 'home' }
-  }),
-)
+const tiles = d.tiles.map((tile) => ({
+  ...tile,
+  href: featurePath(lang, pages[tile.id] ?? ''),
+  shot: shots[tile.id] ?? 'home',
+}))
 ---
 
 <section id="overview" class="bg-panel pt-3 pb-3">
@@ -50,7 +49,7 @@ const tiles = await Promise.all(
           <p class="typo-caption mt-4 font-semibold text-ember">{h.eyebrow}</p>
           <h1 class="mt-1">
             <span class="typo-hero block">FixNote</span>
-            <span class="sr-only"> — </span>
+            <span class="sr-only">: </span>
             <span class="typo-hero-sub mt-2 block">{h.subtitle}</span>
           </h1>
           <p class="typo-body mx-auto mt-4 max-w-[36rem] text-muted">{h.lead}<Sup n={1} /></p>

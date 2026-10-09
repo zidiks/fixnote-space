@@ -7,7 +7,7 @@ import Demo from '../../components/Demo.astro'
 import Lines from '../../components/Lines.astro'
 import More from '../../components/More.astro'
 import { type Lang, t } from '../../i18n'
-import { topicHref } from '../../lib/blog'
+import { featurePath } from '../../lib/pages'
 
 /**
  * One big picture and four items under it; "Show" puts that item's picture in the frame (the
@@ -20,30 +20,28 @@ const { lang } = Astro.props
 const d = t(lang)
 const f = d.features
 const look = {
-  voice: { icon: Mic, shot: 'voice', from: '#ff9f0a', to: '#ff6a00', topic: 'voice-on-device' },
+  voice: { icon: Mic, shot: 'voice', from: '#ff9f0a', to: '#ff6a00', page: 'voice-notes' },
   telegram: {
     icon: Send,
     shot: 'settings-integrations',
     from: '#40a9ff',
     to: '#0071e3',
-    topic: 'telegram-capture',
+    page: 'telegram',
   },
-  tidy: { icon: WandSparkles, shot: 'tidy', from: '#bf5af2', to: '#8944ab', topic: 'tidy' },
+  tidy: { icon: WandSparkles, shot: 'tidy', from: '#bf5af2', to: '#8944ab', page: 'tidy-up' },
   folders: {
     icon: FolderOpen,
     shot: 'folder',
     from: '#8e8e93',
     to: '#48484a',
-    topic: 'findable-notes',
+    page: 'folders',
   },
 } as const
 type Id = keyof typeof look
-const items = await Promise.all(
-  f.items.map(async (item) => {
-    const l = look[item.id as Id] ?? look.folders
-    return { ...item, ...l, href: await topicHref(lang, l.topic, '/features/') }
-  }),
-)
+const items = f.items.map((item) => {
+  const l = look[item.id as Id] ?? look.folders
+  return { ...item, ...l, href: featurePath(lang, l.page) }
+})
 ---
 
 <section id="features" class="section-pad bg-panel" data-showcase>
