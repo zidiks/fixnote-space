@@ -486,12 +486,70 @@
     border-radius: 1.875cqw;
     box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08);
   }
-  .demo-flat > picture > img {
+  .demo > video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top left;
+    border-radius: 1.875cqw;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08);
+    background: #f5f5f7;
+  }
+  .demo-flat > picture > img,
+  .demo-flat > video {
     border-radius: 0;
     box-shadow: none;
   }
-  .theme-dark .demo > picture > img {
+  .theme-dark .demo > picture > img,
+  .theme-dark .demo > video {
     box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12);
+  }
+  /* Play and pause in the corner of a video, as on omninotch.app. */
+  .media-control {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #d2d2d7a3;
+    color: rgb(0 0 0 / 0.56);
+    backdrop-filter: blur(7px) saturate(180%);
+    -webkit-backdrop-filter: blur(7px) saturate(180%);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .media-control:hover {
+    background: #dfdfe3bf;
+    color: rgb(0 0 0 / 0.72);
+  }
+  .media-control svg {
+    width: 16px;
+    height: 16px;
+  }
+  .media-control .media-pause,
+  .media-control[data-playing] .media-play {
+    display: none;
+  }
+  .media-control[data-playing] .media-pause {
+    display: block;
+  }
+  .theme-dark .media-control {
+    background: #424245b8;
+    color: rgb(255 255 255 / 0.8);
+  }
+  @container (max-width: 480px) {
+    .media-control {
+      right: 10px;
+      bottom: 10px;
+      width: 30px;
+      height: 30px;
+    }
   }
 }
 
@@ -764,6 +822,21 @@
 }
 .prose-note th {
   font-weight: 600;
+}
+/* The Markdown part of a feature or comparison page: body size, sections spaced like the page's own. */
+.prose-note.prose-page {
+  font-size: 17px;
+  line-height: 1.47059;
+  letter-spacing: -0.022em;
+}
+.prose-page h2 {
+  margin-top: 56px;
+}
+.prose-page > h2:first-child {
+  margin-top: 0;
+}
+.prose-page h2 + * {
+  margin-top: 16px;
 }
 @media (max-width: 734px) {
   .prose-note {

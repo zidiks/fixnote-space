@@ -75,8 +75,12 @@ const organization = {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={image} />
+    {!Astro.props.image && <meta property="og:image:width" content="1200" />}
+    {!Astro.props.image && <meta property="og:image:height" content="630" />}
     <meta property="og:locale" content={OG_LOCALE[lang]} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
     <link rel="alternate" type="application/rss+xml" title={d.meta.blog.title} href={localePath(lang, '/rss.xml')} />
     <script type="application/ld+json" is:inline set:html={JSON.stringify([organization, ...jsonLd])} />
   </head>
@@ -128,6 +132,46 @@ const organization = {
           list.addEventListener('scroll', update, { passive: true })
           window.addEventListener('resize', update)
           update()
+        }
+      })()
+      // Videos play while on screen and stop out of sight; the round button pauses and resumes.
+      // With reduced motion they wait for the button.
+      ;(() => {
+        const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+        const videos = document.querySelectorAll('video[data-autoplay]')
+        const sync = (v) => {
+          const b = v.parentElement?.querySelector('[data-media-control]')
+          if (!b) return
+          b.toggleAttribute('data-playing', !v.paused)
+          b.setAttribute('aria-label', v.paused ? b.dataset.play : b.dataset.pause)
+        }
+        const play = (v) => v.play().catch(() => {})
+        const io =
+          'IntersectionObserver' in window
+            ? new IntersectionObserver(
+                (entries) => {
+                  for (const e of entries) {
+                    const v = e.target
+                    if (e.isIntersecting && !v.dataset.paused && !still) play(v)
+                    else if (!e.isIntersecting && !v.paused) v.pause()
+                  }
+                },
+                { threshold: 0.4 },
+              )
+            : null
+        for (const v of videos) {
+          v.addEventListener('play', () => sync(v))
+          v.addEventListener('pause', () => sync(v))
+          v.parentElement?.querySelector('[data-media-control]')?.addEventListener('click', () => {
+            if (v.paused) {
+              delete v.dataset.paused
+              play(v)
+            } else {
+              v.dataset.paused = '1'
+              v.pause()
+            }
+          })
+          if (io) io.observe(v)
         }
       })()
       // The features block: "Show" puts that item's picture in the big frame.
