@@ -1,30 +1,43 @@
 ---
-import ChevronDown from '@lucide/astro/icons/chevron-down'
-import Globe from '@lucide/astro/icons/globe'
 import { LANG_NAMES, LANGS, type Lang, localePath, t } from '../i18n'
 
 /** Links to this page in the other languages (the home page where a translation is missing). */
 interface Props {
   lang: Lang
   alternates: Partial<Record<Lang, string>>
+  /** Opens upwards (in the footer). */
   up?: boolean
+  /** Shown as the language's name in small print. */
+  footer?: boolean
 }
-const { lang, alternates, up = false } = Astro.props
+const { lang, alternates, up = false, footer = false } = Astro.props
 ---
 
 <details class="group relative">
   <summary
-    class="flex h-9 cursor-pointer list-none items-center gap-1 rounded-full px-2.5 text-[13px] font-medium text-ink/70 transition hover:text-ink [&::-webkit-details-marker]:hidden"
+    class:list={[
+      'flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden',
+      footer
+        ? 'text-black/[0.72] hover:text-black'
+        : 'h-11 px-2 text-[12px] tracking-[-0.01em] text-black/80 hover:text-black',
+    ]}
     aria-label={t(lang).nav.language}
   >
-    <Globe size={15} />
-    <span class="uppercase">{lang}</span>
-    <ChevronDown size={14} class="transition group-open:rotate-180" />
+    {
+      footer ? (
+        LANG_NAMES[lang]
+      ) : (
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.1" />
+          <path d="M1.6 8h12.8M8 1.4c1.8 1.9 2.7 4.1 2.7 6.6S9.8 12.7 8 14.6M8 1.4C6.2 3.3 5.3 5.5 5.3 8s.9 4.7 2.7 6.6" fill="none" stroke="currentColor" stroke-width="1.1" />
+        </svg>
+      )
+    }
   </summary>
   <ul
     class:list={[
-      'absolute right-0 z-50 w-40 rounded-2xl bg-white p-1.5 shadow-[0_12px_32px_rgba(27,26,24,0.14)] ring-1 ring-black/5',
-      up ? 'bottom-11' : 'top-11',
+      'absolute z-50 w-40 rounded-xl bg-white p-1.5 text-[14px] shadow-[0_12px_32px_rgba(0,0,0,0.14)] ring-1 ring-black/5',
+      up ? 'bottom-7 left-0 small:right-0 small:left-auto' : 'top-11 right-0',
     ]}
   >
     {
@@ -35,7 +48,7 @@ const { lang, alternates, up = false } = Astro.props
             hreflang={l}
             lang={l}
             aria-current={l === lang ? 'true' : undefined}
-            class:list={['block rounded-xl px-3 py-2 text-sm transition hover:bg-canvas', l === lang && 'font-semibold']}
+            class:list={['block rounded-lg px-3 py-2 text-ink transition hover:bg-panel', l === lang && 'font-semibold']}
           >
             {LANG_NAMES[l]}
           </a>

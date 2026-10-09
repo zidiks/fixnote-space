@@ -1,0 +1,96 @@
+---
+import FolderOpen from '@lucide/astro/icons/folder-open'
+import Mic from '@lucide/astro/icons/mic'
+import Send from '@lucide/astro/icons/send'
+import WandSparkles from '@lucide/astro/icons/wand-sparkles'
+import Demo from '../../components/Demo.astro'
+import Lines from '../../components/Lines.astro'
+import More from '../../components/More.astro'
+import { type Lang, t } from '../../i18n'
+import { topicHref } from '../../lib/blog'
+
+/**
+ * One big picture and four items under it; "Show" puts that item's picture in the frame (the
+ * inline script in Base.astro). Without JavaScript the first picture stays.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const f = d.features
+const look = {
+  voice: { icon: Mic, shot: 'voice', from: '#ff9f0a', to: '#ff6a00', topic: 'voice-on-device' },
+  telegram: {
+    icon: Send,
+    shot: 'settings-integrations',
+    from: '#40a9ff',
+    to: '#0071e3',
+    topic: 'telegram-capture',
+  },
+  tidy: { icon: WandSparkles, shot: 'tidy', from: '#bf5af2', to: '#8944ab', topic: 'tidy' },
+  folders: {
+    icon: FolderOpen,
+    shot: 'folder',
+    from: '#8e8e93',
+    to: '#48484a',
+    topic: 'findable-notes',
+  },
+} as const
+type Id = keyof typeof look
+const items = await Promise.all(
+  f.items.map(async (item) => {
+    const l = look[item.id as Id] ?? look.folders
+    return { ...item, ...l, href: await topicHref(lang, l.topic, '/features/') }
+  }),
+)
+---
+
+<section id="features" class="section-pad bg-panel" data-showcase>
+  <header class="section-header">
+    <h2 class="typo-section-headline"><Lines text={f.headline} wide /></h2>
+  </header>
+  <div class="content">
+    <div class="rounded-[18px] bg-white p-[3.5%]">
+      {
+        items.map((item, i) => (
+          <div data-pane={item.id} data-active={i === 0 ? '' : undefined}>
+            <Demo lang={lang} name={item.shot} alt={item.alt} ratio={2.2} />
+          </div>
+        ))
+      }
+    </div>
+    <div class="mt-14 grid grid-cols-4 gap-x-6 gap-y-12 max-[1068px]:grid-cols-2 max-[734px]:mt-10 max-[734px]:grid-cols-1">
+      {
+        items.map((item, i) => {
+          const Icon = item.icon
+          return (
+            <div class="flex flex-col items-center text-center">
+              <span
+                class="flex h-14 w-14 items-center justify-center rounded-[14px] text-white shadow-[0_6px_16px_-8px_rgb(0_0_0/0.45)]"
+                style={`background:linear-gradient(to bottom,${item.from},${item.to})`}
+              >
+                <Icon size={28} stroke-width={1.8} />
+              </span>
+              <h3 class="typo-eyebrow mt-4">{item.title}</h3>
+              <p class="typo-body mt-2 max-w-[15rem] text-muted">{item.text}</p>
+              <div class="mt-5 flex flex-col items-center gap-3">
+                <button
+                  type="button"
+                  class:list={['btn', i === 0 ? 'btn-neutral' : 'btn-primary']}
+                  data-show={item.id}
+                  data-now={f.now}
+                  data-label={f.show}
+                  aria-pressed={i === 0 ? 'true' : 'false'}
+                >
+                  {i === 0 ? f.now : f.show}
+                </button>
+                <More href={item.href}>{d.hero.more}</More>
+              </div>
+            </div>
+          )
+        })
+      }
+    </div>
+  </div>
+</section>

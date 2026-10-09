@@ -1,0 +1,127 @@
+---
+import Demo from '../../components/Demo.astro'
+import Lines from '../../components/Lines.astro'
+import More from '../../components/More.astro'
+import Sup from '../../components/Sup.astro'
+import { DOWNLOADS, type Lang, localePath, t } from '../../i18n'
+import { topicHref } from '../../lib/blog'
+
+/** The announcement, the big first tile with the app, and four half tiles, the first one dark. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const h = d.hero
+const downloadPage = localePath(lang, '/download/')
+const topics: Record<string, [string, string]> = {
+  ai: ['assistant-agent', '/features/'],
+  calls: ['call-notes', '/features/'],
+  daily: ['daily-note', '/features/'],
+  search: ['search', '/features/'],
+}
+const shots: Record<string, string> = {
+  ai: 'ai-dark',
+  calls: 'call',
+  daily: 'daily',
+  search: 'search',
+}
+const notes: Record<string, number> = { calls: 3 }
+const tiles = await Promise.all(
+  d.tiles.map(async (tile) => {
+    const [key, fallback] = topics[tile.id] ?? ['', '/features/']
+    return { ...tile, href: await topicHref(lang, key, fallback), shot: shots[tile.id] ?? 'home' }
+  }),
+)
+---
+
+<div class="ribbon">
+  <p class="ribbon-text content typo-caption py-4 text-center">
+    {d.ribbon.text}
+    <a href={tiles.find((x) => x.id === 'calls')?.href} class="ribbon-link whitespace-nowrap hover:underline">
+      {d.ribbon.link}<svg viewBox="0 0 6 10" aria-hidden="true" class="link-chevron"><path d="m1 1 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </a>
+  </p>
+</div>
+
+<section id="overview" class="bg-panel pt-3 pb-3">
+  <div class="content-wide">
+    <div class="tile-grid">
+      <article class="tile tile-full">
+        <div class="tile-copy !pt-12 max-[734px]:!pt-9">
+          <img
+            src="/favicon.svg"
+            alt=""
+            width="88"
+            height="88"
+            class="mx-auto h-[88px] w-[88px] max-[734px]:h-16 max-[734px]:w-16"
+          />
+          <p class="typo-caption mt-4 font-semibold text-ember">{h.eyebrow}</p>
+          <h1 class="mt-1">
+            <span class="typo-hero block">FixNote</span>
+            <span class="sr-only"> — </span>
+            <span class="typo-hero-sub mt-2 block">{h.subtitle}</span>
+          </h1>
+          <p class="typo-body mx-auto mt-4 max-w-[36rem] text-muted">{h.lead}<Sup n={1} /></p>
+          <div class="tile-ctas mt-6">
+            <a
+              href={downloadPage}
+              id="hero-download"
+              class="btn btn-primary btn-lg"
+              data-windows={h.downloadFor.windows}
+              data-mac={h.downloadFor.mac}
+              data-windows-href={DOWNLOADS.windows}
+              data-mac-href={`${downloadPage}#mac`}>{h.download}</a
+            >
+            <a href="#features" class="btn btn-secondary btn-lg">{h.more}</a>
+          </div>
+          <p class="typo-caption mt-5 text-faint">{h.platforms}<Sup n={2} /></p>
+        </div>
+        <div class="tile-media px-[8.33%] pt-12 pb-[5%] max-[734px]:px-5 max-[734px]:pt-8">
+          <Demo lang={lang} name="home" alt={h.shotAlt} ratio={1920 / 962} class="mx-auto max-w-[940px]" eager />
+        </div>
+      </article>
+      {
+        tiles.map((tile, i) => {
+          const dark = i === 0
+          return (
+            <article class:list={['tile tile-half', dark && 'theme-dark']}>
+              <div class="tile-copy">
+                <p class="typo-eyebrow">{dark ? <span class="text-intelligence">{tile.eyebrow}</span> : tile.eyebrow}</p>
+                <h2 class="typo-tile-headline mt-3">
+                  <Lines text={tile.title} />
+                </h2>
+                <p class:list={['typo-body mx-auto mt-4 max-w-[30rem]', dark ? 'text-[#86868b]' : 'text-muted']}>
+                  {tile.text}
+                  {notes[tile.id] && <Sup n={notes[tile.id] ?? 0} />}
+                </p>
+                <div class="tile-ctas">
+                  <a href={downloadPage} class="btn btn-primary">
+                    {h.download}
+                  </a>
+                  <More href={tile.href}>{h.more}</More>
+                </div>
+              </div>
+              <div class="tile-media px-[7%] pt-10 pb-[7%]">
+                <Demo lang={lang} name={tile.shot} alt={tile.alt} ratio={2.2} sizes="(min-width: 735px) 600px, 90vw" />
+              </div>
+            </article>
+          )
+        })
+      }
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  // Point the main button at the visitor's system. Windows gets the installer; on a Mac the
+  // download page asks which chip (the browser can't tell Apple Silicon from Intel reliably).
+  ;(() => {
+    const b = document.getElementById('hero-download')
+    const ua = navigator.userAgent
+    const os = /Windows/.test(ua) ? 'windows' : /Macintosh/.test(ua) && !('ontouchend' in document) ? 'mac' : ''
+    if (!b || !os) return
+    b.href = b.dataset[`${os}Href`]
+    b.textContent = b.dataset[os]
+  })()
+</script>

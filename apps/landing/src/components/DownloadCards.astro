@@ -1,51 +1,31 @@
 ---
-import ArrowUpRight from '@lucide/astro/icons/arrow-up-right'
-import Download from '@lucide/astro/icons/download'
-import Globe from '@lucide/astro/icons/globe'
-import Laptop from '@lucide/astro/icons/laptop'
-import Monitor from '@lucide/astro/icons/monitor'
 import { APP_URL, DOWNLOADS, type Lang, t } from '../i18n'
 
-/** One card per installer plus the web app. The Mac cards share the #mac anchor the hero links to. */
+/** One row per installer plus the web app. The Mac rows share the #mac anchor the hero links to. */
 interface Props {
   lang: Lang
 }
 const d = t(Astro.props.lang).download
 const cards = [
-  { ...d.windows, href: DOWNLOADS.windows, icon: Monitor, id: 'windows', external: false },
-  { ...d.macArm, href: DOWNLOADS.macArm, icon: Laptop, id: 'mac', external: false },
-  { ...d.macIntel, href: DOWNLOADS.macIntel, icon: Laptop, id: undefined, external: false },
-  { ...d.web, href: APP_URL, icon: Globe, id: 'web', external: true },
+  { ...d.windows, href: DOWNLOADS.windows, id: 'windows', external: false },
+  { ...d.macArm, href: DOWNLOADS.macArm, id: 'mac', external: false },
+  { ...d.macIntel, href: DOWNLOADS.macIntel, id: undefined, external: false },
+  { ...d.web, href: APP_URL, id: 'web', external: true },
 ]
 ---
 
-<div class="mx-auto grid max-w-[1100px] gap-4 sm:grid-cols-2 lg:grid-cols-4">
+<ul class="mt-12 border-t border-line">
   {
-    cards.map((card, i) => {
-      const Icon = card.icon
-      return (
-        <div
-          id={card.id}
-          class="reveal flex scroll-mt-28 flex-col rounded-[28px] bg-white p-6"
-          style={`--delay:${i * 80}ms`}
-        >
-          <span class="flex size-11 items-center justify-center rounded-2xl bg-canvas">
-            <Icon size={21} />
-          </span>
-          <h3 class="mt-6 text-[19px] font-semibold tracking-[-0.03em]">{card.name}</h3>
-          <p class="mt-1.5 flex-1 text-[14px] leading-[1.5] text-muted">{card.detail}</p>
-          <a
-            href={card.href}
-            class:list={[
-              'mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition active:scale-[0.98]',
-              card.external ? 'text-link ring-1 ring-inset ring-brand hover:bg-brand hover:text-white' : 'bg-brand text-white hover:bg-brand-deep',
-            ]}
-          >
-            {card.external ? <ArrowUpRight size={17} /> : <Download size={17} />}
-            {card.button}
-          </a>
+    cards.map((card) => (
+      <li id={card.id} class="flex scroll-mt-20 flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line py-6">
+        <div>
+          <h2 class="typo-eyebrow text-ink">{card.name}</h2>
+          <p class="typo-caption mt-1 text-muted">{card.detail}</p>
         </div>
-      )
-    })
+        <a href={card.href} class:list={['btn', card.external ? 'btn-secondary' : 'btn-primary']}>
+          {card.button}
+        </a>
+      </li>
+    ))
   }
-</div>
+</ul>

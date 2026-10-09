@@ -1,9 +1,9 @@
 ---
-import PostCard from '../components/PostCard.astro'
-import SectionHeader from '../components/SectionHeader.astro'
+import Article from '../components/Article.astro'
+import More from '../components/More.astro'
 import { type Lang, t } from '../i18n'
 import Base from '../layouts/Base.astro'
-import { getPosts } from '../lib/blog'
+import { formatDate, getPosts, postPath, readingMinutes } from '../lib/blog'
 
 interface Props {
   lang: Lang
@@ -14,21 +14,32 @@ const p = d.blogPage
 const posts = await getPosts(lang)
 ---
 
-<Base lang={lang} title={d.meta.blog.title} description={d.meta.blog.description} path="/blog/">
-  <section class="px-4 pb-6 pt-16 sm:px-6 sm:pt-24">
-    <SectionHeader as="h1" eyebrow={p.eyebrow} parts={p.headline} lead={p.lead} />
-  </section>
-  <section class="px-4 py-12 sm:px-6">
+<Base lang={lang} title={d.meta.blog.title} description={d.meta.blog.description} path="/blog/" crumb={d.nav.blog}>
+  <Article lang={lang} eyebrow={p.eyebrow} title={p.headline} intro={p.lead} cta={false}>
     {
       posts.length === 0 ? (
-        <p class="text-center text-muted">{p.empty}</p>
+        <p class="typo-body mt-12 text-muted">{p.empty}</p>
       ) : (
-        <div class="mx-auto grid max-w-[1100px] gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post, i) => (
-            <PostCard post={post} lang={lang} delay={(i % 3) * 80} />
+        <ul class="mt-12 border-t border-line">
+          {posts.map((post) => (
+            <li class="border-b border-line py-8">
+              <p class="typo-caption text-muted">
+                <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time> ·{' '}
+                {readingMinutes(post)} {p.minutes}
+              </p>
+              <h2 class="typo-card-headline mt-2 text-ink">
+                <a href={postPath(post)} class="hover:underline">
+                  {post.data.title}
+                </a>
+              </h2>
+              <p class="typo-body mt-2 text-muted">{post.data.description}</p>
+              <More href={postPath(post)} class="typo-cta mt-3 inline-block">
+                {p.read}
+              </More>
+            </li>
           ))}
-        </div>
+        </ul>
       )
     }
-  </section>
+  </Article>
 </Base>

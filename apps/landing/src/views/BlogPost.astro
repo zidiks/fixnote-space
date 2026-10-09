@@ -1,8 +1,7 @@
 ---
 import { render } from 'astro:content'
-import ArrowLeft from '@lucide/astro/icons/arrow-left'
-import CardRow from '../components/CardRow.astro'
-import PostCard from '../components/PostCard.astro'
+import Chevron from '../components/Chevron.astro'
+import TryCard from '../components/TryCard.astro'
 import { LANG_NAMES, LANGS, localePath, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 import {
@@ -10,10 +9,10 @@ import {
   getPosts,
   type Post,
   postInfo,
+  postPath,
   readingMinutes,
   translations,
 } from '../lib/blog'
-import FinalCta from './home/FinalCta.astro'
 
 interface Props {
   post: Post
@@ -24,7 +23,7 @@ const d = t(lang)
 const p = d.blogPage
 const { Content } = await render(post)
 const alternates = await translations(post)
-const more = (await getPosts(lang)).filter((p) => p.id !== post.id).slice(0, 8)
+const more = (await getPosts(lang)).filter((p) => p.id !== post.id).slice(0, 4)
 const others = LANGS.filter((l) => l !== lang && alternates[l])
 const site = Astro.site ?? new URL('https://fixnote.space')
 const url = new URL(localePath(lang, `/blog/${slug}/`), site).href
@@ -76,31 +75,30 @@ const jsonLd = [
   alternates={alternates}
   type="article"
   jsonLd={jsonLd}
+  crumb={d.nav.blog}
 >
-  <article class="px-3 pb-10 pt-6 sm:px-6 sm:pt-10">
-    <div class="tile mx-auto max-w-[860px] px-5 py-10 sm:px-14 sm:py-16">
-      <a href={localePath(lang, '/blog/')} class="more-link text-[15px]">
-        <ArrowLeft size={16} /> {p.back}
-      </a>
-      <h1 class="headline hero-in mt-8 text-[36px] sm:text-[48px]">{post.data.title}</h1>
-      <p class="hero-in lead mt-5 text-lg sm:text-xl" style="--delay:80ms">{post.data.description}</p>
-      <div class="hero-in mt-6 flex flex-wrap items-center gap-2 text-sm text-muted" style="--delay:120ms">
-        <span>{p.published}</span>
-        <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time>
-        <span aria-hidden="true">·</span>
-        <span>{readingMinutes(post)} {p.minutes}</span>
-      </div>
-      <div class="prose-note mt-10 border-t border-line pt-10">
+  <div class="bg-white">
+    <article class="mx-auto w-[87.5%] max-w-[692px] pt-16 pb-24 small:w-full small:pt-20">
+      <p class="typo-caption font-semibold text-muted">
+        <a href={localePath(lang, '/blog/')} class="hover:underline">{p.eyebrow}</a>
+      </p>
+      <h1 class="typo-headline mt-2 text-ink">{post.data.title}</h1>
+      <p class="typo-intro mt-6 text-ink">{post.data.description}</p>
+      <p class="typo-caption mt-4 text-muted">
+        {p.published} <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time> ·{' '}
+        {readingMinutes(post)} {p.minutes}
+      </p>
+      <div class="prose-note mt-14">
         <Content />
       </div>
       {
         others.length > 0 && (
-          <p class="mt-14 text-[15px] text-muted">
+          <p class="typo-caption mt-12 text-muted">
             {p.otherLanguages}:{' '}
             {others.map((l, i) => (
               <>
                 {i > 0 && ' · '}
-                <a href={alternates[l]} hreflang={l} lang={l} class="font-medium text-brand-deep hover:underline">
+                <a href={alternates[l]} hreflang={l} lang={l} class="link">
                   {LANG_NAMES[l]}
                 </a>
               </>
@@ -108,21 +106,24 @@ const jsonLd = [
           </p>
         )
       }
-    </div>
-  </article>
-  {
-    more.length > 0 && (
-      <section class="py-12 sm:py-16">
-        <h2 class="headline px-4 text-center text-[28px] sm:text-[40px]">{p.more}</h2>
-        <div class="mt-8">
-          <CardRow prev={d.reasons.prev} next={d.reasons.next}>
-            {more.map((other) => (
-              <PostCard post={other} lang={lang} row />
-            ))}
-          </CardRow>
-        </div>
-      </section>
-    )
-  }
-  <FinalCta lang={lang} />
+      <TryCard lang={lang} />
+      {
+        more.length > 0 && (
+          <section class="mt-16">
+            <h2 class="typo-subhead text-ink">{p.more}</h2>
+            <ul class="mt-6 border-t border-line">
+              {more.map((other) => (
+                <li class="border-b border-line">
+                  <a href={postPath(other)} class="group flex items-center justify-between gap-6 py-5">
+                    <span class="typo-body text-ink group-hover:underline">{other.data.title}</span>
+                    <Chevron class="h-3 w-2 shrink-0 text-muted" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </article>
+  </div>
 </Base>

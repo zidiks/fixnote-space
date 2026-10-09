@@ -1,0 +1,50 @@
+---
+import { Picture } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+import type { Lang } from '../i18n'
+
+/**
+ * A screenshot of the app in a frame of a fixed ratio, cut from the top left and rounded like a
+ * window. Shots live in src/assets/shots/<lang>/<name>.png (taken from the app with demo notes).
+ */
+interface Props {
+  lang: Lang
+  name: string
+  alt: string
+  /** Width / height of the frame; the shot's own ratio by default. */
+  ratio?: number
+  /** CSS `sizes` of the picture. */
+  sizes?: string
+  eager?: boolean
+  /** No rounding or outline (a shot that fills a card edge to edge). */
+  flat?: boolean
+  class?: string
+}
+const shots = import.meta.glob<{ default: ImageMetadata }>('../assets/shots/*/*.png', {
+  eager: true,
+})
+const {
+  lang,
+  name,
+  alt,
+  sizes = '(min-width: 1069px) 940px, 90vw',
+  eager = false,
+  flat = false,
+} = Astro.props
+const shot = shots[`../assets/shots/${lang}/${name}.png`]?.default
+if (!shot) throw new Error(`No screenshot ${lang}/${name}`)
+const ratio = Astro.props.ratio ?? shot.width / shot.height
+---
+
+<div class:list={['demo', flat && 'demo-flat', Astro.props.class]} style={`aspect-ratio:${ratio}`}>
+  <Picture
+    src={shot}
+    alt={alt}
+    formats={['avif', 'webp']}
+    widths={[480, 800, 1200, 1600, 2200]}
+    sizes={sizes}
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : 'auto'}
+    decoding="async"
+  />
+</div>

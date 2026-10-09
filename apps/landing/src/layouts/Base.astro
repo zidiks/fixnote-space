@@ -21,6 +21,8 @@ interface Props {
   noindex?: boolean
   /** Numbered footnotes printed above the footer links. */
   notes?: readonly string[]
+  /** The page's name in the footer breadcrumb (none on the home page). */
+  crumb?: string
 }
 const {
   lang,
@@ -31,6 +33,7 @@ const {
   jsonLd = [],
   noindex = false,
   notes = [],
+  crumb,
 } = Astro.props
 const site = Astro.site ?? new URL('https://fixnote.space')
 const alternates: Partial<Record<Lang, string>> =
@@ -77,23 +80,23 @@ const organization = {
     <link rel="alternate" type="application/rss+xml" title={d.meta.blog.title} href={localePath(lang, '/rss.xml')} />
     <script type="application/ld+json" is:inline set:html={JSON.stringify([organization, ...jsonLd])} />
   </head>
-  <body class="min-h-screen overflow-x-clip bg-canvas text-ink">
+  <body class="flex min-h-screen flex-col overflow-x-clip">
     <a
       href="#main"
-      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-white focus:px-4 focus:py-2"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:shadow"
       >{d.nav.skip}</a
     >
     <Header lang={lang} path={path} alternates={alternates} />
-    <main id="main">
+    <main id="main" class="flex-1">
       <slot />
     </main>
-    <Footer lang={lang} alternates={alternates} notes={notes} />
+    <Footer lang={lang} alternates={alternates} notes={notes} crumb={crumb} />
     <script is:inline>
       // Blocks below the first screen fade in as they arrive.
       ;(() => {
         const show = (el) => el.classList.add('in')
         if (!('IntersectionObserver' in window)) {
-          document.querySelectorAll('.reveal').forEach(show)
+          document.querySelectorAll('.fx').forEach(show)
           return
         }
         const io = new IntersectionObserver(
@@ -106,16 +109,16 @@ const organization = {
           },
           { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
         )
-        document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+        document.querySelectorAll('.fx').forEach((el) => io.observe(el))
       })()
-      // Card rows: the arrows under a row scroll it by one card and grey out at either end.
+      // Galleries: the round arrows scroll by one card and grey out at either end.
       ;(() => {
-        for (const row of document.querySelectorAll('[data-scroller]')) {
-          const list = row.querySelector('.scroller')
-          const prev = row.querySelector('[data-prev]')
-          const next = row.querySelector('[data-next]')
+        for (const g of document.querySelectorAll('[data-gallery]')) {
+          const list = g.querySelector('.gallery-track')
+          const prev = g.querySelector('[data-prev]')
+          const next = g.querySelector('[data-next]')
           if (!list || !prev || !next) continue
-          const step = () => (list.firstElementChild?.getBoundingClientRect().width ?? 300) + 16
+          const step = () => (list.firstElementChild?.getBoundingClientRect().width ?? 300) + 20
           const update = () => {
             prev.disabled = list.scrollLeft < 4
             next.disabled = list.scrollLeft + list.clientWidth > list.scrollWidth - 4
@@ -125,6 +128,25 @@ const organization = {
           list.addEventListener('scroll', update, { passive: true })
           window.addEventListener('resize', update)
           update()
+        }
+      })()
+      // The features block: "Show" puts that item's picture in the big frame.
+      ;(() => {
+        for (const box of document.querySelectorAll('[data-showcase]')) {
+          const panes = box.querySelectorAll('[data-pane]')
+          const buttons = box.querySelectorAll('[data-show]')
+          for (const b of buttons) {
+            b.addEventListener('click', () => {
+              for (const p of panes) p.toggleAttribute('data-active', p.dataset.pane === b.dataset.show)
+              for (const o of buttons) {
+                const on = o === b
+                o.classList.toggle('btn-neutral', on)
+                o.classList.toggle('btn-primary', !on)
+                o.textContent = on ? o.dataset.now : o.dataset.label
+                o.setAttribute('aria-pressed', String(on))
+              }
+            })
+          }
         }
       })()
     </script>

@@ -1,5 +1,5 @@
 ---
-import SectionHeader from '../components/SectionHeader.astro'
+import Article from '../components/Article.astro'
 import { type Lang, PRIVACY_EMAIL, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 
@@ -11,27 +11,23 @@ const d = t(lang)
 const p = d.privacyPage
 ---
 
-<Base lang={lang} title={d.meta.privacy.title} description={d.meta.privacy.description} path="/privacy/">
-  <section class="px-4 pb-6 pt-16 sm:px-6 sm:pt-24">
-    <SectionHeader as="h1" eyebrow={p.eyebrow} parts={[p.title]} lead={p.lead} />
-    <p class="mt-5 text-center text-sm text-muted">{p.updated}</p>
-  </section>
-  <section class="px-4 pb-20 pt-6 sm:px-6">
-    <div class="mx-auto max-w-[760px] rounded-[28px] bg-white p-7 sm:p-10">
-      {
-        p.sections.map((s, i) => (
-          <section class:list={[i > 0 && 'mt-9']}>
-            <h2 class="text-[20px] font-semibold leading-tight tracking-[-0.02em]">{s.title}</h2>
-            {s.text.map((para) => (
-              <p class="mt-3 text-[16px] leading-[1.65] text-muted">{para}</p>
-            ))}
-          </section>
-        ))
-      }
-      <p class="mt-10 border-t border-black/[0.06] pt-6 text-[16px] leading-[1.65]">
-        {p.contact}{' '}
-        <a href={`mailto:${PRIVACY_EMAIL}`} class="font-medium text-brand hover:underline">{PRIVACY_EMAIL}</a>
+<Base lang={lang} title={d.meta.privacy.title} description={d.meta.privacy.description} path="/privacy/" crumb={d.footer.privacy}>
+  <Article lang={lang} eyebrow={p.eyebrow} title={p.title} intro={p.lead} cta={false}>
+    <p slot="meta" class="typo-caption mt-4 text-muted">{p.updated}</p>
+    {
+      p.sections.map((s) => (
+        <section class="mt-14">
+          <h2 class="typo-subhead text-ink">{s.title}</h2>
+          {s.text.map((para) => (
+            <p class="typo-body mt-4 text-ink">{para}</p>
+          ))}
+        </section>
+      ))
+    }
+    <section class="mt-14 rounded-[18px] bg-panel p-7 small:p-10">
+      <p class="typo-body text-ink">
+        {p.contact} <a href={`mailto:${PRIVACY_EMAIL}`} class="link">{PRIVACY_EMAIL}</a>
       </p>
-    </div>
-  </section>
+    </section>
+  </Article>
 </Base>

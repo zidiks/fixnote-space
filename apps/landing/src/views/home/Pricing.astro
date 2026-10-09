@@ -1,118 +1,94 @@
 ---
-import Check from '@lucide/astro/icons/check'
-import Minus from '@lucide/astro/icons/minus'
-import Headline from '../../components/Headline.astro'
-import Pill from '../../components/Pill.astro'
+import CloudUpload from '@lucide/astro/icons/cloud-upload'
+import Link from '@lucide/astro/icons/link'
+import RefreshCw from '@lucide/astro/icons/refresh-cw'
+import Send from '@lucide/astro/icons/send'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import Users from '@lucide/astro/icons/users'
+import More from '../../components/More.astro'
 import Sup from '../../components/Sup.astro'
-import { APP_URL, type Lang, localePath, t } from '../../i18n'
+import { type Lang, localePath, t } from '../../i18n'
 
-/** Free and Pro side by side: what each includes, then the two plans with prices. */
+/** The Pro card, a line about Free, what Pro includes, then three steps to start. */
 interface Props {
   lang: Lang
 }
 const { lang } = Astro.props
-const d = t(lang).pricing
-const label = { yes: d.included, part: d.limited, no: d.missing } as Record<string, string>
-const rows = d.groups.flatMap((g) => g.rows)
-const lastRow = rows[rows.length - 1]
+const d = t(lang)
+const p = d.pricing
+const s = d.steps
+const download = localePath(lang, '/download/')
+const icons = {
+  sync: RefreshCw,
+  ai: Sparkles,
+  shared: Users,
+  links: Link,
+  telegram: Send,
+  files: CloudUpload,
+}
 ---
 
-<section id="pricing" class="scroll-mt-14 bg-white px-4 py-24 sm:px-6 sm:py-32">
-  <div class="mx-auto max-w-[860px] text-center">
-    <Headline parts={d.headline} class="text-[36px] sm:text-[56px] lg:text-[64px]" />
-    <p class="reveal lead mx-auto mt-5 max-w-[620px] text-[17px] sm:text-[21px]">{d.lead}</p>
-  </div>
-
-  <div class="reveal mt-10 flex flex-wrap justify-center gap-5 text-[13px] text-muted" aria-hidden="true">
-    <span class="flex items-center gap-1.5"><span class="flex size-5 items-center justify-center rounded-full bg-brand/12 text-brand-deep"><Check size={12} stroke-width={3} /></span>{d.included}</span>
-    <span class="flex items-center gap-1.5"><span class="flex size-5 items-center justify-center rounded-full bg-[#ffcc4d]/30 text-[#b7791f]"><Minus size={12} stroke-width={3} /></span>{d.limited}</span>
-    <span class="flex items-center gap-1.5"><span class="text-faint">—</span>{d.missing}</span>
-  </div>
-
-  <div class="reveal mx-auto mt-10 max-w-[820px] overflow-x-auto">
-    <table class="w-full border-collapse text-left text-[15px]">
-      <thead>
-        <tr>
-          <th class="w-auto" scope="col"><span class="sr-only">{d.lead}</span></th>
-          <th scope="col" class="w-[68px] pb-4 pt-6 text-center align-bottom sm:w-[140px]">
-            <img src="/favicon.svg" alt="" width="40" height="40" class="mx-auto size-8 opacity-60 grayscale sm:size-10" />
-            <div class="mt-2 text-[15px] font-semibold">{d.free.name}</div>
-            <div class="text-[13px] font-normal text-muted">{d.free.price}</div>
-          </th>
-          <th scope="col" class="w-[110px] rounded-t-[18px] bg-canvas pb-4 pt-6 text-center align-bottom sm:w-[140px]">
-            <img src="/favicon.svg" alt="" width="40" height="40" class="mx-auto size-8 sm:size-10" />
-            <div class="mt-2 text-[15px] font-semibold text-brand-deep">{d.pro.name}</div>
-            <div class="text-[13px] font-normal text-muted">{d.pro.price}</div>
-          </th>
-        </tr>
-      </thead>
+<section id="pricing" class="section-pad bg-panel">
+  <header class="section-header">
+    <h2 class="typo-section-headline">{p.headline}</h2>
+    <p class="typo-intro mx-auto mt-5 max-w-[40rem] text-muted">{p.lead}</p>
+  </header>
+  <div class="content">
+    <div class="mx-auto max-w-[580px] rounded-[18px] bg-white px-8 py-12 text-center max-[734px]:px-6 max-[734px]:py-10">
+      <img src="/favicon.svg" alt="" width="72" height="72" class="mx-auto h-[72px] w-[72px]" />
+      <p class="typo-eyebrow mt-4">{p.name}</p>
+      <p class="typo-caption mt-1 text-muted">{p.kind}</p>
+      <p class="mt-6 flex items-baseline justify-center gap-3">
+        <span class="font-display text-[64px] leading-none font-semibold tracking-[-0.009em] tabular-nums max-[734px]:text-[48px]">{p.price}</span>
+        <span class="typo-intro text-faint tabular-nums">{p.year}</span>
+      </p>
+      <p class="typo-body mt-3 text-muted">{p.period}</p>
+      <div class="mt-7 flex justify-center">
+        <a href={download} class="btn btn-primary btn-lg min-w-[12rem]">{p.button}</a>
+      </div>
+      <p class="typo-footnote mt-5 text-muted">{p.prices}<Sup n={4} /></p>
+    </div>
+    <p class="typo-body mt-6 text-center text-muted">
+      {p.free}{' '}
+      <More href={download} class="">{p.freeLink}</More>
+    </p>
+    <h3 class="typo-subhead mt-20 text-center max-[734px]:mt-14">{p.includedTitle}</h3>
+    <ul class="mt-10 grid grid-cols-3 gap-x-8 gap-y-12 max-[1068px]:grid-cols-2 max-[734px]:grid-cols-1 max-[734px]:gap-y-9">
       {
-        d.groups.map((group) => (
-          <tbody>
-            <tr>
-              <th scope="rowgroup" colspan="2" class="pb-3 pt-10 text-[19px] font-semibold tracking-[-0.02em]">{group.title}</th>
-              <td class="bg-canvas" />
-            </tr>
-            {group.rows.map((row) => (
-              <tr>
-                <th scope="row" class="border-t border-line py-3.5 pr-4 font-normal">
-                  {row.label}
-                  {row.note && <span class="mt-0.5 block text-[12px] text-muted">{row.note}</span>}
-                </th>
-                {[row.free, row.pro].map((value, j) => (
-                  <td
-                    class:list={[
-                      'border-t border-line py-3.5 text-center',
-                      j === 1 && 'bg-canvas',
-                      j === 1 && row === lastRow && 'rounded-b-[18px]',
-                    ]}
-                  >
-                    {value === 'yes' ? (
-                      <span class="mx-auto flex size-6 items-center justify-center rounded-full bg-brand/12 text-brand-deep" title={label.yes}>
-                        <Check size={13} stroke-width={3} />
-                        <span class="sr-only">{label.yes}</span>
-                      </span>
-                    ) : value === 'part' ? (
-                      <span class="mx-auto flex size-6 items-center justify-center rounded-full bg-[#ffcc4d]/30 text-[#b7791f]" title={label.part}>
-                        <Minus size={13} stroke-width={3} />
-                        <span class="sr-only">{label.part}</span>
-                      </span>
-                    ) : (
-                      <span class="text-faint" title={label.no}>
-                        —<span class="sr-only">{label.no}</span>
-                      </span>
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        ))
+        p.included.map((item) => {
+          const Icon = icons[item.id as keyof typeof icons] ?? Sparkles
+          return (
+            <li class="text-center">
+              <Icon size={40} stroke-width={1.4} class="mx-auto text-blue" />
+              <p class="typo-eyebrow mt-4">{item.title}</p>
+              <p class="typo-body mx-auto mt-2 max-w-[17rem] text-muted">{item.text}</p>
+            </li>
+          )
+        })
       }
-    </table>
+    </ul>
   </div>
 </section>
 
-<section class="px-4 py-24 sm:px-6 sm:py-28">
-  <div class="mx-auto grid max-w-[820px] gap-4 sm:grid-cols-2">
-    {
-      [
-        { plan: d.free, href: localePath(lang, '/download/'), pro: false },
-        { plan: d.pro, href: APP_URL, pro: true },
-      ].map(({ plan, href, pro }, i) => (
-        <div class="reveal tile flex flex-col items-center px-6 py-10 text-center" style={`--delay:${i * 80}ms`}>
-          <img src="/favicon.svg" alt="" width="56" height="56" class:list={['size-14', !pro && 'opacity-60 grayscale']} />
-          <h3 class="mt-4 text-[21px] font-semibold tracking-[-0.02em]">{plan.name}</h3>
-          <p class="mt-4 text-[48px] font-bold leading-none tracking-[-0.04em]">{plan.price}</p>
-          <p class="mt-2 text-[15px] text-muted">{plan.period}</p>
-          <p class="mt-4 flex-1 text-[15px]">
-            {plan.text}
-            {pro ? <Sup n={4} /> : <Sup n={1} />}
-          </p>
-          <Pill href={href} variant={pro ? 'brand' : 'outline'} class="mt-6 w-full max-w-[240px]">{plan.button}</Pill>
-        </div>
-      ))
-    }
+<section id="start" class="section-pad bg-panel !pt-0">
+  <header class="section-header">
+    <h2 class="typo-subhead">{s.headline}</h2>
+  </header>
+  <div class="content">
+    <ol class="grid grid-cols-3 gap-6 max-[734px]:grid-cols-1">
+      {
+        s.items.map((item, i) => (
+          <li class="rounded-[18px] bg-white px-8 pt-9 pb-10 text-center">
+            <span class="font-display text-[48px] leading-none font-semibold text-faint tabular-nums">{i + 1}</span>
+            <p class="typo-eyebrow mt-5">{item.title}</p>
+            <p class="typo-body mt-2 text-muted">{item.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="mt-12 flex flex-wrap items-center justify-center gap-x-7 gap-y-4">
+      <a href={download} class="btn btn-primary btn-lg">{d.hero.download}</a>
+      <More href={download}>{s.all}</More>
+    </div>
   </div>
-  <p class="mt-5 text-center text-[12px] text-muted">{d.prices}</p>
 </section>

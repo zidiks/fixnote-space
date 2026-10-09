@@ -44,6 +44,10 @@ export const en: Dict = {
     pricing: 'Pricing',
     faq: 'FAQ',
     open: 'Open',
+    overview: 'Overview',
+    tools: 'Tools',
+    compare: 'Compare',
+    menu: 'Menu',
     skip: 'Skip to content',
     language: 'Language',
   },
@@ -51,179 +55,187 @@ export const en: Dict = {
   hero: {
     eyebrow: 'Private notes with an assistant',
     subtitle: 'Write it your way. Find it instantly.',
-    lead: 'Type it, say it or send it on Telegram. The assistant answers from your notes and shows where each answer came from. Everything is encrypted on your device.',
+    lead: 'Type it, say it or send it on Telegram. The assistant answers from your notes and shows where each answer came from.',
     download: 'Download',
     downloadFor: { mac: 'Download for macOS', windows: 'Download for Windows' },
     more: 'Learn more',
     platforms: 'Windows, macOS and the web · Free, no account needed',
-    shotAlt: 'FixNote: notes grouped by date and an assistant answering with links to notes',
+    shotAlt: 'FixNote: today’s notes and an assistant answering with links to notes',
   },
 
-  announce: {
-    text: 'New: call summaries, made right on your computer.',
-    more: 'Learn more',
+  ribbon: {
+    text: 'New in FixNote: call summaries, made right on your computer.',
+    link: 'Learn more',
   },
 
-  tiles: {
-    assistant: {
+  tiles: [
+    {
+      id: 'ai',
       eyebrow: 'FixNote AI',
       title: 'Ask your notes.\nGet an answer.',
-      text: 'The assistant searches by meaning in three languages and answers with links to your notes. The model only gets the passages it found.',
-      question: 'What did I decide about the vacation?',
-      answer: 'July, by the sea: you picked Portugal and put off booking until payday.',
-      sources: 'Sources',
-      source1: 'Vacation 2026',
-      source2: 'Summer ideas',
+      text: 'The assistant searches by meaning in three languages and answers with links to your notes. Only the passages it found go to the model.',
+      alt: 'The FixNote assistant in dark mode answering a question about a vacation with links to two notes',
     },
-    voice: {
-      eyebrow: 'Voice',
-      title: 'Just talk.\nThe text appears.',
-      text: 'Dictation is recognized on your computer while you speak. The recording never leaves it.',
-      recording: 'Recording',
-      sample: 'Buy milk and call mom on Friday',
+    {
+      id: 'calls',
+      eyebrow: 'Calls',
+      title: 'Call summaries.\nRight on your computer.',
+      text: 'Your mic and your computer’s sound are transcribed on the device during the call. The note keeps a summary, decisions and tasks.',
+      alt: 'A call note with Summary, Decisions and Tasks and a folded transcript',
     },
-    telegram: {
-      eyebrow: 'Telegram',
-      title: 'Forward it to the bot.\nIt becomes a note.',
-      text: 'Text, voice messages and photos from Telegram turn into notes. The bot seals them with your key, so only your app can read them.',
-      message: 'Idea: a bot that sorts notes by itself',
-      note: 'From Telegram',
+    {
+      id: 'daily',
+      eyebrow: 'Daily note',
+      title: 'Today’s tasks.\nRepeats show up on their own.',
+      text: 'Ctrl+D opens the daily note. A task with a repeat rule, like “every Sunday”, appears on the right day by itself.',
+      alt: 'A daily note with tasks, two of them repeating weekly and monthly',
     },
-    search: {
+    {
+      id: 'search',
       eyebrow: 'Search',
       title: 'Any language.\nAny keyboard layout.',
       text: '“телеграм” finds “Telegram”, “розыгрыш” finds “giveaway”. Search opens from anywhere with Ctrl+K or ⌘K.',
-      query: 'giveaway',
-      result1: 'Giveaway on the channel: rules',
-      result2: 'Розыгрыш билетов, итоги',
-      similar: 'Similar in meaning',
-      result3: 'Contest for subscribers',
+      alt: 'FixNote search with the matching notes and the word highlighted',
     },
-  },
+  ],
 
-  showcase: {
-    headline: ['Calls, screenshots, tasks.', '\n', 'Everything becomes a note.'],
-    call: {
-      title: 'Call with Oleg',
-      meta: '32 min · Me and others',
-      brief: 'Summary',
-      briefText: 'Went over the beta launch and the plan for blog articles.',
-      decisions: 'Decisions',
-      decision: 'The beta ships on October 15.',
-      tasks: 'Tasks',
-      task1: 'Send Oleg the article plan',
-      task2: 'Finish the landing page by Friday',
-      transcript: 'Transcript',
-    },
+  features: {
+    headline: 'Type it, say it, forward it.\nIt all becomes a note.',
+    now: 'Now showing',
+    show: 'Show',
     items: [
       {
-        id: 'calls',
-        title: 'Call summaries',
-        text: 'Your mic and your computer’s sound are transcribed on the device during the call. No audio is kept.',
+        id: 'voice',
+        title: 'Voice',
+        text: 'Dictation is recognized on your computer as you speak. The recording goes nowhere.',
+        alt: 'A new voice note being recorded, the text appearing as you speak',
       },
       {
-        id: 'ocr',
-        title: 'Text in images',
-        text: 'FixNote reads the text in screenshots and photos, and search finds them by their words.',
-      },
-      {
-        id: 'daily',
-        title: 'Daily note',
-        text: 'Today’s tasks and repeating chores. Anything left open yesterday moves over in one click.',
+        id: 'telegram',
+        title: 'Telegram',
+        text: 'Forward text, a voice message or a photo to the bot. Only your app can read them.',
+        alt: 'FixNote settings, Integrations, with the Telegram bot connection',
       },
       {
         id: 'tidy',
         title: 'Tidy up',
-        text: 'Suggests titles and folders and finds duplicates. Nothing changes until you accept.',
+        text: 'Suggests titles and folders and finds duplicates. Nothing changes without your OK.',
+        alt: 'Tidy up in FixNote with suggestions to accept or dismiss',
+      },
+      {
+        id: 'folders',
+        title: 'Folders',
+        text: 'Folders inside folders, filters by type and period, cards or a list.',
+        alt: 'The Travel folder with two notes',
       },
     ],
-    more: 'Learn more',
   },
 
   reasons: {
-    headline: ['A few more reasons', '\n', 'to keep your notes here.'],
+    headline: 'A few more reasons\nto keep your notes here.',
+    label: 'Why FixNote',
     items: [
       {
-        id: 'edits',
-        title: 'AI edits only\nwith your consent.',
-        text: 'Changes are shown word by word. Accept them, reject them or undo them later.',
-      },
-      {
-        id: 'shared',
-        title: 'Shared notes\nand folders.',
-        text: 'Invite people by email and edit together. You see each other’s cursors right away.',
-      },
-      {
-        id: 'links',
-        title: 'Links to notes\nthe server can’t read.',
-        text: 'The key lives after the “#” in the link, and browsers never send that part to the server.',
-      },
-      {
-        id: 'mcp',
-        title: 'Claude and Cursor\nsee your notes.',
-        text: 'The built-in MCP server connects with one button. By default it can only read.',
+        id: 'models',
+        title: 'FixNote AI, your own key\nor Ollama.',
+        alt: 'AI settings: FixNote AI, your own key or Ollama on your computer',
       },
       {
         id: 'import',
         title: 'Move in from Notion,\nBear and Obsidian.',
-        text: 'On a Mac, from Apple Notes too. Export everything to Markdown whenever you like.',
+        alt: 'FixNote settings, Data, with import and export',
       },
       {
         id: 'offline',
-        title: 'Works\nwithout internet.',
-        text: 'Notes, search and voice work offline and without an account. The assistant can run on Ollama.',
+        title: 'Works offline\nand without an account.',
+        alt: 'FixNote settings, Advanced, with the models that run on the device',
       },
       {
-        id: 'hotkeys',
-        title: 'Shortcuts in\nany keyboard layout.',
-        text: 'Ctrl+K works as Ctrl+Л too: keys are matched by their place on the keyboard.',
+        id: 'dark',
+        title: 'Light and dark.\nJust like your system.',
+        alt: 'The FixNote home screen in dark mode',
+      },
+      {
+        id: 'languages',
+        title: 'English, Spanish\nand Russian.',
+        alt: 'FixNote general settings: language and theme',
       },
     ],
+    privacy: {
+      title: 'All of it encrypted\nwith a key that only\nyou have.',
+      link: 'How we protect your notes',
+    },
     prev: 'Previous',
     next: 'Next',
   },
 
-  securityTeaser: {
-    eyebrow: 'Privacy',
-    headline: ['The server sees', '\n', 'only ciphertext.'],
-    lead: 'Notes are encrypted on your device with a key you keep as 12 words. The key never leaves your devices, so not even we can read your notes.',
-    points: [
-      'Works without an account or internet',
-      'Voice is recognized on your device',
-      'The assistant gets only the passages it found',
-      'Can run fully local, with Ollama',
+  tools: {
+    headline: 'Everything notes need.\nNothing they don’t.',
+    compare: 'Compare Free and Pro',
+    label: 'FixNote tools',
+    items: [
+      {
+        id: 'checklists',
+        title: 'Checklists',
+        text: 'Tasks right in the text. The card shows how many are done.',
+        caption: 'A counter on the card',
+      },
+      {
+        id: 'tables',
+        title: 'Tables',
+        text: 'A budget, a shopping list, a schedule: rows and columns in a note.',
+        caption: 'Markdown tables',
+      },
+      {
+        id: 'daily',
+        title: 'Daily note',
+        text: 'Today’s tasks and notes in one place.',
+        caption: 'Ctrl+D',
+      },
+      {
+        id: 'calls',
+        title: 'Call summary',
+        text: 'Summary, decisions, tasks and the transcript folded away.',
+        caption: 'Windows and macOS 14.2+',
+      },
+      {
+        id: 'folders',
+        title: 'Folders',
+        text: 'Nested folders, filters and sorting.',
+        caption: 'Cards or a list',
+      },
+      {
+        id: 'search',
+        title: 'Search',
+        text: 'By words, by meaning and by the text in images.',
+        caption: 'Ctrl+K',
+      },
+      {
+        id: 'dark',
+        title: 'Dark mode',
+        text: 'Follows your system or switches by hand.',
+        caption: 'Like your system',
+      },
     ],
-    more: 'How we protect your notes',
-    plain: 'Buy Anna a birthday present',
   },
 
-  questions: {
-    headline: ['Ask your notes.'],
-    lead: 'The way you would ask someone who has read everything you ever wrote down.',
-    top: [
-      'What did I decide about the vacation?',
-      'Which books were recommended to me this year?',
-      'What did we agree on in the meeting with Oleg?',
-      'What gift ideas did I have for mom?',
-      'What did I write about moving?',
-      'What sneaker size did I wear last year?',
-    ],
-    bottom: [
-      'Collect all my tasks for this week',
-      'What did I learn about TypeScript this month?',
-      'When did I last change the car’s oil?',
-      'Which movies did I want to watch?',
-      'What was in yesterday’s voice notes?',
-      'Summarize my notes about the renovation',
-    ],
+  blogTeaser: {
+    headline: 'From the blog.',
+    all: 'All articles',
+    label: 'Articles',
+    minutes: 'min read',
   },
 
-  pricing: {
-    headline: ['Which plan', '\n', 'is right for you?'],
+  compare: {
+    headline: 'Which plan\nis right for you?',
     lead: 'Everything that runs on your device is free, with no time limit. Pro adds what goes through our server.',
+    more: 'What Pro costs',
     included: 'Included',
     limited: 'Limited',
     missing: 'Not included',
+    swipe: 'Swipe to see more',
+    free: { name: 'Free', price: '$0' },
+    pro: { name: 'Pro', price: '$7 a month' },
     groups: [
       {
         title: 'On your device',
@@ -277,25 +289,46 @@ export const en: Dict = {
         ],
       },
     ],
-    free: {
-      name: 'Free',
-      price: '$0',
-      period: 'No time limit',
-      text: 'Everything on your device. No account needed.',
-      button: 'Download',
-    },
-    pro: {
-      name: 'Pro',
-      price: '$7',
-      period: 'a month, or $60 a year',
-      text: '7 days free, no card needed.',
-      button: 'Try it',
-    },
+    footnote: 'Free works without an account. Compared by what FixNote does today.',
+  },
+
+  pricing: {
+    headline: 'Try Pro.',
+    lead: '7 days free, no card needed. Then $7 a month or $60 a year.',
+    name: 'FixNote Pro',
+    kind: 'Subscription',
+    price: '$7',
+    year: '$60 a year',
+    period: 'a month. Cancel any time.',
+    button: 'Try it',
     prices: 'Prices in US dollars, paid through Suby.',
+    free: 'Only need your device? Free costs nothing and never runs out.',
+    freeLink: 'Download',
+    includedTitle: 'What’s in Pro.',
+    included: [
+      { id: 'sync', title: 'Sync', text: 'Your notes on all your devices, encrypted.' },
+      {
+        id: 'ai',
+        title: 'FixNote AI',
+        text: 'The assistant without your own key, with a monthly allowance.',
+      },
+      { id: 'shared', title: 'Shared notes', text: 'Notes and folders with people, by email.' },
+      { id: 'links', title: 'Links', text: 'A link to a note that our server can’t read.' },
+      {
+        id: 'telegram',
+        title: 'Telegram bot',
+        text: 'Whatever you forward to the bot becomes a note.',
+      },
+      {
+        id: 'files',
+        title: '20 GB of files',
+        text: 'Images and files on the server, encrypted too.',
+      },
+    ],
   },
 
   steps: {
-    headline: ['Up and running in a minute.'],
+    headline: 'Up and running in a minute.',
     items: [
       {
         title: 'Download',
@@ -335,7 +368,8 @@ export const en: Dict = {
   },
 
   faq: {
-    headline: ['Questions? Answers.'],
+    headline: 'Questions? Answers.',
+    more: 'Still have a question? Write to us at',
     items: [
       {
         q: 'Do I need an account?',
@@ -372,35 +406,35 @@ export const en: Dict = {
     ],
   },
 
-  blogTeaser: {
-    headline: ['From the blog.'],
-    lead: 'How FixNote works, and how to keep notes you can find again.',
-    all: 'All articles',
-  },
-
   cta: {
-    title: 'Write down your first thought.',
-    lead: 'Download FixNote or open it right in your browser.',
+    title: 'Try FixNote',
+    text: 'Free, no account needed: Windows, macOS and the web.',
     download: 'Download',
-    open: 'Open in browser',
+    open: 'Open in the browser',
   },
 
   notes: [
-    'Free works without an account and has no time limit. An account is needed for Pro: sync, FixNote AI, shared notes, links, the Telegram bot and files on the server.',
     'Search runs on your device. With FixNote AI, the question and the passages found pass through our server to the model provider and are not stored. With your own key, requests go straight to the service you chose; with Ollama they stay on your computer.',
-    'Call summaries are in the app for Windows and for macOS 14.2 and later.',
+    'Free works without an account and has no time limit. An account is needed for Pro: sync, FixNote AI, shared notes, links, the Telegram bot and files on the server.',
+    'Call summaries are in the app for Windows and for macOS 14.2 and later. No audio is kept.',
     'The Pro trial starts in the app after you sign in. No card needed; when the week ends, the account goes back to Free unless you subscribe.',
   ],
 
   footer: {
-    tagline: 'Private notes with an assistant.',
-    product: 'Product',
-    resources: 'Resources',
-    company: 'FixNote',
+    notes: 'Footnotes',
+    breadcrumbs: 'Breadcrumbs',
+    directory: 'Site directory',
+    explore: 'Explore',
+    product: 'FixNote',
+    download: 'Download',
+    allPosts: 'All articles',
+    support: 'Help',
     webApp: 'Web app',
     rss: 'RSS',
     privacy: 'Privacy',
-    rights: 'FixNote',
+    email: 'Write to us',
+    help: 'A question about FixNote or your data? Write to ',
+    rights: 'All rights reserved.',
   },
 
   featuresPage: {

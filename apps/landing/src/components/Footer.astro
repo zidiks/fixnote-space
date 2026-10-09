@@ -1,72 +1,120 @@
 ---
-import ChevronRight from '@lucide/astro/icons/chevron-right'
 import { APP_URL, type Lang, localePath, PRIVACY_EMAIL, t } from '../i18n'
+import { getPosts, postPath } from '../lib/blog'
+import Chevron from './Chevron.astro'
 import LangMenu from './LangMenu.astro'
 
-/** Small grey print: the page's footnotes (if it has any), link columns, the language switcher. */
+/**
+ * Small grey print: the page's footnotes, a breadcrumb, the directory of the site, help and the
+ * copyright line with the language switcher.
+ */
 interface Props {
   lang: Lang
   alternates: Partial<Record<Lang, string>>
   notes?: readonly string[]
+  /** The breadcrumb after "FixNote" (the page's name). */
+  crumb?: string
 }
-const { lang, alternates, notes = [] } = Astro.props
+const { lang, alternates, notes = [], crumb } = Astro.props
 const d = t(lang)
+const f = d.footer
+const home = localePath(lang, '/')
+const posts = (await getPosts(lang)).slice(0, 4)
 const columns = [
   {
-    title: d.footer.product,
+    title: f.explore,
+    links: [
+      { label: d.nav.overview, href: home },
+      { label: d.nav.features, href: `${home}#features` },
+      { label: d.nav.tools, href: `${home}#tools` },
+      { label: d.nav.compare, href: `${home}#compare` },
+      { label: d.nav.pricing, href: `${home}#pricing` },
+      { label: d.nav.faq, href: `${home}#faq` },
+    ],
+  },
+  {
+    title: f.product,
     links: [
       { label: d.nav.features, href: localePath(lang, '/features/') },
       { label: d.nav.security, href: localePath(lang, '/security/') },
-      { label: d.nav.pricing, href: localePath(lang, '/#pricing') },
-      { label: d.nav.download, href: localePath(lang, '/download/') },
-      { label: d.footer.webApp, href: APP_URL },
+      { label: f.webApp, href: APP_URL },
     ],
   },
   {
-    title: d.footer.resources,
+    title: f.download,
     links: [
-      { label: d.nav.blog, href: localePath(lang, '/blog/') },
-      { label: d.footer.rss, href: localePath(lang, '/rss.xml') },
-      { label: d.nav.faq, href: localePath(lang, '/#faq') },
+      { label: d.download.windows.name, href: localePath(lang, '/download/') },
+      { label: d.download.macArm.name, href: localePath(lang, '/download/#mac') },
+      { label: d.download.macIntel.name, href: localePath(lang, '/download/#mac') },
+      { label: d.download.web.name, href: APP_URL },
     ],
   },
   {
-    title: d.footer.company,
+    title: d.nav.blog,
     links: [
-      { label: d.footer.privacy, href: localePath(lang, '/privacy/') },
-      { label: PRIVACY_EMAIL, href: `mailto:${PRIVACY_EMAIL}` },
+      ...posts.map((post) => ({ label: post.data.title, href: postPath(post) })),
+      { label: f.allPosts, href: localePath(lang, '/blog/') },
+    ],
+  },
+  {
+    title: f.support,
+    links: [
+      { label: f.privacy, href: localePath(lang, '/privacy/') },
+      { label: f.rss, href: localePath(lang, '/rss.xml') },
+      { label: f.email, href: `mailto:${PRIVACY_EMAIL}` },
     ],
   },
 ]
+const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:underline'
 ---
 
-<footer class="bg-canvas px-4 pb-10 pt-4 text-[12px] leading-[1.5] text-muted sm:px-6">
-  <div class="mx-auto max-w-[1040px]">
+<footer class="typo-footnote bg-panel text-black/[0.56]">
+  <div class="content">
     {
       notes.length > 0 && (
-        <ol class="space-y-2 border-b border-line pb-4 pt-4">
-          {notes.map((note, i) => (
-            <li id={`note-${i + 1}`}>
-              {i + 1}. {note}
-            </li>
-          ))}
-        </ol>
+        <section aria-label={f.notes} class="border-b border-black/[0.16] pt-[17px] pb-[11px]">
+          <ol class="list-none space-y-[0.8em]">
+            {notes.map((note, i) => (
+              <li id={`footnote-${i + 1}`}>
+                <span class="mr-1">{i + 1}.</span>
+                {note}
+              </li>
+            ))}
+          </ol>
+        </section>
       )
     }
-    <div class="flex items-center gap-1.5 border-b border-line py-3 text-ink/80">
-      <a href={localePath(lang, '/')} aria-label="FixNote"><img src="/favicon.svg" alt="" width="16" height="16" class="size-4" /></a>
-      <ChevronRight size={13} class="text-faint" />
-      <span>FixNote</span>
-    </div>
-    <div class="grid gap-8 py-6 sm:grid-cols-3">
+    <nav aria-label={f.breadcrumbs} class="flex items-center gap-2.5 border-b border-black/[0.16] py-3.5">
+      <a href={home} aria-label="FixNote" class="shrink-0">
+        <img src="/favicon.svg" alt="" width="16" height="16" class="h-4 w-4" />
+      </a>
+      <Chevron class="h-[9px] w-[6px] text-black/[0.56]" />
+      {
+        crumb ? (
+          <>
+            <a href={home} class={linkClass}>
+              FixNote
+            </a>
+            <Chevron class="h-[9px] w-[6px] text-black/[0.56]" />
+            <span class="text-black/[0.88]">{crumb}</span>
+          </>
+        ) : (
+          <span class="text-black/[0.88]">FixNote</span>
+        )
+      }
+    </nav>
+    <nav
+      aria-label={f.directory}
+      class="grid grid-cols-2 gap-x-5 gap-y-7 pt-5 pb-6 small:grid-cols-3 medium:grid-cols-5"
+    >
       {
         columns.map((column) => (
           <div>
-            <div class="font-semibold text-ink/90">{column.title}</div>
-            <ul class="mt-2.5 space-y-2">
+            <h3 class="mb-[0.8em] font-semibold text-black/[0.88]">{column.title}</h3>
+            <ul class="space-y-[0.8em]">
               {column.links.map((link) => (
                 <li>
-                  <a href={link.href} class="transition hover:text-ink hover:underline">
+                  <a href={link.href} class={linkClass}>
                     {link.label}
                   </a>
                 </li>
@@ -75,10 +123,29 @@ const columns = [
           </div>
         ))
       }
-    </div>
-    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-      <span>© {new Date().getFullYear()} {d.footer.rights}. {d.footer.tagline}</span>
-      <LangMenu lang={lang} alternates={alternates} up />
+    </nav>
+    <p class="pb-3">
+      {f.help}
+      <a href={`mailto:${PRIVACY_EMAIL}`} class="text-link hover:underline">{PRIVACY_EMAIL}</a>.
+    </p>
+    <div
+      class="flex flex-col gap-2 border-t border-black/[0.16] pt-2 pb-5 small:flex-row small:items-center small:justify-between"
+    >
+      <div class="flex flex-col gap-1 small:flex-row small:items-center small:gap-7">
+        <p>Copyright © {new Date().getFullYear()} FixNote. {f.rights}</p>
+        <ul class="flex flex-wrap items-center">
+          <li class="leading-none">
+            <a class={linkClass} href={localePath(lang, '/privacy/')}>{f.privacy}</a>
+          </li>
+          <li class="ml-[0.6em] border-l border-black/[0.48] pl-[0.6em] leading-none">
+            <a class={linkClass} href={localePath(lang, '/security/')}>{d.nav.security}</a>
+          </li>
+          <li class="ml-[0.6em] border-l border-black/[0.48] pl-[0.6em] leading-none">
+            <a class={linkClass} href={localePath(lang, '/download/')}>{d.nav.download}</a>
+          </li>
+        </ul>
+      </div>
+      <LangMenu lang={lang} alternates={alternates} up footer />
     </div>
   </div>
 </footer>
