@@ -1,42 +1,54 @@
 ---
-title: 'Por qué «sorteo» encuentra «giveaway»: buscar notas en tres idiomas'
-description: Cómo busca FixNote en notas que mezclan español, inglés y ruso, y por qué la búsqueda por palabras y la búsqueda por significado trabajan juntas.
+title: 'Buscar notas en varios idiomas: cómo las encuentra FixNote'
+description: 'Cómo encontrar una nota si no recuerdas en qué idioma la escribiste: búsqueda por palabras con transliteración, por significado en tu equipo y el asistente.'
 date: 2026-09-22
+updated: 2026-10-09
 translationKey: search
+faq:
+  - q: ¿La búsqueda encuentra una palabra en alfabeto latino si la escribo en cirílico?
+    a: Sí. FixNote busca cada palabra también en el otro alfabeto, así que «телеграм» encuentra «Telegram» y «zametki» encuentra «заметки».
+  - q: ¿Una pregunta en español puede encontrar una nota en inglés?
+    a: Sí, de eso se encarga la búsqueda por significado. Su modelo es multilingüe y encuentra fragmentos de sentido parecido en cualquiera de los idiomas que conoce.
+  - q: ¿Mis notas se envían a un servidor cuando busco?
+    a: No. El índice de texto completo y el modelo de búsqueda por significado funcionan en tu dispositivo. Solo salen una pregunta al asistente y los fragmentos encontrados para ella, y solo si usas el asistente.
+  - q: ¿Cuánto ocupa el modelo de búsqueda por significado?
+    a: Unos 120 MB. Se descarga una vez y luego funciona sin conexión.
 ---
 
-Una app de notas normal busca exactamente las letras que escribiste. Pero apuntamos las ideas como salen: «llamada con Oleg», «call con Oleg», «bot de Telegram», «телеграм-бот». Un mes después ya no recuerdas qué palabra usaste, y una búsqueda exacta no la encuentra.
+Apuntaste «llamada con Oleg» y ahora buscas «call»; la nota dice «giveaway» y tú preguntas por «sorteos». ¿Cómo encuentras una nota si un mes después no recuerdas en qué idioma ni con qué palabra la escribiste? Aquí verás cómo busca FixNote por palabras, cómo funciona la búsqueda por significado y qué añade el asistente.
 
-FixNote tiene dos búsquedas, y las dos funcionan en tu dispositivo.
+## Por qué la búsqueda normal no encuentra la nota
 
-## Una búsqueda por palabras que perdona
+La búsqueda normal de una app de notas compara letras. Si escribiste una idea en inglés y la buscas en español, no hay coincidencia. Las formas de las palabras también fallan: una nota sobre «canciones» puede no salir al buscar «canción». En notas que mezclan español, inglés y ruso estos fallos se acumulan y parece que la nota ha desaparecido.
 
-La primera es la búsqueda de texto completo de la base de datos local SQLite. Encima de ella, FixNote hace varias cosas:
+FixNote tiene dos búsquedas, y las dos funcionan en tu dispositivo, sin conexión.
 
-- **Transliteración.** Cada palabra también se busca en el otro alfabeto: «телеграм» encuentra «telegram».
-- **Terminaciones.** Las formas de una palabra rusa se reducen a una raíz común, así que la gramática no estorba.
-- **La distribución del teclado no afecta a los atajos.** Mod+K abre la búsqueda también con el teclado ruso o español, porque las teclas se reconocen por su posición física.
+## Búsqueda por palabras: principio de palabra y transliteración
 
-Las coincidencias se resaltan en la nota, así que ves enseguida por qué apareció.
+La búsqueda se abre con Ctrl+K (⌘K en Mac). El atajo funciona también con la distribución de teclado rusa, porque FixNote se fija en la tecla física. Por debajo hay un índice de texto completo de SQLite guardado en la base de datos local.
+
+Cada palabra de la consulta se busca como principio de palabra, así que «plan» encuentra «planes», «planear» y «planificación». Cada palabra se busca también en el otro alfabeto: «телеграм» encuentra «Telegram» y «zametki» encuentra «заметки». Si la consulta tiene varias palabras, la nota tiene que contenerlas todas.
+
+Bajo el título de cada resultado, FixNote muestra un fragmento con las palabras encontradas resaltadas, para que veas enseguida por qué salió esa nota.
+
+Las palabras de las imágenes también cuentan. FixNote lee el texto de capturas y fotos en tu dispositivo, y una nota con una imagen se encuentra por las palabras escritas en ella. Es gratis; más en [texto en imágenes](/es/features/text-in-images/).
 
 ## Búsqueda por significado
 
-La segunda búsqueda encuentra notas que no comparten ni una palabra con tu consulta. Cada nota se divide en fragmentos, y un modelo multilingüe pequeño (multilingual-e5-small) convierte cada fragmento en un vector, una descripción numérica de su significado. El modelo se descarga una vez y funciona en tu ordenador; el texto de tus notas no sale de él.
+La segunda búsqueda encuentra notas que no comparten ninguna palabra con la consulta. Cada nota se divide en fragmentos y, para cada uno, un modelo multilingüe pequeño (multilingual-e5-small) calcula un vector, una descripción numérica de su significado. La consulta también se convierte en vector, y FixNote busca los fragmentos de sentido más parecido.
 
-Tu pregunta también se convierte en un vector, y FixNote busca los fragmentos más cercanos en significado. El modelo se entrenó con muchos idiomas, así que una pregunta en español encuentra una nota escrita en inglés.
+El modelo se entrenó con muchos idiomas, así que una pregunta en español puede encontrar una nota escrita en inglés o en ruso. Ocupa unos 120 MB y se descarga una vez: en el ordenador, la primera vez que abres el asistente; en el móvil, cuando pulsas el botón. Puedes descargarlo o quitarlo en Ajustes → Avanzado → «Modelos en este dispositivo». El modelo funciona en tu dispositivo, y el texto de tus notas no se envía a ningún sitio para buscar.
 
-## Cómo trabajan juntas
+En la ventana de Ctrl+K, los resultados por significado aparecen en «Parecidas en significado», junto a las coincidencias por palabras.
 
-Los resultados de ambas búsquedas se combinan por posición: un fragmento que aparece tanto por palabras como por significado sube. Las notas recientes reciben un pequeño empujón, porque «¿qué decidí sobre las vacaciones?» seguramente se refiere a este año y no a hace dos.
+## Cómo busca el asistente
 
-## Dónde ayuda el asistente
+Cuando le haces una pregunta al [asistente](/es/features/ask-your-notes/), FixNote pide primero al modelo palabras clave extra: traducciones y sinónimos. Así una pregunta sobre «sorteos» encuentra una nota sobre «giveaway». Esas palabras se añaden solo a la búsqueda por palabras. La búsqueda por significado usa siempre tu pregunta tal como la escribiste.
 
-Cuando le preguntas al asistente, primero añade palabras clave a la consulta: traducciones y sinónimos. Así «sorteos» encuentra una nota sobre «giveaway». Esas palabras solo se añaden a la búsqueda por palabras; la búsqueda por significado siempre usa tu pregunta tal como la escribiste.
+Para el asistente, FixNote recorta además terminaciones frecuentes, de modo que «canciones» encuentra también «canción». Después une los resultados de las dos búsquedas por posición: un fragmento encontrado por palabras y por significado sube más arriba. Las notas editadas hace poco reciben un pequeño empujón que se apaga en un mes más o menos, porque «¿qué decidí sobre el viaje?» suele referirse a este año.
 
-Después, el asistente recibe los mejores fragmentos y responde solo con ellos, citando las fuentes por número: `[1]`, `[2]`. Pulsa un número y se abre la nota de la que salió la respuesta. Si la respuesta no está en tus notas, el asistente lo dice en lugar de inventarse algo.
+El asistente recibe los mejores fragmentos y responde a partir de ellos, numerando las fuentes: `[1]`, `[2]`. Pulsa un número para abrir la nota de donde sale el dato. Si los fragmentos no bastan, el asistente puede buscar otra vez con otras palabras o leer una nota entera. Si la respuesta no está en tus notas, la etiqueta bajo ella dice «No está en tus notas».
 
-## Por qué importa
+## Pruébalo con tus notas
 
-Las buenas notas no son las que están bien ordenadas en carpetas, sino las que encuentras cuando las necesitas. Una búsqueda que entiende la transliteración, las formas de las palabras y el significado te deja apuntar rápido sin decidir antes dónde va cada idea. El orden puede esperar, y el asistente también ayuda con eso.
-
-Pruébalo: [descarga FixNote](/es/download/) o abre la versión web.
+Abre la búsqueda con Ctrl+K y escribe solo el principio de una palabra que sepas que está en una nota. Después hazle al asistente una pregunta en un idioma sobre una nota que escribiste en otro y mira qué fuentes cita. [Descarga FixNote](/es/download/) o abre la app web en app.fixnote.space. Si quieres hábitos que hagan tus notas más fáciles de encontrar, lee [cómo tomar notas que luego encuentres](/es/blog/como-tomar-notas-que-encuentres/).

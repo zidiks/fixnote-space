@@ -1,0 +1,66 @@
+---
+import Article from '../components/Article.astro'
+import DownloadCards from '../components/DownloadCards.astro'
+import { CONTACT_EMAIL, type Lang, localePath, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+
+/** What to do after downloading: the three steps, the first-launch warnings on both systems, and whom to write. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.setupPage
+const site = Astro.site ?? new URL('https://fixnote.space')
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: p.title,
+    description: p.lead,
+    step: p.steps.map((s, i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: s.title,
+      text: s.text,
+    })),
+    url: new URL(localePath(lang, '/setup/'), site).href,
+  },
+]
+---
+
+<Base lang={lang} title={d.meta.setup.title} description={d.meta.setup.description} path="/setup/" crumb={d.nav.setup} jsonLd={jsonLd}>
+  <Article lang={lang} eyebrow={p.eyebrow} title={p.title} intro={p.lead} cta={false}>
+    <ol class="mt-12 space-y-10">
+      {
+        p.steps.map((s, i) => (
+          <li class="flex gap-5">
+            <span class="font-display flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-[19px] font-semibold text-ink tabular-nums">
+              {i + 1}
+            </span>
+            <div>
+              <h2 class="typo-card-headline text-ink">{s.title}</h2>
+              <p class="typo-body mt-2 text-ink">{s.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+    <DownloadCards lang={lang} />
+    <section id="mac" class="mt-14 scroll-mt-20">
+      <h2 class="typo-subhead text-ink">{p.macTitle}</h2>
+      <ul class="typo-body mt-4 list-disc space-y-3 pl-5 text-ink">
+        {p.mac.map((line) => <li>{line}</li>)}
+      </ul>
+      <pre class="mt-4 overflow-x-auto rounded-xl bg-panel px-5 py-4 font-mono text-[15px] text-ink"><code>xattr -cr /Applications/FixNote.app</code></pre>
+    </section>
+    <section id="windows" class="mt-14 scroll-mt-20">
+      <h2 class="typo-subhead text-ink">{p.windowsTitle}</h2>
+      <p class="typo-body mt-4 text-ink">{p.windows}</p>
+    </section>
+    <p class="typo-body mt-14 rounded-[18px] bg-panel p-7 text-ink small:p-10">
+      {p.help} <a class="link" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+      {p.helpAfter}
+    </p>
+  </Article>
+</Base>

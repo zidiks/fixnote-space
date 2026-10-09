@@ -1,0 +1,80 @@
+---
+import Article from '../components/Article.astro'
+import TryCard from '../components/TryCard.astro'
+import { FEATURES, GROUPS } from '../data/features'
+import { type Lang, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import { featurePath, getFeatures } from '../lib/pages'
+
+/** Every feature page, grouped, each a card with its icon, name and one line. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.featuresIndex
+const features = await getFeatures(lang)
+const site = Astro.site ?? new URL('https://fixnote.space')
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: features.map((f, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: f.entry.data.card.title,
+      url: new URL(featurePath(lang, f.slug), site).href,
+    })),
+  },
+]
+---
+
+<Base
+  lang={lang}
+  title={d.meta.features.title}
+  description={d.meta.features.description}
+  path="/features/"
+  crumb={d.nav.features}
+  jsonLd={jsonLd}
+>
+  <Article lang={lang} eyebrow={p.eyebrow} title={p.headline} intro={p.lead}>
+    {
+      GROUPS.map((group) => (
+        <section class="mt-14">
+          <h2 class="typo-subhead text-ink">{p.groups[group]}</h2>
+          <ul class="mt-6 grid gap-3 small:grid-cols-2">
+            {features
+              .filter((f) => FEATURES[f.slug].group === group)
+              .map((f) => {
+                const info = FEATURES[f.slug]
+                const Icon = info.icon
+                return (
+                  <li>
+                    <a
+                      href={featurePath(lang, f.slug)}
+                      class="group flex h-full gap-4 rounded-[18px] bg-panel p-5 transition-colors hover:bg-[#ececf0]"
+                    >
+                      <span
+                        class="flex h-11 w-11 flex-none items-center justify-center rounded-[11px] text-white"
+                        style={`background:linear-gradient(to bottom,${info.from},${info.to})`}
+                      >
+                        <Icon size={22} stroke-width={1.8} />
+                      </span>
+                      <span class="min-w-0">
+                        <span class="typo-body block font-semibold text-ink group-hover:underline">
+                          {f.entry.data.card.title}
+                        </span>
+                        <span class="typo-caption mt-1 block text-muted">{f.entry.data.card.text}</span>
+                        <span class="typo-caption mt-2 block font-semibold text-faint">{p.plan[info.plan]}</span>
+                      </span>
+                    </a>
+                  </li>
+                )
+              })}
+          </ul>
+        </section>
+      ))
+    }
+    <TryCard lang={lang} />
+  </Article>
+</Base>

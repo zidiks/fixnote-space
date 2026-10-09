@@ -1,0 +1,17 @@
+---
+/** Questions and answers as a definition list. */
+interface Props {
+  items: readonly { q: string; a: string }[]
+}
+---
+
+<dl class="mt-8 space-y-8">
+  {
+    Astro.props.items.map((item) => (
+      <div>
+        <dt class="typo-card-headline text-ink">{item.q}</dt>
+        <dd class="typo-body mt-2 text-ink">{item.a}</dd>
+      </div>
+    ))
+  }
+</dl>

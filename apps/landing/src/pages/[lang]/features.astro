@@ -1,7 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro'
 import { isLang } from '../../i18n'
-import Features from '../../views/Features.astro'
+import FeaturesIndex from '../../views/FeaturesIndex.astro'
 
 export const getStaticPaths = (() => [
   { params: { lang: 'ru' } },
@@ -11,4 +11,4 @@ const { lang } = Astro.params
 if (!isLang(lang)) throw new Error(`Unknown language: ${lang}`)
 ---
 
-<Features lang={lang} />
+<FeaturesIndex lang={lang} />

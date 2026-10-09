@@ -1,0 +1,28 @@
+---
+import type { Mark } from '../data/apps'
+
+/** A round mark of a comparison table (included, limited, not offered) with its word for readers. */
+interface Props {
+  mark: Mark
+  /** The word a screen reader says; none in the legend, where the word is printed next to it. */
+  label?: string
+}
+const { mark, label } = Astro.props
+---
+
+{
+  mark === 'yes' ? (
+    <span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-brand/10 text-brand">
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+        <path d="m2.5 6.2 2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
+  ) : mark === 'part' ? (
+    <span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-ember/10 text-ember">
+      <span class="h-[2px] w-2.5 rounded-full bg-current" />
+    </span>
+  ) : (
+    <span class="mx-auto block h-[2px] w-3 rounded-full bg-line" />
+  )
+}
+{label && <span class="sr-only">{label}</span>}

@@ -1,0 +1,15 @@
+---
+import type { GetStaticPaths } from 'astro'
+import { getFeatures } from '../../lib/pages'
+import FeaturePage from '../../views/FeaturePage.astro'
+
+export const getStaticPaths = (async () =>
+  (await getFeatures('en')).map(({ slug, entry }) => ({
+    params: { slug },
+    props: { entry },
+  }))) satisfies GetStaticPaths
+const { entry } = Astro.props
+const { slug } = Astro.params
+---
+
+<FeaturePage lang="en" entry={entry} slug={slug} />

@@ -1,0 +1,46 @@
+---
+import Article from '../components/Article.astro'
+import { RELEASES } from '../data/releases'
+import { type Lang, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import { formatDate } from '../lib/blog'
+
+/** Every version, newest first, with what changed for people. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.releasePage
+---
+
+<Base lang={lang} title={d.meta.releaseNotes.title} description={d.meta.releaseNotes.description} path="/release-notes/" crumb={d.nav.releaseNotes}>
+  <Article lang={lang} eyebrow={p.eyebrow} title={p.title} intro={p.lead}>
+    <ol class="mt-14 border-t border-line">
+      {
+        RELEASES.map((r, i) => (
+          <li id={`v${r.version}`} class="scroll-mt-20 border-b border-line py-8">
+            <h2 class="flex flex-wrap items-baseline gap-x-3">
+              <span class="typo-card-headline text-ink">
+                {p.version} {r.version}
+              </span>
+              {i === 0 && <span class="typo-caption rounded-full bg-panel px-2.5 py-0.5 font-semibold text-ember">{p.latest}</span>}
+              <time class="typo-caption text-muted" datetime={r.date}>
+                {formatDate(new Date(`${r.date}T12:00:00Z`), lang)}
+              </time>
+            </h2>
+            {r.notes[lang].length ? (
+              <ul class="typo-body mt-4 list-disc space-y-2 pl-5 text-ink">
+                {r.notes[lang].map((n) => (
+                  <li>{n}</li>
+                ))}
+              </ul>
+            ) : (
+              <p class="typo-body mt-4 text-muted">{p.site}</p>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+  </Article>
+</Base>

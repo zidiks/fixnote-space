@@ -4,7 +4,7 @@ import More from '../../components/More.astro'
 import { type Lang, localePath, t } from '../../i18n'
 import { formatDate, getPosts, postPath, readingMinutes } from '../../lib/blog'
 
-/** The latest articles as cards: the title large, the date and reading time at the bottom. */
+/** The latest articles as cards: the title, what it is about, and the date and reading time at the bottom. */
 interface Props {
   lang: Lang
 }
@@ -28,20 +28,14 @@ const posts = (await getPosts(lang)).slice(0, 9)
           <li class="gallery-item">
             <a
               href={postPath(post)}
-              class="group flex h-[300px] flex-col rounded-[18px] bg-white p-8 text-left transition-shadow duration-300 hover:shadow-[0_12px_32px_-12px_rgb(0_0_0/0.18)] max-[734px]:h-[280px] max-[734px]:p-6"
+              class="group flex h-[320px] flex-col rounded-[18px] bg-white p-8 text-left transition-shadow duration-300 hover:shadow-[0_12px_32px_-12px_rgb(0_0_0/0.18)] max-[734px]:h-[300px] max-[734px]:p-6"
             >
-              <p class="typo-card-headline line-clamp-5 text-ink">{post.data.title}</p>
-              <div class="mt-auto flex items-center gap-3 pt-6">
-                <img src="/favicon.svg" alt="" width="40" height="40" class="h-10 w-10 shrink-0" />
-                <div class="min-w-0 flex-1">
-                  <p class="typo-caption truncate font-semibold text-ink">
-                    <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time>
-                  </p>
-                  <p class="typo-caption truncate text-muted">
-                    {readingMinutes(post)} {b.minutes}
-                  </p>
-                </div>
-              </div>
+              <p class="typo-card-headline line-clamp-4 text-ink">{post.data.title}</p>
+              <p class="typo-body mt-3 line-clamp-3 text-muted">{post.data.description}</p>
+              <p class="typo-caption mt-auto pt-6 text-muted">
+                <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time> ·{' '}
+                {readingMinutes(post)} {b.minutes}
+              </p>
             </a>
           </li>
         ))}

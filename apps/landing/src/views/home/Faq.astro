@@ -1,5 +1,5 @@
 ---
-import { type Lang, PRIVACY_EMAIL, t } from '../../i18n'
+import { CONTACT_EMAIL, type Lang, t } from '../../i18n'
 
 /** Questions as native <details>, one open at a time is not enforced. */
 interface Props {
@@ -32,7 +32,7 @@ const f = t(lang).faq
       }
     </div>
     <p class="typo-body mt-12 text-center text-muted">
-      {f.more} <a href={`mailto:${PRIVACY_EMAIL}`} class="link">{PRIVACY_EMAIL}</a>.
+      {f.more} <a href={`mailto:${CONTACT_EMAIL}`} class="link">{CONTACT_EMAIL}</a>.
     </p>
   </div>
 </section>

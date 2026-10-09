@@ -1,0 +1,73 @@
+---
+import { APPS, type AppId, type Mark as MarkType, ROWS } from '../data/apps'
+import { type Lang, t } from '../i18n'
+import { fill } from '../lib/pages'
+import AppIcon from './AppIcon.astro'
+import Mark from './Mark.astro'
+
+/**
+ * Apps side by side, one row per feature (src/data/apps.ts), FixNote's column highlighted. The
+ * table scrolls sideways on phones with the first column pinned.
+ */
+interface Props {
+  lang: Lang
+  apps: readonly AppId[]
+  /** A narrow table for a reading page (two apps). */
+  compact?: boolean
+}
+const { lang, apps, compact = false } = Astro.props
+const c = t(lang).compare
+const word = (m: MarkType) => (m === 'yes' ? c.included : m === 'part' ? c.limited : c.missing)
+const price = (id: AppId) => {
+  const paid = APPS[id].paid
+  return paid ? `${c.free} · ${fill(c.perMonth, { price: paid })}` : c.free
+}
+---
+
+<div class="relative overflow-x-auto [-webkit-overflow-scrolling:touch]">
+  <table class:list={['w-full table-fixed border-collapse text-left', !compact && 'min-w-[780px]']}>
+    <colgroup>
+      <col class={compact ? 'w-[50%]' : 'w-[28%]'} />
+      {apps.map(() => <col />)}
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="sticky left-0 z-10 bg-white"></th>
+        {
+          apps.map((id) => (
+            <th class:list={['px-2 pt-6 pb-6 text-center align-bottom', id === 'fixnote' && 'rounded-t-[18px] bg-panel']}>
+              <div class="flex flex-col items-center gap-2.5">
+                <AppIcon app={id} size={compact ? 40 : 48} />
+                <span class:list={['typo-caption leading-tight font-semibold', id === 'fixnote' ? 'text-brand' : 'text-ink']}>
+                  {APPS[id].name}
+                </span>
+                <span class="typo-caption leading-tight text-muted">{price(id)}</span>
+              </div>
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      {
+        ROWS.map((row) => (
+          <tr class="border-t border-line">
+            <th scope="row" class="sticky left-0 z-10 bg-white py-4 pr-4 font-normal">
+              <span class="typo-body block text-ink">{c.rows[row].label}</span>
+              {c.rows[row].note && <span class="typo-caption mt-0.5 block text-muted">{c.rows[row].note}</span>}
+            </th>
+            {apps.map((id) => (
+              <td class:list={['px-3 py-4 text-center', id === 'fixnote' && 'bg-panel']}>
+                <Mark mark={APPS[id].marks[row]} label={word(APPS[id].marks[row])} />
+              </td>
+            ))}
+          </tr>
+        ))
+      }
+      <tr>
+        <td class="sticky left-0 bg-white"></td>
+        {apps.map((id) => <td class:list={['h-6', id === 'fixnote' && 'rounded-b-[18px] bg-panel']} />)}
+      </tr>
+    </tbody>
+  </table>
+</div>

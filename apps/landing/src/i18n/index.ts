@@ -16,8 +16,11 @@ export const OG_LOCALE: Record<Lang, string> = { ru: 'ru_RU', en: 'en_US', es: '
 
 export const APP_URL = 'https://app.fixnote.space/'
 
-/** Where privacy questions and account deletion requests go (the privacy policy). */
+/** Where privacy questions and account deletion requests go: only the privacy policy names it. */
 export const PRIVACY_EMAIL = 'privacy@fixnote.space'
+
+/** Everything else: questions, help, feedback. */
+export const CONTACT_EMAIL = 'info@fixnote.space'
 
 /** Stable links on this site; public/_redirects sends them to the latest release's files. */
 export const DOWNLOADS = {
