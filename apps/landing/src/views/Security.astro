@@ -35,7 +35,7 @@ const row = `{
 ---
 
 <Base lang={lang} title={d.meta.security.title} description={d.meta.security.description} path="/security/">
-  <section class="px-4 pb-10 pt-36 sm:px-6 sm:pt-44">
+  <section class="px-4 pb-10 pt-16 sm:px-6 sm:pt-24">
     <SectionHeader as="h1" eyebrow={p.eyebrow} parts={p.headline} lead={p.lead} />
   </section>
   <section class="px-4 py-12 sm:px-6">
@@ -46,7 +46,7 @@ const row = `{
           return (
             <article
               class:list={[
-                'reveal rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] sm:p-8',
+                'reveal rounded-[28px] bg-white p-7 sm:p-8',
                 i === 0 && 'md:col-span-2',
               ]}
             >

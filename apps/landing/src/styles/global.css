@@ -2,14 +2,21 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter/wght.css";
 
+/*
+ * A product-page look: a light grey canvas, white and black tiles with large radii, bold tight
+ * headlines, the FixNote orange for actions.
+ */
 @theme {
-  --color-canvas: #f5f3ef;
-  --color-ink: #1b1a18;
-  --color-muted: #6e6b64;
-  --color-line: #e6e2da;
+  --color-canvas: #f5f5f7;
+  --color-ink: #1d1d1f;
+  --color-muted: #6e6e73;
+  --color-faint: #86868b;
+  --color-line: #d2d2d7;
   --color-brand: #f26a2a;
   --color-brand-deep: #d9531a;
-  --color-night: #1f1c19;
+  --color-link: #c74a12;
+  --color-night: #000000;
+  --color-night-2: #1c1c1e;
 
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -48,37 +55,71 @@
 
 @layer components {
   .headline {
-    font-weight: 600;
-    line-height: 1.04;
-    letter-spacing: -0.045em;
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.035em;
     text-wrap: balance;
   }
   .lead {
-    line-height: 1.55;
+    line-height: 1.5;
     color: var(--color-muted);
     text-wrap: pretty;
   }
+  /* A white tile on the grey canvas. */
+  .tile {
+    background: #fff;
+    border-radius: 28px;
+  }
+  @media (min-width: 640px) {
+    .tile {
+      border-radius: 32px;
+    }
+  }
+  /* "Learn more ›" text links. */
+  .more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15em;
+    color: var(--color-link);
+  }
+  .more-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
-/* A highlighted word inside a headline: a soft tinted chip. */
-.mark {
-  display: inline-block;
-  font-size: 0.9em;
-  line-height: 1.12;
-  padding: 0.04em 0.2em 0.1em;
-  border-radius: 0.24em;
-}
+/* A highlighted word inside a headline: coloured text, no chip. */
 .mark-brand {
-  color: #e2561c;
-  background: #fde2d3;
+  background: linear-gradient(100deg, #ff8a3d, #e2501a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .mark-blue {
   color: #2d64b3;
-  background: #dde8f7;
 }
 .mark-green {
   color: #23883f;
-  background: #d9efdf;
+}
+/* The assistant's name over a dark tile. */
+.ai-gradient {
+  background: linear-gradient(90deg, #ff9a5a, #f26a2a 35%, #c86bfa 70%, #6aa8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* A soft backdrop behind the app pictures, like a desk under a laptop. */
+.backdrop {
+  background:
+    radial-gradient(120% 90% at 15% 0%, #fff6ef 0%, transparent 55%),
+    radial-gradient(90% 80% at 100% 100%, #f3d9c7 0%, transparent 60%),
+    linear-gradient(160deg, #f6eee7, #e9ddd2);
+}
+.backdrop-night {
+  background:
+    radial-gradient(100% 80% at 20% 0%, #3a2a22 0%, transparent 60%),
+    radial-gradient(90% 80% at 100% 100%, #2a2238 0%, transparent 60%), #141416;
 }
 
 /*
@@ -93,7 +134,6 @@
 @keyframes hero-in {
   from {
     opacity: 0.01;
-    filter: blur(8px);
     transform: translateY(18px);
   }
 }
@@ -102,7 +142,6 @@
 .reveal .word {
   transition:
     opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
-    filter 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
     transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .reveal {
@@ -110,17 +149,15 @@
 }
 .reveal .word {
   display: inline-block;
-  transition-delay: calc(var(--i, 0) * 50ms);
+  transition-delay: calc(var(--i, 0) * 40ms);
 }
 .js .reveal:not(.in):not(.words) {
   opacity: 0.01;
-  filter: blur(8px);
-  transform: translateY(24px);
+  transform: translateY(28px);
 }
 .js .reveal.words:not(.in) .word {
   opacity: 0.01;
-  filter: blur(10px);
-  transform: translateY(0.45em);
+  transform: translateY(0.35em);
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-in {
@@ -129,85 +166,37 @@
   .js .reveal:not(.in):not(.words),
   .js .reveal.words:not(.in) .word {
     opacity: 1;
-    filter: none;
     transform: none;
   }
 }
 
-/* The problem story: a faint grid, lines that light up as they reach the upper half of the screen. */
-.story-grid {
-  background-image:
-    linear-gradient(to right, rgba(27, 26, 24, 0.028) 2px, transparent 2px),
-    linear-gradient(to bottom, rgba(27, 26, 24, 0.028) 2px, transparent 2px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent,
-    #000 min(360px, 25%),
-    #000 calc(100% - min(360px, 25%)),
-    transparent
-  );
+/* Horizontal card rows: scroll-snap, no visible scrollbar; the arrows under them scroll by a card. */
+.scroller {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: var(--gutter, 16px);
+  padding-inline: var(--gutter, 16px);
 }
-.js .story-line {
-  opacity: 0.32;
-  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+.scroller::-webkit-scrollbar {
+  display: none;
 }
-.js .story-line.in {
-  opacity: 1;
+.scroller > * {
+  scroll-snap-align: start;
 }
-.story-pop {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(var(--pop-to, 0deg));
-  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s;
+@media (min-width: 640px) {
+  .scroller {
+    --gutter: 24px;
+  }
 }
-.js .story-line:not(.in) .story-pop {
-  transform: scale(var(--pop-scale, 0.5)) rotate(var(--pop-from, 40deg));
+@media (min-width: 1100px) {
+  .scroller {
+    --gutter: calc((100vw - 1040px) / 2);
+  }
 }
-.story-emoji {
-  font-size: 0.94em;
-  line-height: 1;
-  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.12));
-}
-/* A glossy app tile (Telegram blue): top sheen, bright rim, shaded bottom and a cast shadow. */
-.story-app {
-  width: 0.94em;
-  height: 0.94em;
-  vertical-align: 0.1em;
-  border-radius: 0.25em;
-  background:
-    radial-gradient(120% 90% at 28% 12%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 46%),
-    linear-gradient(160deg, #7dd3ff 0%, #2aa3ef 50%, #1a7fc9 100%);
-  box-shadow:
-    inset 0 0.03em 0 rgba(255, 255, 255, 0.7),
-    inset 0 -0.07em 0.1em rgba(10, 70, 150, 0.4),
-    0 0.02em 0.03em rgba(10, 40, 110, 0.22),
-    0 0.14em 0.26em -0.04em rgba(22, 110, 190, 0.4);
-}
-.story-app svg {
-  width: 0.56em;
-  height: 0.56em;
-  color: #fff;
-}
-.story-chip {
-  display: inline-block;
-  padding: 0.14em 0.3em 0.2em;
-  border-radius: 0.4em;
-  font-weight: 600;
-  letter-spacing: -0.035em;
-}
-.story-chip-brand {
-  color: #e2561c;
-  background: #fde2d3;
-}
-.story-chip-blue {
-  color: #2d64b3;
-  background: #dde8f7;
-}
-.story-chip-green {
-  color: #23883f;
-  background: #d9efdf;
+.scroll-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* Endless question rows: four copies on one track, shifted by exactly one copy, so no seam. */
@@ -231,7 +220,7 @@
   }
 }
 
-/* Small looping details in the step visuals. */
+/* Small looping details in the app pictures. */
 .fx-pulse {
   animation: fx-pulse 1.6s ease-in-out infinite;
 }
@@ -248,6 +237,12 @@
     opacity: 0;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .fx-pulse,
+  .fx-blink {
+    animation: none;
+  }
+}
 
 /* FAQ: native <details>, the plus turns into a cross when open. */
 .faq-item summary {
@@ -259,38 +254,40 @@
 }
 .faq-item[open] .faq-icon {
   transform: rotate(45deg);
-  background: var(--color-ink);
-  color: #fff;
 }
 
 /* Blog article typography. */
 .prose-note {
   font-size: 1.125rem;
-  line-height: 1.75;
-  color: #34322e;
+  line-height: 1.7;
+  color: #333336;
 }
 .prose-note > * + * {
-  margin-top: 1.15em;
+  margin-top: 1.1em;
 }
 .prose-note h2 {
   margin-top: 2em;
   font-size: 1.75rem;
   line-height: 1.2;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--color-ink);
 }
 .prose-note h3 {
   margin-top: 1.6em;
   font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 650;
   letter-spacing: -0.02em;
   color: var(--color-ink);
 }
 .prose-note a {
-  color: var(--color-brand-deep);
+  color: var(--color-link);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+.prose-note strong {
+  font-weight: 650;
+  color: var(--color-ink);
 }
 .prose-note ul,
 .prose-note ol {
@@ -312,20 +309,35 @@
 }
 .prose-note code {
   font-family: var(--font-mono);
-  font-size: 0.9em;
-  background: #ece8e0;
+  font-size: 0.88em;
+  background: var(--color-canvas);
   padding: 0.1em 0.35em;
   border-radius: 0.35em;
 }
 .prose-note pre {
   overflow-x: auto;
-  background: var(--color-night);
-  color: #f2efe9;
+  background: var(--color-night-2);
+  color: #f2f2f7;
   padding: 1em 1.2em;
-  border-radius: 14px;
+  border-radius: 16px;
   font-size: 0.9rem;
 }
 .prose-note pre code {
   background: none;
   padding: 0;
+}
+.prose-note table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.prose-note th,
+.prose-note td {
+  text-align: left;
+  padding: 0.55em 0.6em;
+  border-bottom: 1px solid var(--color-line);
+}
+.prose-note th {
+  font-weight: 600;
+  color: var(--color-ink);
 }

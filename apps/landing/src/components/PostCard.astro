@@ -6,23 +6,29 @@ interface Props {
   post: Post
   lang: Lang
   delay?: number
+  /** In a sideways row the card has a fixed width. */
+  row?: boolean
 }
-const { post, lang, delay = 0 } = Astro.props
+const { post, lang, delay = 0, row = false } = Astro.props
 const d = t(lang).blogPage
+const Tag = row ? 'li' : 'article'
 ---
 
-<article
-  class="reveal group relative flex flex-col rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(27,26,24,0.08)]"
-  style={`--delay:${delay}ms`}
+<Tag
+  class:list={[
+    'group relative flex flex-col rounded-[28px] bg-white p-7 transition hover:shadow-[0_18px_40px_-20px_rgba(0,0,0,0.25)] sm:p-8',
+    row ? 'w-[290px] shrink-0 sm:w-[360px]' : 'reveal',
+  ]}
+  style={row ? undefined : `--delay:${delay}ms`}
 >
   <div class="flex items-center gap-2 text-[13px] text-muted">
     <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time>
     <span aria-hidden="true">·</span>
     <span>{readingMinutes(post)} {d.minutes}</span>
   </div>
-  <h3 class="mt-4 text-[21px] font-semibold leading-[1.25] tracking-[-0.03em]">
-    <a href={postPath(post)} class="after:absolute after:inset-0 after:rounded-[24px]">{post.data.title}</a>
+  <h3 class="mt-4 text-[21px] font-bold leading-[1.22] tracking-[-0.025em]">
+    <a href={postPath(post)} class="after:absolute after:inset-0 after:rounded-[28px]">{post.data.title}</a>
   </h3>
-  <p class="mt-3 flex-1 text-[15px] leading-[1.6] text-muted">{post.data.description}</p>
-  <span class="mt-6 text-[15px] font-medium text-brand-deep group-hover:underline">{d.read} →</span>
-</article>
+  <p class="mt-3 flex-1 text-[15px] leading-[1.55] text-muted">{post.data.description}</p>
+  <span class="more-link mt-6 text-[15px] group-hover:underline">{d.read} ›</span>
+</Tag>

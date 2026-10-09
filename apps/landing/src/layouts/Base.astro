@@ -19,6 +19,8 @@ interface Props {
   jsonLd?: Record<string, unknown>[]
   /** Keep the page out of search results (the 404 page). */
   noindex?: boolean
+  /** Numbered footnotes printed above the footer links. */
+  notes?: readonly string[]
 }
 const {
   lang,
@@ -28,6 +30,7 @@ const {
   type = 'website',
   jsonLd = [],
   noindex = false,
+  notes = [],
 } = Astro.props
 const site = Astro.site ?? new URL('https://fixnote.space')
 const alternates: Partial<Record<Lang, string>> =
@@ -62,7 +65,7 @@ const organization = {
     <link rel="preload" href={lang === 'ru' ? interCyrillic : interLatin} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#f5f3ef" />
+    <meta name="theme-color" content="#f5f5f7" />
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content="FixNote" />
     <meta property="og:title" content={title} />
@@ -84,13 +87,13 @@ const organization = {
     <main id="main">
       <slot />
     </main>
-    <Footer lang={lang} alternates={alternates} />
+    <Footer lang={lang} alternates={alternates} notes={notes} />
     <script is:inline>
-      // Blocks below the first screen fade in as they arrive; story lines light up in the upper half.
+      // Blocks below the first screen fade in as they arrive.
       ;(() => {
         const show = (el) => el.classList.add('in')
         if (!('IntersectionObserver' in window)) {
-          document.querySelectorAll('.reveal,.story-line').forEach(show)
+          document.querySelectorAll('.reveal').forEach(show)
           return
         }
         const io = new IntersectionObserver(
@@ -103,18 +106,26 @@ const organization = {
           },
           { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
         )
-        const story = new IntersectionObserver(
-          (entries) => {
-            for (const e of entries) {
-              if (!e.isIntersecting && e.boundingClientRect.top > 0) continue
-              show(e.target)
-              story.unobserve(e.target)
-            }
-          },
-          { rootMargin: '0px 0px -45% 0px' },
-        )
         document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
-        document.querySelectorAll('.story-line').forEach((el) => story.observe(el))
+      })()
+      // Card rows: the arrows under a row scroll it by one card and grey out at either end.
+      ;(() => {
+        for (const row of document.querySelectorAll('[data-scroller]')) {
+          const list = row.querySelector('.scroller')
+          const prev = row.querySelector('[data-prev]')
+          const next = row.querySelector('[data-next]')
+          if (!list || !prev || !next) continue
+          const step = () => (list.firstElementChild?.getBoundingClientRect().width ?? 300) + 16
+          const update = () => {
+            prev.disabled = list.scrollLeft < 4
+            next.disabled = list.scrollLeft + list.clientWidth > list.scrollWidth - 4
+          }
+          prev.addEventListener('click', () => list.scrollBy({ left: -step(), behavior: 'smooth' }))
+          next.addEventListener('click', () => list.scrollBy({ left: step(), behavior: 'smooth' }))
+          list.addEventListener('scroll', update, { passive: true })
+          window.addEventListener('resize', update)
+          update()
+        }
       })()
     </script>
   </body>

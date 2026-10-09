@@ -2,15 +2,15 @@
 import { type Lang, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 import BlogTeaser from './home/BlogTeaser.astro'
-import DownloadSection from './home/DownloadSection.astro'
 import FaqSection from './home/FaqSection.astro'
-import Features from './home/Features.astro'
-import FinalCta from './home/FinalCta.astro'
 import Hero from './home/Hero.astro'
-import How from './home/How.astro'
+import Pricing from './home/Pricing.astro'
 import Questions from './home/Questions.astro'
+import Reasons from './home/Reasons.astro'
 import SecurityTeaser from './home/SecurityTeaser.astro'
-import Story from './home/Story.astro'
+import Showcase from './home/Showcase.astro'
+import Steps from './home/Steps.astro'
+import Tiles from './home/Tiles.astro'
 
 interface Props {
   lang: Lang
@@ -41,15 +41,16 @@ const jsonLd = [
 ]
 ---
 
-<Base lang={lang} title={d.meta.home.title} description={d.meta.home.description} path="/" jsonLd={jsonLd}>
+<Base lang={lang} title={d.meta.home.title} description={d.meta.home.description} path="/" jsonLd={jsonLd} notes={d.notes}>
   <Hero lang={lang} />
-  <Story lang={lang} />
-  <How lang={lang} />
-  <Features lang={lang} />
-  <SecurityTeaser lang={lang} />
+  <Tiles lang={lang} />
+  <Showcase lang={lang} />
   <Questions lang={lang} />
-  <DownloadSection lang={lang} />
+  <Reasons lang={lang} />
+  <SecurityTeaser lang={lang} />
+  <div class="h-20 sm:h-28"></div>
+  <Pricing lang={lang} />
+  <Steps lang={lang} />
   <FaqSection lang={lang} />
   <BlogTeaser lang={lang} />
-  <FinalCta lang={lang} />
 </Base>

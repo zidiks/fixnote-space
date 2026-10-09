@@ -1,11 +1,11 @@
 ---
-import ArrowUpRight from '@lucide/astro/icons/arrow-up-right'
 import Menu from '@lucide/astro/icons/menu'
-import { APP_URL, type Lang, localePath, t } from '../i18n'
+import { type Lang, localePath, t } from '../i18n'
 import Brand from './Brand.astro'
 import LangMenu from './LangMenu.astro'
 import Pill from './Pill.astro'
 
+/** A thin sticky bar: the name on the left, sections and the download button on the right. */
 interface Props {
   lang: Lang
   path: string
@@ -16,43 +16,41 @@ const d = t(lang)
 const nav = [
   { label: d.nav.features, href: '/features/' },
   { label: d.nav.security, href: '/security/' },
+  { label: d.nav.pricing, href: '/#pricing' },
   { label: d.nav.blog, href: '/blog/' },
-  { label: d.nav.download, href: '/download/' },
 ]
 const active = (href: string) => path === href || (href === '/blog/' && path.startsWith('/blog/'))
 ---
 
-<header class="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-5">
-  <div
-    class="mx-auto flex h-14 w-full max-w-[920px] items-center justify-between gap-2 rounded-full bg-white/55 pl-5 pr-2 shadow-[inset_0_0.5px_1px_0.5px_rgba(255,255,255,0.6),0_4px_12px_rgba(0,0,0,0.07)] backdrop-blur-md md:h-16 md:pr-2.5"
-  >
+<header class="sticky top-0 z-50 border-b border-black/[0.08] bg-[#f5f5f7]/80 backdrop-blur-xl backdrop-saturate-150">
+  <div class="mx-auto flex h-[52px] max-w-[1040px] items-center justify-between gap-3 px-4 sm:px-6">
     <a href={localePath(lang, '/')} aria-label="FixNote"><Brand /></a>
-    <nav class="hidden items-center gap-6 md:flex" aria-label="FixNote">
-      {
-        nav.map((item) => (
-          <a
-            href={localePath(lang, item.href)}
-            aria-current={active(item.href) ? 'page' : undefined}
-            class:list={[
-              'text-[15px] font-medium tracking-[-0.02em] transition hover:text-ink',
-              active(item.href) ? 'text-ink' : 'text-ink/60',
-            ]}
-          >
-            {item.label}
-          </a>
-        ))
-      }
-    </nav>
-    <div class="flex items-center gap-1">
+    <div class="flex items-center gap-1 sm:gap-2">
+      <nav class="mr-2 hidden items-center gap-6 md:flex" aria-label="FixNote">
+        {
+          nav.map((item) => (
+            <a
+              href={localePath(lang, item.href)}
+              aria-current={active(item.href) ? 'page' : undefined}
+              class:list={[
+                'text-[13px] tracking-[-0.005em] transition hover:text-ink',
+                active(item.href) ? 'text-ink' : 'text-ink/70',
+              ]}
+            >
+              {item.label}
+            </a>
+          ))
+        }
+      </nav>
       <div class="hidden sm:block"><LangMenu lang={lang} alternates={alternates} /></div>
       <details class="group relative md:hidden">
         <summary
-          class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-ink/70 [&::-webkit-details-marker]:hidden"
+          class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full text-ink/70 [&::-webkit-details-marker]:hidden"
           aria-label="Menu"
         >
-          <Menu size={20} />
+          <Menu size={19} />
         </summary>
-        <div class="absolute right-0 top-12 w-56 rounded-2xl bg-white p-2 shadow-[0_12px_32px_rgba(27,26,24,0.14)] ring-1 ring-black/5">
+        <div class="absolute right-0 top-11 w-56 rounded-2xl bg-white p-2 shadow-[0_12px_32px_rgba(0,0,0,0.12)] ring-1 ring-black/5">
           {
             nav.map((item) => (
               <a href={localePath(lang, item.href)} class="block rounded-xl px-3 py-2.5 text-[15px] hover:bg-canvas">
@@ -63,7 +61,7 @@ const active = (href: string) => path === href || (href === '/blog/' && path.sta
           <div class="mt-1 border-t border-line pt-1 sm:hidden"><LangMenu lang={lang} alternates={alternates} /></div>
         </div>
       </details>
-      <Pill href={APP_URL} size="nav">{d.nav.open} <ArrowUpRight size={16} /></Pill>
+      <Pill href={localePath(lang, '/download/')} size="sm">{d.nav.download}</Pill>
     </div>
   </div>
 </header>

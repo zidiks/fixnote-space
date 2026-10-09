@@ -26,7 +26,7 @@ const cards = [
       return (
         <div
           id={card.id}
-          class="reveal flex scroll-mt-28 flex-col rounded-[24px] bg-white p-6 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04]"
+          class="reveal flex scroll-mt-28 flex-col rounded-[28px] bg-white p-6"
           style={`--delay:${i * 80}ms`}
         >
           <span class="flex size-11 items-center justify-center rounded-2xl bg-canvas">
@@ -38,7 +38,7 @@ const cards = [
             href={card.href}
             class:list={[
               'mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition active:scale-[0.98]',
-              card.external ? 'bg-canvas text-ink hover:bg-line' : 'bg-ink text-white hover:bg-[#2e2c29]',
+              card.external ? 'text-link ring-1 ring-inset ring-brand hover:bg-brand hover:text-white' : 'bg-brand text-white hover:bg-brand-deep',
             ]}
           >
             {card.external ? <ArrowUpRight size={17} /> : <Download size={17} />}

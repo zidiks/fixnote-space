@@ -1,0 +1,99 @@
+---
+import FileInput from '@lucide/astro/icons/file-input'
+import Keyboard from '@lucide/astro/icons/keyboard'
+import Link from '@lucide/astro/icons/link'
+import Plug from '@lucide/astro/icons/plug'
+import SpellCheck from '@lucide/astro/icons/spell-check'
+import Users from '@lucide/astro/icons/users'
+import WifiOff from '@lucide/astro/icons/wifi-off'
+import CardRow from '../../components/CardRow.astro'
+import Headline from '../../components/Headline.astro'
+import Lines from '../../components/Lines.astro'
+import MoreLink from '../../components/MoreLink.astro'
+import { type Lang, t } from '../../i18n'
+import { topicHref } from '../../lib/blog'
+
+/** Smaller reasons in a sideways row of cards. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const r = d.reasons
+type Look = { icon: typeof Plug; tint: string; topic: string; fallback: string }
+const look: Record<string, Look> = {
+  edits: {
+    icon: SpellCheck,
+    tint: 'from-[#4cd07a] to-[#23883f]',
+    topic: 'ai-edits',
+    fallback: '/features/#edit',
+  },
+  shared: {
+    icon: Users,
+    tint: 'from-[#6aa8ff] to-[#2d64b3]',
+    topic: 'shared-notes',
+    fallback: '/features/',
+  },
+  links: {
+    icon: Link,
+    tint: 'from-[#8e8e93] to-[#48484a]',
+    topic: 'share-links',
+    fallback: '/security/',
+  },
+  mcp: {
+    icon: Plug,
+    tint: 'from-[#ff9a5a] to-[#e2501a]',
+    topic: 'mcp',
+    fallback: '/features/#mcp',
+  },
+  import: {
+    icon: FileInput,
+    tint: 'from-[#c58bff] to-[#7b4ad6]',
+    topic: 'import',
+    fallback: '/features/#import',
+  },
+  offline: {
+    icon: WifiOff,
+    tint: 'from-[#5ac8fa] to-[#1f8fc9]',
+    topic: 'offline',
+    fallback: '/security/',
+  },
+  hotkeys: {
+    icon: Keyboard,
+    tint: 'from-[#ffcc4d] to-[#e09a0b]',
+    topic: 'hotkeys',
+    fallback: '/features/',
+  },
+}
+const items = await Promise.all(
+  r.items.map(async (item) => {
+    const l: Look = look[item.id] ?? (look.mcp as Look)
+    return { ...item, ...l, href: await topicHref(lang, l.topic, l.fallback) }
+  }),
+)
+---
+
+<section class="py-20 sm:py-28">
+  <Headline parts={r.headline} class="mx-auto max-w-[900px] px-4 text-center text-[36px] sm:text-[56px] lg:text-[64px]" />
+  <div class="mt-12 sm:mt-16">
+    <CardRow prev={r.prev} next={r.next}>
+      {
+        items.map((item) => {
+          const Icon = item.icon
+          return (
+            <li class="tile flex w-[290px] shrink-0 flex-col p-7 sm:w-[360px] sm:p-8">
+              <h3 class="text-[22px] font-bold leading-[1.18] tracking-[-0.025em] sm:text-[24px]"><Lines text={item.title} /></h3>
+              <p class="mt-3 flex-1 text-[15px] leading-[1.5] text-muted">{item.text}</p>
+              <div class="backdrop mt-6 flex h-[150px] items-center justify-center rounded-[18px]" aria-hidden="true">
+                <span class={`flex size-[72px] items-center justify-center rounded-[20px] bg-gradient-to-b text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_14px_28px_-12px_rgba(0,0,0,0.35)] ${item.tint}`}>
+                  <Icon size={34} />
+                </span>
+              </div>
+              <MoreLink href={item.href} class="mt-5 text-[15px]">{d.hero.more}</MoreLink>
+            </li>
+          )
+        })
+      }
+    </CardRow>
+  </div>
+</section>

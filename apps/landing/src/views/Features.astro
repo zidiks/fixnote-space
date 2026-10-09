@@ -26,13 +26,13 @@ const look: Record<string, { icon: typeof Search; tint: string }> = {
   edit: { icon: SpellCheck, tint: 'bg-[#d9efdf] text-[#23883f]' },
   daily: { icon: CalendarCheck, tint: 'bg-[#d9efdf] text-[#23883f]' },
   capture: { icon: Send, tint: 'bg-[#dde8f7] text-[#2d64b3]' },
-  mcp: { icon: Plug, tint: 'bg-[#ece8e0] text-ink' },
-  import: { icon: FileInput, tint: 'bg-[#ece8e0] text-ink' },
+  mcp: { icon: Plug, tint: 'bg-canvas text-ink' },
+  import: { icon: FileInput, tint: 'bg-canvas text-ink' },
 }
 ---
 
 <Base lang={lang} title={d.meta.features.title} description={d.meta.features.description} path="/features/">
-  <section class="px-4 pb-10 pt-36 sm:px-6 sm:pt-44">
+  <section class="px-4 pb-10 pt-16 sm:px-6 sm:pt-24">
     <SectionHeader as="h1" eyebrow={p.eyebrow} parts={p.headline} lead={p.lead} />
   </section>
   <section class="px-4 py-12 sm:px-6">
@@ -43,7 +43,7 @@ const look: Record<string, { icon: typeof Search; tint: string }> = {
           return (
             <article
               id={s.id}
-              class="reveal grid scroll-mt-28 gap-8 rounded-[28px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] sm:p-10 md:grid-cols-[auto_1fr_0.8fr] md:gap-10"
+              class="reveal grid scroll-mt-28 gap-8 rounded-[28px] bg-white p-7 sm:p-10 md:grid-cols-[auto_1fr_0.8fr] md:gap-10"
             >
               <span class={`flex size-14 items-center justify-center rounded-[18px] ${tint}`}>
                 <Icon size={26} />

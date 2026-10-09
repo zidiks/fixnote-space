@@ -12,12 +12,12 @@ const p = d.privacyPage
 ---
 
 <Base lang={lang} title={d.meta.privacy.title} description={d.meta.privacy.description} path="/privacy/">
-  <section class="px-4 pb-6 pt-36 sm:px-6 sm:pt-44">
+  <section class="px-4 pb-6 pt-16 sm:px-6 sm:pt-24">
     <SectionHeader as="h1" eyebrow={p.eyebrow} parts={[p.title]} lead={p.lead} />
     <p class="mt-5 text-center text-sm text-muted">{p.updated}</p>
   </section>
   <section class="px-4 pb-20 pt-6 sm:px-6">
-    <div class="mx-auto max-w-[760px] rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] sm:p-10">
+    <div class="mx-auto max-w-[760px] rounded-[28px] bg-white p-7 sm:p-10">
       {
         p.sections.map((s, i) => (
           <section class:list={[i > 0 && 'mt-9']}>

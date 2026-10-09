@@ -1,5 +1,5 @@
 ---
-import SectionHeader from '../../components/SectionHeader.astro'
+import Headline from '../../components/Headline.astro'
 import { type Lang, t } from '../../i18n'
 
 /** Two endless rows of example questions moving in opposite directions (CSS only). */
@@ -13,9 +13,12 @@ const rows = [
 ]
 ---
 
-<section class="overflow-hidden py-20 sm:py-28">
-  <div class="px-4 sm:px-6"><SectionHeader eyebrow={d.eyebrow} parts={d.headline} lead={d.lead} /></div>
-  <div class="reveal mt-14 space-y-4 sm:mt-16">
+<section class="overflow-hidden bg-white py-20 sm:py-28">
+  <div class="px-4 text-center">
+    <Headline parts={d.headline} class="text-[36px] sm:text-[56px] lg:text-[64px]" />
+    <p class="reveal lead mx-auto mt-4 max-w-[560px] text-[17px] sm:text-[21px]">{d.lead}</p>
+  </div>
+  <div class="reveal mt-12 space-y-3 sm:mt-14">
     {
       rows.map((row) => (
         <div class="marquee-track overflow-hidden">
@@ -24,7 +27,7 @@ const rows = [
               row.items.map((q) => (
                 <li
                   aria-hidden={copy > 0 ? 'true' : undefined}
-                  class="mr-4 whitespace-nowrap rounded-full bg-white px-5 py-3 text-[15px] font-medium tracking-[-0.01em] shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04] sm:text-[17px]"
+                  class="mr-3 whitespace-nowrap rounded-full bg-canvas px-5 py-3 text-[15px] font-medium tracking-[-0.01em] sm:text-[17px]"
                 >
                   {q}
                 </li>

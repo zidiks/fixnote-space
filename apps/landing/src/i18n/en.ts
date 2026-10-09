@@ -41,6 +41,8 @@ export const en: Dict = {
     security: 'Security',
     blog: 'Blog',
     download: 'Download',
+    pricing: 'Pricing',
+    faq: 'FAQ',
     open: 'Open',
     skip: 'Skip to content',
     language: 'Language',
@@ -48,113 +50,142 @@ export const en: Dict = {
 
   hero: {
     eyebrow: 'Private notes with an assistant',
-    headline: [
-      'Write it',
-      { text: 'your way', tone: 'brand' },
-      '\n',
-      'Find it',
-      { text: 'instantly', tone: 'blue' },
-    ],
-    lead: 'Type it, say it or send it on Telegram. Ask the assistant and it answers from your notes, citing the ones it used. Everything is encrypted on your device.',
+    subtitle: 'Write it your way. Find it instantly.',
+    lead: 'Type it, say it or send it on Telegram. The assistant answers from your notes and shows where each answer came from. Everything is encrypted on your device.',
     download: 'Download',
     downloadFor: { mac: 'Download for macOS', windows: 'Download for Windows' },
-    openWeb: 'Open in browser',
-    platforms: 'Windows · macOS · Web',
+    more: 'Learn more',
+    platforms: 'Windows, macOS and the web · Free, no account needed',
     shotAlt: 'FixNote: notes grouped by date and an assistant answering with links to notes',
   },
 
-  story: {
-    label: 'How thoughts get lost',
-    lines: [
-      { text: 'An idea came to you on the way.' },
-      { text: 'You sent yourself a voice message on Telegram.', app: 'telegram' },
-      { text: 'Then jotted a couple more thoughts on your phone.', emoji: '📱' },
-      {
-        text: 'A month later, you need it.',
-        chip: { text: 'Where did I write that?', tone: 'blue', tilt: '-1.5deg' },
-      },
-      { text: 'You search for “sale”, but you wrote “discount”.', emoji: '🔍' },
-      {
-        text: 'You scroll through chats, folders and screenshots.',
-        chip: { text: 'It was here somewhere…', tone: 'brand', tilt: '1.5deg' },
-      },
-    ],
-    final: ['Notes should', { text: 'remember for you', tone: 'brand', after: '.' }],
+  announce: {
+    text: 'New: call summaries, made right on your computer.',
+    more: 'Learn more',
   },
 
-  how: {
-    eyebrow: 'How it works',
-    headline: ['Three steps', '\n', 'from thought to', { text: 'answer', tone: 'brand' }],
-    lead: 'No folders or rules to set up first. Tidy up later: the assistant will suggest how.',
-    step: 'Step',
-    steps: [
-      {
-        title: 'Capture it any way you like.',
-        text: 'Type, dictate, or send the Telegram bot a message, voice note or photo. Speech is recognized right on your device.',
-      },
-      {
-        title: 'Ask in your own words.',
-        text: 'The assistant searches by meaning and by words in English, Spanish and Russian, and answers with links to the notes it drew from.',
-      },
-      {
-        title: 'Tidy up in one click.',
-        text: 'FixNote suggests titles and folders and finds duplicates. Nothing changes until you accept, and every change can be undone.',
-      },
-    ],
-    visual: {
-      recording: 'Recording',
-      done: 'Done',
-      voice: 'Buy milk and call mom on Friday',
-      telegram: 'Idea: a bot that sorts notes by itself',
+  tiles: {
+    assistant: {
+      eyebrow: 'FixNote AI',
+      title: 'Ask your notes.\nGet an answer.',
+      text: 'The assistant searches by meaning in three languages and answers with links to your notes. The model only gets the passages it found.',
       question: 'What did I decide about the vacation?',
       answer: 'July, by the sea: you picked Portugal and put off booking until payday.',
       sources: 'Sources',
       source1: 'Vacation 2026',
       source2: 'Summer ideas',
-      tidyTitle: 'Tidy up',
-      tidyMove: 'Move “Groceries” to the “Home” folder',
-      tidyTitleSuggestion: 'Add a title: “Plan for the week”',
-      tidyMerge: 'Merge two similar notes',
-      accept: 'Accept',
+    },
+    voice: {
+      eyebrow: 'Voice',
+      title: 'Just talk.\nThe text appears.',
+      text: 'Dictation is recognized on your computer while you speak. The recording never leaves it.',
+      recording: 'Recording',
+      sample: 'Buy milk and call mom on Friday',
+    },
+    telegram: {
+      eyebrow: 'Telegram',
+      title: 'Forward it to the bot.\nIt becomes a note.',
+      text: 'Text, voice messages and photos from Telegram turn into notes. The bot seals them with your key, so only your app can read them.',
+      message: 'Idea: a bot that sorts notes by itself',
+      note: 'From Telegram',
+    },
+    search: {
+      eyebrow: 'Search',
+      title: 'Any language.\nAny keyboard layout.',
+      text: '“телеграм” finds “Telegram”, “розыгрыш” finds “giveaway”. Search opens from anywhere with Ctrl+K or ⌘K.',
+      query: 'giveaway',
+      result1: 'Giveaway on the channel: rules',
+      result2: 'Розыгрыш билетов, итоги',
+      similar: 'Similar in meaning',
+      result3: 'Contest for subscribers',
     },
   },
 
-  features: {
-    eyebrow: 'Features',
-    headline: ['More than', { text: 'notes', tone: 'brand' }],
-    lead: 'Everything to capture fast and find even faster.',
-    more: 'All features',
-    cards: {
-      search: {
-        title: 'Search in three languages',
-        text: '“telegram” finds “телеграм”, “giveaway” finds “розыгрыш”. Notes similar in meaning show up too.',
-      },
-      voice: {
-        title: 'On-device voice',
-        text: 'Dictate a thought and FixNote transcribes it locally. The recording never leaves your device.',
-      },
-      assistant: {
-        title: 'Answers with sources',
-        text: 'Answers come only from your notes, with numbered sources that are easy to check.',
-      },
-      daily: {
-        title: 'Daily note',
-        text: 'One note per day: carry yesterday’s unfinished tasks over with one click.',
-      },
-      telegram: {
-        title: 'Telegram bot',
-        text: 'Forward texts, voice notes and photos to the bot. It encrypts them with your key, so only your device can read them.',
-      },
-      mcp: {
-        title: 'Claude and Cursor',
-        text: 'A built-in MCP server: Claude Desktop and Cursor can search your notes, look at their images and files, and add to them if you allow it.',
-      },
+  showcase: {
+    headline: ['Calls, screenshots, tasks.', '\n', 'Everything becomes a note.'],
+    call: {
+      title: 'Call with Oleg',
+      meta: '32 min · Me and others',
+      brief: 'Summary',
+      briefText: 'Went over the beta launch and the plan for blog articles.',
+      decisions: 'Decisions',
+      decision: 'The beta ships on October 15.',
+      tasks: 'Tasks',
+      task1: 'Send Oleg the article plan',
+      task2: 'Finish the landing page by Friday',
+      transcript: 'Transcript',
     },
+    items: [
+      {
+        id: 'calls',
+        title: 'Call summaries',
+        text: 'Your mic and your computer’s sound are transcribed on the device during the call. No audio is kept.',
+      },
+      {
+        id: 'ocr',
+        title: 'Text in images',
+        text: 'FixNote reads the text in screenshots and photos, and search finds them by their words.',
+      },
+      {
+        id: 'daily',
+        title: 'Daily note',
+        text: 'Today’s tasks and repeating chores. Anything left open yesterday moves over in one click.',
+      },
+      {
+        id: 'tidy',
+        title: 'Tidy up',
+        text: 'Suggests titles and folders and finds duplicates. Nothing changes until you accept.',
+      },
+    ],
+    more: 'Learn more',
+  },
+
+  reasons: {
+    headline: ['A few more reasons', '\n', 'to keep your notes here.'],
+    items: [
+      {
+        id: 'edits',
+        title: 'AI edits only\nwith your consent.',
+        text: 'Changes are shown word by word. Accept them, reject them or undo them later.',
+      },
+      {
+        id: 'shared',
+        title: 'Shared notes\nand folders.',
+        text: 'Invite people by email and edit together. You see each other’s cursors right away.',
+      },
+      {
+        id: 'links',
+        title: 'Links to notes\nthe server can’t read.',
+        text: 'The key lives after the “#” in the link, and browsers never send that part to the server.',
+      },
+      {
+        id: 'mcp',
+        title: 'Claude and Cursor\nsee your notes.',
+        text: 'The built-in MCP server connects with one button. By default it can only read.',
+      },
+      {
+        id: 'import',
+        title: 'Move in from Notion,\nBear and Obsidian.',
+        text: 'On a Mac, from Apple Notes too. Export everything to Markdown whenever you like.',
+      },
+      {
+        id: 'offline',
+        title: 'Works\nwithout internet.',
+        text: 'Notes, search and voice work offline and without an account. The assistant can run on Ollama.',
+      },
+      {
+        id: 'hotkeys',
+        title: 'Shortcuts in\nany keyboard layout.',
+        text: 'Ctrl+K works as Ctrl+Л too: keys are matched by their place on the keyboard.',
+      },
+    ],
+    prev: 'Previous',
+    next: 'Next',
   },
 
   securityTeaser: {
     eyebrow: 'Privacy',
-    headline: ['The server sees', '\n', 'only', { text: 'ciphertext', tone: 'green' }],
+    headline: ['The server sees', '\n', 'only ciphertext.'],
     lead: 'Notes are encrypted on your device with a key you keep as 12 words. The key never leaves your devices, so not even we can read your notes.',
     points: [
       'Works without an account or internet',
@@ -167,8 +198,7 @@ export const en: Dict = {
   },
 
   questions: {
-    eyebrow: 'Example questions',
-    headline: ['Ask', { text: 'your notes', tone: 'blue' }],
+    headline: ['Ask your notes.'],
     lead: 'The way you would ask someone who has read everything you ever wrote down.',
     top: [
       'What did I decide about the vacation?',
@@ -188,10 +218,102 @@ export const en: Dict = {
     ],
   },
 
+  pricing: {
+    headline: ['Which plan', '\n', 'is right for you?'],
+    lead: 'Everything that runs on your device is free, with no time limit. Pro adds what goes through our server.',
+    included: 'Included',
+    limited: 'Limited',
+    missing: 'Not included',
+    groups: [
+      {
+        title: 'On your device',
+        rows: [
+          { label: 'Notes, folders and search', note: '', free: 'yes', pro: 'yes' },
+          {
+            label: 'Dictation and text in images',
+            note: 'Recognized on the device',
+            free: 'yes',
+            pro: 'yes',
+          },
+          {
+            label: 'Assistant with your own key',
+            note: 'OpenAI, OpenRouter, Groq, DeepSeek or Ollama',
+            free: 'yes',
+            pro: 'yes',
+          },
+          {
+            label: 'MCP for Claude and Cursor',
+            note: 'In the desktop app',
+            free: 'yes',
+            pro: 'yes',
+          },
+          { label: 'Import and Markdown export', note: '', free: 'yes', pro: 'yes' },
+        ],
+      },
+      {
+        title: 'Through our server',
+        rows: [
+          {
+            label: 'Sync between devices',
+            note: 'On Free, changes only download',
+            free: 'part',
+            pro: 'yes',
+          },
+          {
+            label: 'FixNote AI assistant',
+            note: 'With a monthly allowance',
+            free: 'no',
+            pro: 'yes',
+          },
+          {
+            label: 'Shared notes and folders',
+            note: 'People you invite don’t need Pro',
+            free: 'no',
+            pro: 'yes',
+          },
+          { label: 'Links to notes', note: '', free: 'no', pro: 'yes' },
+          { label: 'Telegram bot', note: '', free: 'no', pro: 'yes' },
+          { label: 'Images and files on the server', note: '20 GB', free: 'no', pro: 'yes' },
+        ],
+      },
+    ],
+    free: {
+      name: 'Free',
+      price: '$0',
+      period: 'No time limit',
+      text: 'Everything on your device. No account needed.',
+      button: 'Download',
+    },
+    pro: {
+      name: 'Pro',
+      price: '$7',
+      period: 'a month, or $60 a year',
+      text: '7 days free, no card needed.',
+      button: 'Try it',
+    },
+    prices: 'Prices in US dollars, paid through Suby.',
+  },
+
+  steps: {
+    headline: ['Up and running in a minute.'],
+    items: [
+      {
+        title: 'Download',
+        text: 'The installer for Windows or macOS. Or open the web version in your browser.',
+      },
+      {
+        title: 'Write',
+        text: 'Your first note needs no sign-up. You only need an account for sync and Pro.',
+      },
+      {
+        title: 'Find',
+        text: 'Ctrl+K finds a note by any word, and the assistant answers questions about what you wrote.',
+      },
+    ],
+    all: 'All installers',
+  },
+
   download: {
-    eyebrow: 'Download',
-    headline: ['Your notes,', '\n', { text: 'everywhere', tone: 'brand' }],
-    lead: 'Apps for Windows and macOS and a web version in your browser. Sync between devices is end-to-end encrypted.',
     windows: { name: 'Windows', detail: 'Windows 10 and 11, 64-bit', button: 'Download .exe' },
     macArm: {
       name: 'macOS · Apple Silicon',
@@ -213,12 +335,11 @@ export const en: Dict = {
   },
 
   faq: {
-    eyebrow: 'FAQ',
-    headline: ['Questions', '\n', 'and', { text: 'answers', tone: 'blue' }],
+    headline: ['Questions? Answers.'],
     items: [
       {
         q: 'Do I need an account?',
-        a: 'No. FixNote works on your device without signing up and without internet. An account is only needed to sync between devices, for FixNote AI and for sharing links to notes.',
+        a: 'No. FixNote works on your device without signing up and without internet. An account is only needed for Pro: sync between devices, FixNote AI, shared notes and links.',
       },
       {
         q: 'Who can read my notes?',
@@ -229,12 +350,20 @@ export const en: Dict = {
         a: 'Only the passages found for a particular question, never your whole library. You can plug in your own OpenAI, OpenRouter, Groq or DeepSeek key, or Ollama on your computer, and then nothing goes online.',
       },
       {
+        q: 'How much does FixNote cost?',
+        a: 'Everything that runs on your device is free, with no time limit. Pro is $7 a month or $60 a year, and you can try it for 7 days without a card.',
+      },
+      {
+        q: 'What happens to my notes when Pro ends?',
+        a: 'They stay on your devices. Sync only downloads changes, and the rest of what goes through the server is off until you renew.',
+      },
+      {
         q: 'What if I lose my 12-word phrase?',
         a: 'Devices where you are already signed in keep your notes, and from there you can add a new device without the phrase. If you lose both the phrase and every device, no one can recover the notes, including us.',
       },
       {
         q: 'Can I move my notes from Notion, Bear or Obsidian?',
-        a: 'Yes. Import understands a Markdown folder (Obsidian too), a Bear backup and a Notion export, and keeps folders, dates and images. You can export everything back to Markdown at any time.',
+        a: 'Yes. Import understands a Markdown folder (Obsidian too), a Bear backup and a Notion export, and keeps folders, dates and images. On a Mac you can bring in Apple Notes too. You can export everything back to Markdown at any time.',
       },
       {
         q: 'Which languages does FixNote support?',
@@ -244,22 +373,30 @@ export const en: Dict = {
   },
 
   blogTeaser: {
-    eyebrow: 'Blog',
-    headline: ['On', { text: 'memory', tone: 'green' }, 'and notes'],
+    headline: ['From the blog.'],
+    lead: 'How FixNote works, and how to keep notes you can find again.',
     all: 'All articles',
   },
 
   cta: {
-    title: 'Write down your first thought',
+    title: 'Write down your first thought.',
     lead: 'Download FixNote or open it right in your browser.',
     download: 'Download',
     open: 'Open in browser',
   },
 
+  notes: [
+    'Free works without an account and has no time limit. An account is needed for Pro: sync, FixNote AI, shared notes, links, the Telegram bot and files on the server.',
+    'Search runs on your device. With FixNote AI, the question and the passages found pass through our server to the model provider and are not stored. With your own key, requests go straight to the service you chose; with Ollama they stay on your computer.',
+    'Call summaries are in the app for Windows and for macOS 14.2 and later.',
+    'The Pro trial starts in the app after you sign in. No card needed; when the week ends, the account goes back to Free unless you subscribe.',
+  ],
+
   footer: {
-    tagline: 'Private notes with an assistant that remembers for you.',
+    tagline: 'Private notes with an assistant.',
     product: 'Product',
     resources: 'Resources',
+    company: 'FixNote',
     webApp: 'Web app',
     rss: 'RSS',
     privacy: 'Privacy',
@@ -389,6 +526,7 @@ export const en: Dict = {
   },
 
   blogPage: {
+    more: 'More articles',
     eyebrow: 'Blog',
     headline: ['Notes', { text: 'about notes', tone: 'brand' }],
     lead: 'How to write thoughts down so you can find them later, and how FixNote works inside.',

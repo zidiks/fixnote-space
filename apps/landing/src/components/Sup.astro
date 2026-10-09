@@ -1,0 +1,9 @@
+---
+/** A footnote marker that jumps to the note above the footer. */
+interface Props {
+  n: number
+}
+const { n } = Astro.props
+---
+
+<sup class="ml-px text-[0.6em] font-normal"><a href={`#note-${n}`} class="hover:underline">{n}</a></sup>

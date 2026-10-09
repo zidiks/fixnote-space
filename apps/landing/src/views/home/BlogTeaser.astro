@@ -1,7 +1,8 @@
 ---
-import ArrowRight from '@lucide/astro/icons/arrow-right'
+import CardRow from '../../components/CardRow.astro'
+import Headline from '../../components/Headline.astro'
+import MoreLink from '../../components/MoreLink.astro'
 import PostCard from '../../components/PostCard.astro'
-import SectionHeader from '../../components/SectionHeader.astro'
 import { type Lang, localePath, t } from '../../i18n'
 import { getPosts } from '../../lib/blog'
 
@@ -9,23 +10,25 @@ interface Props {
   lang: Lang
 }
 const { lang } = Astro.props
-const d = t(lang).blogTeaser
-const posts = (await getPosts(lang)).slice(0, 3)
+const d = t(lang)
+const b = d.blogTeaser
+const posts = (await getPosts(lang)).slice(0, 9)
 ---
 
 {
   posts.length > 0 && (
-    <section class="px-4 py-24 sm:px-6 sm:py-32">
-      <SectionHeader eyebrow={d.eyebrow} parts={d.headline} />
-      <div class="mx-auto mt-14 grid max-w-[1100px] gap-4 md:grid-cols-3">
-        {posts.map((post, i) => (
-          <PostCard post={post} lang={lang} delay={i * 80} />
-        ))}
+    <section class="py-20 sm:py-28">
+      <div class="px-4 text-center">
+        <Headline parts={b.headline} class="text-[36px] sm:text-[56px] lg:text-[64px]" />
+        <p class="reveal lead mx-auto mt-4 max-w-[560px] text-[17px] sm:text-[21px]">{b.lead}</p>
+        <div class="reveal mt-4"><MoreLink href={localePath(lang, '/blog/')} class="text-[17px] sm:text-[19px]">{b.all}</MoreLink></div>
       </div>
-      <div class="reveal mt-10 text-center">
-        <a href={localePath(lang, '/blog/')} class="inline-flex items-center gap-1.5 text-[15px] font-medium text-brand-deep hover:underline">
-          {d.all} <ArrowRight size={16} />
-        </a>
+      <div class="mt-12">
+        <CardRow prev={d.reasons.prev} next={d.reasons.next}>
+          {posts.map((post) => (
+            <PostCard post={post} lang={lang} row />
+          ))}
+        </CardRow>
       </div>
     </section>
   )

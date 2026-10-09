@@ -14,17 +14,17 @@ const { lang, alternates, up = false } = Astro.props
 
 <details class="group relative">
   <summary
-    class="flex h-10 cursor-pointer list-none items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink/70 transition hover:text-ink [&::-webkit-details-marker]:hidden"
+    class="flex h-9 cursor-pointer list-none items-center gap-1 rounded-full px-2.5 text-[13px] font-medium text-ink/70 transition hover:text-ink [&::-webkit-details-marker]:hidden"
     aria-label={t(lang).nav.language}
   >
-    <Globe size={16} />
+    <Globe size={15} />
     <span class="uppercase">{lang}</span>
     <ChevronDown size={14} class="transition group-open:rotate-180" />
   </summary>
   <ul
     class:list={[
       'absolute right-0 z-50 w-40 rounded-2xl bg-white p-1.5 shadow-[0_12px_32px_rgba(27,26,24,0.14)] ring-1 ring-black/5',
-      up ? 'bottom-12' : 'top-12',
+      up ? 'bottom-11' : 'top-11',
     ]}
   >
     {

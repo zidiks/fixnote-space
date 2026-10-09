@@ -1,13 +1,15 @@
 ---
-import { APP_URL, type Lang, localePath, t } from '../i18n'
-import Brand from './Brand.astro'
+import ChevronRight from '@lucide/astro/icons/chevron-right'
+import { APP_URL, type Lang, localePath, PRIVACY_EMAIL, t } from '../i18n'
 import LangMenu from './LangMenu.astro'
 
+/** Small grey print: the page's footnotes (if it has any), link columns, the language switcher. */
 interface Props {
   lang: Lang
   alternates: Partial<Record<Lang, string>>
+  notes?: readonly string[]
 }
-const { lang, alternates } = Astro.props
+const { lang, alternates, notes = [] } = Astro.props
 const d = t(lang)
 const columns = [
   {
@@ -15,6 +17,7 @@ const columns = [
     links: [
       { label: d.nav.features, href: localePath(lang, '/features/') },
       { label: d.nav.security, href: localePath(lang, '/security/') },
+      { label: d.nav.pricing, href: localePath(lang, '/#pricing') },
       { label: d.nav.download, href: localePath(lang, '/download/') },
       { label: d.footer.webApp, href: APP_URL },
     ],
@@ -24,37 +27,58 @@ const columns = [
     links: [
       { label: d.nav.blog, href: localePath(lang, '/blog/') },
       { label: d.footer.rss, href: localePath(lang, '/rss.xml') },
+      { label: d.nav.faq, href: localePath(lang, '/#faq') },
+    ],
+  },
+  {
+    title: d.footer.company,
+    links: [
       { label: d.footer.privacy, href: localePath(lang, '/privacy/') },
+      { label: PRIVACY_EMAIL, href: `mailto:${PRIVACY_EMAIL}` },
     ],
   },
 ]
 ---
 
-<footer class="px-4 pb-10 pt-16 sm:px-6">
-  <div class="mx-auto grid max-w-[1100px] gap-10 md:grid-cols-[1.6fr_1fr_1fr]">
-    <div>
-      <Brand />
-      <p class="mt-5 max-w-[300px] text-[15px] leading-[1.55] text-muted">{d.footer.tagline}</p>
-    </div>
+<footer class="bg-canvas px-4 pb-10 pt-4 text-[12px] leading-[1.5] text-muted sm:px-6">
+  <div class="mx-auto max-w-[1040px]">
     {
-      columns.map((column) => (
-        <div>
-          <div class="text-sm font-medium text-muted">{column.title}</div>
-          <ul class="mt-5 space-y-3.5">
-            {column.links.map((link) => (
-              <li>
-                <a href={link.href} class="text-[15px] transition hover:text-brand">
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))
+      notes.length > 0 && (
+        <ol class="space-y-2 border-b border-line pb-4 pt-4">
+          {notes.map((note, i) => (
+            <li id={`note-${i + 1}`}>
+              {i + 1}. {note}
+            </li>
+          ))}
+        </ol>
+      )
     }
-  </div>
-  <div class="mx-auto mt-14 flex max-w-[1100px] items-center justify-between gap-4 border-t border-black/[0.06] pt-5 text-sm text-muted">
-    <span>© {new Date().getFullYear()} {d.footer.rights}</span>
-    <LangMenu lang={lang} alternates={alternates} up />
+    <div class="flex items-center gap-1.5 border-b border-line py-3 text-ink/80">
+      <a href={localePath(lang, '/')} aria-label="FixNote"><img src="/favicon.svg" alt="" width="16" height="16" class="size-4" /></a>
+      <ChevronRight size={13} class="text-faint" />
+      <span>FixNote</span>
+    </div>
+    <div class="grid gap-8 py-6 sm:grid-cols-3">
+      {
+        columns.map((column) => (
+          <div>
+            <div class="font-semibold text-ink/90">{column.title}</div>
+            <ul class="mt-2.5 space-y-2">
+              {column.links.map((link) => (
+                <li>
+                  <a href={link.href} class="transition hover:text-ink hover:underline">
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+      <span>© {new Date().getFullYear()} {d.footer.rights}. {d.footer.tagline}</span>
+      <LangMenu lang={lang} alternates={alternates} up />
+    </div>
   </div>
 </footer>

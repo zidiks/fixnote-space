@@ -1,6 +1,6 @@
 ---
 import Faq from '../../components/Faq.astro'
-import SectionHeader from '../../components/SectionHeader.astro'
+import Headline from '../../components/Headline.astro'
 import { type Lang, t } from '../../i18n'
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 const d = t(Astro.props.lang).faq
 ---
 
-<section id="faq" class="px-4 py-24 sm:px-6 sm:py-32">
-  <SectionHeader eyebrow={d.eyebrow} parts={d.headline} />
-  <div class="mt-14"><Faq items={d.items} /></div>
+<section id="faq" class="scroll-mt-14 bg-white px-4 py-24 sm:px-6 sm:py-32">
+  <Headline parts={d.headline} class="text-center text-[38px] sm:text-[56px] lg:text-[64px]" />
+  <div class="reveal mt-12 sm:mt-16"><Faq items={d.items} /></div>
 </section>
