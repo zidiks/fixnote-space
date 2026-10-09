@@ -63,11 +63,6 @@ export const en: Dict = {
     shotAlt: 'FixNote: today’s notes and an assistant answering with links to notes',
   },
 
-  ribbon: {
-    text: 'New in FixNote: call summaries, made right on your computer.',
-    link: 'Learn more',
-  },
-
   tiles: [
     {
       id: 'ai',
@@ -433,7 +428,7 @@ export const en: Dict = {
     rss: 'RSS',
     privacy: 'Privacy',
     email: 'Write to us',
-    help: 'A question about FixNote or your data? Write to ',
+    help: 'A question about FixNote? Write to ',
     rights: 'All rights reserved.',
   },
 

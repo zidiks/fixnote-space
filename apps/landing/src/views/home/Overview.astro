@@ -6,7 +6,7 @@ import Sup from '../../components/Sup.astro'
 import { DOWNLOADS, type Lang, localePath, t } from '../../i18n'
 import { topicHref } from '../../lib/blog'
 
-/** The announcement, the big first tile with the app, and four half tiles, the first one dark. */
+/** The big first tile with the app, and four half tiles, the first one dark. */
 interface Props {
   lang: Lang
 }
@@ -34,15 +34,6 @@ const tiles = await Promise.all(
   }),
 )
 ---
-
-<div class="ribbon">
-  <p class="ribbon-text content typo-caption py-4 text-center">
-    {d.ribbon.text}
-    <a href={tiles.find((x) => x.id === 'calls')?.href} class="ribbon-link whitespace-nowrap hover:underline">
-      {d.ribbon.link}<svg viewBox="0 0 6 10" aria-hidden="true" class="link-chevron"><path d="m1 1 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    </a>
-  </p>
-</div>
 
 <section id="overview" class="bg-panel pt-3 pb-3">
   <div class="content-wide">

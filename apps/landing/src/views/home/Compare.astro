@@ -17,7 +17,7 @@ type Mark = 'yes' | 'part' | 'no'
 /** The round marks of the table and its legend (static SVG, no text inside). */
 const mark = (m: Mark) =>
   m === 'yes'
-    ? '<span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue/10 text-blue"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="m2.5 6.2 2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+    ? '<span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-brand/10 text-brand"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="m2.5 6.2 2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
     : m === 'part'
       ? '<span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-ember/10 text-ember"><span class="h-[2px] w-2.5 rounded-full bg-current"></span></span>'
       : '<span class="mx-auto block h-[2px] w-3 rounded-full bg-line"></span>'
@@ -51,7 +51,7 @@ const label = (m: Mark) => (m === 'yes' ? c.included : m === 'part' ? c.limited 
                 <th class:list={['px-2 pt-6 pb-6 text-center align-bottom', plan.highlight && 'rounded-t-[18px] bg-panel']}>
                   <div class="flex flex-col items-center gap-2.5">
                     <img src="/favicon.svg" alt="" width="48" height="48" class:list={['h-12 w-12', !plan.highlight && 'opacity-60 grayscale']} />
-                    <span class:list={['typo-caption leading-tight font-semibold', plan.highlight ? 'text-blue' : 'text-ink']}>
+                    <span class:list={['typo-caption leading-tight font-semibold', plan.highlight ? 'text-brand' : 'text-ink']}>
                       FixNote {plan.name}
                     </span>
                     <span class="typo-caption text-muted">{plan.price}</span>

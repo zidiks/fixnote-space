@@ -1,5 +1,5 @@
 ---
-import { APP_URL, type Lang, localePath, PRIVACY_EMAIL, t } from '../i18n'
+import { APP_URL, CONTACT_EMAIL, type Lang, localePath, t } from '../i18n'
 import { getPosts, postPath } from '../lib/blog'
 import Chevron from './Chevron.astro'
 import LangMenu from './LangMenu.astro'
@@ -61,7 +61,7 @@ const columns = [
     links: [
       { label: f.privacy, href: localePath(lang, '/privacy/') },
       { label: f.rss, href: localePath(lang, '/rss.xml') },
-      { label: f.email, href: `mailto:${PRIVACY_EMAIL}` },
+      { label: f.email, href: `mailto:${CONTACT_EMAIL}` },
     ],
   },
 ]
@@ -126,7 +126,7 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
     </nav>
     <p class="pb-3">
       {f.help}
-      <a href={`mailto:${PRIVACY_EMAIL}`} class="text-link hover:underline">{PRIVACY_EMAIL}</a>.
+      <a href={`mailto:${CONTACT_EMAIL}`} class="text-link hover:underline">{CONTACT_EMAIL}</a>.
     </p>
     <div
       class="flex flex-col gap-2 border-t border-black/[0.16] pt-2 pb-5 small:flex-row small:items-center small:justify-between"

@@ -59,7 +59,7 @@ const icons = {
           const Icon = icons[item.id as keyof typeof icons] ?? Sparkles
           return (
             <li class="text-center">
-              <Icon size={40} stroke-width={1.4} class="mx-auto text-blue" />
+              <Icon size={40} stroke-width={1.4} class="mx-auto text-brand" />
               <p class="typo-eyebrow mt-4">{item.title}</p>
               <p class="typo-body mx-auto mt-2 max-w-[17rem] text-muted">{item.text}</p>
             </li>
