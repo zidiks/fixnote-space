@@ -1,9 +1,11 @@
 ---
-import { APPS, type AppId } from '../data/apps'
+import { Image } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+import type { AppId } from '../data/apps'
 
 /**
- * An app's square: FixNote's own icon, or for other apps a tinted square with the first letter (we
- * don't copy other companies' icons).
+ * An app's icon: FixNote's own, or the other app's App Store icon (src/assets/apps/<id>.png, 256 px
+ * squares) in the same rounded square. A hairline keeps white icons visible on white.
  */
 interface Props {
   app: AppId
@@ -11,19 +13,22 @@ interface Props {
   class?: string
 }
 const { app, size = 48, class: className } = Astro.props
-const info = APPS[app]
+const icons = import.meta.glob<{ default: ImageMetadata }>('../assets/apps/*.png', { eager: true })
+// FixNote has no file here and uses the site's favicon.
+const icon = icons[`../assets/apps/${app}.png`]?.default
+const radius = Math.round(size * 0.223)
 ---
 
 {
-  app === 'fixnote' ? (
+  !icon ? (
     <img src="/favicon.svg" alt="" width={size} height={size} class={className} style={`width:${size}px;height:${size}px`} />
   ) : (
     <span
-      aria-hidden="true"
-      class:list={['flex shrink-0 items-center justify-center font-display font-semibold text-white', className]}
-      style={`width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.23)}px;background:${info.tint};font-size:${Math.round(size * 0.46)}px`}
+      class:list={['relative block shrink-0 overflow-hidden', className]}
+      style={`width:${size}px;height:${size}px;border-radius:${radius}px`}
     >
-      {info.name.charAt(0)}
+      <Image src={icon} alt="" width={size * 2} height={size * 2} class="h-full w-full" />
+      <span class="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgb(0_0_0/0.1)]" style={`border-radius:${radius}px`} />
     </span>
   )
 }

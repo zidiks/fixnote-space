@@ -9,7 +9,7 @@ faq:
   - q: "¿Qué apps de notas cifran de extremo a extremo?"
     a: "FixNote cifra todas las notas, siempre. Obsidian cifra lo que pasa por Obsidian Sync, que es de pago. Joplin ofrece cifrado de extremo a extremo si lo activas. Notas de Apple solo cifra así con la protección de datos avanzada. Notion no tiene cifrado de extremo a extremo, y Evernote solo bloquea con contraseña el texto seleccionado."
   - q: "¿Qué app de notas con IA funciona en Windows y en el navegador?"
-    a: "Notion, Evernote y FixNote funcionan en Windows y en el navegador. Obsidian tiene app para Windows, pero no versión web. Notas de Apple no tiene app para Windows, solo iCloud.com en el navegador. Joplin funciona en Windows y se abre en el navegador como app web."
+    a: "Notion, Evernote y FixNote funcionan en Windows y en el navegador. Obsidian tiene app para Windows, pero no versión web. Notas de Apple no tiene app para Windows, solo iCloud.com en el navegador. Joplin funciona en Windows, y con Joplin Cloud también tienes una app web."
   - q: "¿Puedo pasar mis notas de una app a otra?"
     a: "Sí, casi siempre a través de Markdown. FixNote importa carpetas Markdown y bóvedas de Obsidian, exportaciones de Notion, copias de Bear y, en el Mac, Notas de Apple directamente. Las notas de Evernote se exportan antes como .enex y se convierten a Markdown."
 ---
@@ -19,22 +19,22 @@ Buscas una app de notas en la que la IA te ayude a encontrar lo que escribiste, 
 ## La respuesta corta
 
 - FixNote te encaja si quieres un asistente que responda a partir de todas tus notas y cifrado de extremo a extremo sin configurar nada, en Windows, macOS y el navegador.
-- Notion encaja con un equipo que tiene su wiki, tareas y bases de datos en un mismo sitio y está dispuesto a pagar el plan Business para tener Notion Agent.
+- Notion encaja con un equipo que tiene su wiki, tareas y bases de datos en un mismo sitio y está dispuesto a pagar el plan Business para tener Notion Agent, respuestas a partir del espacio de trabajo y AI Meeting Notes.
 - Obsidian encaja con quien disfruta configurando: las notas son archivos Markdown y la IA llega con los plugins que elijas.
 - Evernote encaja con quien tiene allí un archivo de años con páginas web y PDF y no le importa pagar desde $14.99 al mes.
 - Notas de Apple encaja con quien solo usa iPhone, iPad y Mac y quiere IA para resumir grabaciones y pulir textos.
-- Joplin encaja con quien valora el código abierto, Linux y su propio servidor de sincronización, y quiere una IA que trabaje con una nota cada vez.
+- Joplin encaja con quien valora el código abierto, Linux y su propio servidor de sincronización, y le basta con un chat de IA sobre la nota abierta y la búsqueda por significado.
 
 ## La comparativa en una tabla
 
 | App | Plan gratis | De pago desde | IA | Cifrado de extremo a extremo | Windows | Web |
 | --- | --- | --- | --- | --- | --- | --- |
 | FixNote | Sí, sin límite de notas | $7 al mes | Asistente para todas las notas; tu clave u Ollama gratis | Sí, siempre | Sí | Sí |
-| Notion | Sí | $10 al mes | Notion Agent en Business ($20); prueba en Free y Plus | No | Sí | Sí |
+| Notion | Sí | $10 al mes | Notion AI responde con tus páginas, Agent, AI Meeting Notes en Business ($20); prueba en Free y Plus | No | Sí | Sí |
 | Obsidian | Sí | $5 al mes (Sync) | Solo plugins de la comunidad | Con Obsidian Sync | Sí | No |
 | Evernote | 50 notas, un dispositivo | $14.99 al mes | AI Assistant, búsqueda semántica, AI Transcribe | Solo texto seleccionado | Sí | Sí |
 | Notas de Apple | Sí, con dispositivos Apple | Sin plan de pago | Apple Intelligence: herramientas de escritura, resúmenes de grabaciones | Con protección de datos avanzada | No | iCloud.com |
-| Joplin | Sí, código abierto | 2,99 € al mes (Joplin Cloud) | Chat sobre la nota abierta, app de escritorio | Sí, se activa a mano | Sí | App web |
+| Joplin | Sí, código abierto | 2,99 € al mes (Joplin Cloud) | Chat sobre la nota abierta, búsqueda semántica, app de escritorio | Sí, se activa a mano | Sí | Con Joplin Cloud |
 
 Precios con pago mensual; Joplin Cloud cobra en euros.
 
@@ -50,7 +50,7 @@ Las notas se cifran en tu dispositivo y el servidor guarda solo texto cifrado. F
 
 ## Notion
 
-Notion es la más fuerte de las seis para trabajar en equipo: bases de datos con vistas, wiki, tareas y proyectos en un mismo espacio. Su IA completa va en el plan Business, a $20 por miembro al mes. Notion Agent hace tareas de varios pasos en tu espacio de trabajo y en las apps conectadas, y AI Meeting Notes graba reuniones. En Free y en Plus ($10 al mes) solo puedes probar la IA.
+Notion es la más fuerte de las seis para trabajar en equipo: bases de datos con vistas, wiki, tareas y proyectos en un mismo espacio. Su IA completa va en el plan Business, a $20 por miembro al mes. Notion AI y Notion Agent responden a partir de tus páginas con enlaces y hacen tareas de varios pasos en tu espacio de trabajo y en las apps conectadas, y AI Meeting Notes graba reuniones en la app de escritorio y escribe un resumen. En Free y en Plus ($10 al mes) solo puedes probar la IA.
 
 Notion tiene apps para Windows, macOS, iPhone y Android, versión web y servidor MCP. No hay cifrado de extremo a extremo: las claves de tus datos las tiene Notion, y sin cuenta no se puede usar. Sin conexión, las apps de Notion abren solo las páginas que marcaste antes como disponibles sin conexión, y el navegador no tiene ese modo. Más en [FixNote o Notion](/es/vs/notion/).
 
@@ -58,7 +58,7 @@ Notion tiene apps para Windows, macOS, iPhone y Android, versión web y servidor
 
 Obsidian guarda las notas como archivos Markdown en tu disco y no pide cuenta. La app es gratis; Obsidian Sync cuesta $4 al mes con pago anual o $5 al mes y usa cifrado de extremo a extremo AES-256. Tiene apps para Windows, macOS, Linux, iPhone y Android, y no tiene versión web.
 
-Obsidian no trae IA integrada. La añaden los plugins de la comunidad: chat con tu bóveda, búsqueda por significado, conexión con distintos modelos. Es flexible, pero elegir y configurar los plugins te toca a ti. Tampoco tiene servidor MCP oficial, solo de terceros. Más en [FixNote o Obsidian](/es/vs/obsidian/).
+Obsidian no trae IA integrada. La añaden los plugins de la comunidad: chat con tu bóveda, búsqueda por significado, conexión con distintos modelos. Es flexible, pero elegir y configurar los plugins te toca a ti. Tampoco tiene servidor MCP oficial: desde la versión 1.12 hay una herramienta oficial de línea de comandos, y los servidores MCP los hace la comunidad. Más en [FixNote o Obsidian](/es/vs/obsidian/).
 
 ## Evernote
 
@@ -68,15 +68,15 @@ La pega está en el plan gratis: 50 notas, una libreta y un dispositivo. Starter
 
 ## Notas de Apple
 
-Notas de Apple es gratis y ya está en tu iPhone, iPad y Mac. En dispositivos con Apple Intelligence reescribe textos y resume grabaciones de audio, y las llamadas grabadas en el iPhone también llegan a Notas. No tiene un chat que responda a partir de todas tus notas.
+Notas de Apple es gratis y ya está en tu iPhone, iPad y Mac. En dispositivos con Apple Intelligence reescribe textos y resume grabaciones de audio, y las llamadas grabadas en Teléfono o FaceTime llegan a Notas con transcripción. El dictado de Apple funciona en el dispositivo. No tiene un chat que responda a partir de todas tus notas.
 
 No hay app de Notas para Windows; desde otros ordenadores se llega por iCloud.com. El cifrado de extremo a extremo llega solo con la protección de datos avanzada de iCloud, y con ella activada el acceso por iCloud.com queda desactivado hasta que lo permitas. Más en [FixNote o Notas de Apple](/es/vs/apple-notes/).
 
 ## Joplin
 
-Joplin es gratis y de código abierto, con apps para Windows, macOS, Linux, iPhone y Android, y también funciona en el navegador como app web. Puedes sincronizar con Dropbox, OneDrive, WebDAV, tu propio Joplin Server o Joplin Cloud desde 2,99 € al mes. El cifrado de extremo a extremo está en todas las apps, pero lo activas tú, y la contraseña maestra no se puede recuperar.
+Joplin es gratis y de código abierto, con apps para Windows, macOS, Linux, iPhone y Android, y con Joplin Cloud también tienes una app web. Puedes sincronizar con Dropbox, OneDrive, WebDAV, tu propio Joplin Server o Joplin Cloud desde 2,99 € al mes. El cifrado de extremo a extremo está en todas las apps, pero lo activas tú, y la contraseña maestra no se puede recuperar.
 
-Joplin 3.7, publicada en septiembre de 2026, llevó la IA a la app de escritorio: un chat sobre la nota abierta, búsqueda semántica en el dispositivo y un servidor MCP. El modelo puede ser Joplin Cloud AI, tu propia clave u Ollama, y todo viene desactivado por defecto. Más en [FixNote o Joplin](/es/vs/joplin/).
+Joplin 3.7, publicada en septiembre de 2026, llevó la IA a la app de escritorio: un chat sobre la nota abierta, búsqueda semántica en el dispositivo y un servidor MCP. El modelo puede ser Joplin Cloud AI, tu propia clave u Ollama, y todo viene desactivado por defecto. El dictado en el dispositivo solo está en la app para Android. Más en [FixNote o Joplin](/es/vs/joplin/).
 
 ## Cómo elegir
 

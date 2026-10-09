@@ -31,8 +31,6 @@ export interface App {
   paid: string | null
   /** The vendor's site, for the footnote. */
   site: string
-  /** A square of colour with the first letter stands in for the app's icon. */
-  tint: string
   marks: Record<Row, Mark>
 }
 
@@ -41,7 +39,6 @@ export const APPS: Record<AppId, App> = {
     name: 'FixNote',
     paid: '$7',
     site: 'fixnote.space',
-    tint: '#f26a2a',
     marks: {
       free: 'yes',
       noAccount: 'yes',
@@ -60,19 +57,20 @@ export const APPS: Record<AppId, App> = {
     name: 'Notion',
     paid: '$10',
     site: 'notion.com',
-    tint: '#191919',
     marks: {
       free: 'yes',
       noAccount: 'no',
       windows: 'yes',
       web: 'yes',
       e2ee: 'no',
-      // Notion Agent and AI Meeting Notes come with Business; Free and Plus get a short trial.
-      assistant: 'part',
+      // Notion AI (Agent, Enterprise Search) comes with Business; Free and Plus get a trial.
+      assistant: 'yes',
       ownModel: 'no',
       dictation: 'no',
-      calls: 'part',
+      // AI Meeting Notes, Business plan, desktop app.
+      calls: 'yes',
       telegram: 'no',
+      // Hosted server at mcp.notion.com.
       mcp: 'yes',
     },
   },
@@ -80,7 +78,6 @@ export const APPS: Record<AppId, App> = {
     name: 'Obsidian',
     paid: '$5',
     site: 'obsidian.md',
-    tint: '#7c3aed',
     marks: {
       free: 'yes',
       noAccount: 'yes',
@@ -100,20 +97,23 @@ export const APPS: Record<AppId, App> = {
     name: 'Evernote',
     paid: '$14.99',
     site: 'evernote.com',
-    tint: '#00a82d',
     marks: {
       // Free keeps 50 notes in one notebook on one device.
       free: 'part',
       noAccount: 'no',
       windows: 'yes',
       web: 'yes',
-      // Only text you select and lock with a passphrase.
-      e2ee: 'part',
-      assistant: 'part',
+      // Only text you select and lock with a passphrase; synced notes are not end-to-end encrypted.
+      e2ee: 'no',
+      // AI Assistant answers across notebooks on paid plans.
+      assistant: 'yes',
       ownModel: 'no',
+      // AI Transcribe runs in the cloud.
       dictation: 'no',
-      calls: 'part',
+      // AI Transcribe records a meeting and writes its summary and transcript.
+      calls: 'yes',
       telegram: 'no',
+      // Official MCP server (beta).
       mcp: 'yes',
     },
   },
@@ -121,21 +121,20 @@ export const APPS: Record<AppId, App> = {
     name: 'Apple Notes',
     paid: null,
     site: 'apple.com',
-    tint: '#f5b700',
     marks: {
       free: 'yes',
       // Notes "On My Mac" or "On My iPhone" need no Apple Account; they then stay on that device.
       noAccount: 'part',
       windows: 'no',
       // iCloud.com in a browser.
-      web: 'part',
+      web: 'yes',
       // With Advanced Data Protection, which is off until you turn it on.
       e2ee: 'part',
       assistant: 'no',
       ownModel: 'no',
       dictation: 'yes',
-      // Recordings in Notes get a summary with Apple Intelligence on supported devices.
-      calls: 'part',
+      // Phone and FaceTime calls recorded into Notes with a transcript and an Apple Intelligence summary.
+      calls: 'yes',
       telegram: 'no',
       mcp: 'no',
     },
@@ -144,18 +143,21 @@ export const APPS: Record<AppId, App> = {
     name: 'Joplin',
     paid: '€2.99',
     site: 'joplinapp.org',
-    tint: '#1071d3',
     marks: {
       free: 'yes',
       noAccount: 'yes',
       windows: 'yes',
+      // The Joplin Cloud web app.
       web: 'part',
       e2ee: 'yes',
+      // Joplin 3.7 chat answers about the open note.
       assistant: 'part',
       ownModel: 'yes',
-      dictation: 'no',
+      // Voice typing on Android only.
+      dictation: 'part',
       calls: 'no',
       telegram: 'no',
+      // Built-in MCP server in the desktop app, off until you turn it on.
       mcp: 'yes',
     },
   },

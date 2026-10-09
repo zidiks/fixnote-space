@@ -7,7 +7,7 @@ steps:
   - title: "Decide si te importa el código abierto"
     text: "Si quieres leer el código, tener tu propio servidor de sincronización o usar una app para Linux, ahí Joplin es más fuerte. FixNote sincroniza solo a través de nuestro servidor."
   - title: "Piensa qué debe hacer la IA"
-    text: "El chat de Joplin 3.7 trabaja con la nota que tienes abierta. El asistente de FixNote busca en todas tus notas, responde con enlaces y puede cambiar varias notas a la vez, mostrando cada edición."
+    text: "El chat de Joplin 3.7 responde sobre la nota que tienes abierta, y su búsqueda semántica abarca todas las notas. El asistente de FixNote busca en todas tus notas, responde con enlaces y puede cambiar varias notas a la vez, mostrando cada edición."
   - title: "Revisa el cifrado"
     text: "En Joplin el cifrado de extremo a extremo se activa a mano, y la contraseña maestra no se puede recuperar. En FixNote está activo desde el principio, y las claves se recuperan con una frase de 12 palabras."
   - title: "Pasa primero una libreta"
@@ -43,7 +43,7 @@ Joplin 3.7, publicada en septiembre de 2026, llevó la IA a la app de escritorio
 
 El [asistente](/es/features/ask-your-notes/) de FixNote trabaja con todas tus notas: busca por palabras y por significado, responde con enlaces y crea, edita y mueve notas. Borrar, o cambiar muchas notas a la vez, siempre pide confirmación, y cualquier cambio se puede deshacer en Ajustes → IA. Las opciones de modelo son parecidas: FixNote AI con Pro, tu propia clave u Ollama. También hay un [servidor MCP](/es/features/mcp/) con alcance por carpetas y niveles de acceso.
 
-FixNote también trata la voz en el dispositivo. Las [notas de voz](/es/features/voice-notes/) se transcriben mientras hablas, y los [resúmenes de llamadas](/es/features/call-summaries/) recogen decisiones y tareas al terminar. Joplin no tiene dictado ni grabación de reuniones.
+FixNote también trata la voz en el dispositivo. Las [notas de voz](/es/features/voice-notes/) se transcriben mientras hablas, y los [resúmenes de llamadas](/es/features/call-summaries/) recogen decisiones y tareas al terminar. Joplin solo tiene dictado en el dispositivo en su app para Android, y no graba llamadas.
 
 ## Cifrado y sincronización
 
@@ -53,7 +53,7 @@ En FixNote el [cifrado](/es/features/encryption/) está siempre activo, y la sin
 
 ## Plataformas y precio
 
-Joplin es gratis y funciona en Windows, macOS, Linux, iPhone y Android, y en el navegador como app web. Joplin Cloud empieza en 2,99 € al mes. FixNote funciona en Windows, macOS y el navegador, y en el móvil también en el navegador. Free no caduca; Pro cuesta $7 al mes o $60 al año e incluye sincronización, FixNote AI, notas compartidas y el bot de Telegram.
+Joplin es gratis y funciona en Windows, macOS, Linux, iPhone y Android; con Joplin Cloud también tienes una app web. Joplin Cloud empieza en 2,99 € al mes. FixNote funciona en Windows, macOS y el navegador, y en el móvil también en el navegador. Free no caduca; Pro cuesta $7 al mes o $60 al año e incluye sincronización, FixNote AI, notas compartidas y el bot de Telegram.
 
 ## Cómo pasar tus notas desde Joplin
 

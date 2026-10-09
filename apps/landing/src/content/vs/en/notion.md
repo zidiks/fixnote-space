@@ -22,6 +22,7 @@ still:
   - "Notion has databases with views, filters and relations; FixNote has nothing like them."
   - "If your team already runs its wiki, projects and tasks in Notion, keeping personal notes next to them can be the simpler choice."
   - "Notion has native iPhone and Android apps, while FixNote runs on a phone only as a web app in the browser."
+  - "If your team already pays for Business, Notion AI answers from the whole workspace and AI Meeting Notes summarizes calls, so a second app adds little for work notes."
 verdict: "For team work built on databases and a shared wiki, Notion is still the stronger tool. For personal notes that need to stay private, FixNote gives you end-to-end encryption and an assistant without a Business plan. Plenty of people keep both: Notion for the team, FixNote for themselves."
 faq:
   - q: "Does Notion have end-to-end encryption?"
@@ -38,7 +39,7 @@ faq:
 
 ## AI and the assistant
 
-Notion keeps its full AI in the Business plan. That covers Notion Agent, which carries out multi-step tasks across your workspace and connected apps, and AI Meeting Notes for recording meetings. On Free and Plus you can only try these features.
+Notion keeps its full AI in the Business plan. That covers Notion AI and Notion Agent, which answer questions from your pages with links to them and carry out multi-step tasks across your workspace and connected apps, and AI Meeting Notes, which records meetings in the desktop app and writes a summary. On Free and Plus you can only try these features.
 
 FixNote's [assistant](/features/ask-your-notes/) is there on every plan. It searches by words and by meaning, answers with links to your notes, writes new notes and moves them between folders. Each change appears as a diff; deleting, or changing more than a few notes at once, always asks first, and Settings → AI keeps a log where any change can be undone. On Free you plug in your own model key or Ollama; Pro adds FixNote AI, which needs no key. Inside a note you can select text and ask to [rewrite or expand it](/features/ai-edits/).
 

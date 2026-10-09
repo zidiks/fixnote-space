@@ -100,7 +100,7 @@ const active = (href: string) => path === href || (href === '/blog/' && path.sta
   </div>
 </div>
 <div class="sticky top-0 z-50">
-  <div class="absolute inset-0 bg-panel"></div>
+  <div class="absolute inset-0 bg-[rgb(245_245_247/0.72)] backdrop-blur-[20px] backdrop-saturate-[1.8]"></div>
   <nav aria-label="FixNote" class="relative mx-auto flex h-[52px] max-w-[1024px] items-center px-4 nav:px-[22px]">
     <a href={home} class="font-display text-[21px] leading-none font-semibold tracking-[0.011em] text-ink">FixNote</a>
     <ul class="ml-auto hidden items-center gap-6 nav:flex">
@@ -125,5 +125,4 @@ const active = (href: string) => path === href || (href === '/blog/' && path.sta
       {d.nav.download}
     </a>
   </nav>
-  <div class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-black/[0.16]"></div>
 </div>

@@ -31,7 +31,7 @@ const icons = {
 <section id="pricing" class="section-pad bg-panel">
   <header class="section-header">
     <h2 class="typo-section-headline">{p.headline}</h2>
-    <p class="typo-intro mx-auto mt-5 max-w-[40rem] text-muted">{p.lead}</p>
+    <p class="typo-intro mx-auto mt-5 max-w-[40rem] text-muted">{p.lead}<Sup n={4} /></p>
   </header>
   <div class="content">
     <div class="mx-auto max-w-[580px] rounded-[18px] bg-white px-8 py-12 text-center max-[734px]:px-6 max-[734px]:py-10">
@@ -46,7 +46,6 @@ const icons = {
       <div class="mt-7 flex justify-center">
         <a href={download} class="btn btn-primary btn-lg min-w-[12rem]">{p.button}</a>
       </div>
-      <p class="typo-footnote mt-5 text-muted">{p.prices}<Sup n={4} /></p>
     </div>
     <p class="typo-body mt-6 text-center text-muted">
       {p.free}{' '}

@@ -42,7 +42,7 @@ Obsidian no trae IA integrada. La añaden los plugins de la comunidad, que son m
 
 El [asistente](/es/features/ask-your-notes/) de FixNote funciona desde el principio. Busca por palabras y por significado en español, inglés y ruso, responde con enlaces a tus notas, escribe notas nuevas y las mueve entre carpetas. Borrar, o cambiar muchas notas a la vez, siempre pide confirmación, y cualquier cambio se puede deshacer desde el registro en Ajustes → IA. Tú eliges el modelo: FixNote AI con Pro, tu propia clave u Ollama en tu ordenador.
 
-El [servidor MCP](/es/features/mcp/) también viene integrado y es gratis. Claude Desktop, Claude Code o Cursor ven solo las carpetas que permitas. Obsidian no tiene servidor MCP oficial, solo los de terceros.
+El [servidor MCP](/es/features/mcp/) también viene integrado y es gratis. Claude Desktop, Claude Code o Cursor ven solo las carpetas que permitas. Obsidian no tiene servidor MCP oficial: desde la versión 1.12 tiene una herramienta oficial de línea de comandos, y los servidores MCP los hace la comunidad.
 
 ## Sincronización y cifrado
 
