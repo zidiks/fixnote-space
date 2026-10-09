@@ -45,3 +45,12 @@ export const formatDate = (date: Date, lang: Lang): string =>
     year: 'numeric',
     timeZone: 'UTC',
   }).format(date)
+
+/**
+ * Where a "Learn more" about a topic leads: the article with this `translationKey` in the page's
+ * language, or `fallback` (a site path) where that article is not written yet.
+ */
+export async function topicHref(lang: Lang, key: string, fallback: string): Promise<string> {
+  const post = (await getPosts(lang)).find((p) => p.data.translationKey === key)
+  return post ? postPath(post) : localePath(lang, fallback)
+}

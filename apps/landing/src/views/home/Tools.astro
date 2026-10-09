@@ -1,0 +1,47 @@
+---
+import Demo from '../../components/Demo.astro'
+import Gallery from '../../components/Gallery.astro'
+import Lines from '../../components/Lines.astro'
+import More from '../../components/More.astro'
+import { type Lang, t } from '../../i18n'
+
+/** Short cards: a picture of the app on top, a name, one line and a caption. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const tl = d.tools
+const shots: Record<string, string> = {
+  checklists: 'note-trip',
+  tables: 'note-repair',
+  daily: 'note-daily',
+  calls: 'note-call',
+  folders: 'folder',
+  search: 'search',
+  dark: 'home-dark',
+}
+---
+
+<section id="tools" class="section-pad bg-panel !pt-0">
+  <header class="section-header">
+    <h2 class="typo-section-headline"><Lines text={tl.headline} wide /></h2>
+    <More href="#compare" class="typo-intro mt-4 inline-block">{tl.compare}</More>
+  </header>
+  <Gallery label={tl.label} prev={d.reasons.prev} next={d.reasons.next}>
+    {
+      tl.items.map((item) => (
+        <li class="gallery-item gallery-item-wide">
+          <div class="gallery-card gallery-card-short">
+            <Demo lang={lang} name={shots[item.id] ?? 'home'} alt="" ratio={16 / 9} flat sizes="(min-width: 1069px) 480px, 400px" />
+            <div class="gallery-card-copy !pt-8">
+              <h3 class="typo-card-headline">{item.title}</h3>
+              <p class="typo-card-copy mt-2 text-muted">{item.text}</p>
+            </div>
+            <p class="typo-caption mt-auto mb-8 text-muted max-[734px]:px-[7.3%]">{item.caption}</p>
+          </div>
+        </li>
+      ))
+    }
+  </Gallery>
+</section>

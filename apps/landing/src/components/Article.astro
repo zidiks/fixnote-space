@@ -1,0 +1,47 @@
+---
+import { APP_URL, type Lang, localePath, type Part, t } from '../i18n'
+import More from './More.astro'
+
+/**
+ * A reading page: a narrow white column with a small grey label, a headline, an intro and the
+ * download button, then the page's own content.
+ */
+interface Props {
+  lang: Lang
+  eyebrow: string
+  title: string | readonly Part[]
+  intro?: string
+  /** Show the download button and the web app link under the intro. */
+  cta?: boolean
+}
+const { lang, eyebrow, title, intro, cta = true } = Astro.props
+const d = t(lang)
+const text =
+  typeof title === 'string'
+    ? title
+    : title
+        .map((p) => (typeof p === 'string' ? p : `${p.text}${p.after ?? ''}`))
+        .filter((p) => p !== '\n')
+        .join(' ')
+        .replace(/\s+([,.!?:;])/g, '$1')
+---
+
+<div class="bg-white">
+  <article class="mx-auto w-[87.5%] max-w-[692px] pt-16 pb-24 small:w-full small:pt-20">
+    <p class="typo-caption font-semibold text-muted">{eyebrow}</p>
+    <h1 class="typo-headline mt-2 text-ink">{text}</h1>
+    {intro && <p class="typo-intro mt-6 text-ink">{intro}</p>}
+    <slot name="meta" />
+    {
+      cta && (
+        <div class="mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
+          <a href={localePath(lang, '/download/')} class="btn btn-primary btn-lg">
+            {d.cta.download}
+          </a>
+          <More href={APP_URL}>{d.cta.open}</More>
+        </div>
+      )
+    }
+    <slot />
+  </article>
+</div>

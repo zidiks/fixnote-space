@@ -1,0 +1,19 @@
+---
+/** The thin chevron after "Learn more" links and in the breadcrumb. */
+interface Props {
+  class?: string
+  /** Points left (the "back" link). */
+  back?: boolean
+}
+const { class: className = 'link-chevron', back = false } = Astro.props
+---
+
+<svg viewBox="0 0 6 10" aria-hidden="true" class={className}>
+  <path
+    d={back ? 'M5 1 1 5l4 4' : 'm1 1 4 4-4 4'}
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"></path>
+</svg>

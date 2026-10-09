@@ -1,0 +1,26 @@
+---
+/**
+ * A row of cards that scrolls sideways (scroll-snap) with round arrows under it. The arrows are
+ * wired by the small script in Base.astro; without JavaScript the row still scrolls by touch.
+ */
+interface Props {
+  label: string
+  prev: string
+  next: string
+}
+const { label, prev, next } = Astro.props
+---
+
+<div aria-label={label} data-gallery>
+  <ul class="gallery-track">
+    <slot />
+  </ul>
+  <div class="paddlenav">
+    <button type="button" class="paddle" aria-label={prev} data-prev>
+      <svg viewBox="0 0 11 11" aria-hidden="true"><path d="M7.5 1.5 3.5 5.5l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </button>
+    <button type="button" class="paddle" aria-label={next} data-next>
+      <svg viewBox="0 0 11 11" aria-hidden="true"><path d="m3.5 1.5 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </button>
+  </div>
+</div>

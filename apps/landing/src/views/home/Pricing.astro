@@ -1,0 +1,94 @@
+---
+import CloudUpload from '@lucide/astro/icons/cloud-upload'
+import Link from '@lucide/astro/icons/link'
+import RefreshCw from '@lucide/astro/icons/refresh-cw'
+import Send from '@lucide/astro/icons/send'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import Users from '@lucide/astro/icons/users'
+import More from '../../components/More.astro'
+import Sup from '../../components/Sup.astro'
+import { type Lang, localePath, t } from '../../i18n'
+
+/** The Pro card, a line about Free, what Pro includes, then three steps to start. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.pricing
+const s = d.steps
+const download = localePath(lang, '/download/')
+const icons = {
+  sync: RefreshCw,
+  ai: Sparkles,
+  shared: Users,
+  links: Link,
+  telegram: Send,
+  files: CloudUpload,
+}
+---
+
+<section id="pricing" class="section-pad bg-panel">
+  <header class="section-header">
+    <h2 class="typo-section-headline">{p.headline}</h2>
+    <p class="typo-intro mx-auto mt-5 max-w-[40rem] text-muted">{p.lead}</p>
+  </header>
+  <div class="content">
+    <div class="mx-auto max-w-[580px] rounded-[18px] bg-white px-8 py-12 text-center max-[734px]:px-6 max-[734px]:py-10">
+      <img src="/favicon.svg" alt="" width="72" height="72" class="mx-auto h-[72px] w-[72px]" />
+      <p class="typo-eyebrow mt-4">{p.name}</p>
+      <p class="typo-caption mt-1 text-muted">{p.kind}</p>
+      <p class="mt-6 flex items-baseline justify-center gap-3">
+        <span class="font-display text-[64px] leading-none font-semibold tracking-[-0.009em] tabular-nums max-[734px]:text-[48px]">{p.price}</span>
+        <span class="typo-intro text-faint tabular-nums">{p.year}</span>
+      </p>
+      <p class="typo-body mt-3 text-muted">{p.period}</p>
+      <div class="mt-7 flex justify-center">
+        <a href={download} class="btn btn-primary btn-lg min-w-[12rem]">{p.button}</a>
+      </div>
+      <p class="typo-footnote mt-5 text-muted">{p.prices}<Sup n={4} /></p>
+    </div>
+    <p class="typo-body mt-6 text-center text-muted">
+      {p.free}{' '}
+      <More href={download} class="">{p.freeLink}</More>
+    </p>
+    <h3 class="typo-subhead mt-20 text-center max-[734px]:mt-14">{p.includedTitle}</h3>
+    <ul class="mt-10 grid grid-cols-3 gap-x-8 gap-y-12 max-[1068px]:grid-cols-2 max-[734px]:grid-cols-1 max-[734px]:gap-y-9">
+      {
+        p.included.map((item) => {
+          const Icon = icons[item.id as keyof typeof icons] ?? Sparkles
+          return (
+            <li class="text-center">
+              <Icon size={40} stroke-width={1.4} class="mx-auto text-blue" />
+              <p class="typo-eyebrow mt-4">{item.title}</p>
+              <p class="typo-body mx-auto mt-2 max-w-[17rem] text-muted">{item.text}</p>
+            </li>
+          )
+        })
+      }
+    </ul>
+  </div>
+</section>
+
+<section id="start" class="section-pad bg-panel !pt-0">
+  <header class="section-header">
+    <h2 class="typo-subhead">{s.headline}</h2>
+  </header>
+  <div class="content">
+    <ol class="grid grid-cols-3 gap-6 max-[734px]:grid-cols-1">
+      {
+        s.items.map((item, i) => (
+          <li class="rounded-[18px] bg-white px-8 pt-9 pb-10 text-center">
+            <span class="font-display text-[48px] leading-none font-semibold text-faint tabular-nums">{i + 1}</span>
+            <p class="typo-eyebrow mt-5">{item.title}</p>
+            <p class="typo-body mt-2 text-muted">{item.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <div class="mt-12 flex flex-wrap items-center justify-center gap-x-7 gap-y-4">
+      <a href={download} class="btn btn-primary btn-lg">{d.hero.download}</a>
+      <More href={download}>{s.all}</More>
+    </div>
+  </div>
+</section>

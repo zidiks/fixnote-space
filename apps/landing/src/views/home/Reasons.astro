@@ -1,0 +1,63 @@
+---
+import Lock from '@lucide/astro/icons/lock'
+import Demo from '../../components/Demo.astro'
+import Gallery from '../../components/Gallery.astro'
+import Lines from '../../components/Lines.astro'
+import More from '../../components/More.astro'
+import { type Lang, localePath, t } from '../../i18n'
+
+/** Wide cards with a headline and a picture of the app; the last one is about privacy. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const r = t(lang).reasons
+const shots: Record<string, string> = {
+  models: 'settings-ai',
+  import: 'settings-data',
+  offline: 'settings-advanced',
+  dark: 'home-dark',
+  languages: 'settings-general',
+}
+---
+
+<section class="bg-panel pb-[100px] max-[1068px]:pb-20 max-[734px]:pb-16">
+  <header class="section-header">
+    <h2 class="typo-section-headline"><Lines text={r.headline} wide /></h2>
+  </header>
+  <Gallery label={r.label} prev={r.prev} next={r.next}>
+    {
+      r.items.map((item) => (
+        <li class="gallery-item gallery-item-wide">
+          <div class="gallery-card">
+            <div class="gallery-card-copy">
+              <h3 class="typo-card-headline">
+                <Lines text={item.title} />
+              </h3>
+            </div>
+            <div class="mt-auto w-full px-5 pb-6">
+              <Demo lang={lang} name={shots[item.id] ?? 'home'} alt={item.alt} ratio={1280 / 680} sizes="(min-width: 1069px) 440px, 360px" />
+            </div>
+          </div>
+        </li>
+      ))
+    }
+    <li class="gallery-item gallery-item-wide">
+      <div class="gallery-card">
+        <div class="gallery-card-copy">
+          <h3 class="typo-card-headline">
+            <Lines text={r.privacy.title} />
+          </h3>
+          <More href={localePath(lang, '/security/')} class="typo-cta mt-3 inline-block">{r.privacy.link}</More>
+        </div>
+        <div class="mt-auto mb-[18%] flex items-center justify-center">
+          <span
+            class="flex h-[140px] w-[140px] items-center justify-center rounded-full bg-linear-to-b from-[#3d9bff] to-[#0058c9] text-white shadow-[0_24px_48px_-20px_rgb(0_88_201/0.55)] max-[1068px]:h-[112px] max-[1068px]:w-[112px]"
+          >
+            <Lock size={56} stroke-width={1.6} />
+          </span>
+        </div>
+      </div>
+    </li>
+  </Gallery>
+</section>

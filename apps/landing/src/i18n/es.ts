@@ -41,159 +41,319 @@ export const es: Dict = {
     security: 'Seguridad',
     blog: 'Blog',
     download: 'Descargar',
+    pricing: 'Precios',
+    faq: 'Preguntas',
     open: 'Abrir',
+    overview: 'Resumen',
+    tools: 'Herramientas',
+    compare: 'Comparar',
+    menu: 'Menú',
     skip: 'Ir al contenido',
     language: 'Idioma',
   },
 
   hero: {
     eyebrow: 'Notas privadas con asistente',
-    headline: [
-      'Anota',
-      { text: 'a tu manera', tone: 'brand' },
-      '\n',
-      'Encuentra',
-      { text: 'al instante', tone: 'blue' },
-    ],
-    lead: 'Escríbelo, díctalo o envíalo por Telegram. Pregunta al asistente y te responde a partir de tus notas, citando las que usó. Todo se cifra en tu dispositivo.',
+    subtitle: 'Anota a tu manera. Encuentra al instante.',
+    lead: 'Escríbelo, díctalo o envíalo por Telegram. El asistente responde a partir de tus notas y muestra de dónde sacó cada respuesta.',
     download: 'Descargar',
     downloadFor: { mac: 'Descargar para macOS', windows: 'Descargar para Windows' },
-    openWeb: 'Abrir en el navegador',
-    platforms: 'Windows · macOS · Web',
-    shotAlt:
-      'FixNote: notas agrupadas por fecha y un asistente que responde con enlaces a las notas',
+    more: 'Más información',
+    platforms: 'Windows, macOS y navegador · Gratis y sin cuenta',
+    shotAlt: 'FixNote: las notas de hoy y un asistente que responde con enlaces a las notas',
   },
 
-  story: {
-    label: 'Cómo se pierden las ideas',
-    lines: [
-      { text: 'Se te ocurrió una idea por el camino.' },
-      { text: 'Te enviaste un audio por Telegram.', app: 'telegram' },
-      { text: 'Luego apuntaste un par de cosas en el móvil.', emoji: '📱' },
-      {
-        text: 'Un mes después, la necesitas.',
-        chip: { text: '¿Dónde lo apunté?', tone: 'blue', tilt: '-1.5deg' },
-      },
-      { text: 'Buscas «sorteo», pero escribiste «giveaway».', emoji: '🔍' },
-      {
-        text: 'Repasas chats, carpetas y capturas de pantalla.',
-        chip: { text: 'Estaba por aquí…', tone: 'brand', tilt: '1.5deg' },
-      },
-    ],
-    final: ['Las notas deberían', { text: 'recordar por ti', tone: 'brand', after: '.' }],
+  ribbon: {
+    text: 'Novedad en FixNote: resumen de llamadas, hecho en tu propio ordenador.',
+    link: 'Más información',
   },
 
-  how: {
-    eyebrow: 'Cómo funciona',
-    headline: ['Tres pasos', '\n', 'de la idea a la', { text: 'respuesta', tone: 'brand' }],
-    lead: 'Sin carpetas ni reglas al empezar. Ordena después: el asistente te sugerirá cómo.',
-    step: 'Paso',
-    steps: [
-      {
-        title: 'Anótalo como quieras.',
-        text: 'Escribe, dicta o envía al bot de Telegram un texto, un audio o una foto. La voz se reconoce en tu propio dispositivo.',
-      },
-      {
-        title: 'Pregunta con tus palabras.',
-        text: 'El asistente busca por significado y por palabras en español, inglés y ruso, y responde con enlaces a las notas de las que sacó la respuesta.',
-      },
-      {
-        title: 'Ordena con un clic.',
-        text: 'FixNote sugiere títulos y carpetas y encuentra duplicados. Nada cambia sin tu confirmación y todo se puede deshacer.',
-      },
-    ],
-    visual: {
-      recording: 'Grabando',
-      done: 'Listo',
-      voice: 'Comprar leche y llamar a mamá el viernes',
-      telegram: 'Idea: un bot que ordena las notas solo',
-      question: '¿Qué decidí sobre las vacaciones?',
-      answer:
-        'En julio, en la playa: elegiste Portugal y dejaste la reserva para después de cobrar.',
-      sources: 'Fuentes',
-      source1: 'Vacaciones 2026',
-      source2: 'Ideas para el verano',
-      tidyTitle: 'Ordenar',
-      tidyMove: 'Mover «Compras» a la carpeta «Casa»',
-      tidyTitleSuggestion: 'Poner título: «Plan de la semana»',
-      tidyMerge: 'Unir dos notas parecidas',
-      accept: 'Aceptar',
+  tiles: [
+    {
+      id: 'ai',
+      eyebrow: 'FixNote AI',
+      title: 'Pregunta a tus notas.\nObtén la respuesta.',
+      text: 'El asistente busca por significado en tres idiomas y responde con enlaces a tus notas. Al modelo solo le llegan los fragmentos encontrados.',
+      alt: 'El asistente de FixNote en modo oscuro responde sobre unas vacaciones con enlaces a dos notas',
     },
-  },
+    {
+      id: 'calls',
+      eyebrow: 'Llamadas',
+      title: 'Resumen de la llamada.\nEn tu ordenador.',
+      text: 'El micrófono y el sonido del ordenador se transcriben en el dispositivo durante la llamada. En la nota quedan el resumen, las decisiones y las tareas.',
+      alt: 'Una nota de llamada con Resumen, Decisiones, Tareas y la transcripción plegada',
+    },
+    {
+      id: 'daily',
+      eyebrow: 'Nota del día',
+      title: 'Las tareas de hoy.\nLo que se repite llega solo.',
+      text: 'Ctrl+D abre la nota del día. Una tarea con regla de repetición, como «cada domingo», aparece sola el día que toca.',
+      alt: 'Una nota del día con tareas, dos de ellas se repiten cada semana y cada mes',
+    },
+    {
+      id: 'search',
+      eyebrow: 'Búsqueda',
+      title: 'Cualquier idioma.\nCualquier teclado.',
+      text: '«sorteo» encuentra «giveaway», «телеграм» encuentra «Telegram». La búsqueda se abre desde cualquier sitio con Ctrl+K o ⌘K.',
+      alt: 'La búsqueda de FixNote con las notas encontradas y la palabra resaltada',
+    },
+  ],
 
   features: {
-    eyebrow: 'Funciones',
-    headline: ['Más que', { text: 'notas', tone: 'brand' }],
-    lead: 'Todo para anotar rápido y encontrar aún más rápido.',
-    more: 'Todas las funciones',
-    cards: {
-      search: {
-        title: 'Búsqueda en tres idiomas',
-        text: '«telegram» encuentra «телеграм», «sorteo» encuentra «giveaway». También aparecen notas parecidas en significado.',
+    headline: 'Escribe, dicta, reenvía.\nTodo se convierte en nota.',
+    now: 'En pantalla',
+    show: 'Ver',
+    items: [
+      {
+        id: 'voice',
+        title: 'Voz',
+        text: 'El dictado se reconoce en tu ordenador mientras hablas. La grabación no sale de él.',
+        alt: 'Una nota de voz nueva grabándose, el texto aparece mientras hablas',
       },
-      voice: {
-        title: 'Voz en el dispositivo',
-        text: 'Dicta una idea y FixNote la transcribe localmente. La grabación no sale de tu dispositivo.',
+      {
+        id: 'telegram',
+        title: 'Telegram',
+        text: 'Reenvía al bot un texto, un audio o una foto. Solo tu app puede leerlos.',
+        alt: 'Ajustes de FixNote, Integraciones, con la conexión del bot de Telegram',
       },
-      assistant: {
-        title: 'Respuestas con fuentes',
-        text: 'Las respuestas salen solo de tus notas, con fuentes numeradas fáciles de comprobar.',
+      {
+        id: 'tidy',
+        title: 'Poner orden',
+        text: 'Propone títulos y carpetas y encuentra duplicados. Nada cambia sin tu permiso.',
+        alt: 'Poner orden en FixNote con propuestas para aceptar o descartar',
       },
-      daily: {
-        title: 'Nota del día',
-        text: 'Una nota por día: pasa las tareas pendientes de ayer con un clic.',
+      {
+        id: 'folders',
+        title: 'Carpetas',
+        text: 'Carpetas dentro de carpetas, filtros por tipo y periodo, tarjetas o lista.',
+        alt: 'La carpeta Viajes con dos notas',
       },
-      telegram: {
-        title: 'Bot de Telegram',
-        text: 'Reenvía al bot textos, audios y fotos. Los cifra con tu clave, así que solo tu dispositivo puede leerlos.',
+    ],
+  },
+
+  reasons: {
+    headline: 'Unas cuantas razones más\npara guardar aquí tus notas.',
+    label: 'Por qué FixNote',
+    items: [
+      {
+        id: 'models',
+        title: 'FixNote AI, tu propia clave\no Ollama.',
+        alt: 'Ajustes de AI: FixNote AI, tu propia clave u Ollama en tu ordenador',
       },
-      mcp: {
-        title: 'Claude y Cursor',
-        text: 'Servidor MCP integrado: Claude Desktop y Cursor buscan en tus notas, ven sus imágenes y archivos y las amplían si lo permites.',
+      {
+        id: 'import',
+        title: 'Múdate desde Notion,\nBear y Obsidian.',
+        alt: 'Ajustes de FixNote, Datos, con importación y exportación',
       },
+      {
+        id: 'offline',
+        title: 'Funciona sin internet\ny sin cuenta.',
+        alt: 'Ajustes de FixNote, Avanzado, con los modelos que funcionan en el dispositivo',
+      },
+      {
+        id: 'dark',
+        title: 'Claro y oscuro.\nComo tu sistema.',
+        alt: 'La pantalla principal de FixNote en modo oscuro',
+      },
+      {
+        id: 'languages',
+        title: 'Español, inglés\ny ruso.',
+        alt: 'Ajustes generales de FixNote: idioma y tema',
+      },
+    ],
+    privacy: {
+      title: 'Todo cifrado con\nuna clave que solo\ntienes tú.',
+      link: 'Cómo protegemos tus notas',
     },
+    prev: 'Anterior',
+    next: 'Siguiente',
   },
 
-  securityTeaser: {
-    eyebrow: 'Privacidad',
-    headline: ['El servidor ve', '\n', 'solo', { text: 'cifrado', tone: 'green' }],
-    lead: 'Las notas se cifran en tu dispositivo con una clave que guardas como 12 palabras. La clave no sale de tus dispositivos, así que ni siquiera nosotros podemos leer tus notas.',
-    points: [
-      'Funciona sin cuenta y sin internet',
-      'La voz se reconoce en tu dispositivo',
-      'El asistente recibe solo los fragmentos encontrados',
-      'Puede ser totalmente local, con Ollama',
+  tools: {
+    headline: 'Todo lo que necesitan tus notas.\nNada que sobre.',
+    compare: 'Comparar Free y Pro',
+    label: 'Herramientas de FixNote',
+    items: [
+      {
+        id: 'checklists',
+        title: 'Listas de tareas',
+        text: 'Tareas dentro del texto. La tarjeta muestra cuántas están hechas.',
+        caption: 'Contador en la tarjeta',
+      },
+      {
+        id: 'tables',
+        title: 'Tablas',
+        text: 'Un presupuesto, la compra, un horario: filas y columnas en una nota.',
+        caption: 'Tablas Markdown',
+      },
+      {
+        id: 'daily',
+        title: 'Nota del día',
+        text: 'Las tareas y las notas de hoy en un solo sitio.',
+        caption: 'Ctrl+D',
+      },
+      {
+        id: 'calls',
+        title: 'Resumen de llamada',
+        text: 'Resumen, decisiones, tareas y la transcripción plegada.',
+        caption: 'Windows y macOS 14.2+',
+      },
+      {
+        id: 'folders',
+        title: 'Carpetas',
+        text: 'Carpetas anidadas, filtros y orden.',
+        caption: 'Tarjetas o lista',
+      },
+      {
+        id: 'search',
+        title: 'Búsqueda',
+        text: 'Por palabras, por significado y por el texto de las imágenes.',
+        caption: 'Ctrl+K',
+      },
+      {
+        id: 'dark',
+        title: 'Modo oscuro',
+        text: 'Sigue a tu sistema o se cambia a mano.',
+        caption: 'Como tu sistema',
+      },
     ],
-    more: 'Cómo protegemos tus notas',
-    plain: 'Comprar el regalo de cumpleaños de Ana',
   },
 
-  questions: {
-    eyebrow: 'Ejemplos de preguntas',
-    headline: ['Pregunta a', { text: 'tus notas', tone: 'blue' }],
-    lead: 'Como se lo preguntarías a alguien que ha leído todo lo que has apuntado.',
-    top: [
-      '¿Qué decidí sobre las vacaciones?',
-      '¿Qué libros me recomendaron este año?',
-      '¿Qué acordamos en la reunión con Oleg?',
-      '¿Qué ideas tenía para el regalo de mamá?',
-      '¿Qué escribí sobre la mudanza?',
-      '¿Qué talla de zapatillas usaba el año pasado?',
+  blogTeaser: {
+    headline: 'Del blog.',
+    all: 'Todos los artículos',
+    label: 'Artículos',
+    minutes: 'min de lectura',
+  },
+
+  compare: {
+    headline: '¿Qué plan\nte conviene?',
+    lead: 'Todo lo que funciona en tu dispositivo es gratis y sin límite de tiempo. Pro añade lo que pasa por nuestro servidor.',
+    more: 'Cuánto cuesta Pro',
+    included: 'Incluido',
+    limited: 'Limitado',
+    missing: 'No incluido',
+    swipe: 'Desliza para ver más',
+    free: { name: 'Free', price: '0 $' },
+    pro: { name: 'Pro', price: '7 $ al mes' },
+    groups: [
+      {
+        title: 'En tu dispositivo',
+        rows: [
+          { label: 'Notas, carpetas y búsqueda', note: '', free: 'yes', pro: 'yes' },
+          {
+            label: 'Dictado y texto en imágenes',
+            note: 'Se reconoce en el dispositivo',
+            free: 'yes',
+            pro: 'yes',
+          },
+          {
+            label: 'Asistente con tu propia clave',
+            note: 'OpenAI, OpenRouter, Groq, DeepSeek u Ollama',
+            free: 'yes',
+            pro: 'yes',
+          },
+          {
+            label: 'MCP para Claude y Cursor',
+            note: 'En la app de escritorio',
+            free: 'yes',
+            pro: 'yes',
+          },
+          { label: 'Importar y exportar a Markdown', note: '', free: 'yes', pro: 'yes' },
+        ],
+      },
+      {
+        title: 'A través del servidor',
+        rows: [
+          {
+            label: 'Sincronización entre dispositivos',
+            note: 'En Free los cambios solo se descargan',
+            free: 'part',
+            pro: 'yes',
+          },
+          { label: 'Asistente FixNote AI', note: 'Con un límite mensual', free: 'no', pro: 'yes' },
+          {
+            label: 'Notas y carpetas compartidas',
+            note: 'Los invitados no necesitan Pro',
+            free: 'no',
+            pro: 'yes',
+          },
+          { label: 'Enlaces a notas', note: '', free: 'no', pro: 'yes' },
+          { label: 'Bot de Telegram', note: '', free: 'no', pro: 'yes' },
+          { label: 'Imágenes y archivos en el servidor', note: '20 GB', free: 'no', pro: 'yes' },
+        ],
+      },
     ],
-    bottom: [
-      'Reúne todas mis tareas de esta semana',
-      '¿Qué aprendí sobre TypeScript este mes?',
-      '¿Cuándo cambié el aceite del coche por última vez?',
-      '¿Qué películas quería ver?',
-      '¿Qué había en los audios de ayer?',
-      'Resume mis notas sobre la reforma',
+    footnote: 'Free funciona sin cuenta. Comparado según lo que FixNote hace hoy.',
+  },
+
+  pricing: {
+    headline: 'Prueba Pro.',
+    lead: '7 días gratis, sin tarjeta. Después, 7 $ al mes o 60 $ al año.',
+    name: 'FixNote Pro',
+    kind: 'Suscripción',
+    price: '7 $',
+    year: '60 $ al año',
+    period: 'al mes. Cancela cuando quieras.',
+    button: 'Probar',
+    prices: 'Precios en dólares estadounidenses, pago a través de Suby.',
+    free: '¿Solo necesitas tu dispositivo? Free es gratis y no caduca.',
+    freeLink: 'Descargar',
+    includedTitle: 'Qué incluye Pro.',
+    included: [
+      {
+        id: 'sync',
+        title: 'Sincronización',
+        text: 'Tus notas en todos tus dispositivos, cifradas.',
+      },
+      {
+        id: 'ai',
+        title: 'FixNote AI',
+        text: 'El asistente sin clave propia, con un límite mensual.',
+      },
+      {
+        id: 'shared',
+        title: 'Notas compartidas',
+        text: 'Notas y carpetas con otras personas, por correo.',
+      },
+      {
+        id: 'links',
+        title: 'Enlaces',
+        text: 'Un enlace a una nota que nuestro servidor no puede leer.',
+      },
+      {
+        id: 'telegram',
+        title: 'Bot de Telegram',
+        text: 'Lo que reenvías al bot se convierte en nota.',
+      },
+      {
+        id: 'files',
+        title: '20 GB de archivos',
+        text: 'Imágenes y archivos en el servidor, también cifrados.',
+      },
     ],
+  },
+
+  steps: {
+    headline: 'Listo en un minuto.',
+    items: [
+      {
+        title: 'Descarga',
+        text: 'El instalador para Windows o macOS. O abre la versión web en el navegador.',
+      },
+      {
+        title: 'Escribe',
+        text: 'La primera nota no necesita registro. La cuenta solo hace falta para sincronizar y para Pro.',
+      },
+      {
+        title: 'Encuentra',
+        text: 'Ctrl+K encuentra una nota por cualquier palabra, y el asistente responde preguntas sobre lo que escribiste.',
+      },
+    ],
+    all: 'Todos los instaladores',
   },
 
   download: {
-    eyebrow: 'Descargar',
-    headline: ['Tus notas,', '\n', { text: 'en todas partes', tone: 'brand' }],
-    lead: 'Apps para Windows y macOS y una versión web en el navegador. La sincronización entre dispositivos está cifrada de extremo a extremo.',
     windows: { name: 'Windows', detail: 'Windows 10 y 11, 64 bits', button: 'Descargar .exe' },
     macArm: {
       name: 'macOS · Apple Silicon',
@@ -215,12 +375,12 @@ export const es: Dict = {
   },
 
   faq: {
-    eyebrow: 'FAQ',
-    headline: ['Preguntas', '\n', 'y', { text: 'respuestas', tone: 'blue' }],
+    headline: '¿Preguntas? Respuestas.',
+    more: '¿Te queda alguna duda? Escríbenos a',
     items: [
       {
         q: '¿Necesito una cuenta?',
-        a: 'No. FixNote funciona en tu dispositivo sin registrarte y sin internet. La cuenta solo hace falta para sincronizar entre dispositivos, para FixNote AI y para compartir enlaces a notas.',
+        a: 'No. FixNote funciona en tu dispositivo sin registrarte y sin internet. La cuenta solo hace falta para Pro: sincronizar entre dispositivos, FixNote AI, notas compartidas y enlaces.',
       },
       {
         q: '¿Quién puede leer mis notas?',
@@ -231,12 +391,20 @@ export const es: Dict = {
         a: 'Solo los fragmentos encontrados para cada pregunta, nunca toda tu biblioteca. Puedes usar tu propia clave de OpenAI, OpenRouter, Groq o DeepSeek, u Ollama en tu ordenador, y entonces nada sale a internet.',
       },
       {
+        q: '¿Cuánto cuesta FixNote?',
+        a: 'Todo lo que funciona en tu dispositivo es gratis y sin límite de tiempo. Pro cuesta 7 $ al mes o 60 $ al año, y puedes probarlo 7 días sin tarjeta.',
+      },
+      {
+        q: '¿Qué pasa con mis notas cuando termina Pro?',
+        a: 'Se quedan en tus dispositivos. La sincronización solo descarga cambios, y lo demás que pasa por el servidor se desactiva hasta que renueves.',
+      },
+      {
         q: '¿Y si pierdo mi frase de 12 palabras?',
         a: 'En los dispositivos donde ya iniciaste sesión conservas tus notas, y desde ahí puedes añadir un dispositivo nuevo sin la frase. Si pierdes la frase y todos los dispositivos, nadie puede recuperar las notas, tampoco nosotros.',
       },
       {
         q: '¿Puedo traer mis notas de Notion, Bear u Obsidian?',
-        a: 'Sí. La importación entiende una carpeta de Markdown (también Obsidian), una copia de Bear y una exportación de Notion, y conserva carpetas, fechas e imágenes. Puedes exportarlo todo a Markdown cuando quieras.',
+        a: 'Sí. La importación entiende una carpeta de Markdown (también Obsidian), una copia de Bear y una exportación de Notion, y conserva carpetas, fechas e imágenes. En Mac también puedes traer Apple Notes. Puedes exportarlo todo a Markdown cuando quieras.',
       },
       {
         q: '¿En qué idiomas funciona FixNote?',
@@ -245,27 +413,35 @@ export const es: Dict = {
     ],
   },
 
-  blogTeaser: {
-    eyebrow: 'Blog',
-    headline: ['Sobre la', { text: 'memoria', tone: 'green' }, 'y las notas'],
-    all: 'Todos los artículos',
-  },
-
   cta: {
-    title: 'Apunta tu primera idea',
-    lead: 'Descarga FixNote o ábrelo directamente en el navegador.',
+    title: 'Prueba FixNote',
+    text: 'Gratis y sin cuenta: Windows, macOS y navegador.',
     download: 'Descargar',
     open: 'Abrir en el navegador',
   },
 
+  notes: [
+    'La búsqueda funciona en tu dispositivo. Con FixNote AI, la pregunta y los fragmentos encontrados pasan por nuestro servidor hasta el proveedor del modelo y no se guardan. Con tu propia clave, las peticiones van directamente al servicio que elegiste; con Ollama se quedan en tu ordenador.',
+    'Free funciona sin cuenta y sin límite de tiempo. La cuenta hace falta para Pro: sincronización, FixNote AI, notas compartidas, enlaces, el bot de Telegram y archivos en el servidor.',
+    'El resumen de llamadas está en la app para Windows y para macOS 14.2 o posterior. El audio no se guarda.',
+    'La prueba de Pro se activa en la app después de iniciar sesión. Sin tarjeta; al terminar la semana, la cuenta vuelve a Free si no te suscribes.',
+  ],
+
   footer: {
-    tagline: 'Notas privadas con un asistente que recuerda por ti.',
-    product: 'Producto',
-    resources: 'Recursos',
+    notes: 'Notas',
+    breadcrumbs: 'Ruta',
+    directory: 'Mapa del sitio',
+    explore: 'Explorar',
+    product: 'FixNote',
+    download: 'Descargar',
+    allPosts: 'Todos los artículos',
+    support: 'Ayuda',
     webApp: 'Versión web',
     rss: 'RSS',
     privacy: 'Privacidad',
-    rights: 'FixNote',
+    email: 'Escríbenos',
+    help: '¿Una pregunta sobre FixNote o tus datos? Escribe a ',
+    rights: 'Todos los derechos reservados.',
   },
 
   featuresPage: {
@@ -407,6 +583,7 @@ export const es: Dict = {
   },
 
   blogPage: {
+    more: 'Más artículos',
     eyebrow: 'Blog',
     headline: ['Notas', { text: 'sobre notas', tone: 'brand' }],
     lead: 'Cómo apuntar ideas para encontrarlas después, y cómo funciona FixNote por dentro.',

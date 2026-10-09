@@ -1,16 +1,14 @@
 ---
 import { type Lang, t } from '../i18n'
 import Base from '../layouts/Base.astro'
-import BlogTeaser from './home/BlogTeaser.astro'
-import DownloadSection from './home/DownloadSection.astro'
-import FaqSection from './home/FaqSection.astro'
+import Blog from './home/Blog.astro'
+import Compare from './home/Compare.astro'
+import Faq from './home/Faq.astro'
 import Features from './home/Features.astro'
-import FinalCta from './home/FinalCta.astro'
-import Hero from './home/Hero.astro'
-import How from './home/How.astro'
-import Questions from './home/Questions.astro'
-import SecurityTeaser from './home/SecurityTeaser.astro'
-import Story from './home/Story.astro'
+import Overview from './home/Overview.astro'
+import Pricing from './home/Pricing.astro'
+import Reasons from './home/Reasons.astro'
+import Tools from './home/Tools.astro'
 
 interface Props {
   lang: Lang
@@ -41,15 +39,13 @@ const jsonLd = [
 ]
 ---
 
-<Base lang={lang} title={d.meta.home.title} description={d.meta.home.description} path="/" jsonLd={jsonLd}>
-  <Hero lang={lang} />
-  <Story lang={lang} />
-  <How lang={lang} />
+<Base lang={lang} title={d.meta.home.title} description={d.meta.home.description} path="/" jsonLd={jsonLd} notes={d.notes}>
+  <Overview lang={lang} />
   <Features lang={lang} />
-  <SecurityTeaser lang={lang} />
-  <Questions lang={lang} />
-  <DownloadSection lang={lang} />
-  <FaqSection lang={lang} />
-  <BlogTeaser lang={lang} />
-  <FinalCta lang={lang} />
+  <Reasons lang={lang} />
+  <Tools lang={lang} />
+  <Blog lang={lang} />
+  <Compare lang={lang} />
+  <Pricing lang={lang} />
+  <Faq lang={lang} />
 </Base>

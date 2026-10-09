@@ -1,0 +1,19 @@
+---
+/** Text whose "\n" become line breaks; `wide` breaks only from 735px up (Apple-style headlines). */
+interface Props {
+  text: string
+  wide?: boolean
+}
+const { text, wide = false } = Astro.props
+const lines = text.split('\n')
+---
+
+{
+  lines.map((line, i) => (
+    <>
+      {i > 0 && (wide ? <br class="max-[734px]:hidden" /> : <br />)}
+      {i > 0 && wide && <span class="small:hidden"> </span>}
+      {line}
+    </>
+  ))
+}

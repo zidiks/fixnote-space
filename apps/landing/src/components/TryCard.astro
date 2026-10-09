@@ -1,0 +1,19 @@
+---
+import { APP_URL, type Lang, localePath, t } from '../i18n'
+import More from './More.astro'
+
+/** The grey card at the end of a reading page: try FixNote. */
+interface Props {
+  lang: Lang
+}
+const d = t(Astro.props.lang)
+---
+
+<section class="mt-14 rounded-[18px] bg-panel p-7 small:p-10">
+  <h2 class="typo-card-headline text-ink">{d.cta.title}</h2>
+  <p class="typo-body mt-2 text-muted">{d.cta.text}</p>
+  <div class="mt-6 flex flex-wrap items-center gap-x-7 gap-y-4">
+    <a href={localePath(Astro.props.lang, '/download/')} class="btn btn-primary btn-lg">{d.cta.download}</a>
+    <More href={APP_URL}>{d.cta.open}</More>
+  </div>
+</section>

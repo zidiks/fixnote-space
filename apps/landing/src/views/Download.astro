@@ -1,7 +1,6 @@
 ---
-import Info from '@lucide/astro/icons/info'
+import Article from '../components/Article.astro'
 import DownloadCards from '../components/DownloadCards.astro'
-import SectionHeader from '../components/SectionHeader.astro'
 import { type Lang, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 
@@ -21,34 +20,25 @@ const notes = [
 ]
 ---
 
-<Base lang={lang} title={d.meta.download.title} description={d.meta.download.description} path="/download/">
-  <section class="px-4 pb-6 pt-36 sm:px-6 sm:pt-44">
-    <SectionHeader as="h1" eyebrow={p.eyebrow} parts={p.headline} lead={p.lead} />
-  </section>
-  <section class="px-4 py-12 sm:px-6">
+<Base lang={lang} title={d.meta.download.title} description={d.meta.download.description} path="/download/" crumb={d.nav.download}>
+  <Article lang={lang} eyebrow={p.eyebrow} title={p.headline} intro={p.lead} cta={false}>
     <DownloadCards lang={lang} />
-  </section>
-  <section class="px-4 pb-16 sm:px-6">
-    <div class="mx-auto grid max-w-[1100px] gap-4 md:grid-cols-2">
-      {
-        notes.map((note) => (
-          <div class="reveal rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04]">
-            <h2 class="flex items-center gap-2 text-[18px] font-semibold tracking-[-0.02em]">
-              <Info size={18} class="text-brand" /> {note.title}
-            </h2>
-            <p class="mt-3 text-[15px] leading-[1.6] text-muted">{note.text}</p>
-            {note.code && (
-              <pre class="mt-4 overflow-x-auto rounded-2xl bg-night px-4 py-3 font-mono text-[14px] text-[#f2efe9]"><code>{note.code}</code></pre>
-            )}
-          </div>
-        ))
-      }
-    </div>
-    <div class="reveal mx-auto mt-4 max-w-[1100px] rounded-[24px] bg-white p-7 shadow-[0_1px_2px_rgba(27,26,24,0.05)] ring-1 ring-black/[0.04]">
-      <h2 class="text-[18px] font-semibold tracking-[-0.02em]">{p.requirementsTitle}</h2>
-      <ul class="mt-4 grid gap-x-8 gap-y-2.5 text-[15px] text-muted sm:grid-cols-2">
-        {p.requirements.map((r) => <li class="flex gap-2.5"><span class="mt-[9px] size-1.5 shrink-0 rounded-full bg-brand" />{r}</li>)}
+    {
+      notes.map((note) => (
+        <section class="mt-14">
+          <h2 class="typo-subhead text-ink">{note.title}</h2>
+          <p class="typo-body mt-4 text-ink">{note.text}</p>
+          {note.code && (
+            <pre class="mt-4 overflow-x-auto rounded-xl bg-panel px-5 py-4 font-mono text-[15px] text-ink"><code>{note.code}</code></pre>
+          )}
+        </section>
+      ))
+    }
+    <section class="mt-14 rounded-[18px] bg-panel p-7 small:p-10">
+      <h2 class="typo-card-headline text-ink">{p.requirementsTitle}</h2>
+      <ul class="typo-body mt-4 list-disc space-y-2 pl-5 text-ink">
+        {p.requirements.map((r) => <li>{r}</li>)}
       </ul>
-    </div>
-  </section>
+    </section>
+  </Article>
 </Base>
