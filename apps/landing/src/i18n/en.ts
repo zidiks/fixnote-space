@@ -258,7 +258,7 @@ export const en: Dict = {
       mcp: { label: 'Notes in Claude and Cursor over MCP', note: '' },
     },
     footnote:
-      'Based on each vendor’s public pages as of October 2026. Price of the cheapest paid plan, billed monthly. Names belong to their owners.',
+      'Based on each vendor’s own site and help pages as of October 2026. A check means the app has the feature on at least one plan (Notion AI and AI Meeting Notes come with Notion Business). Price of the cheapest paid plan, billed monthly. Names and icons belong to their owners.',
     detailed: 'Detailed comparisons',
     vsLink: 'FixNote vs {name}',
   },
@@ -272,7 +272,6 @@ export const en: Dict = {
     year: '$60 a year',
     period: 'a month. Cancel any time.',
     button: 'Try it',
-    prices: 'Prices in US dollars, paid through Suby.',
     free: 'Only need your device? Free costs nothing and never runs out.',
     freeLink: 'Download',
     includedTitle: 'What’s in Pro.',

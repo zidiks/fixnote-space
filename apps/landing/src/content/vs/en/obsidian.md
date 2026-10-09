@@ -42,7 +42,7 @@ Obsidian has no built-in AI. Community plugins add it, and there are many of the
 
 FixNote's [assistant](/features/ask-your-notes/) works out of the box. It searches by words and by meaning in English, Spanish and Russian, answers with links to your notes, writes new notes and moves them between folders. Deleting, or changing more than a few notes at once, always asks first, and any change can be undone from the log in Settings → AI. You pick the model: FixNote AI with Pro, your own key, or Ollama on your computer.
 
-The [MCP server](/features/mcp/) is built in and free as well. Claude Desktop, Claude Code or Cursor see only the folders you allow. Obsidian has no official MCP server, only third-party ones.
+The [MCP server](/features/mcp/) is built in and free as well. Claude Desktop, Claude Code or Cursor see only the folders you allow. Obsidian has no official MCP server: since version 1.12 it has an official command-line tool, and MCP servers come from the community.
 
 ## Sync and encryption
 

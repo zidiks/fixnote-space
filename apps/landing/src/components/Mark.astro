@@ -12,13 +12,13 @@ const { mark, label } = Astro.props
 
 {
   mark === 'yes' ? (
-    <span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-brand/10 text-brand">
+    <span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-good/15 text-good">
       <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-        <path d="m2.5 6.2 2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="m2.5 6.2 2.3 2.3 4.7-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </span>
   ) : mark === 'part' ? (
-    <span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-ember/10 text-ember">
+    <span class="mx-auto flex h-6 w-6 items-center justify-center rounded-full bg-part/12 text-part">
       <span class="h-[2px] w-2.5 rounded-full bg-current" />
     </span>
   ) : (

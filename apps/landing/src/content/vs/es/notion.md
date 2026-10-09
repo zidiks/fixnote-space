@@ -22,6 +22,7 @@ still:
   - "Notion tiene bases de datos con vistas, filtros y relaciones, y FixNote no tiene nada parecido."
   - "Si tu equipo ya lleva en Notion su wiki, proyectos y tareas, tener tus notas personales al lado puede ser lo más sencillo."
   - "Notion tiene apps nativas para iPhone y Android, mientras que FixNote en el móvil funciona solo como app web en el navegador."
+  - "Si tu equipo ya paga Business, Notion AI responde a partir de todo el espacio de trabajo y AI Meeting Notes resume las llamadas, así que para las notas de trabajo una segunda app aporta poco."
 verdict: "Para el trabajo en equipo con bases de datos y una wiki compartida, Notion sigue siendo más fuerte. Para notas personales que deben quedar en privado, FixNote te da cifrado de extremo a extremo y un asistente sin pagar el plan Business. Mucha gente usa las dos: Notion para el equipo y FixNote para lo suyo."
 faq:
   - q: "¿Tiene Notion cifrado de extremo a extremo?"
@@ -38,7 +39,7 @@ faq:
 
 ## IA y asistente
 
-Notion reserva su IA completa para el plan Business. Incluye Notion Agent, que hace tareas de varios pasos en tu espacio de trabajo y en las apps conectadas, y AI Meeting Notes para grabar reuniones. En Free y Plus solo puedes probar estas funciones.
+Notion reserva su IA completa para el plan Business. Incluye Notion AI y Notion Agent, que responden a partir de tus páginas con enlaces a ellas y hacen tareas de varios pasos en tu espacio de trabajo y en las apps conectadas, y AI Meeting Notes, que graba reuniones en la app de escritorio y escribe un resumen. En Free y Plus solo puedes probar estas funciones.
 
 El [asistente](/es/features/ask-your-notes/) de FixNote está en todos los planes. Busca por palabras y por significado, responde con enlaces a tus notas, escribe notas nuevas y las mueve entre carpetas. Cada cambio se muestra como una edición; borrar, o cambiar muchas notas a la vez, siempre pide confirmación, y en Ajustes → IA hay un registro donde se puede deshacer cualquier cambio. En Free conectas tu propia clave de modelo u Ollama; Pro añade FixNote AI, que no necesita clave. Dentro de una nota puedes seleccionar texto y pedir que lo [reescriba o lo amplíe](/es/features/ai-edits/).
 

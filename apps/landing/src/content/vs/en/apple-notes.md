@@ -38,7 +38,7 @@ faq:
 
 ## AI and voice
 
-In Apple Notes you can record audio, get a transcript and, on devices with Apple Intelligence, a summary of the recording. Calls recorded on an iPhone land in Notes too. Apple Intelligence Writing Tools can rewrite or shorten selected text. What Notes lacks is a chat that answers questions from all your notes.
+In Apple Notes you can record audio, get a transcript and, on devices with Apple Intelligence, a summary of the recording. Calls recorded in the Phone app or FaceTime land in Notes too, with a transcript. Apple Intelligence Writing Tools can rewrite or shorten selected text. What Notes lacks is a chat that answers questions from all your notes.
 
 FixNote's [assistant](/features/ask-your-notes/) searches by words and by meaning in three languages, answers with links and edits notes, showing each change as a diff. You choose the model: FixNote AI with Pro, your own key, or Ollama. [Voice notes](/features/voice-notes/) are transcribed on the device, and [call summaries](/features/call-summaries/) on Windows and macOS 14.2+ are built from the microphone and the computer's audio, so they work with Zoom, Teams or any other call app.
 

@@ -264,7 +264,7 @@ export const es: Dict = {
       mcp: { label: 'Notas en Claude y Cursor por MCP', note: '' },
     },
     footnote:
-      'Según las páginas públicas de cada servicio en octubre de 2026. Precio del plan de pago más barato, con pago mensual. Los nombres pertenecen a sus dueños.',
+      'Según el sitio y la ayuda de cada servicio en octubre de 2026. Una marca verde significa que la app lo tiene al menos en un plan (Notion AI y AI Meeting Notes vienen con Notion Business). Precio del plan de pago más barato, con pago mensual. Los nombres y los iconos pertenecen a sus dueños.',
     detailed: 'Comparativas detalladas',
     vsLink: 'FixNote vs {name}',
   },
@@ -278,7 +278,6 @@ export const es: Dict = {
     year: '60 $ al año',
     period: 'al mes. Cancela cuando quieras.',
     button: 'Probar',
-    prices: 'Precios en dólares estadounidenses, pago a través de Suby.',
     free: '¿Solo necesitas tu dispositivo? Free es gratis y no caduca.',
     freeLink: 'Descargar',
     includedTitle: 'Qué incluye Pro.',

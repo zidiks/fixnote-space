@@ -38,7 +38,7 @@ faq:
 
 ## IA y voz
 
-En Notas de Apple puedes grabar audio, obtener la transcripción y, en dispositivos con Apple Intelligence, un resumen de la grabación. Las llamadas grabadas en el iPhone también llegan a Notas. Las herramientas de escritura de Apple Intelligence reescriben o acortan el texto seleccionado. Lo que Notas no tiene es un chat que responda a partir de todas tus notas.
+En Notas de Apple puedes grabar audio, obtener la transcripción y, en dispositivos con Apple Intelligence, un resumen de la grabación. Las llamadas grabadas en Teléfono o FaceTime también llegan a Notas, con transcripción. Las herramientas de escritura de Apple Intelligence reescriben o acortan el texto seleccionado. Lo que Notas no tiene es un chat que responda a partir de todas tus notas.
 
 El [asistente](/es/features/ask-your-notes/) de FixNote busca por palabras y por significado en tres idiomas, responde con enlaces y edita notas, mostrando cada cambio como una edición. Tú eliges el modelo: FixNote AI con Pro, tu propia clave u Ollama. Las [notas de voz](/es/features/voice-notes/) se transcriben en el dispositivo, y los [resúmenes de llamadas](/es/features/call-summaries/) en Windows y macOS 14.2+ se hacen con el micrófono y el audio del ordenador, así que sirven para Zoom, Teams o cualquier otra app de llamadas.
 
