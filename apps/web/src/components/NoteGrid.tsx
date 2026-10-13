@@ -1,4 +1,4 @@
-import { joinPages, type NoteFilter, type NoteSort, type NoteSummary } from '@fixnote/core'
+import type { NoteFilter, NoteSort } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -22,37 +22,13 @@ import {
   Plus,
   Rows3,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef } from 'react'
 import { type NoteView, useUi } from '../app/store'
-import { useNotesInfinite, usePinnedNotes } from '../lib/queries'
-import { type DateGroup, dateGroup, dateGroupKey } from '../lib/time'
+import { useNoteList } from '../lib/note-list'
+import type { DateGroup } from '../lib/time'
 import { NoteCard, NoteLine, NoteRow } from './NoteCard'
 import { SelectionBar } from './SelectionBar'
 
-interface Section {
-  key: string
-  group: DateGroup | null
-  notes: NoteSummary[]
-}
-
-/**
- * Sorted by a date, notes come newest first, so each date group is one run of the list. By title
- * there are no groups.
- */
-function sections(notes: NoteSummary[], sort: NoteSort, now: Date): Section[] {
-  if (sort === 'title') return notes.length ? [{ key: 'all', group: null, notes }] : []
-  const out: Section[] = []
-  for (const n of notes) {
-    const group = dateGroup(sort === 'created' ? n.createdAt : n.updatedAt, now)
-    const key = dateGroupKey(group)
-    const last = out.at(-1)
-    if (last?.key === key) last.notes.push(n)
-    else out.push({ key, group, notes: [n] })
-  }
-  return out
-}
-
-function useGroupLabel() {
+export function useGroupLabel() {
   const { t, i18n } = useTranslation()
   return (g: DateGroup) => {
     if (g.kind === 'year') return String(g.year)
@@ -77,36 +53,51 @@ const SORTS: { sort: NoteSort; icon: LucideIcon }[] = [
   { sort: 'title', icon: ArrowDownAZ },
 ]
 
-/** How lists of notes look and are ordered, remembered on this device. */
-export function ViewMenu({ className }: { className?: string }) {
+/**
+ * How lists of notes look and are ordered, remembered on this device. `sortOnly`: the column of
+ * the notes layout, whose cards always look the same.
+ */
+export function ViewMenu({
+  className,
+  sortOnly = false,
+}: {
+  className?: string
+  sortOnly?: boolean
+}) {
   const { t } = useTranslation()
   const view = useUi((s) => s.noteView)
   const sort = useUi((s) => s.noteSort)
   const setView = useUi((s) => s.setNoteView)
   const setSort = useUi((s) => s.setNoteSort)
-  const Current = VIEWS.find((v) => v.view === view)?.icon ?? LayoutGrid
+  const Current = sortOnly
+    ? (SORTS.find((o) => o.sort === sort)?.icon ?? Clock)
+    : (VIEWS.find((v) => v.view === view)?.icon ?? LayoutGrid)
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
-          size="icon-sm"
-          className={cn('rounded-full', className)}
-          aria-label={t('view.menu')}
+          variant={sortOnly ? 'ghost' : 'outline'}
+          size={sortOnly ? 'icon-xs' : 'icon-sm'}
+          className={cn(!sortOnly && 'rounded-full', className)}
+          aria-label={sortOnly ? t('view.sort') : t('view.menu')}
         >
           <Current />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
-        <DropdownMenuLabel>{t('view.title')}</DropdownMenuLabel>
-        {VIEWS.map(({ view: v, icon: Icon }) => (
-          <DropdownMenuItem key={v} onSelect={() => setView(v)}>
-            <Icon />
-            <span className="flex-1">{t(`view.${v}`)}</span>
-            <Check className={cn(v !== view && 'invisible')} />
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
+        {sortOnly ? null : (
+          <>
+            <DropdownMenuLabel>{t('view.title')}</DropdownMenuLabel>
+            {VIEWS.map(({ view: v, icon: Icon }) => (
+              <DropdownMenuItem key={v} onSelect={() => setView(v)}>
+                <Icon />
+                <span className="flex-1">{t(`view.${v}`)}</span>
+                <Check className={cn(v !== view && 'invisible')} />
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuLabel>{t('view.sort')}</DropdownMenuLabel>
         {SORTS.map(({ sort: o, icon: Icon }) => (
           <DropdownMenuItem key={o} onSelect={() => setSort(o)}>
@@ -148,45 +139,20 @@ export function NoteGrid({
 }) {
   const { t } = useTranslation()
   const view = useUi((s) => s.noteView)
-  const sort = useUi((s) => s.noteSort)
-  const listFilter = useMemo(
-    () => (pinnedFirst ? { ...filter, pinned: false } : filter),
-    [filter, pinnedFirst],
-  )
-  const query = useNotesInfinite(listFilter, sort)
-  const pinned = usePinnedNotes(filter, pinnedFirst, sort).data ?? []
-  const sentinel = useRef<HTMLDivElement>(null)
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query
-
-  useEffect(() => {
-    const el = sentinel.current
-    if (!el || !hasNextPage) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting) && !isFetchingNextPage) void fetchNextPage()
-      },
-      { rootMargin: '600px 0px' },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
-
-  // Each note once and in order, also when pages refetched after a sync overlap.
-  const notes = useMemo(
-    () => joinPages(query.data?.pages.map((p) => p.items) ?? [], sort),
-    [query.data, sort],
-  )
-  const groups = useMemo(() => sections(notes, sort, new Date()), [notes, sort])
-  // What "Select all" picks: every note on screen, the pinned ones too.
-  const pickable = useMemo(
-    () => (pinnedFirst ? [...pinned, ...notes] : notes),
-    [pinnedFirst, pinned, notes],
-  )
+  const {
+    pending,
+    loadingMore,
+    pinned,
+    groups,
+    pickable,
+    empty: none,
+    sentinel,
+    date,
+  } = useNoteList(filter, pinnedFirst)
   const label = useGroupLabel()
-  const date = sort === 'created' ? 'created' : 'edited'
   const Item = view === 'cards' ? NoteCard : view === 'list' ? NoteRow : NoteLine
 
-  if (query.isPending) {
+  if (pending) {
     return <p className="mt-6 text-sm text-muted-foreground">{t('common.loading')}</p>
   }
   const newItem = onNew ? (
@@ -198,7 +164,7 @@ export function NoteGrid({
       )}
     </li>
   ) : null
-  if (!notes.length && !(pinnedFirst && pinned.length)) {
+  if (none) {
     return (
       <>
         {newItem ? (
@@ -216,7 +182,7 @@ export function NoteGrid({
 
   return (
     <>
-      {pinnedFirst && pinned.length ? (
+      {pinned.length ? (
         <section aria-label={t('pin.section')} className="mt-6">
           <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
             <Pin className="size-3.5" />
@@ -255,7 +221,7 @@ export function NoteGrid({
       ))}
       <div ref={sentinel} aria-hidden className="h-px" />
       <SelectionBar notes={pickable} />
-      {isFetchingNextPage ? (
+      {loadingMore ? (
         <p className="mt-4 text-center text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : null}
     </>

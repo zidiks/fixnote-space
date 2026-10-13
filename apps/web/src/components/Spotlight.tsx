@@ -10,7 +10,7 @@ import { useCreateNote, useOpenDaily, useRecents, useSearch, useSimilar } from '
 import { formatCardDate } from '../lib/time'
 
 /** Renders an FTS snippet, turning the private-use markers into <mark> without any HTML parsing. */
-function Snippet({ text }: { text: string }) {
+export function Snippet({ text }: { text: string }) {
   const parts: ReactNode[] = []
   let rest = text
   let key = 0

@@ -18,7 +18,7 @@ export const keys = {
   notes: ['notes'] as const,
   list: (filter: NoteFilter) => ['notes', 'list', filter] as const,
   note: (id: string) => ['notes', 'one', id] as const,
-  search: (q: string) => ['notes', 'search', q] as const,
+  search: (q: string, filter?: NoteFilter) => ['notes', 'search', q, filter ?? null] as const,
   similar: (q: string) => ['notes', 'similar', q] as const,
   counts: ['counts'] as const,
   folders: ['folders'] as const,
@@ -70,12 +70,13 @@ export function useFolders() {
   return useQuery({ queryKey: keys.folders, queryFn: () => repo.listFolders() })
 }
 
-export function useSearch(q: string) {
+/** Full-text search; with `filter`, only among those notes (a list of the notes layout). */
+export function useSearch(q: string, filter?: NoteFilter, limit = 20) {
   const repo = useRepo()
   const query = q.trim()
   return useQuery({
-    queryKey: keys.search(query),
-    queryFn: () => repo.search(query, { limit: 20 }),
+    queryKey: keys.search(query, filter),
+    queryFn: () => repo.search(query, { limit, ...(filter ? { filter } : {}) }),
     enabled: query.length > 0,
     placeholderData: keepPreviousData,
   })
