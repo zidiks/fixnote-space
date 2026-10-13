@@ -20,6 +20,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   not a button shows `Spinner` next to its text. Nothing may look frozen.
 - Hotkeys: Mod = Ctrl on Windows/Linux, ⌘ on macOS. Windows is the primary desktop target. Match
   letters by physical key (`e.code`, see `hotkeys.ts`), never only by `e.key`: users type in RU/ES layouts.
+  App shortcuts run through `useShortcut(action, …)` (`lib/shortcuts.ts`): bindings are the person's
+  own (Settings → Shortcuts, kv `shortcuts`, per device) or the defaults in `hotkeys.ts`; tooltips
+  use `useShortcutLabel`. System-wide ones (desktop) are registered from `DesktopTray` through
+  `global_shortcuts` (`shortcuts.rs`, global-shortcut plugin) and run the tray actions.
 - Local DB: schema and all SQL live in `packages/core` (`db/schema.ts`, `notes/repo.ts`). Append
   migrations, never edit a shipped one. Inside `db.transaction(fn)` use only the `tx` argument;
   calling the driver itself there deadlocks.
