@@ -171,10 +171,6 @@ export class RemoteBridge {
       if (this.ping) clearInterval(this.ping)
       this.ping = null
       if (!this.running) return
-      if (ev.code === RELAY_CLOSE.off) {
-        this.stop()
-        return
-      }
       if (ev.code === RELAY_CLOSE.proRequired) {
         this.setStatus('pro')
         this.later(PRO_RETRY_MS)

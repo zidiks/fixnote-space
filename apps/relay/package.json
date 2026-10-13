@@ -1,0 +1,22 @@
+{
+  "name": "@fixnote/relay",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Remote MCP relay (Cloudflare Worker + Durable Object): forwards MCP tool calls to the person's online FixNote device. Holds no keys and no note content.",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@fixnote/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261006.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1",
+    "wrangler": "^4.40.0"
+  }
+}

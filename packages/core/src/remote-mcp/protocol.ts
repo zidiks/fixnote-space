@@ -20,8 +20,6 @@ export const RELAY_CLOSE = {
   unauthorized: 4001,
   /** The account is not on Pro: stop until the plan changes. */
   proRequired: 4003,
-  /** Remote access was turned off from another device of the account. */
-  off: 4004,
 } as const
 
 /** The client that asked, as the relay knows it (OAuth client id, name from `initialize`). */

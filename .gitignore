@@ -17,3 +17,5 @@ apps/desktop/src-tauri/binaries/
 
 # Astro generated types
 .astro/
+.wrangler/
+.dev.vars

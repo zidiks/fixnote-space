@@ -104,7 +104,7 @@ describe('RemoteBridge', () => {
     expect(sockets).toHaveLength(4)
   })
 
-  it('waits long when the account is not on Pro, and stops when turned off elsewhere', async () => {
+  it('waits long when the account is not on Pro', async () => {
     const b = bridge()
     b.start()
     await vi.advanceTimersByTimeAsync(0)
@@ -113,10 +113,6 @@ describe('RemoteBridge', () => {
     await vi.advanceTimersByTimeAsync(60_000)
     expect(sockets).toHaveLength(1)
     await vi.advanceTimersByTimeAsync(10 * 60_000)
-    expect(sockets).toHaveLength(2)
-    ;(sockets[1] as FakeSocket).drop(RELAY_CLOSE.off)
-    expect(b.status).toBe('off')
-    await vi.advanceTimersByTimeAsync(60 * 60_000)
     expect(sockets).toHaveLength(2)
   })
 
