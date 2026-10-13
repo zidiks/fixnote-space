@@ -14,6 +14,7 @@ mod http;
 mod keys;
 mod links;
 mod mcp;
+mod shortcuts;
 mod store;
 mod system_audio;
 mod tray;
@@ -99,6 +100,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(shortcuts::plugin())
+        .manage(shortcuts::Bound::default())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
@@ -150,6 +153,7 @@ pub fn run() {
             system_audio::system_audio_supported,
             system_audio::system_audio_start,
             system_audio::system_audio_stop,
+            shortcuts::global_shortcuts,
             tray::tray_menu,
             tray::app_quit
         ])
