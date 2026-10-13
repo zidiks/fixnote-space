@@ -1,6 +1,16 @@
 import { useTranslation } from '@fixnote/i18n'
 import { Button, cn, Dialog, DialogContent, DialogTitle } from '@fixnote/ui'
-import { Blocks, Cpu, Database, Gem, Settings2, Sparkles, UserRound, X } from 'lucide-react'
+import {
+  Blocks,
+  Cpu,
+  Database,
+  Gem,
+  Keyboard,
+  Settings2,
+  Sparkles,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { type SettingsSection, useUi } from '../../app/store'
 import { useBackLayer } from '../../lib/nav-history'
 import { AccountSection } from './AccountSection'
@@ -10,6 +20,7 @@ import { DataSection } from './DataSection'
 import { GeneralSection } from './GeneralSection'
 import { IntegrationsSection } from './IntegrationsSection'
 import { PlanSection } from './PlanSection'
+import { ShortcutsSection } from './ShortcutsSection'
 
 const SECTIONS: { id: SettingsSection; icon: typeof Settings2 }[] = [
   { id: 'general', icon: Settings2 },
@@ -18,6 +29,7 @@ const SECTIONS: { id: SettingsSection; icon: typeof Settings2 }[] = [
   { id: 'integrations', icon: Blocks },
   { id: 'ai', icon: Sparkles },
   { id: 'data', icon: Database },
+  { id: 'shortcuts', icon: Keyboard },
   { id: 'advanced', icon: Cpu },
 ]
 
@@ -79,6 +91,7 @@ export function SettingsDialog() {
           {section === 'integrations' ? <IntegrationsSection /> : null}
           {section === 'ai' ? <AiSection /> : null}
           {section === 'data' ? <DataSection /> : null}
+          {section === 'shortcuts' ? <ShortcutsSection /> : null}
           {section === 'advanced' ? <AdvancedSection /> : null}
         </div>
       </DialogContent>
