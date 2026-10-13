@@ -1,0 +1,15 @@
+---
+import type { GetStaticPaths } from 'astro'
+import { AUTHOR_PAGES } from '../../data/authors'
+import AuthorPage from '../../views/AuthorPage.astro'
+
+export const getStaticPaths = (() =>
+  AUTHOR_PAGES.map(([id, author]) => ({
+    params: { id },
+    props: { author },
+  }))) satisfies GetStaticPaths
+const { author } = Astro.props
+const { id } = Astro.params
+---
+
+<AuthorPage lang="en" id={id} author={author} />

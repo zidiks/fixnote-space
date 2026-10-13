@@ -1,7 +1,8 @@
 ---
-title: 'Call transcription and summary on your computer with FixNote'
+title: 'How to transcribe a Zoom or Meet call on your computer'
 description: 'Record a Zoom, Meet or Telegram call and get a note with a summary, decisions and tasks. Transcription runs on your computer and no audio is kept.'
 date: 2026-10-09
+updated: 2026-10-11
 translationKey: call-notes
 faq:
   - q: 'Does FixNote keep a recording of the call?'

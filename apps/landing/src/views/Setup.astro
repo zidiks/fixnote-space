@@ -29,7 +29,7 @@ const jsonLd = [
 ]
 ---
 
-<Base lang={lang} title={d.meta.setup.title} description={d.meta.setup.description} path="/setup/" crumb={d.nav.setup} jsonLd={jsonLd}>
+<Base lang={lang} title={d.meta.setup.title} description={d.meta.setup.description} path="/setup/" crumb={d.nav.setup} jsonLd={jsonLd} og={{ eyebrow: d.nav.setup }}>
   <Article lang={lang} eyebrow={p.eyebrow} title={p.title} intro={p.lead} cta={false}>
     <ol class="mt-12 space-y-10">
       {

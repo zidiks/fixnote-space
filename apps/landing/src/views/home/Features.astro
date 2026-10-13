@@ -83,7 +83,9 @@ const items = f.items.map((item) => {
                 >
                   {i === 0 ? f.now : f.show}
                 </button>
-                <More href={item.href}>{d.hero.more}</More>
+                <More href={item.href} about={item.title}>
+                  {d.hero.more}
+                </More>
               </div>
             </div>
           )

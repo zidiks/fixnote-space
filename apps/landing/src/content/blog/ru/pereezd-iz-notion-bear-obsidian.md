@@ -1,8 +1,8 @@
 ---
-title: 'Перенос заметок из Notion, Obsidian, Bear и Apple Notes в FixNote'
+title: 'Как перенести заметки из Notion, Obsidian и Bear в FixNote'
 description: 'Импорт в FixNote по шагам: что выгрузить из Notion, Obsidian, Bear и Apple Notes, что перенесётся, что останется и как потом забрать заметки в Markdown.'
 date: 2026-10-01
-updated: 2026-10-09
+updated: 2026-10-11
 translationKey: import
 faq:
   - q: 'Можно ли перенести заметки из Notion в FixNote?'

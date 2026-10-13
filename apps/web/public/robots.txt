@@ -1,0 +1,5 @@
+# The app (app.fixnote.space) is not for search results: every response carries
+# X-Robots-Tag: noindex (_headers). Crawling stays allowed so search engines can see that header;
+# the site people should find is fixnote.space.
+User-agent: *
+Allow: /

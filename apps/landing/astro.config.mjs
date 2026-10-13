@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 import sitemap from '@astrojs/sitemap'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'astro/config'
+import { indexNow } from './indexnow.mjs'
+import { ogCards } from './og.mjs'
 
 /**
  * Cloudflare serves the nearest 404.html for a missing page, so /ru/… gets the Russian one. Astro
@@ -47,6 +49,9 @@ export default defineConfig({
       },
     }),
     localized404,
+    ogCards,
+    // Last: it hashes the finished pages.
+    indexNow,
   ],
   vite: { plugins: [tailwindcss()] },
 })

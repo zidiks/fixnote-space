@@ -89,7 +89,9 @@ const tiles = d.tiles.map((tile) => ({
                   <a href={downloadPage} class="btn btn-primary">
                     {h.download}
                   </a>
-                  <More href={tile.href}>{h.more}</More>
+                  <More href={tile.href} about={tile.eyebrow}>
+                    {h.more}
+                  </More>
                 </div>
               </div>
               <div class="tile-media px-[7%] pt-10 pb-[7%]">

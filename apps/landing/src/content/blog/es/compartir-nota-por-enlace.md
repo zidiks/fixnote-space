@@ -1,7 +1,8 @@
 ---
-title: "Cómo compartir una nota por enlace sin que el servidor la lea: FixNote"
+title: "Cómo crear, actualizar y cerrar el enlace de una nota en FixNote"
 description: "Enlaces de solo lectura en FixNote: cómo crearlos y actualizarlos, por qué la clave va después del # y el servidor no ve el texto, y cómo dejar de compartir."
 date: 2026-09-29
+updated: 2026-10-11
 translationKey: share-links
 faq:
   - q: "¿Quien recibe el enlace necesita una cuenta de FixNote?"

@@ -1,6 +1,6 @@
 ---
-title: Заметки в Claude, Cursor и Codex
-metaTitle: 'MCP-сервер для заметок: FixNote в Claude, Cursor и Codex'
+title: 'MCP-сервер для заметок: FixNote в Claude, Cursor и Codex'
+metaTitle: 'MCP-сервер для заметок: Claude, Cursor и Codex — FixNote'
 description: Подключите заметки FixNote к Claude Desktop, Cursor, Codex и другим MCP-клиентам. Вы решаете, что им можно читать и менять, а каждое изменение видно в журнале.
 eyebrow: MCP
 intro: Хотите, чтобы Claude или Cursor знал, что вы решили по проекту, и не пересказывать это каждый раз? Встроенный MCP-сервер FixNote даёт этим программам искать и читать ваши заметки, а с вашего разрешения и менять их.

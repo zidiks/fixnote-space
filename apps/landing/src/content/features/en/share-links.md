@@ -1,6 +1,6 @@
 ---
 title: Share a note by link
-metaTitle: 'Share a note with a link the server cannot read | FixNote'
+metaTitle: 'Share a note by link, end-to-end encrypted | FixNote'
 description: Create a read-only link and send a note to anyone. The key lives in the part of the link after #, so the server keeps a copy it has no way to read.
 eyebrow: Links
 intro: How do you send a recipe or a packing list to someone who doesn't use FixNote? Create a read-only link. It opens in any browser, and the server only ever holds an encrypted copy of the note.

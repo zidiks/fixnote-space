@@ -1,6 +1,6 @@
 ---
-title: Your notes in Claude, Cursor and Codex
-metaTitle: 'MCP server for your notes: FixNote in Claude, Cursor and Codex'
+title: 'MCP server for your notes: Claude, Cursor and Codex'
+metaTitle: 'MCP server for notes: Claude, Cursor and Codex | FixNote'
 description: Connect FixNote notes to Claude Desktop, Cursor, Codex and other MCP clients. You decide what they may read and change, and every change shows in the AI log.
 eyebrow: MCP
 intro: Want Claude or Cursor to know what you decided about a project without retelling it every time? The MCP server built into FixNote lets these apps search and read your notes and, if you allow it, change them.

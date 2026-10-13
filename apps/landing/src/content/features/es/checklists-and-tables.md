@@ -1,6 +1,6 @@
 ---
 title: Listas de tareas y tablas
-metaTitle: 'Listas de tareas y tablas en tus notas: checklists en FixNote'
+metaTitle: 'Listas de tareas y tablas en tus notas | FixNote'
 description: Listas de tareas con subtareas y tablas dentro de una nota de FixNote. La tarjeta muestra cuántas tareas están hechas y todo se guarda como Markdown normal.
 eyebrow: Listas
 intro: ¿Dónde guardas la lista de la compra, el plan de una reforma o una comparación de precios sin abrir una aplicación distinta para cada cosa? Una nota de FixNote admite una lista de tareas con subtareas y una tabla, y todo sigue siendo Markdown normal.

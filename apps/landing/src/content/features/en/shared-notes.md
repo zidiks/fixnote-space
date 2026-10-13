@@ -1,6 +1,6 @@
 ---
-title: Shared notes and folders
-metaTitle: 'Encrypted shared notes: edit together in real time in FixNote'
+title: Shared notes and folders, end-to-end encrypted
+metaTitle: 'Encrypted shared notes app: edit together live | FixNote'
 description: Invite people by email to a note or a whole folder, pick what they can do, and edit together live. The server stores ciphertext; only members read the text.
 eyebrow: Together
 intro: How do you keep a shopping list or a trip plan with someone else without your text sitting readable on a server? Invite them by email to a note or a whole folder, and you see each other's edits as they happen.

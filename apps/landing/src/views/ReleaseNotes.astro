@@ -14,7 +14,7 @@ const d = t(lang)
 const p = d.releasePage
 ---
 
-<Base lang={lang} title={d.meta.releaseNotes.title} description={d.meta.releaseNotes.description} path="/release-notes/" crumb={d.nav.releaseNotes}>
+<Base lang={lang} title={d.meta.releaseNotes.title} description={d.meta.releaseNotes.description} path="/release-notes/" crumb={d.nav.releaseNotes} og={{ eyebrow: d.nav.releaseNotes }}>
   <Article lang={lang} eyebrow={p.eyebrow} title={p.title} intro={p.lead}>
     <ol class="mt-14 border-t border-line">
       {

@@ -1,0 +1,152 @@
+query,priority,intent,cluster,url
+app de notas,high,commercial,app de notas con ia (inicio),/es/
+app de notas con ia,med,commercial,app de notas con ia (inicio),/es/
+app de notas con ia gratis,med,commercial,app de notas con ia (inicio),/es/
+notas con inteligencia artificial,med,commercial,app de notas con ia (inicio),/es/
+app para tomar notas con ia,med,commercial,app de notas con ia (inicio),/es/
+app para notas con ia,low,commercial,app de notas con ia (inicio),/es/
+bloc de notas con ia,low,commercial,app de notas con ia (inicio),/es/
+tomar notas con ia,high,commercial,app de notas con ia (inicio),/es/
+app de notas gratis,med,commercial,app de notas con ia (inicio),/es/
+app de notas sin anuncios,low,commercial,app de notas con ia (inicio),/es/
+mejor app de notas,high,commercial,mejores apps de notas con ia,/es/blog/mejores-apps-de-notas-con-ia/
+mejor app de notas para pc,med,commercial,mejores apps de notas con ia,/es/blog/mejores-apps-de-notas-con-ia/
+asistente de notas con ia,med,commercial,asistente de ia para notas,/es/features/ask-your-notes/
+asistente notas ia,med,commercial,asistente de ia para notas,/es/features/ask-your-notes/
+asistente de ia para tomar notas,med,commercial,asistente de ia para notas,/es/features/ask-your-notes/
+asistente de notas ia gratis,low,commercial,asistente de ia para notas,/es/features/ask-your-notes/
+preguntar a tus notas,low,commercial,asistente de ia para notas,/es/features/ask-your-notes/
+cómo funciona el asistente de ia de fixnote,low,informational,asistente how-to,/es/blog/asistente-ia-para-notas/
+reescribir texto con ia,low,commercial,edición con ia,/es/features/ai-edits/
+corregir texto con ia,low,commercial,edición con ia,/es/features/ai-edits/
+app de notas para pc,high,commercial,app de notas para windows,NEW:/es/windows/
+app de notas para windows,high,commercial,app de notas para windows,NEW:/es/windows/
+app de notas para pc gratis,high,commercial,app de notas para windows,NEW:/es/windows/
+mejor app de notas para windows,high,commercial,app de notas para windows,NEW:/es/windows/
+aplicacion de notas para windows,high,commercial,app de notas para windows,NEW:/es/windows/
+bloc de notas para windows,high,commercial,app de notas para windows,NEW:/es/windows/
+bloc de notas para windows 11,med,commercial,app de notas para windows,NEW:/es/windows/
+app de notas para ordenador,med,commercial,app de notas para windows,NEW:/es/windows/
+app de notas para windows 11,med,commercial,app de notas para windows,NEW:/es/windows/
+app de notas escritorio para windows,low,commercial,app de notas para windows,NEW:/es/windows/
+descargar app de notas para pc,med,navigational,descargar,/es/download/
+notas para mac,med,commercial,app de notas para mac,NEW:/es/mac/
+notas cifradas,high,commercial,notas cifradas,/es/features/encryption/
+notas encriptadas,high,commercial,notas cifradas,/es/features/encryption/
+app de notas seguras,high,commercial,notas cifradas,/es/features/encryption/
+app de notas privadas,med,commercial,notas cifradas,/es/features/encryption/
+app notas encriptadas,low,commercial,notas cifradas,/es/features/encryption/
+cifrado de extremo a extremo notas,low,informational,cómo funciona el cifrado,/es/blog/notas-cifrado-de-extremo-a-extremo/
+frase de recuperación,low,informational,frase de recuperación,/es/blog/frase-de-recuperacion/
+app de notas sin internet,med,commercial,app de notas sin internet,/es/features/offline/
+notas sin internet,med,commercial,app de notas sin internet,/es/features/offline/
+app notas sin internet,med,commercial,app de notas sin internet,/es/features/offline/
+app de notas offline,low,commercial,app de notas sin internet,/es/features/offline/
+bloc de notas sin internet,low,commercial,app de notas sin internet,/es/features/offline/
+fixnote sin conexión con ollama,low,informational,fixnote sin conexión,/es/blog/app-de-notas-sin-internet/
+notas de voz a texto,high,commercial,notas de voz a texto,/es/features/voice-notes/
+transcribir nota de voz a texto,med,commercial,notas de voz a texto,/es/features/voice-notes/
+notas de voz con ia gratis,med,commercial,notas de voz a texto,/es/features/voice-notes/
+notas voz ia,low,commercial,notas de voz a texto,/es/features/voice-notes/
+dictado por voz pc,med,commercial,notas de voz a texto,/es/features/voice-notes/
+dictado por voz windows 11,high,commercial,notas de voz a texto,/es/features/voice-notes/
+dictado por voz mac,med,commercial,notas de voz a texto,/es/features/voice-notes/
+dictado por voz,high,informational,dictado por voz sin internet,/es/blog/dictado-por-voz-sin-internet/
+dictado por voz sin internet,med,informational,dictado por voz sin internet,/es/blog/dictado-por-voz-sin-internet/
+dictado por voz sin conexión,med,informational,dictado por voz sin internet,/es/blog/dictado-por-voz-sin-internet/
+voz a texto sin internet,med,informational,dictado por voz sin internet,/es/blog/dictado-por-voz-sin-internet/
+dictado por voz a texto,high,informational,dictado por voz sin internet,/es/blog/dictado-por-voz-sin-internet/
+dictado por voz gratis,high,informational,dictado por voz sin internet,/es/blog/dictado-por-voz-sin-internet/
+resumen de reuniones con ia,high,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+resumen de reuniones con ia gratis,high,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+resumen de reuniones,high,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+ia para resumen de reuniones,high,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+notas de reuniones con ia,med,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+tomar notas de reuniones con ia,med,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+ia para tomar notas de reuniones,med,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+resumen de llamadas,high,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+transcripción de llamadas,high,commercial,resumen de reuniones con ia,/es/features/call-summaries/
+transcribir reuniones,high,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+transcribir reuniones de zoom,high,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+transcribir reuniones de meet,high,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+transcribir reuniones de teams,high,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+transcribir reuniones gratis,med,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+transcribir llamadas,high,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+transcribir llamadas gratis,med,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+tomar notas con ia en google meet,high,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+tomar notas con ia en teams,high,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+tomar notas con ia en zoom,med,informational,cómo transcribir una reunión,/es/blog/transcripcion-y-resumen-de-llamadas/
+extraer texto de imagen,high,commercial,extraer texto de imagen,/es/features/text-in-images/
+texto de imagen,high,commercial,extraer texto de imagen,/es/features/text-in-images/
+texto de una imagen,high,commercial,extraer texto de imagen,/es/features/text-in-images/
+copiar texto de una imagen,med,commercial,extraer texto de imagen,/es/features/text-in-images/
+extraer texto de imagen gratis,med,commercial,extraer texto de imagen,/es/features/text-in-images/
+transcribir imagen a texto,low,commercial,extraer texto de imagen,/es/features/text-in-images/
+ocr notas,low,commercial,extraer texto de imagen,/es/features/text-in-images/
+buscar texto en imágenes,low,informational,buscar texto en imágenes,/es/blog/buscar-texto-en-imagenes/
+buscar texto en capturas de pantalla,low,informational,buscar texto en imágenes,/es/blog/buscar-texto-en-imagenes/
+bot de telegram para notas,low,commercial,bot de telegram para notas,/es/features/telegram/
+notas en telegram,low,commercial,bot de telegram para notas,/es/features/telegram/
+guardar mensajes de telegram,med,informational,guardar mensajes de telegram,/es/blog/guardar-mensajes-de-telegram-en-notas/
+guardar chat de telegram,low,informational,guardar mensajes de telegram,/es/blog/guardar-mensajes-de-telegram-en-notas/
+enviar mensajes a mi mismo en telegram,low,informational,guardar mensajes de telegram,/es/blog/guardar-mensajes-de-telegram-en-notas/
+alternativa a notion,high,comparison,alternativa a notion,/es/vs/notion/
+alternativa a notion gratis,med,comparison,alternativa a notion,/es/vs/notion/
+mejor alternativa a notion,med,comparison,alternativas a notion (lista),NEW:/es/alternativas/notion/
+app alternativa a notion,low,comparison,alternativa a notion,/es/vs/notion/
+alternativa europea a notion,low,comparison,alternativa a notion,/es/vs/notion/
+notion vs obsidian,high,comparison,notion vs obsidian,NEW:/es/blog/notion-vs-obsidian/
+obsidian vs notion,high,comparison,notion vs obsidian,NEW:/es/blog/notion-vs-obsidian/
+alternativa a evernote,high,comparison,alternativa a evernote,/es/vs/evernote/
+alternativa a evernote gratis,high,comparison,alternativa a evernote,/es/vs/evernote/
+evernote vs notion,high,comparison,alternativa a evernote,/es/vs/evernote/
+evernote vs obsidian,high,comparison,alternativa a evernote,/es/vs/evernote/
+evernote vs apple notes,low,comparison,alternativa a evernote,/es/vs/evernote/
+evernote vs joplin,low,comparison,alternativa a joplin,/es/vs/joplin/
+alternativa a obsidian,high,comparison,alternativa a obsidian,/es/vs/obsidian/
+obsidian vs joplin,med,comparison,alternativa a joplin,/es/vs/joplin/
+alternativa a joplin,low,comparison,alternativa a joplin,/es/vs/joplin/
+notas de apple en windows,high,comparison,alternativa a notas de apple para windows,/es/vs/apple-notes/
+apple notes en windows,high,comparison,alternativa a notas de apple para windows,/es/vs/apple-notes/
+apple notes para windows,high,comparison,alternativa a notas de apple para windows,/es/vs/apple-notes/
+notas apple para windows,med,comparison,alternativa a notas de apple para windows,/es/vs/apple-notes/
+ver notas de iphone en pc,low,informational,alternativa a notas de apple para windows,/es/vs/apple-notes/
+servidor mcp,high,informational,qué es un servidor mcp,NEW:/es/blog/que-es-un-servidor-mcp/
+servidor mcp claude,med,informational,qué es un servidor mcp,NEW:/es/blog/que-es-un-servidor-mcp/
+servidor mcp local,low,commercial,servidor mcp para notas,/es/features/mcp/
+mcp notas,low,commercial,servidor mcp para notas,/es/features/mcp/
+conectar notas a claude desktop,low,informational,conectar notas a claude y cursor,/es/blog/servidor-mcp-para-notas/
+nota diaria,high,commercial,nota diaria,/es/features/daily-notes/
+plantilla nota diaria,low,commercial,nota diaria,/es/features/daily-notes/
+nota diaria obsidian,low,comparison,nota diaria,/es/features/daily-notes/
+tareas recurrentes en notas,low,informational,tareas que se repiten,/es/blog/nota-diaria-y-tareas-repetidas/
+programar tareas repetitivas,low,informational,tareas que se repiten,/es/blog/nota-diaria-y-tareas-repetidas/
+app de notas compartidas,high,commercial,app de notas compartidas,/es/features/shared-notes/
+notas compartidas,high,commercial,app de notas compartidas,/es/features/shared-notes/
+notas compartidas online,high,commercial,app de notas compartidas,/es/features/shared-notes/
+app de notas compartidas para parejas,med,commercial,app de notas compartidas,/es/features/shared-notes/
+compartir notas con otra persona,low,informational,cómo compartir una nota o carpeta,/es/blog/notas-y-carpetas-compartidas/
+compartir notas,high,commercial,compartir nota por enlace,/es/features/share-links/
+compartir notas online,high,commercial,compartir nota por enlace,/es/features/share-links/
+compartir nota por enlace,low,commercial,compartir nota por enlace,/es/features/share-links/
+cómo compartir una nota con un enlace,low,informational,enlace a una nota how-to,/es/blog/compartir-nota-por-enlace/
+app de notas con sincronización,med,commercial,sincronizar notas,/es/features/sync/
+sincronizar notas,med,commercial,sincronizar notas,/es/features/sync/
+sincronizar notas en la nube,med,commercial,sincronizar notas,/es/features/sync/
+app de notas para pc y android,low,commercial,sincronizar notas,/es/features/sync/
+organizar notas,high,commercial,organizar notas con ia,/es/features/tidy-up/
+organizar notas con ia,low,commercial,organizar notas con ia,/es/features/tidy-up/
+cómo ordenar notas sueltas,low,informational,cómo ordenar notas,/es/blog/ordenar-notas-con-ia/
+importar notas de notion,low,commercial,importar notas,/es/features/import-export/
+importar notas de apple,low,commercial,importar notas,/es/features/import-export/
+exportar notas de notion,low,informational,pasar notas,/es/blog/pasar-notas-de-notion-obsidian-bear/
+pasar notas de notion a obsidian,low,informational,pasar notas,/es/blog/pasar-notas-de-notion-obsidian-bear/
+exportar notas mac,low,informational,pasar notas,/es/blog/pasar-notas-de-notion-obsidian-bear/
+buscar en notas,high,commercial,buscar en notas,/es/features/search/
+buscar en notas windows,low,commercial,buscar en notas,/es/features/search/
+buscar notas en varios idiomas,low,informational,búsqueda multilingüe,/es/blog/buscar-notas-en-tres-idiomas/
+segundo cerebro app,med,commercial,segundo cerebro,NEW:/es/blog/segundo-cerebro-app/
+notas markdown,high,commercial,markdown,/es/features/checklists-and-tables/
+cómo tomar notas,low,informational,tomar notas que encuentres,/es/blog/como-tomar-notas-que-encuentres/
+qué modelo de ia usar ollama,low,informational,modelo de ia,/es/blog/que-modelo-de-ia-elegir-para-el-asistente/
+atajos de teclado fixnote,low,navigational,atajos,/es/blog/atajos-de-teclado-fixnote/

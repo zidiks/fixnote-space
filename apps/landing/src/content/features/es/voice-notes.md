@@ -1,6 +1,6 @@
 ---
-title: Notas de voz sin internet
-metaTitle: 'Notas de voz sin internet: dictado en el dispositivo con FixNote'
+title: Notas de voz a texto, sin internet
+metaTitle: 'Notas de voz a texto sin internet | FixNote'
 description: Dicta una nota y FixNote convierte tu voz en texto en el dispositivo mientras hablas. El audio no sale de él y, con el modelo descargado, no necesitas internet.
 eyebrow: Dictado
 intro: ¿Quieres dictar una idea o una lista de tareas sin mandar tu voz al servidor de otro? FixNote reconoce la voz en tu ordenador o en tu navegador y la convierte directamente en una nota.

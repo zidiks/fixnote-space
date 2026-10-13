@@ -1,7 +1,7 @@
 ---
-title: "FixNote vs Apple Notes: which is better for your notes"
-metaTitle: "Apple Notes alternative for Windows with an AI assistant"
-description: "Apple Notes or FixNote: Windows and the browser, an AI assistant, end-to-end encryption, call notes. Where each app is stronger and how to move your notes over."
+title: "Apple Notes alternative for Windows: FixNote vs Apple Notes"
+metaTitle: "Apple Notes alternative for Windows: FixNote vs Apple Notes"
+description: "Looking for Apple Notes on Windows? FixNote runs on Windows, Mac and the web, with an AI assistant, end-to-end encryption and import from Apple Notes."
 intro: "Apple Notes is free, already on your iPhone and Mac, and works well inside Apple's world. FixNote covers what Apple Notes leaves out: a Windows computer, an assistant that answers from all your notes, and encryption with nothing to switch on. Here is how the two differ, including where Apple Notes is the better pick."
 steps:
   - title: "Look at your devices"

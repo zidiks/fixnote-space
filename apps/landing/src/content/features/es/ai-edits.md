@@ -1,6 +1,6 @@
 ---
 title: Edita el texto con IA
-metaTitle: 'Reescribir, acortar y corregir textos con IA en tus notas'
+metaTitle: 'Reescribir y corregir textos con IA en tus notas | FixNote'
 description: Selecciona texto en una nota y pide a la IA que lo reescriba, acorte o corrija. FixNote muestra el cambio palabra por palabra y lo aplica al pulsar Aceptar.
 eyebrow: Edición con IA
 intro: ¿Quieres un párrafo más claro, un correo más corto o un texto sin erratas sin pegarlo en un chatbot? Selecciónalo, elige una acción y FixNote te muestra la edición propuesta en la propia nota.

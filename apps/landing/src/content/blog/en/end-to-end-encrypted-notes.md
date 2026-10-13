@@ -1,8 +1,8 @@
 ---
-title: 'End-to-End Encrypted Notes: How Encryption Works in FixNote'
+title: 'How end-to-end encryption works in FixNote'
 description: 'A 12-word phrase, a fresh key for every version of a note and a server that stores only ciphertext: what FixNote sees and what happens if you lose the phrase.'
 date: 2026-09-18
-updated: 2026-10-09
+updated: 2026-10-11
 translationKey: e2ee
 faq:
   - q: Can FixNote read my notes?

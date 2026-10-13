@@ -3,6 +3,7 @@ import { render } from 'astro:content'
 import Chevron from '../components/Chevron.astro'
 import QA from '../components/QA.astro'
 import TryCard from '../components/TryCard.astro'
+import { authorOf } from '../data/authors'
 import { LANG_NAMES, LANGS, localePath, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 import {
@@ -14,6 +15,15 @@ import {
   readingMinutes,
   translations,
 } from '../lib/blog'
+import {
+  APP_ID,
+  authorPath,
+  breadcrumbs,
+  faqPage,
+  ORG_ID,
+  ogImagePath,
+  person,
+} from '../lib/schema'
 
 interface Props {
   post: Post
@@ -28,56 +38,29 @@ const more = (await getPosts(lang)).filter((p) => p.id !== post.id).slice(0, 4)
 const others = LANGS.filter((l) => l !== lang && alternates[l])
 const site = Astro.site ?? new URL('https://fixnote.space')
 const url = new URL(localePath(lang, `/blog/${slug}/`), site).href
+const by = authorOf(post.data.author)
 const jsonLd = [
   {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
+    '@id': `${url}#article`,
     headline: post.data.title,
     description: post.data.description,
     datePublished: post.data.date.toISOString(),
     dateModified: (post.data.updated ?? post.data.date).toISOString(),
     inLanguage: lang,
-    mainEntityOfPage: url,
-    image: new URL(`/og/${lang}.png`, site).href,
-    author: { '@type': 'Organization', name: 'FixNote', url: site.href },
-    publisher: {
-      '@type': 'Organization',
-      name: 'FixNote',
-      logo: new URL('/favicon.svg', site).href,
-    },
+    mainEntityOfPage: { '@id': `${url}#webpage` },
+    image: new URL(ogImagePath(lang, `/blog/${slug}/`), site).href,
+    author: by ? person(lang, by.id, by.author) : { '@id': ORG_ID },
+    publisher: { '@id': ORG_ID },
+    about: { '@id': APP_ID },
   },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'FixNote',
-        item: new URL(localePath(lang, '/'), site).href,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: d.nav.blog,
-        item: new URL(localePath(lang, '/blog/'), site).href,
-      },
-      { '@type': 'ListItem', position: 3, name: post.data.title, item: url },
-    ],
-  },
-  ...(post.data.faq.length
-    ? [
-        {
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: post.data.faq.map((x) => ({
-            '@type': 'Question',
-            name: x.q,
-            acceptedAnswer: { '@type': 'Answer', text: x.a },
-          })),
-        },
-      ]
-    : []),
+  breadcrumbs([
+    { name: 'FixNote', url: new URL(localePath(lang, '/'), site).href },
+    { name: d.nav.blog, url: new URL(localePath(lang, '/blog/'), site).href },
+    { name: post.data.title, url },
+  ]),
+  ...(post.data.faq.length ? [faqPage(post.data.faq)] : []),
 ]
 const title = post.data.title.includes('FixNote') ? post.data.title : `${post.data.title} · FixNote`
 ---
@@ -91,6 +74,7 @@ const title = post.data.title.includes('FixNote') ? post.data.title : `${post.da
   type="article"
   jsonLd={jsonLd}
   crumb={d.nav.blog}
+  og={{ eyebrow: d.nav.blog }}
 >
   <div class="bg-white">
     <article class="mx-auto w-[87.5%] max-w-[692px] pt-16 pb-24 small:w-full small:pt-20">
@@ -100,8 +84,31 @@ const title = post.data.title.includes('FixNote') ? post.data.title : `${post.da
       <h1 class="typo-headline mt-2 text-ink">{post.data.title}</h1>
       <p class="typo-intro mt-6 text-ink">{post.data.description}</p>
       <p class="typo-caption mt-4 text-muted">
-        {p.published} <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time> ·{' '}
-        {readingMinutes(post)} {p.minutes}
+        {
+          by &&
+            (by.author.bio ? (
+              <>
+                <a href={authorPath(lang, by.id)} rel="author" class="link">
+                  {by.author.name[lang]}
+                </a>
+                , {by.author.role[lang]} ·{' '}
+              </>
+            ) : (
+              <>
+                {by.author.name[lang]}, {by.author.role[lang]} ·{' '}
+              </>
+            ))
+        }
+        {p.published} <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, lang)}</time>
+        {
+          post.data.updated && (
+            <>
+              {' '}
+              · {p.updated} <time datetime={post.data.updated.toISOString()}>{formatDate(post.data.updated, lang)}</time>
+            </>
+          )
+        }{' '}
+        · {readingMinutes(post)} {p.minutes}
       </p>
       <div class="prose-note mt-14">
         <Content />

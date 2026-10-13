@@ -9,7 +9,7 @@ const { lang } = Astro.props
 const d = t(lang)
 ---
 
-<Base lang={lang} title={d.meta.notFound.title} description={d.meta.notFound.description} path="/404/" alternates={{}} noindex>
+<Base lang={lang} title={d.meta.notFound.title} description={d.meta.notFound.description} path="/404/" alternates={{}} noindex aboutApp={false}>
   <section class="flex min-h-[60vh] flex-col items-center justify-center bg-white px-6 py-24 text-center">
     <p class="typo-caption font-semibold text-muted">404</p>
     <h1 class="typo-headline mt-2">{d.notFound.title}</h1>

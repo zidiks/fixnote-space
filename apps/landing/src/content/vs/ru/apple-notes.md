@@ -1,7 +1,7 @@
 ---
-title: 'FixNote и Apple Notes: что выбрать для заметок'
-metaTitle: 'Альтернатива Apple Notes для Windows с ИИ-ассистентом: FixNote'
-description: 'Apple Notes или FixNote: Windows и браузер, ИИ-ассистент, сквозное шифрование и запись звонков. Где сильнее каждое приложение и как перенести заметки.'
+title: 'Аналог Apple Notes для Windows: FixNote или Заметки Apple'
+metaTitle: 'Аналог Apple Notes для Windows и браузера — FixNote'
+description: 'Ищете Заметки Apple для Windows? FixNote работает на Windows, Mac и в браузере: ИИ-ассистент, сквозное шифрование, запись звонков и перенос заметок с Mac.'
 intro: 'Apple Notes бесплатны, уже стоят на iPhone и Mac и отлично работают внутри экосистемы Apple. FixNote нужен там, где Apple Notes не хватает: на компьютере с Windows, в ассистенте, который отвечает по всем заметкам, и в шифровании без дополнительных настроек. Ниже разница по пунктам и то, в чём Apple Notes сильнее.'
 steps:
   - title: 'Посмотрите на свои устройства'

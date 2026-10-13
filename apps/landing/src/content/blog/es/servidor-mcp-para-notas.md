@@ -1,7 +1,8 @@
 ---
-title: 'Servidor MCP para tus notas: conecta FixNote a Claude, Cursor y Codex'
+title: 'Cómo conectar tus notas a Claude, Cursor y Codex con MCP'
 description: 'Cómo dar a Claude Desktop, Cursor y Codex acceso a tus notas de FixNote con el servidor MCP, elegir el nivel de acceso y mostrar solo las carpetas que quieras.'
 date: 2026-10-03
+updated: 2026-10-11
 translationKey: mcp
 faq:
   - q: '¿Hace falta FixNote Pro para usar el servidor MCP?'

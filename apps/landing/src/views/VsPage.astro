@@ -11,6 +11,7 @@ import { APP_URL, type Lang, localePath, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 import { topicHref } from '../lib/blog'
 import { fill, getComparisons, type Vs, vsPath } from '../lib/pages'
+import { breadcrumbs, faqPage } from '../lib/schema'
 
 /**
  * FixNote next to one other app: the two side by side, the table, how to choose, the longer
@@ -33,33 +34,11 @@ const guide = await topicHref(lang, 'best-ai-note-apps', '/blog/')
 const price = (paid: string | null) => (paid ? fill(c.perMonth, { price: paid }) : c.free)
 const site = Astro.site ?? new URL('https://fixnote.space')
 const jsonLd = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: v.faq.map((x) => ({
-      '@type': 'Question',
-      name: x.q,
-      acceptedAnswer: { '@type': 'Answer', text: x.a },
-    })),
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'FixNote',
-        item: new URL(localePath(lang, '/'), site).href,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: v.title,
-        item: new URL(vsPath(lang, rival), site).href,
-      },
-    ],
-  },
+  faqPage(v.faq),
+  breadcrumbs([
+    { name: 'FixNote', url: new URL(localePath(lang, '/'), site).href },
+    { name: v.title, url: new URL(vsPath(lang, rival), site).href },
+  ]),
 ]
 ---
 
@@ -70,13 +49,14 @@ const jsonLd = [
   path={`/vs/${rival}/`}
   crumb={u.eyebrow}
   jsonLd={jsonLd}
+  og={{ eyebrow: u.eyebrow, rival }}
 >
   <Article lang={lang} eyebrow={u.eyebrow} title={v.title} intro={v.intro} cta={false}>
     <div class="mt-10 flex flex-wrap items-center gap-6">
       <div class="flex items-center gap-3">
         <AppIcon app="fixnote" size={48} />
         <div>
-          <p class="typo-body font-semibold text-brand">FixNote</p>
+          <p class="typo-body font-semibold text-link">FixNote</p>
           <p class="typo-caption text-muted">{c.free} · {price(APPS.fixnote.paid)}</p>
         </div>
       </div>
