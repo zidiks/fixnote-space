@@ -12,7 +12,15 @@ export const jsonError = (status: number, message: string, extra: Record<string,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   })
 
-function claims(req: Request): { sub?: string; role?: string; email?: string } | null {
+interface Claims {
+  sub?: string
+  role?: string
+  email?: string
+  /** Set on tokens Supabase Auth's OAuth server gave an AI app (remote MCP): never ours to serve. */
+  client_id?: string
+}
+
+function claims(req: Request): Claims | null {
   const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
   const payload = token?.split('.')[1]
   if (!payload) return null
@@ -26,23 +34,16 @@ function claims(req: Request): { sub?: string; role?: string; email?: string } |
 /** Email of a signed-in user's JWT (verified by the platform, like `userId`). */
 export function userEmail(req: Request): string | null {
   const c = claims(req)
-  return c?.role === 'authenticated' && c.email ? c.email : null
+  return c?.role === 'authenticated' && !c.client_id && c.email ? c.email : null
 }
 
-/** Subject of a signed-in user's JWT, without verifying it (the platform already did). */
+/**
+ * Subject of a signed-in user's JWT, without verifying it (the platform already did). Null for an
+ * AI app's OAuth token: it may not spend the account's AI allowance, pay or do anything else here.
+ */
 export function userId(req: Request): string | null {
-  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  const payload = token?.split('.')[1]
-  if (!payload) return null
-  try {
-    const claims = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
-      sub?: string
-      role?: string
-    }
-    return claims.role === 'authenticated' && claims.sub ? claims.sub : null
-  } catch {
-    return null
-  }
+  const c = claims(req)
+  return c?.role === 'authenticated' && !c.client_id && c.sub ? c.sub : null
 }
 
 /** Best effort, per isolate: enough to stop a runaway loop from one account. */
