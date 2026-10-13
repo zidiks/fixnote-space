@@ -4,12 +4,15 @@ import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /**
- * IndexNow: Yandex and Bing (and through it others) hear about new and changed pages within
- * minutes instead of waiting for a crawl.
+ * IndexNow and the sitemap's <lastmod>: Yandex and Bing (and through it others) hear about new and
+ * changed pages within minutes, and every engine sees when a page last changed.
  *
- * 1. The build (`indexNow` integration) writes dist/indexnow.json: every indexable page and a
- *    hash of its HTML. It compares that with the live site's indexnow.json and writes the pages
- *    that are new or changed to .indexnow-pending.json (next to this file, not published).
+ * 1. The build (`indexNow` integration) writes dist/indexnow.json: every indexable page, a hash of
+ *    what it says (title, description, <main>; not the header and footer, which change on every
+ *    page with a new blog post) and the date it last changed. It compares the hashes with the live
+ *    site's indexnow.json: a changed page gets today's date, an unchanged one keeps its date, an
+ *    article always has its own (`dateModified`). The dates go into the sitemap as <lastmod>, and
+ *    the new or changed pages into .indexnow-pending.json (next to this file, not published).
  * 2. After the deploy, `node indexnow.mjs` sends that list. The Cloudflare deploy command is
  *    `npx wrangler deploy && node indexnow.mjs`, so only production deploys send anything.
  *
@@ -44,28 +47,53 @@ export const indexNow = {
   hooks: {
     'astro:build:done': async ({ dir, logger }) => {
       const out = fileURLToPath(dir)
-      const pages = {}
+      const found = {}
       for (const file of htmlFiles(out)) {
         const html = readFileSync(file, 'utf8')
         if (/<meta name="robots" content="noindex/.test(html)) continue
         const path = `/${relative(out, file).split(sep).slice(0, -1).join('/')}`
-        pages[path === '/' ? '/' : `${path}/`] = createHash('sha1')
-          .update(html)
-          .digest('hex')
-          .slice(0, 16)
+        const said = [
+          html.match(/<title>[^<]*<\/title>/)?.[0],
+          html.match(/<meta name="description" content="[^"]*"/)?.[0],
+          html.match(/<main[\s\S]*<\/main>/)?.[0] ?? html,
+        ].join('\n')
+        found[path === '/' ? '/' : `${path}/`] = {
+          h: createHash('sha1').update(said).digest('hex').slice(0, 16),
+          dated: html.match(/"dateModified":"(\d{4}-\d{2}-\d{2})/)?.[1],
+        }
+      }
+      const live = await liveManifest()
+      if (!live)
+        logger.warn('could not read the live indexnow.json; nothing will be sent after this deploy')
+      const today = new Date().toISOString().slice(0, 10)
+      const pages = {}
+      const changed = []
+      for (const [path, { h, dated }] of Object.entries(found)) {
+        // Older manifests held only the hash.
+        const before = typeof live?.[path] === 'string' ? { h: live[path] } : live?.[path]
+        const same = before?.h === h
+        if (live && !same) changed.push(path)
+        pages[path] = { h, m: dated ?? (same && before?.m ? before.m : live ? today : undefined) }
       }
       writeFileSync(join(out, 'indexnow.json'), JSON.stringify(pages))
-      const live = await liveManifest()
-      if (!live) {
-        logger.warn('could not read the live indexnow.json; nothing will be sent after this deploy')
-        writeFileSync(PENDING, '[]')
-        return
-      }
-      const changed = Object.keys(pages).filter((p) => live[p] !== pages[p])
       writeFileSync(PENDING, JSON.stringify(changed))
-      logger.info(`${changed.length} new or changed pages to send after the deploy`)
+      addLastmod(out, pages)
+      if (live) logger.info(`${changed.length} new or changed pages to send after the deploy`)
     },
   },
+}
+
+/** Each sitemap <url> gets <lastmod> right after its <loc>. */
+function addLastmod(out, pages) {
+  for (const name of readdirSync(out)) {
+    if (!/^sitemap-\d+\.xml$/.test(name)) continue
+    const file = join(out, name)
+    const xml = readFileSync(file, 'utf8').replace(/<loc>([^<]+)<\/loc>/g, (tag, url) => {
+      const m = pages[new URL(url).pathname]?.m
+      return m ? `${tag}<lastmod>${m}</lastmod>` : tag
+    })
+    writeFileSync(file, xml)
+  }
 }
 
 /** `node indexnow.mjs`: send the pages the last build found new or changed. */

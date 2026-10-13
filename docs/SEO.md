@@ -33,7 +33,7 @@
 - Search Console, Яндекс.Вебмастер, Bing Webmaster;
 - PageSpeed и CrUX;
 - серверная статистика Cloudflare;
-- IndexNow.
+- IndexNow и <lastmod> в sitemap: дата меняется только у страниц, где поменялся текст (`apps/landing/indexnow.mjs`).
 
 Что сделать руками и куда положить ключи: [docs/seo/SETUP.md](seo/SETUP.md).
 
