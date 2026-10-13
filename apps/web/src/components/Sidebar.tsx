@@ -1,14 +1,6 @@
 import { useTranslation } from '@fixnote/i18n'
 import { appInfo } from '@fixnote/platform-tauri'
-import {
-  Button,
-  cn,
-  Kbd,
-  shortcutLabel,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@fixnote/ui'
+import { Button, cn, Kbd, Tooltip, TooltipContent, TooltipTrigger } from '@fixnote/ui'
 import { useQuery } from '@tanstack/react-query'
 import {
   CalendarDays,
@@ -28,6 +20,7 @@ import { useLlm } from '../lib/assistant/llm'
 import { useTidy } from '../lib/assistant/tidy'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useOpenDaily } from '../lib/queries'
+import { useShortcutLabel } from '../lib/shortcuts'
 import { ProCard } from './ProCard'
 import { SidebarFolders } from './SidebarFolders'
 
@@ -63,6 +56,7 @@ function NavItem({
 
 export function Sidebar() {
   const { t } = useTranslation()
+  const searchKeys = useShortcutLabel('search')
   const setSpotlightOpen = useUi((s) => s.setSpotlightOpen)
   const route = useUi((s) => s.route)
   const navigate = useUi((s) => s.navigate)
@@ -79,7 +73,7 @@ export function Sidebar() {
         >
           <Search className="size-3.5" />
           <span className="flex-1 text-left">{t('sidebar.search')}</span>
-          <Kbd>{shortcutLabel('K')}</Kbd>
+          {searchKeys ? <Kbd>{searchKeys}</Kbd> : null}
         </button>
       </div>
 
