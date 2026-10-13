@@ -37,6 +37,13 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Picking notes in a list (`lib/selection.ts`, `SelectionBar`): a long press or Ctrl/⌘+click
   starts it, clicks then check and uncheck; bulk pin, move, tidy up, delete (Undo; shared notes
   are left out). Back and Escape stop it.
+- Two layouts, chosen per device (`useUi().layout`, kept with the theme in `fixnote.ui`):
+  `assistant` (Home with large cards, a note opens in place) and `notes` (like Bear: sidebar, a
+  column of compact cards `NoteColumn`, the open note; phones show one at a time). The column
+  lists `listOf(route, back)` (the last list in the history), so no extra state; Today and the
+  big-card Home (`overview` route) are routes too. Lists share `useNoteList` and `useNotePress`.
+  `LayoutOnboarding` asks once while no layout is stored (new and earlier users), only when no
+  other dialog is open; closing keeps `assistant`. Settings → General changes it.
 - Server traffic: changes from other devices arrive over Realtime, so the app's own sync is a
   safety net (`SYNC_SAFETY` 10 min, `SYNC_HIDDEN` 15 min out of sight, every minute only without
   Realtime; `account.ts`). Never put a table with big rows (sealed documents) in the Realtime

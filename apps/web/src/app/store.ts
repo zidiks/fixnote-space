@@ -12,6 +12,46 @@ export type Route =
   | { kind: 'note'; id: string }
   /** Tidy suggestions to review. */
   | { kind: 'tidy' }
+  /** Notes edited today (the notes layout lists them beside today's daily note). */
+  | { kind: 'today' }
+  /** The big-card Home screen with the greeting, in the notes layout (where Home is a list). */
+  | { kind: 'overview' }
+
+/** Routes that are a list of notes: in the notes layout they fill the middle column. */
+export type ListRoute = Extract<Route, { kind: 'home' | 'folder' | 'today' }>
+
+export const isListRoute = (r: Route): r is ListRoute =>
+  r.kind === 'home' || r.kind === 'folder' || r.kind === 'today'
+
+/**
+ * The list shown beside an open note in the notes layout: the route itself when it is a list,
+ * else the list the person last came through (so Back and Forward bring the right one along),
+ * else Home.
+ */
+export function listOf(route: Route, back: readonly Route[]): ListRoute {
+  if (isListRoute(route)) return route
+  for (let i = back.length - 1; i >= 0; i--) {
+    const r = back[i]
+    if (r && isListRoute(r)) return r
+  }
+  return { kind: 'home' }
+}
+
+/**
+ * How the window is laid out: `assistant` = sidebar and one content area (Home with large cards
+ * and the assistant; a note opens in place), `notes` = three columns like Bear (sidebar, a column
+ * of compact cards, the open note). `null` = not chosen yet on this device: `LayoutOnboarding`
+ * asks once, and the app looks like `assistant` until then.
+ */
+export type Layout = 'assistant' | 'notes'
+
+/** The middle column of the notes layout: its width in px, kept on this device. */
+export const LIST_WIDTH = { min: 240, max: 480, initial: 320 } as const
+
+export const clampListWidth = (w: number) =>
+  Number.isFinite(w)
+    ? Math.round(Math.min(LIST_WIDTH.max, Math.max(LIST_WIDTH.min, w)))
+    : LIST_WIDTH.initial
 
 /** How lists of notes look: cards in a grid, rows with a preview, or one line per note. */
 export type NoteView = 'cards' | 'list' | 'compact'
@@ -44,6 +84,11 @@ interface UiState {
   spotlightOpen: boolean
   settings: SettingsSection | null
   theme: Theme
+  /** Chosen once (`LayoutOnboarding`) and in Settings → General; kept on this device. */
+  layout: Layout | null
+  listWidth: number
+  setLayout: (layout: Layout) => void
+  setListWidth: (width: number) => void
   /** Remembered on this device, like the theme. */
   noteView: NoteView
   noteSort: NoteSort
@@ -83,6 +128,10 @@ export const useUi = create<UiState>()(
       spotlightOpen: false,
       settings: null,
       theme: 'system',
+      layout: null,
+      listWidth: LIST_WIDTH.initial,
+      setLayout: (layout) => set({ layout }),
+      setListWidth: (width) => set({ listWidth: clampListWidth(width) }),
       collapsedFolders: [],
       noteView: 'cards',
       noteSort: 'edited',
@@ -134,16 +183,46 @@ export const useUi = create<UiState>()(
     }),
     {
       name: 'fixnote.ui',
-      partialize: ({ sidebarOpen, theme, noteView, noteSort, collapsedFolders }) => ({
+      partialize: ({
         sidebarOpen,
         theme,
         noteView,
         noteSort,
         collapsedFolders,
+        layout,
+        listWidth,
+      }) => ({
+        sidebarOpen,
+        theme,
+        noteView,
+        noteSort,
+        collapsedFolders,
+        layout,
+        listWidth,
       }),
+      merge: (persisted, current) => ({ ...current, ...readPersisted(persisted) }),
     },
   ),
 )
+
+type Persisted = Partial<
+  Pick<
+    UiState,
+    'sidebarOpen' | 'theme' | 'noteView' | 'noteSort' | 'collapsedFolders' | 'layout' | 'listWidth'
+  >
+>
+
+/**
+ * What was kept on this device, with values that cannot be used dropped: a layout that is not
+ * one of ours is asked again, a width out of range is brought back into it.
+ */
+export function readPersisted(value: unknown): Persisted {
+  if (typeof value !== 'object' || value === null) return {}
+  const out = { ...(value as Persisted) }
+  if (out.layout !== 'assistant' && out.layout !== 'notes') out.layout = null
+  if (out.listWidth !== undefined) out.listWidth = clampListWidth(Number(out.listWidth))
+  return out
+}
 
 /** Keeps the `dark` class on <html> in sync with the chosen theme and the OS setting. */
 export function applyTheme(theme: Theme) {

@@ -13,12 +13,15 @@ import { type Theme, useUi } from '../../app/store'
 import { captureToDaily, VOICE_TO_DAILY } from '../../lib/daily'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
+import { LayoutPicker } from '../LayoutOnboarding'
 import { UpdatesSection } from './UpdatesSection'
 
 export function GeneralSection() {
   const { t } = useTranslation()
   const theme = useUi((s) => s.theme)
   const setTheme = useUi((s) => s.setTheme)
+  const layout = useUi((s) => s.layout ?? 'assistant')
+  const setLayout = useUi((s) => s.setLayout)
   const [lang, setLang] = useState<Language>(currentLanguage())
   const { driver } = useDb()
   const qc = useQueryClient()
@@ -66,6 +69,10 @@ export function GeneralSection() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="max-w-lg space-y-2 pt-1">
+        <p className="text-sm text-muted-foreground">{t('layout.setting')}</p>
+        <LayoutPicker value={layout} onChange={setLayout} />
       </div>
       <label className="flex max-w-lg items-start gap-3 pt-2">
         <input

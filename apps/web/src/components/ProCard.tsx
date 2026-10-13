@@ -6,6 +6,7 @@ import { useUi } from '../app/store'
 import { startTrial, useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { type ProFeature, showPaywall, usePlan } from '../lib/plan'
+import { useLayoutAsking } from './LayoutOnboarding'
 import { ART, PRO_BENEFITS } from './pro-look'
 
 const HIDDEN_KEY = 'fixnote.pro-card-hidden'
@@ -208,10 +209,12 @@ export function Paywall() {
   const phase = useAccount((s) => s.phase)
   // Not on top of Settings, where the sign-in happens: once they are closed.
   const settingsOpen = useUi((s) => s.settings !== null)
+  // Nor on top of the layout question: after it.
+  const asking = useLayoutAsking((s) => s.open)
   const close = () => usePlan.setState({ paywall: false })
 
   useEffect(() => {
-    if (phase !== 'ready' || settingsOpen || !email) return
+    if (phase !== 'ready' || settingsOpen || asking || !email) return
     if (info?.plan !== 'free' || !info.trialAvailable) return
     try {
       if (localStorage.getItem(PAYWALL_SEEN + email)) return
@@ -220,7 +223,7 @@ export function Paywall() {
       return
     }
     showPaywall()
-  }, [phase, settingsOpen, email, info])
+  }, [phase, settingsOpen, asking, email, info])
 
   return (
     <Dialog open={open && info?.trialAvailable === true} onOpenChange={(o) => !o && close()}>

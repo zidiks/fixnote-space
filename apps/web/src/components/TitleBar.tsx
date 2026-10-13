@@ -64,6 +64,10 @@ function useRouteLabel(route: Route): string {
       return note.data?.title || t('common.untitled')
     case 'tidy':
       return t('tidy.title')
+    case 'today':
+      return t('sidebar.daily')
+    case 'overview':
+      return t('layout.overview')
   }
 }
 

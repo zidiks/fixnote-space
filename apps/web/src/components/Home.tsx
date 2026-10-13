@@ -142,12 +142,21 @@ export function Home() {
   const folders = useFolders().data ?? []
   const counts = useCounts().data
   const route = useUi((s) => s.route)
-  // Kept in the route, so Back returns to the same view.
-  const scope = route.kind === 'home' && route.filter === 'inbox' ? 'inbox' : 'all'
+  // Kept in the route, so Back returns to the same view. As the notes layout's Overview (where
+  // Home is a list), only on this screen.
+  const overview = route.kind === 'overview'
+  const [overviewScope, setOverviewScope] = useState<'all' | 'inbox'>('all')
+  const scope = overview
+    ? overviewScope
+    : route.kind === 'home' && route.filter === 'inbox'
+      ? 'inbox'
+      : 'all'
   const setScope = (s: 'all' | 'inbox') =>
-    navigate(s === 'inbox' ? { kind: 'home', filter: 'inbox' } : { kind: 'home' }, {
-      replace: true,
-    })
+    overview
+      ? setOverviewScope(s)
+      : navigate(s === 'inbox' ? { kind: 'home', filter: 'inbox' } : { kind: 'home' }, {
+          replace: true,
+        })
   const [folderId, setFolderId] = useState('')
   const [type, setType] = useState<'' | NoteType>('')
   const [period, setPeriod] = useState<Period>('any')

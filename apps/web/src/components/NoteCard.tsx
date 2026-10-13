@@ -66,7 +66,7 @@ function Cover({ src }: { src: string }) {
   )
 }
 
-function Thumb({ src }: { src: string }) {
+function Thumb({ src, small = false }: { src: string; small?: boolean }) {
   const resolved = useCoverUrl(src)
   if (!resolved) return null
   return (
@@ -76,7 +76,10 @@ function Thumb({ src }: { src: string }) {
       loading="lazy"
       referrerPolicy="no-referrer"
       draggable={false}
-      className="size-16 shrink-0 self-center rounded-lg border object-cover"
+      className={cn(
+        'shrink-0 rounded-lg border object-cover',
+        small ? 'mt-0.5 size-11 self-start rounded-md' : 'size-16 self-center',
+      )}
       onError={(e) => {
         e.currentTarget.style.display = 'none'
       }}
@@ -350,6 +353,66 @@ export function NoteLine({ note, inFolder, date = 'edited' }: ItemProps) {
             )}
           </span>
         </span>
+      </button>
+    </NoteMenu>
+  )
+}
+
+/**
+ * The notes layout's middle column: a compact card with the title, two lines of the text (or the
+ * search match), the date, marks and a small thumbnail. `active`: the note open beside it.
+ */
+export function NoteSnippet({
+  note,
+  inFolder,
+  date = 'edited',
+  active = false,
+  excerpt,
+}: ItemProps & { active?: boolean; excerpt?: React.ReactNode }) {
+  const { t, i18n } = useTranslation()
+  const marks = useMarks(note, inFolder)
+  const press = useNotePress(note)
+  const text = excerpt ?? note.excerpt
+
+  return (
+    <NoteMenu note={note}>
+      <button
+        type="button"
+        {...press.props}
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'flex w-full gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50 aria-[current=page]:bg-accent data-[selected]:bg-brand/10',
+          itemClass,
+        )}
+      >
+        {press.selecting ? <SelectMark selected={press.selected} className="mt-0.5" /> : null}
+        <span className="min-w-0 flex-1">
+          <span
+            className={cn(
+              'block truncate text-sm font-medium',
+              !note.title && 'text-muted-foreground',
+            )}
+          >
+            {note.title || t('common.untitled')}
+          </span>
+          {text ? (
+            <span className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+              {text}
+            </span>
+          ) : null}
+          <span className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            {note.type === 'daily' ? <CalendarDays className="size-3.5 shrink-0" /> : null}
+            <span className="shrink-0">
+              {formatCardDate(
+                date === 'created' ? note.createdAt : note.updatedAt,
+                i18n.resolvedLanguage,
+              )}
+            </span>
+            {marks}
+            <Tasks tasks={note.tasks} />
+          </span>
+        </span>
+        {note.cover ? <Thumb src={note.cover} small /> : null}
       </button>
     </NoteMenu>
   )

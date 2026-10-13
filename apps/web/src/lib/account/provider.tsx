@@ -6,6 +6,7 @@ import { useUi } from '../../app/store'
 import { notifyNotesChanged } from '../assistant/assistant'
 import { appendToToday, captureToDaily } from '../daily'
 import { useDb } from '../db'
+import { currentListRoute } from '../layout'
 import { platform } from '../platform'
 import { initAccount, onSharedSync } from './account'
 import { pickBackend } from './pick'
@@ -19,8 +20,10 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   useEffect(
     () =>
       onSharedSync(({ removedFolders }) => {
-        const { route, navigate } = useUi.getState()
-        if (route.kind !== 'folder' || !removedFolders.includes(route.id)) return
+        // The folder on screen, or (notes layout) listed beside the open note.
+        const list = currentListRoute()
+        if (list?.kind !== 'folder' || !removedFolders.includes(list.id)) return
+        const { navigate } = useUi.getState()
         navigate({ kind: 'home' }, { replace: true })
         toast(i18n.t('people.lostFolder'))
       }),

@@ -8,7 +8,9 @@ import { ChatPanel } from '../components/ChatPanel'
 import { DesktopTray } from '../components/DesktopTray'
 import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
+import { LayoutOnboarding } from '../components/LayoutOnboarding'
 import { ListView } from '../components/ListView'
+import { NoNoteOpen, NoteColumn } from '../components/NoteColumn'
 import { PairingRequestDialog } from '../components/PairingRequestDialog'
 import { PaymentDialog } from '../components/PaymentDialog'
 import { Paywall, ProDialog, TrialEndedDialog } from '../components/ProCard'
@@ -25,6 +27,7 @@ import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider } from '../lib/db'
 import { useExternalChanges } from '../lib/external-changes'
 import { useHotkey } from '../lib/hotkeys'
+import { currentListRoute, useLayout } from '../lib/layout'
 import { useNativeFeel } from '../lib/native'
 import { navBack, navForward, useBackLayer, useNavHistory } from '../lib/nav-history'
 import { billingLink } from '../lib/payment'
@@ -34,7 +37,7 @@ import { appShown } from '../lib/shown'
 import { useAutoUpdateCheck } from '../lib/updates'
 import { useVisualViewport } from '../lib/viewport'
 import { toggleVoice } from '../lib/voice/voice'
-import { applyTheme, useUi } from './store'
+import { applyTheme, listOf, useUi } from './store'
 
 // The editor (Tiptap/ProseMirror) is the heaviest part of the bundle; load it on first open.
 const NoteView = lazy(() => import('../components/NoteView').then((m) => ({ default: m.NoteView })))
@@ -59,24 +62,64 @@ const HK = {
 
 const NONE = { key: '\u0000' } as const
 
+function OpenNote({ id }: { id: string }) {
+  return (
+    <Suspense fallback={null}>
+      {/* One instance per note: its query must refetch on mount, and the editor must start
+          from the stored text, also when switching straight from note to note. */}
+      <NoteView key={id} id={id} />
+    </Suspense>
+  )
+}
+
+/** The assistant layout: one content area for Home, a folder, Tidy or the open note. */
 function Content() {
   const route = useUi((s) => s.route)
   switch (route.kind) {
     case 'home':
+    case 'overview':
       return <Home />
     case 'tidy':
       return <TidyView />
     case 'note':
-      return (
-        <Suspense fallback={null}>
-          {/* One instance per note: its query must refetch on mount, and the editor must start
-              from the stored text, also when switching straight from note to note. */}
-          <NoteView key={route.id} id={route.id} />
-        </Suspense>
-      )
+      return <OpenNote id={route.id} />
     default:
       return <ListView route={route} />
   }
+}
+
+/**
+ * The notes layout (like Bear): the list of the place picked in the sidebar in its own column,
+ * the open note beside it. Tidy and the big-card Home take the whole width. A narrow window shows
+ * one of them at a time, list then note, and Back goes from the note to the list.
+ */
+function NotesContent({ onNewNote }: { onNewNote: () => void }) {
+  const route = useUi((s) => s.route)
+  const back = useUi((s) => s.back)
+  const narrow = useUi((s) => s.narrow)
+  const list = listOf(route, back)
+  const whole = (node: React.ReactNode) => (
+    <main className="relative flex min-w-0 flex-1 flex-col">
+      <div className="flex-1 overflow-y-auto">{node}</div>
+    </main>
+  )
+  if (route.kind === 'overview') return whole(<Home />)
+  if (route.kind === 'tidy') return whole(<TidyView />)
+  if (narrow) {
+    if (route.kind === 'note') return whole(<OpenNote id={route.id} />)
+    // One instance per list: its search and scroll start fresh in another place.
+    return <NoteColumn key={JSON.stringify(list)} list={list} wide />
+  }
+  return (
+    <>
+      <NoteColumn
+        key={JSON.stringify(list)}
+        list={list}
+        activeId={route.kind === 'note' ? route.id : undefined}
+      />
+      {whole(route.kind === 'note' ? <OpenNote id={route.id} /> : <NoNoteOpen onNew={onNewNote} />)}
+    </>
+  )
 }
 
 function AppShell() {
@@ -86,6 +129,7 @@ function AppShell() {
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const { sidebarOpen, chatOpen, theme, narrow, drawerOpen } = ui
+  const layout = useLayout()
   // Back from Suby's payment page (supabase/functions/billing): the dialog, then Pro.
   useEffect(() => {
     const url = new URL(location.href)
@@ -126,9 +170,10 @@ function AppShell() {
   }, [])
 
   const newNote = () => {
-    const route = useUi.getState().route
+    // In the folder on screen, or (notes layout) the folder listed beside the open note.
+    const list = currentListRoute()
     createNote.mutate(
-      { content: '', folderId: route.kind === 'folder' ? route.id : null },
+      { content: '', folderId: list?.kind === 'folder' ? list.id : null },
       { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) },
     )
   }
@@ -208,11 +253,15 @@ function AppShell() {
               </div>
             </>
           ) : null}
-          <main className="relative flex min-w-0 flex-1 flex-col">
-            <div className="flex-1 overflow-y-auto">
-              <Content />
-            </div>
-          </main>
+          {layout === 'notes' ? (
+            <NotesContent onNewNote={newNote} />
+          ) : (
+            <main className="relative flex min-w-0 flex-1 flex-col">
+              <div className="flex-1 overflow-y-auto">
+                <Content />
+              </div>
+            </main>
+          )}
         </div>
       </div>
       {/* Full window height, beside the title bar: its buttons end next to the panel. */}
@@ -242,6 +291,7 @@ function AppShell() {
       <DesktopTray />
       <DropLayer />
       <PairingRequestDialog />
+      <LayoutOnboarding />
       <Toaster
         theme={theme}
         position="bottom-right"

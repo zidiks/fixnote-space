@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync, sharedContext, useAccount } from '../lib/account/account'
 import { errorMessage } from '../lib/errors'
+import { useListRoute } from '../lib/layout'
 import { useFolderMutations, useFolders, useInvalidateNotes } from '../lib/queries'
 import { FolderShareDialog } from './FolderShareDialog'
 
@@ -75,7 +76,8 @@ export function SidebarFolders() {
   const { t } = useTranslation()
   const folders = useFolders().data ?? []
   const { create, rename, remove } = useFolderMutations()
-  const route = useUi((s) => s.route)
+  // The folder listed: on screen, or (notes layout) beside the open note.
+  const list = useListRoute()
   const navigate = useUi((s) => s.navigate)
   const [creatingIn, setCreatingIn] = useState<string | null | undefined>(undefined)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -121,7 +123,7 @@ export function SidebarFolders() {
       {(children.get(parentId) ?? []).map((f) => {
         const kids = children.get(f.id)?.length ?? 0
         const open = !collapsed.has(f.id)
-        const active = route.kind === 'folder' && route.id === f.id
+        const active = list?.kind === 'folder' && list.id === f.id
         return (
           <div key={f.id}>
             {renaming === f.id ? (
@@ -325,7 +327,7 @@ export function SidebarFolders() {
           const folder = confirm
           if (!folder) return
           setConfirm(null)
-          if (route.kind === 'folder')
+          if (list?.kind === 'folder')
             navigate({ kind: 'home', filter: 'inbox' }, { replace: true })
           const ctx = folder.shared ? sharedContext() : null
           const shared = ctx ? await ctx.shared.folder(folder.id) : null
