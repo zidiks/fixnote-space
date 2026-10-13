@@ -20,6 +20,8 @@ interface NoteRow {
   origin: string
   state: string | null
   version: number
+  /** When it was last saved (`shared_notes.updated_at`), ms; absent in an older stored fake. */
+  updatedAt?: number
   members: Map<string, Member>
   folder: string | null
   folderKey: string | null
@@ -160,13 +162,17 @@ export class MemorySharedServer {
       state: async (id) => {
         this.calls.state++
         const n = this.notes.get(id)
-        return n && role(id) ? { state: n.state, version: n.version } : null
+        return n && role(id)
+          ? { state: n.state, version: n.version, updatedAt: n.updatedAt ?? null }
+          : null
       },
       versions: async (ids) => {
         this.calls.versions++
         return ids.flatMap((id) => {
           const n = this.notes.get(id)
-          return n && role(id) ? [{ sharedId: id, version: n.version }] : []
+          return n && role(id)
+            ? [{ sharedId: id, version: n.version, updatedAt: n.updatedAt ?? null }]
+            : []
         })
       },
       share: async (origin, wrappedKey) => {
@@ -200,6 +206,7 @@ export class MemorySharedServer {
         if (n.version !== base) return { ok: false, version: n.version, state: n.state }
         n.state = state
         n.version++
+        n.updatedAt = this.now()
         return { ok: true, version: n.version }
       },
       findUser: async (email) => {

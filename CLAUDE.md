@@ -32,7 +32,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - A note's time (`updatedAt` in the app, `edited_at` in SQL) moves only when its text changes;
   `updated_at` moves with any change and settles moves and deletes in sync. Triggers keep `edited_at`
   unless a writer sets it; sync carries it (`editedAt`, server `notes.edited_at`), so a moved or
-  pulled note keeps its time. Lists join their pages with `joinPages` (each note once, re-sorted):
+  pulled note keeps its time. A shared note's text taken in from the server gets the time it was
+  saved there (`shared_notes.updated_at`, `updatedAt` of `state`/`versions`), never the time of the
+  sync; Telegram notes get the time the message was sent. Lists join their pages with `joinPages` (each note once, re-sorted):
   pages refetched after a sync can overlap.
 - Picking notes in a list (`lib/selection.ts`, `SelectionBar`): a long press or Ctrl/⌘+click
   starts it, clicks then check and uncheck; bulk pin, move, tidy up, delete (Undo; shared notes
