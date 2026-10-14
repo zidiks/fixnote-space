@@ -1,7 +1,7 @@
 import { useTranslation } from '@fixnote/i18n'
 import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, useEffect, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
 import { Toaster } from 'sonner'
 import { CallBar } from '../components/CallBar'
 import { ChatPanel } from '../components/ChatPanel'
@@ -14,6 +14,7 @@ import { NoNoteOpen, NoteColumn } from '../components/NoteColumn'
 import { PairingRequestDialog } from '../components/PairingRequestDialog'
 import { PaymentDialog } from '../components/PaymentDialog'
 import { Paywall, ProDialog, TrialEndedDialog } from '../components/ProCard'
+import { SelectionArea } from '../components/SelectionBar'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
@@ -27,7 +28,7 @@ import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider } from '../lib/db'
 import { useExternalChanges } from '../lib/external-changes'
 import { useHotkey } from '../lib/hotkeys'
-import { currentListRoute, useLayout } from '../lib/layout'
+import { currentListRoute, useDocking, useLayout } from '../lib/layout'
 import { useNativeFeel } from '../lib/native'
 import { navBack, navForward, useBackLayer, useNavHistory } from '../lib/nav-history'
 import { billingLink } from '../lib/payment'
@@ -97,28 +98,42 @@ function NotesContent({ onNewNote }: { onNewNote: () => void }) {
   const route = useUi((s) => s.route)
   const back = useUi((s) => s.back)
   const narrow = useUi((s) => s.narrow)
+  // Everything right of the sidebar: the bar for picked notes is centred over it.
+  const area = useRef<HTMLDivElement>(null)
   const list = listOf(route, back)
   const whole = (node: React.ReactNode) => (
     <main className="relative flex min-w-0 flex-1 flex-col">
       <div className="flex-1 overflow-y-auto">{node}</div>
     </main>
   )
-  if (route.kind === 'overview') return whole(<Home />)
-  if (route.kind === 'tidy') return whole(<TidyView />)
   if (narrow) {
+    if (route.kind === 'overview') return whole(<Home />)
+    if (route.kind === 'tidy') return whole(<TidyView />)
     if (route.kind === 'note') return whole(<OpenNote id={route.id} />)
     // One instance per list: its search and scroll start fresh in another place.
     return <NoteColumn key={JSON.stringify(list)} list={list} wide />
   }
   return (
-    <>
-      <NoteColumn
-        key={JSON.stringify(list)}
-        list={list}
-        activeId={route.kind === 'note' ? route.id : undefined}
-      />
-      {whole(route.kind === 'note' ? <OpenNote id={route.id} /> : <NoNoteOpen onNew={onNewNote} />)}
-    </>
+    <SelectionArea.Provider value={area}>
+      <div ref={area} className="flex min-w-0 flex-1">
+        {route.kind === 'overview' ? (
+          whole(<Home />)
+        ) : route.kind === 'tidy' ? (
+          whole(<TidyView />)
+        ) : (
+          <>
+            <NoteColumn
+              key={JSON.stringify(list)}
+              list={list}
+              activeId={route.kind === 'note' ? route.id : undefined}
+            />
+            {whole(
+              route.kind === 'note' ? <OpenNote id={route.id} /> : <NoNoteOpen onNew={onNewNote} />,
+            )}
+          </>
+        )}
+      </div>
+    </SelectionArea.Provider>
   )
 }
 
@@ -128,7 +143,9 @@ function AppShell() {
   const ui = useUi()
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
-  const { sidebarOpen, chatOpen, theme, narrow, drawerOpen } = ui
+  const { sidebarOpen, chatOpen, theme, drawerOpen } = ui
+  // Beside the content, or over it when it would squeeze the content too much.
+  const { sidebarDrawer, chatOverlay } = useDocking()
   const layout = useLayout()
   // Back from Suby's payment page (supabase/functions/billing): the dialog, then Pro.
   useEffect(() => {
@@ -168,6 +185,13 @@ function AppShell() {
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
   }, [])
+  // The notes layout also lets panels open over the content when its columns would be tight.
+  useEffect(() => {
+    const update = () => useUi.getState().setWidth(window.innerWidth)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
   const newNote = () => {
     // In the folder on screen, or (notes layout) the folder listed beside the open note.
@@ -189,8 +213,8 @@ function AppShell() {
   useNavHistory(platform.kind === 'web')
   useVisualViewport(platform.kind === 'web')
   // On a phone, back closes the panels that open over the content.
-  useBackLayer(narrow && drawerOpen, () => useUi.setState({ drawerOpen: false }))
-  useBackLayer(narrow && chatOpen, () => useUi.getState().setChatOpen(false))
+  useBackLayer(sidebarDrawer && drawerOpen, () => useUi.setState({ drawerOpen: false }))
+  useBackLayer(chatOverlay && chatOpen, () => useUi.getState().setChatOpen(false))
   useNativeFeel(platform, isApple, nativeActions)
   useExternalChanges()
   useAutoUpdateCheck()
@@ -239,8 +263,8 @@ function AppShell() {
         <TitleBar onNewNote={newNote} />
         <StorageBanner />
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
-          {sidebarOpen && !narrow ? <Sidebar /> : null}
-          {narrow && drawerOpen ? (
+          {sidebarOpen && !sidebarDrawer ? <Sidebar /> : null}
+          {sidebarDrawer && drawerOpen ? (
             <>
               <button
                 type="button"
@@ -265,7 +289,7 @@ function AppShell() {
         </div>
       </div>
       {/* Full window height, beside the title bar: its buttons end next to the panel. */}
-      {chatOpen && narrow ? (
+      {chatOpen && chatOverlay ? (
         <>
           <button
             type="button"

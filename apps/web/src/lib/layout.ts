@@ -1,9 +1,23 @@
 import type { NoteFilter } from '@fixnote/core'
-import { isListRoute, type Layout, type ListRoute, listOf, useUi } from '../app/store'
+import { useShallow } from 'zustand/react/shallow'
+import {
+  type Docking,
+  docking,
+  isListRoute,
+  type Layout,
+  type ListRoute,
+  listOf,
+  useUi,
+} from '../app/store'
 
 /** The layout in use: the assistant layout until one is chosen on this device. */
 export function useLayout(): Layout {
   return useUi((s) => s.layout ?? 'assistant')
+}
+
+/** Whether the sidebar and the assistant open beside the content or over it (`docking`). */
+export function useDocking(): Docking {
+  return useUi(useShallow((s) => docking(s)))
 }
 
 /**

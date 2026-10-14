@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { type Route, useUi } from '../app/store'
+import { useDocking } from '../lib/layout'
 import { navBack, navForward } from '../lib/nav-history'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote, useRecents } from '../lib/queries'
@@ -120,9 +121,10 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
   const platform = usePlatform()
   const ui = useUi()
   const drag = platform.kind === 'desktop' ? { 'data-tauri-drag-region': true } : {}
-  // Docked beside the content, or (narrow window) opened over it.
-  const docked = ui.sidebarOpen && !ui.narrow
-  const shown = ui.narrow ? ui.drawerOpen : ui.sidebarOpen
+  // Docked beside the content, or (narrow window, tight columns) opened over it.
+  const { sidebarDrawer } = useDocking()
+  const docked = ui.sidebarOpen && !sidebarDrawer
+  const shown = sidebarDrawer ? ui.drawerOpen : ui.sidebarOpen
 
   return (
     <header {...drag} className="flex h-11 shrink-0 select-none items-stretch">

@@ -53,6 +53,40 @@ export const clampListWidth = (w: number) =>
     ? Math.round(Math.min(LIST_WIDTH.max, Math.max(LIST_WIDTH.min, w)))
     : LIST_WIDTH.initial
 
+/** The sidebar and the assistant panel as they take room beside the content (`docking`). */
+export const SIDEBAR_WIDTH = 256
+export const CHAT_WIDTH = 390
+/** The open note in the notes layout keeps at least this much width, for reading. */
+export const EDITOR_MIN = 460
+
+export interface Docking {
+  /** The sidebar opens over the content (a drawer) instead of beside it. */
+  sidebarDrawer: boolean
+  /** The assistant opens over the content instead of beside it. */
+  chatOverlay: boolean
+}
+
+/**
+ * Whether the sidebar and the assistant fit beside the content. A narrow window (a phone, half a
+ * laptop screen) opens both over it. In the notes layout the list column and a readable note
+ * come first: the assistant docks only if the note keeps `EDITOR_MIN` beside the list, then the
+ * sidebar only if there is still room for it; otherwise each opens over the content.
+ */
+export function docking(s: {
+  narrow: boolean
+  width: number
+  layout: Layout | null
+  listWidth: number
+  chatOpen: boolean
+}): Docking {
+  if (s.narrow) return { sidebarDrawer: true, chatOverlay: true }
+  if (s.layout !== 'notes') return { sidebarDrawer: false, chatOverlay: false }
+  const room = s.width - s.listWidth - EDITOR_MIN
+  const chatOverlay = room < CHAT_WIDTH
+  const chat = s.chatOpen && !chatOverlay ? CHAT_WIDTH : 0
+  return { sidebarDrawer: room - chat < SIDEBAR_WIDTH, chatOverlay }
+}
+
 /** How lists of notes look: cards in a grid, rows with a preview, or one line per note. */
 export type NoteView = 'cards' | 'list' | 'compact'
 
@@ -80,6 +114,9 @@ interface UiState {
   /** The sidebar opened over the content in a narrow window; closes on navigation. */
   drawerOpen: boolean
   setNarrow: (narrow: boolean) => void
+  /** The window's width in px, for `docking`. */
+  width: number
+  setWidth: (width: number) => void
   chatOpen: boolean
   spotlightOpen: boolean
   settings: SettingsSection | null
@@ -124,6 +161,13 @@ export const useUi = create<UiState>()(
       narrow: false,
       drawerOpen: false,
       setNarrow: (narrow) => set({ narrow, drawerOpen: false }),
+      width: 1280,
+      setWidth: (width) =>
+        set((s) =>
+          docking(s).sidebarDrawer === docking({ ...s, width }).sidebarDrawer
+            ? { width }
+            : { width, drawerOpen: false },
+        ),
       chatOpen: false,
       spotlightOpen: false,
       settings: null,
@@ -141,7 +185,11 @@ export const useUi = create<UiState>()(
       back: [],
       forward: [],
       toggleSidebar: () =>
-        set((s) => (s.narrow ? { drawerOpen: !s.drawerOpen } : { sidebarOpen: !s.sidebarOpen })),
+        set((s) =>
+          docking(s).sidebarDrawer
+            ? { drawerOpen: !s.drawerOpen }
+            : { sidebarOpen: !s.sidebarOpen },
+        ),
       setChatOpen: (chatOpen) => set({ chatOpen }),
       toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
       setSpotlightOpen: (spotlightOpen) => set({ spotlightOpen }),

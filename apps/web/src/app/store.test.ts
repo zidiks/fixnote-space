@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   clampListWidth,
+  docking,
   isListRoute,
   LIST_WIDTH,
   listOf,
@@ -77,6 +78,41 @@ describe('the list beside an open note (notes layout)', () => {
     expect(isListRoute({ kind: 'today' })).toBe(true)
     expect(isListRoute({ kind: 'note', id: 'x' })).toBe(false)
     expect(isListRoute({ kind: 'overview' })).toBe(false)
+  })
+})
+
+describe('panels beside or over the content', () => {
+  const at = (width: number, more: Partial<Parameters<typeof docking>[0]> = {}) =>
+    docking({ narrow: false, width, layout: 'notes', listWidth: 320, chatOpen: false, ...more })
+
+  it('docks both in the assistant layout unless the window is narrow', () => {
+    expect(at(820, { layout: 'assistant', chatOpen: true })).toEqual({
+      sidebarDrawer: false,
+      chatOverlay: false,
+    })
+    expect(at(700, { narrow: true })).toEqual({ sidebarDrawer: true, chatOverlay: true })
+  })
+
+  it('keeps the list and a readable note first in the notes layout', () => {
+    for (const w of [820, 900, 1000]) {
+      expect(at(w)).toEqual({ sidebarDrawer: true, chatOverlay: true })
+    }
+    expect(at(1280)).toEqual({ sidebarDrawer: false, chatOverlay: false })
+    // The assistant takes the sidebar's place first.
+    expect(at(1280, { chatOpen: true })).toEqual({ sidebarDrawer: true, chatOverlay: false })
+    expect(at(1700, { chatOpen: true })).toEqual({ sidebarDrawer: false, chatOverlay: false })
+    // A wider list leaves less room.
+    expect(at(1100, { listWidth: 480 }).sidebarDrawer).toBe(true)
+  })
+
+  it('toggles the drawer, not the docked sidebar, when it does not fit', () => {
+    useUi.setState({ layout: 'notes', width: 900, drawerOpen: false, sidebarOpen: true })
+    useUi.getState().toggleSidebar()
+    expect(useUi.getState()).toMatchObject({ drawerOpen: true, sidebarOpen: true })
+    // Wide enough again: the drawer is gone, the docked sidebar shows.
+    useUi.getState().setWidth(1400)
+    expect(useUi.getState().drawerOpen).toBe(false)
+    useUi.setState({ layout: null })
   })
 })
 
