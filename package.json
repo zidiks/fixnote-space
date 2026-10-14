@@ -29,7 +29,8 @@
     "@biomejs/biome": "2.5.14",
     "supabase": "^2.117.0",
     "turbo": "^2.11.4",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "wrangler": "^4.151.0"
   },
   "workspaces": [
     "apps/*",
