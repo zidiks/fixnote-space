@@ -30,6 +30,13 @@ export interface RemoteClient {
 
 export type ToolText = { type: 'text'; text: string }
 
+/**
+ * Which notes remote apps may see, kept on the relay for the account as ids only (folder ids are
+ * the same on every device: folders sync). null = everything. The device that answers applies it
+ * on top of its own `mcp.scope`, so no device ever shows more than its own settings allow.
+ */
+export type RemoteScope = { folders: string[]; notes: string[] } | null
+
 /** Relay → device: run a tool. */
 export interface RelayCall {
   type: 'call'
@@ -37,6 +44,7 @@ export interface RelayCall {
   client: RemoteClient
   tool: string
   args: Record<string, unknown>
+  scope: RemoteScope
 }
 
 /** Device → relay: the answer to a call. */
@@ -47,14 +55,33 @@ export interface RelayResult {
   isError?: boolean
 }
 
-/** Device → relay right after connecting: a label for the list of devices. */
-export interface RelayHello {
-  type: 'hello'
+/** 'desktop' answers before 'web' (a browser tab may close any time). */
+export type DeviceKind = 'desktop' | 'web'
+
+/** What the relay needs to pick a device. */
+export interface DeviceState {
+  /** "Windows · FixNote", for the account's list of devices. */
   device: string
+  kind: DeviceKind
+  /** When this device last finished a sync (ms); the fresher one answers first. */
+  syncedAt: number | null
+  /** Remote access is on here. A device that says otherwise is never sent a call. */
+  serving: boolean
+}
+
+/** Device → relay right after connecting, and again when its state changes (`state`). */
+export interface RelayHello extends DeviceState {
+  type: 'hello' | 'state'
+}
+
+/** Device → relay: the person changed what remote apps may see, on this device. */
+export interface RelayScopeUpdate {
+  type: 'scope'
+  scope: RemoteScope
 }
 
 export type ToDevice = RelayCall
-export type FromDevice = RelayResult | RelayHello
+export type FromDevice = RelayResult | RelayHello | RelayScopeUpdate
 
 /** Keep-alive text the relay answers without waking up (`setWebSocketAutoResponse`). */
 export const PING = 'ping'
@@ -62,6 +89,8 @@ export const PONG = 'pong'
 
 /** How long the relay waits for a device to answer a call. */
 export const CALL_TIMEOUT_MS = 25_000
+/** With another device to fall back on, a read waits this long for the first one. */
+export const FIRST_TRY_MS = 8_000
 /** Biggest answer a device sends back (the relay refuses bigger messages). */
 export const MAX_RESULT_CHARS = 512 * 1024
 
@@ -77,10 +106,17 @@ function parse(text: string): Record<string, unknown> | null {
   }
 }
 
+const ids = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, 2000) : []
+
+export function parseScope(v: unknown): RemoteScope {
+  return isRecord(v) ? { folders: ids(v.folders), notes: ids(v.notes) } : null
+}
+
 /** A message from the relay, or null when it is not one this device understands. */
 export function parseToDevice(text: string): ToDevice | null {
   const m = parse(text)
-  if (!m || m.type !== 'call' || typeof m.id !== 'string' || typeof m.tool !== 'string') return null
+  if (m?.type !== 'call' || typeof m.id !== 'string' || typeof m.tool !== 'string') return null
   const client = isRecord(m.client) ? m.client : {}
   return {
     type: 'call',
@@ -91,6 +127,7 @@ export function parseToDevice(text: string): ToDevice | null {
       id: typeof client.id === 'string' ? client.id : '',
       name: typeof client.name === 'string' && client.name.trim() ? client.name.trim() : '',
     },
+    scope: parseScope(m.scope),
   }
 }
 
@@ -99,7 +136,16 @@ export function parseFromDevice(text: string): FromDevice | null {
   if (text.length > MAX_RESULT_CHARS + 4096) return null
   const m = parse(text)
   if (!m) return null
-  if (m.type === 'hello') return { type: 'hello', device: String(m.device ?? '').slice(0, 80) }
+  if (m.type === 'hello' || m.type === 'state') {
+    return {
+      type: m.type,
+      device: String(m.device ?? '').slice(0, 80),
+      kind: m.kind === 'desktop' ? 'desktop' : 'web',
+      syncedAt: typeof m.syncedAt === 'number' && Number.isFinite(m.syncedAt) ? m.syncedAt : null,
+      serving: m.serving === true,
+    }
+  }
+  if (m.type === 'scope') return { type: 'scope', scope: parseScope(m.scope) }
   if (m.type !== 'result' || typeof m.id !== 'string' || !Array.isArray(m.content)) return null
   const content: ToolText[] = []
   for (const c of m.content) {
@@ -124,6 +170,13 @@ export type RemoteToolName = (typeof REMOTE_TOOLS)[number]
 
 export const isRemoteTool = (name: string): name is RemoteToolName =>
   (REMOTE_TOOLS as readonly string[]).includes(name)
+
+/**
+ * A call that only reads, so the relay may try it again on another device when the first one
+ * does not answer. Changes (phase 2) are never sent twice.
+ */
+export const isReadCall = (tool: string, args: Record<string, unknown>) =>
+  isRemoteTool(tool) && !(tool === 'daily_note' && args.append !== undefined)
 
 /** A tool as MCP `tools/list` describes it. */
 export interface McpToolDescription {

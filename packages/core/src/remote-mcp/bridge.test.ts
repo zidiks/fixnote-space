@@ -38,7 +38,7 @@ const bridge = (token: () => Promise<string | null> = async () => 'jwt') =>
   new RemoteBridge({
     url: 'wss://relay/device',
     token,
-    device: 'Test',
+    state: () => ({ device: 'Test', kind: 'desktop', syncedAt: 5, serving: true }),
     random: () => 1,
     connect: (url, protocols) => {
       const s = new FakeSocket(url, protocols)
@@ -69,7 +69,19 @@ describe('RemoteBridge', () => {
     expect(s.protocols).toEqual([RELAY_PROTOCOL, 'auth.jwt'])
     s.open()
     expect(b.status).toBe('online')
-    expect(JSON.parse(s.sent[0] ?? '')).toEqual({ type: 'hello', device: 'Test' })
+    expect(JSON.parse(s.sent[0] ?? '')).toEqual({
+      type: 'hello',
+      device: 'Test',
+      kind: 'desktop',
+      syncedAt: 5,
+      serving: true,
+    })
+    b.setScope({ folders: ['f1'], notes: [] })
+    expect(JSON.parse(s.sent[1] ?? '')).toEqual({
+      type: 'scope',
+      scope: { folders: ['f1'], notes: [] },
+    })
+    s.sent.splice(1)
     s.onmessage?.({
       data: JSON.stringify({ type: 'call', id: 'c1', tool: 'list_folders', args: {}, client: {} }),
     })

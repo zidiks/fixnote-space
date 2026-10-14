@@ -2,10 +2,11 @@ import {
   parseFromDevice,
   RELAY_PROTOCOL,
   type RelayCall,
+  type RemoteScope,
   type SocketLike,
   type ToolText,
 } from '@fixnote/core'
-import type { RemoteMcpApi, RemoteMcpClient } from './api'
+import type { RemoteDevice, RemoteMcpApi, RemoteMcpClient } from './api'
 
 /**
  * `?dev-backend`: a relay inside the page, so the bridge, the executor and Settings can be tried
@@ -24,6 +25,9 @@ function load(): RemoteMcpClient[] {
 const save = (list: RemoteMcpClient[]) => localStorage.setItem(KEY, JSON.stringify(list))
 
 let device: SocketLike | null = null
+let devConnectedAt = 0
+let devState: Omit<RemoteDevice, 'connectedAt'> = { device: '', kind: 'web', serving: false }
+let devScope: RemoteScope = null
 const waiting = new Map<string, (r: { content: ToolText[]; isError?: boolean }) => void>()
 
 class DevSocket implements SocketLike {
@@ -36,12 +40,17 @@ class DevSocket implements SocketLike {
     setTimeout(() => {
       this.readyState = 1
       device = this
+      devConnectedAt = Date.now()
       this.onopen?.({})
     }, 50)
   }
   send(text: string) {
     const m = parseFromDevice(text)
     if (m?.type === 'result') waiting.get(m.id)?.(m)
+    if (m?.type === 'hello' || m?.type === 'state') {
+      devState = { device: m.device, kind: m.kind, serving: m.serving }
+    }
+    if (m?.type === 'scope') devScope = m.scope
   }
   close() {
     this.readyState = 3
@@ -63,13 +72,15 @@ async function call(tool: string, args: Record<string, unknown> = {}) {
   entry.lastUsed = Date.now()
   save([entry, ...list.filter((c) => c.id !== id)])
   const socket = device
-  if (!socket) return { content: [{ type: 'text', text: 'No device online' }], isError: true }
+  if (!socket || !devState.serving)
+    return { content: [{ type: 'text', text: 'No device online' }], isError: true }
   const message: RelayCall = {
     type: 'call',
     id: crypto.randomUUID(),
     client: { id, name: entry.name },
     tool,
     args,
+    scope: devScope,
   }
   return new Promise((resolve) => {
     waiting.set(message.id, resolve)
@@ -87,7 +98,10 @@ export function devRemoteMcp(signedIn: () => boolean): RemoteMcpApi {
       if (!protocols.includes(RELAY_PROTOCOL)) throw new Error('protocol')
       return new DevSocket()
     },
-    clients: async () => load(),
+    overview: async () => ({
+      clients: load(),
+      devices: device ? [{ ...devState, connectedAt: devConnectedAt }] : [],
+    }),
     revoke: async (clientId) => save(load().filter((c) => c.id !== clientId)),
   }
 }

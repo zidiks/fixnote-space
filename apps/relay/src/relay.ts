@@ -1,6 +1,13 @@
 import { DurableObject } from 'cloudflare:workers'
-import { PING, PONG, RELAY_PROTOCOL } from '@fixnote/core/remote-mcp'
-import { type DeviceInfo, type DeviceSocket, Hub } from './hub'
+import {
+  isReadCall,
+  PING,
+  PONG,
+  parseScope,
+  RELAY_PROTOCOL,
+  type RemoteScope,
+} from '@fixnote/core/remote-mcp'
+import { type DeviceInfo, type DeviceSocket, Hub, newDeviceInfo } from './hub'
 
 export interface RelayEnv {
   RELAY: DurableObjectNamespace<UserRelay>
@@ -20,18 +27,22 @@ const LAST_USED_EVERY_MS = 5 * 60_000
  * One account's relay (Durable Object named by the user id, SQLite-backed so it runs on the
  * Workers Free plan). Holds its devices' WebSockets with the Hibernation API: an idle connection
  * costs no duration, and keep-alive pings are answered by the runtime without waking it. Its
- * storage keeps only which AI apps connected, when they were last used and which were revoked.
+ * storage keeps only which AI apps connected, when they were last used, which were revoked and
+ * which folder and note ids remote apps may see.
  */
 export class UserRelay extends DurableObject<RelayEnv> {
   private readonly wrapped = new WeakMap<WebSocket, DeviceSocket>()
-  private readonly hub = new Hub(() => this.ctx.getWebSockets().map((ws) => this.wrap(ws)))
+  private readonly hub = new Hub(() => this.ctx.getWebSockets().map((ws) => this.wrap(ws)), {
+    onScope: (scope) => this.setScope(scope),
+  })
 
   constructor(ctx: DurableObjectState, env: RelayEnv) {
     super(ctx, env)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair(PING, PONG))
     ctx.storage.sql.exec(
       `CREATE TABLE IF NOT EXISTS clients (id TEXT PRIMARY KEY, name TEXT NOT NULL DEFAULT '', last_used INTEGER NOT NULL DEFAULT 0);
-       CREATE TABLE IF NOT EXISTS revoked (id TEXT PRIMARY KEY, at INTEGER NOT NULL);`,
+       CREATE TABLE IF NOT EXISTS revoked (id TEXT PRIMARY KEY, at INTEGER NOT NULL);
+       CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);`,
     )
   }
 
@@ -40,8 +51,7 @@ export class UserRelay extends DurableObject<RelayEnv> {
     if (!s) {
       s = {
         send: (text) => ws.send(text),
-        info: () =>
-          (ws.deserializeAttachment() as DeviceInfo | null) ?? { device: '', connectedAt: 0 },
+        info: () => (ws.deserializeAttachment() as DeviceInfo | null) ?? newDeviceInfo(0),
         setInfo: (info) => ws.serializeAttachment(info),
       }
       this.wrapped.set(ws, s)
@@ -53,7 +63,7 @@ export class UserRelay extends DurableObject<RelayEnv> {
   private acceptDevice(): Response {
     const { 0: client, 1: server } = new WebSocketPair()
     this.ctx.acceptWebSocket(server)
-    server.serializeAttachment({ device: '', connectedAt: Date.now() } satisfies DeviceInfo)
+    server.serializeAttachment(newDeviceInfo(Date.now()))
     return new Response(null, {
       status: 101,
       webSocket: client,
@@ -118,18 +128,49 @@ export class UserRelay extends DurableObject<RelayEnv> {
         now,
       )
     }
-    return this.hub.call({ id: clientId, name: row?.name ?? '' }, tool, args)
+    return this.hub.call({ id: clientId, name: row?.name ?? '' }, tool, args, {
+      scope: this.scope(),
+      retry: isReadCall(tool, args),
+    })
+  }
+
+  /**
+   * Which notes remote apps may see (ids only), as last set on one of the account's devices; null =
+   * everything. The device that answers applies its own settings on top.
+   */
+  private scope(): RemoteScope {
+    const row = this.ctx.storage.sql
+      .exec<{ value: string }>("SELECT value FROM settings WHERE key = 'scope'")
+      .toArray()[0]
+    if (!row) return null
+    try {
+      return parseScope(JSON.parse(row.value))
+    } catch {
+      return null
+    }
+  }
+
+  private setScope(scope: RemoteScope) {
+    if (scope) {
+      this.ctx.storage.sql.exec(
+        `INSERT INTO settings (key, value) VALUES ('scope', ?)
+         ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
+        JSON.stringify(scope),
+      )
+    } else {
+      this.ctx.storage.sql.exec("DELETE FROM settings WHERE key = 'scope'")
+    }
   }
 
   /** For the app's settings: connected apps and the devices online now. */
-  overview(): { clients: ClientRow[]; devices: DeviceInfo[] } {
+  overview(): { clients: ClientRow[]; devices: DeviceInfo[]; scoped: boolean } {
     const clients = this.ctx.storage.sql
       .exec<{ id: string; name: string; last_used: number }>(
         'SELECT id, name, last_used FROM clients ORDER BY last_used DESC',
       )
       .toArray()
       .map((r) => ({ id: r.id, name: r.name, lastUsed: r.last_used }))
-    return { clients, devices: this.hub.devices() }
+    return { clients, devices: this.hub.devices(), scoped: this.scope() !== null }
   }
 
   /**

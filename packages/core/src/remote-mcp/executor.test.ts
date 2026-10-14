@@ -19,12 +19,17 @@ const setKv = (key: string, value: string) =>
     [key, value],
   )
 
-const call = (tool: string, args: Record<string, unknown> = {}): RelayCall => ({
+const call = (
+  tool: string,
+  args: Record<string, unknown> = {},
+  scope: RelayCall['scope'] = null,
+): RelayCall => ({
   type: 'call',
   id: crypto.randomUUID(),
   client: { id: 'client-1', name: 'Claude' },
   tool,
   args,
+  scope,
 })
 
 const text = (r: { content: { text: string }[] }) => r.content.map((c) => c.text).join('\n')
@@ -113,6 +118,46 @@ describe('RemoteExecutor', () => {
     expect(folders).not.toContain('Home')
     const daily = await exec.run(call('daily_note'))
     expect(daily.isError).toBe(true)
+  })
+
+  it('narrows to the account scope from the relay, never past the device scope', async () => {
+    const work = await repo.createFolder('Work', null)
+    const home = await repo.createFolder('Home', null)
+    const plan = await repo.createNote({ content: '# Plan\n\nshared word', folderId: work.id })
+    const diary = await repo.createNote({ content: '# Diary\n\nshared word', folderId: home.id })
+    const loose = await repo.createNote({ content: '# Loose\n\nshared word' })
+    const onlyWork = { folders: [work.id], notes: [] }
+    let found = text(await exec.run(call('search_notes', { query: 'shared' }, onlyWork)))
+    expect(found).toContain('Plan')
+    expect(found).not.toContain('Diary')
+    expect(found).not.toContain('Loose')
+    // The device allows Home and one loose note; the relay allows Work and that note: only the note.
+    await setKv(MCP_SCOPE_KEY, JSON.stringify({ folders: [home.id], notes: [loose.id] }))
+    found = text(
+      await exec.run(
+        call('search_notes', { query: 'shared' }, { folders: [work.id], notes: [loose.id] }),
+      ),
+    )
+    expect(found).toContain('Loose')
+    expect(found).not.toContain('Plan')
+    expect(found).not.toContain('Diary')
+    expect((await exec.run(call('get_note', { id: diary.id }, onlyWork))).isError).toBe(true)
+    expect((await exec.run(call('get_note', { id: plan.id }, onlyWork))).isError).toBe(true)
+  })
+
+  it('tells when a call starts and ends, for the indicator', async () => {
+    const seen: string[] = []
+    const watched = new RemoteExecutor(db, repo, audit, {
+      onStart: (a) => seen.push(`start ${a.client} ${a.tool}`),
+      onCall: (e, a) => seen.push(`end ${a.tool} ${e.ok}`),
+    })
+    await watched.run(call('list_folders'))
+    await watched.run(call('delete_note', { id: 'x' }))
+    expect(seen).toEqual([
+      'start Claude list_folders',
+      'end list_folders true',
+      'end delete_note false',
+    ])
   })
 
   it('logs each call without its arguments or answer', async () => {

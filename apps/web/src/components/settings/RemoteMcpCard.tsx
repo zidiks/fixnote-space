@@ -12,14 +12,16 @@ import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
 import { withPro } from '../../lib/plan'
 import {
-  REMOTE_CLIENTS,
   REMOTE_KEY,
   REMOTE_LOG,
+  REMOTE_OVERVIEW,
   remoteMcpApi,
+  remoteScopeChanged,
   useRemoteEnabled,
   useRemoteMcp,
 } from '../../lib/remote-mcp/bridge'
 import { formatRelative } from '../../lib/time'
+import { actionKey } from '../RemoteActivityPill'
 
 /**
  * Remote access for ChatGPT, claude.ai and other remote MCP apps (docs/remote-mcp.md): on/off for
@@ -45,10 +47,11 @@ export function RemoteMcpCard({
   const enabled = useRemoteEnabled()
   const api = phase === 'ready' ? remoteMcpApi() : null
   const [revoking, setRevoking] = useState<string | null>(null)
-  const clients = useQuery({
-    queryKey: REMOTE_CLIENTS,
-    queryFn: () => api?.clients() ?? [],
+  const overview = useQuery({
+    queryKey: REMOTE_OVERVIEW,
+    queryFn: () => api?.overview() ?? { clients: [], devices: [] },
     enabled: Boolean(api),
+    refetchInterval: 30_000,
   })
   const log =
     useQuery({ queryKey: REMOTE_LOG, queryFn: () => remoteLog(driver), enabled: enabled }).data ??
@@ -59,6 +62,7 @@ export function RemoteMcpCard({
     qc.setQueryData(REMOTE_KEY, on)
     await kvStore(driver).set(MCP_REMOTE_KEY, on ? '1' : '0')
     await qc.invalidateQueries({ queryKey: REMOTE_KEY })
+    if (on) await remoteScopeChanged(driver)
   }
   const copy = async () => {
     if (!api) return
@@ -71,7 +75,7 @@ export function RemoteMcpCard({
     try {
       await api.revoke(id)
       toast(t('remoteMcp.revoked', { name }))
-      await qc.invalidateQueries({ queryKey: REMOTE_CLIENTS })
+      await qc.invalidateQueries({ queryKey: REMOTE_OVERVIEW })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err))
     } finally {
@@ -99,7 +103,8 @@ export function RemoteMcpCard({
     </Button>
   )
 
-  const list = clients.data ?? []
+  const list = overview.data?.clients ?? []
+  const devices = (overview.data?.devices ?? []).filter((d) => d.serving)
   const settings =
     api && !localOnly ? (
       <div className="space-y-4">
@@ -128,7 +133,7 @@ export function RemoteMcpCard({
         {enabled || list.length ? (
           <div className="space-y-1.5">
             <span className="block text-sm">{t('remoteMcp.clients')}</span>
-            {clients.isLoading ? (
+            {overview.isLoading ? (
               <Spinner />
             ) : list.length ? (
               <ul className="max-w-md divide-y rounded-lg border">
@@ -164,13 +169,34 @@ export function RemoteMcpCard({
             )}
           </div>
         ) : null}
+        <div className="space-y-1.5">
+          <span className="block text-sm">{t('remoteMcp.devices')}</span>
+          {devices.length ? (
+            <ul className="max-w-md space-y-0.5 text-sm">
+              {devices.map((d) => (
+                <li key={`${d.device}-${d.connectedAt}`} className="flex items-center gap-2">
+                  <span className="size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
+                  <span className="truncate">{d.device || '—'}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('remoteMcp.noDevices')}</p>
+          )}
+          {enabled ? null : (
+            <p className="text-sm text-muted-foreground">{t('remoteMcp.thisDeviceOff')}</p>
+          )}
+          <p className="max-w-md text-xs text-muted-foreground">{t('remoteMcp.multiDevice')}</p>
+          <p className="max-w-md text-xs text-muted-foreground">{t('remoteMcp.scopeNote')}</p>
+        </div>
         {enabled && log.length ? (
           <div className="space-y-1.5">
             <span className="block text-sm">{t('remoteMcp.recent')}</span>
             <ul className="max-w-md space-y-0.5 text-xs text-muted-foreground">
               {log.slice(0, 5).map((e) => (
                 <li key={`${e.at}-${e.tool}`}>
-                  {formatRelative(e.at, i18n.resolvedLanguage)} · {e.client} · {e.tool}
+                  {formatRelative(e.at, i18n.resolvedLanguage)} · {e.client} ·{' '}
+                  {t(actionKey(e.tool))}
                   {e.ok ? '' : ` · ${t('remoteMcp.refused')}`}
                 </li>
               ))}

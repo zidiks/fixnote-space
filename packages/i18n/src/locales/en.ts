@@ -547,6 +547,21 @@ const en = {
     revoked: '{{name}} no longer has access',
     recent: 'Recent requests',
     refused: 'refused',
+    devices: 'Your devices answering requests',
+    thisDeviceOff: 'This device does not answer: remote access is off here.',
+    noDevices: 'None of your devices is answering right now.',
+    multiDevice:
+      'One device answers each request: a computer before a browser tab, then the one synced most recently. Answers reflect that device’s notes as last synced.',
+    scopeNote:
+      'AI apps see the notes chosen in Settings → AI → Connected apps on the device where you last changed them with remote access on. A device never shows more than its own settings allow.',
+    activity: '{{client}} · {{action}}',
+    activityLabel: '{{client}} is using your notes through remote access',
+    action_search_notes: 'searching notes',
+    action_get_note: 'reading a note',
+    action_list_recent: 'looking at recent notes',
+    action_list_folders: 'looking at folders',
+    action_daily_note: 'reading the daily note',
+    action_other: 'working',
     privacy:
       'What passes through our server: what the AI app asks and the notes your device sends back as the answer. They pass through memory only and are not stored or logged. What the AI app receives is then under its own rules.',
   },

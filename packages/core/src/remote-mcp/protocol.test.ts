@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  isReadCall,
   negotiateProtocol,
   parseFromDevice,
   parseToDevice,
@@ -25,16 +26,25 @@ describe('remote MCP protocol', () => {
       tool: 'get_note',
       args: {},
       client: { id: '', name: '' },
+      scope: null,
     })
     expect(
       parseFromDevice(
         '{"type":"result","id":"1","content":[{"type":"text","text":"ok"},{"type":"image"}]}',
       ),
     ).toEqual({ type: 'result', id: '1', content: [{ type: 'text', text: 'ok' }], isError: false })
-    expect(parseFromDevice('{"type":"hello","device":"PC"}')).toEqual({
-      type: 'hello',
-      device: 'PC',
+    expect(
+      parseFromDevice(
+        '{"type":"hello","device":"PC","kind":"desktop","syncedAt":9,"serving":true}',
+      ),
+    ).toEqual({ type: 'hello', device: 'PC', kind: 'desktop', syncedAt: 9, serving: true })
+    expect(parseFromDevice('{"type":"scope","scope":{"folders":["a",1]}}')).toEqual({
+      type: 'scope',
+      scope: { folders: ['a'], notes: [] },
     })
+    expect(isReadCall('get_note', {})).toBe(true)
+    expect(isReadCall('daily_note', { append: 'x' })).toBe(false)
+    expect(isReadCall('create_note', {})).toBe(false)
   })
 
   it('answers initialize with a version both sides know', () => {

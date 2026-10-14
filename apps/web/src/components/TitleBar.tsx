@@ -33,6 +33,7 @@ import { usePlatform } from '../lib/platform'
 import { useFolders, useNote, useRecents } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
 import { NotificationsButton } from './Notifications'
+import { RemoteActivityPill } from './RemoteActivityPill'
 import { WindowControls } from './WindowControls'
 
 function Tip({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
@@ -191,6 +192,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         </div>
         <PlaceMenu />
         <div {...drag} className="flex items-center justify-end gap-1">
+          <RemoteActivityPill />
           <NotificationsButton />
           <Tip label={ui.chatOpen ? t('chat.close') : t('chat.open')} hint={shortcutLabel('J')}>
             <Button

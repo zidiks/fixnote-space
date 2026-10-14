@@ -1,4 +1,4 @@
-import type { SocketFactory } from '@fixnote/core'
+import type { DeviceKind, SocketFactory } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { toError } from '../errors'
 
@@ -14,6 +14,19 @@ export interface RemoteMcpClient {
   lastUsed: number | null
 }
 
+/** One of the account's devices connected to the relay. */
+export interface RemoteDevice {
+  device: string
+  kind: DeviceKind
+  serving: boolean
+  connectedAt: number
+}
+
+export interface RemoteOverview {
+  clients: RemoteMcpClient[]
+  devices: RemoteDevice[]
+}
+
 /** Remote MCP from the app's side: the relay this device connects to and the apps let in. */
 export interface RemoteMcpApi {
   /** What the person pastes into ChatGPT or Claude. */
@@ -24,7 +37,8 @@ export interface RemoteMcpApi {
   token(): Promise<string | null>
   /** The dev backend's in-page relay instead of a WebSocket. */
   connect?: SocketFactory
-  clients(): Promise<RemoteMcpClient[]>
+  /** The apps let in and the devices answering now. */
+  overview(): Promise<RemoteOverview>
   /** Revokes the app's grant (its tokens stop at the relay right away). */
   revoke(clientId: string): Promise<void>
 }
@@ -56,18 +70,19 @@ export function supabaseRemoteMcp(client: SupabaseClient, relayUrl: string): Rem
     serverUrl: `${base}/mcp`,
     deviceUrl: `${base.replace(/^http/, 'ws')}/device`,
     token,
-    async clients() {
+    async overview() {
       const [grants, seen] = await Promise.all([
         client.auth.oauth.listGrants(),
         relay('/api/clients')
-          .then((r) => (r.ok ? r.json() : { clients: [] }))
-          .catch(() => ({ clients: [] })) as Promise<{
+          .then((r) => (r.ok ? r.json() : { clients: [], devices: [] }))
+          .catch(() => ({ clients: [], devices: [] })) as Promise<{
           clients: { id: string; name: string; lastUsed: number }[]
+          devices: RemoteDevice[]
         }>,
       ])
       if (grants.error) throw toError(grants.error)
       const byId = new Map(seen.clients.map((c) => [c.id, c]))
-      return (grants.data ?? []).map((g) => {
+      const clients = (grants.data ?? []).map((g) => {
         const s = byId.get(g.client.id)
         return {
           id: g.client.id,
@@ -77,6 +92,7 @@ export function supabaseRemoteMcp(client: SupabaseClient, relayUrl: string): Rem
           lastUsed: s?.lastUsed || null,
         }
       })
+      return { clients, devices: seen.devices ?? [] }
     },
     async revoke(clientId) {
       const { error } = await client.auth.oauth.revokeGrant({ clientId })

@@ -1,7 +1,7 @@
 import { NO_DEVICE_MESSAGE, remoteToolList } from '@fixnote/core/remote-mcp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { challenge, checkToken, resourceMetadata, TokenCache } from './auth'
-import { type DeviceInfo, type DeviceSocket, Hub } from './hub'
+import { type DeviceInfo, type DeviceSocket, Hub, newDeviceInfo, rankDevices } from './hub'
 import { answer, answerBody, type McpContext } from './mcp'
 
 const env = {
@@ -127,56 +127,132 @@ class FakeDevice implements DeviceSocket {
     this.data = info
   }
   last() {
-    return JSON.parse(this.sent.at(-1) ?? '{}') as { id: string; tool: string }
+    return JSON.parse(this.sent.at(-1) ?? '{}') as { id: string; tool: string; scope: unknown }
+  }
+  answer(hub: Hub, text: string) {
+    hub.onMessage(
+      this,
+      JSON.stringify({ type: 'result', id: this.last().id, content: [{ type: 'text', text }] }),
+    )
   }
 }
+
+const device = (over: Partial<DeviceInfo>) =>
+  new FakeDevice({ ...newDeviceInfo(0), serving: true, ...over })
+const read = { scope: null, retry: true }
+const write = { scope: null, retry: false }
+const claude = { id: 'c', name: 'Claude' }
 
 describe('Hub', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
 
-  it('sends a call to the newest device and returns its answer', async () => {
-    const old = new FakeDevice({ device: 'old', connectedAt: 1 })
-    const fresh = new FakeDevice({ device: 'new', connectedAt: 2 })
-    const hub = new Hub(() => [old, fresh])
-    const pending = hub.call({ id: 'c', name: 'Claude' }, 'list_folders', {})
-    expect(old.sent).toHaveLength(0)
-    const { id, tool } = fresh.last()
-    expect(tool).toBe('list_folders')
+  it('ranks serving devices: desktop, then freshest sync, then most recently active', () => {
+    const off = device({ device: 'off', kind: 'desktop', syncedAt: 99, serving: false })
+    const tab = device({ device: 'tab', kind: 'web', syncedAt: 50, activeAt: 9 })
+    const oldPc = device({ device: 'oldPc', kind: 'desktop', syncedAt: 10, activeAt: 9 })
+    const newPc = device({ device: 'newPc', kind: 'desktop', syncedAt: 20, activeAt: 1 })
+    const idlePc = device({ device: 'idlePc', kind: 'desktop', syncedAt: 20, activeAt: 0 })
+    expect(rankDevices([off, tab, oldPc, idlePc, newPc]).map((d) => d.info().device)).toEqual([
+      'newPc',
+      'idlePc',
+      'oldPc',
+      'tab',
+    ])
+  })
+
+  it('sends a call to exactly one device and returns its answer', async () => {
+    const pc = device({ device: 'pc', kind: 'desktop' })
+    const tab = device({ device: 'tab' })
+    const hub = new Hub(() => [tab, pc])
+    const pending = hub.call(
+      claude,
+      'list_folders',
+      {},
+      { scope: { folders: ['f'], notes: [] }, retry: true },
+    )
+    expect(tab.sent).toHaveLength(0)
+    expect(pc.last()).toMatchObject({ tool: 'list_folders', scope: { folders: ['f'], notes: [] } })
     // Another device cannot answer for it.
     hub.onMessage(
-      old,
-      JSON.stringify({ type: 'result', id, content: [{ type: 'text', text: 'x' }] }),
+      tab,
+      JSON.stringify({ type: 'result', id: pc.last().id, content: [{ type: 'text', text: 'x' }] }),
     )
-    hub.onMessage(
-      fresh,
-      JSON.stringify({ type: 'result', id, content: [{ type: 'text', text: 'Work' }] }),
-    )
+    pc.answer(hub, 'Work')
     expect(await pending).toEqual({ content: [{ type: 'text', text: 'Work' }] })
+    expect(tab.sent).toHaveLength(0)
     expect(hub.waiting).toBe(0)
   })
 
-  it('says so when no device is online, times out, and fails fast when one drops', async () => {
-    expect(await new Hub(() => []).call({ id: 'c', name: '' }, 'get_note', {})).toEqual({
+  it('tries a read once more on the next device when the first is slow or drops', async () => {
+    const pc = device({ device: 'pc', kind: 'desktop' })
+    const tab = device({ device: 'tab' })
+    const hub = new Hub(() => [pc, tab], { firstTryMs: 1000, timeoutMs: 5000 })
+    const slow = hub.call(claude, 'get_note', { id: 'n' }, read)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(tab.sent).toHaveLength(1)
+    tab.answer(hub, 'from tab')
+    expect(await slow).toEqual({ content: [{ type: 'text', text: 'from tab' }] })
+
+    const dropped = hub.call(claude, 'get_note', { id: 'n' }, read)
+    hub.onClose(pc)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(tab.sent).toHaveLength(2)
+    tab.answer(hub, 'again')
+    expect(await dropped).toEqual({ content: [{ type: 'text', text: 'again' }] })
+  })
+
+  it('never sends a change twice', async () => {
+    const pc = device({ device: 'pc', kind: 'desktop' })
+    const tab = device({ device: 'tab' })
+    const hub = new Hub(() => [pc, tab], { firstTryMs: 1000, timeoutMs: 5000 })
+    const change = hub.call(claude, 'create_note', { content: 'x' }, write)
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(await change).toMatchObject({ isError: true })
+    expect(pc.sent).toHaveLength(1)
+    expect(tab.sent).toHaveLength(0)
+  })
+
+  it('never asks a device with Remote access off, and says so when none is left', async () => {
+    const off = device({ device: 'off', kind: 'desktop', serving: false })
+    const hub = new Hub(() => [off])
+    expect(await hub.call(claude, 'get_note', {}, read)).toEqual({
       content: [{ type: 'text', text: NO_DEVICE_MESSAGE }],
       isError: true,
     })
-    const d = new FakeDevice({ device: 'pc', connectedAt: 1 })
-    const hub = new Hub(() => [d], { timeoutMs: 1000 })
-    const slow = hub.call({ id: 'c', name: '' }, 'get_note', {})
-    await vi.advanceTimersByTimeAsync(1000)
-    expect((await slow).isError).toBe(true)
-    const dropped = hub.call({ id: 'c', name: '' }, 'get_note', {})
-    hub.onClose(d)
-    expect(await dropped).toMatchObject({ isError: true })
-    expect(hub.waiting).toBe(0)
+    expect(off.sent).toHaveLength(0)
+    // Nothing goes to a device before its hello says it serves.
+    const fresh = new FakeDevice(newDeviceInfo(1))
+    expect(rankDevices([fresh])).toEqual([])
   })
 
-  it('takes the device label from its hello', () => {
-    const d = new FakeDevice({ device: '', connectedAt: 5 })
-    const hub = new Hub(() => [d])
-    hub.onMessage(d, JSON.stringify({ type: 'hello', device: 'Windows' }))
-    expect(hub.devices()).toEqual([{ device: 'Windows', connectedAt: 5 }])
+  it('takes state from hello, and scope only from a serving device', () => {
+    const scopes: unknown[] = []
+    const d = new FakeDevice(newDeviceInfo(5))
+    const hub = new Hub(() => [d], { onScope: (s) => scopes.push(s), now: () => 7 })
+    hub.onMessage(d, JSON.stringify({ type: 'scope', scope: { folders: ['x'] } }))
+    hub.onMessage(
+      d,
+      JSON.stringify({
+        type: 'hello',
+        device: 'Windows',
+        kind: 'desktop',
+        syncedAt: 3,
+        serving: true,
+      }),
+    )
+    hub.onMessage(d, JSON.stringify({ type: 'scope', scope: { folders: ['f'], notes: [] } }))
+    expect(hub.devices()).toEqual([
+      {
+        device: 'Windows',
+        kind: 'desktop',
+        syncedAt: 3,
+        serving: true,
+        connectedAt: 5,
+        activeAt: 7,
+      },
+    ])
+    expect(scopes).toEqual([{ folders: ['f'], notes: [] }])
   })
 })
 

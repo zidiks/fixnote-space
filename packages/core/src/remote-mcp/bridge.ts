@@ -1,4 +1,5 @@
 import {
+  type DeviceState,
   type FromDevice,
   PING,
   PONG,
@@ -8,6 +9,7 @@ import {
   RELAY_PROTOCOL,
   type RelayCall,
   type RelayResult,
+  type RemoteScope,
 } from './protocol'
 
 /**
@@ -36,8 +38,8 @@ export interface BridgeOptions {
   token: () => Promise<string | null>
   /** Runs a call on this device (`RemoteExecutor.run`). */
   run: (call: RelayCall) => Promise<RelayResult>
-  /** "Windows · FixNote", for the relay's list of devices. */
-  device: string
+  /** Name, kind and last sync of this device, read whenever the relay is told. */
+  state: () => DeviceState
   connect?: SocketFactory
   onStatus?: (status: BridgeStatus) => void
   random?: () => number
@@ -89,6 +91,18 @@ export class RemoteBridge {
       s.close(1000, 'off')
     }
     this.setStatus('off')
+  }
+
+  /** This device synced (or was renamed): the relay prefers the freshest device. */
+  stateChanged() {
+    const s = this.socket
+    if (s) this.send(s, { type: 'state', ...this.opts.state() })
+  }
+
+  /** The person changed which notes remote apps may see, here: the relay keeps it for the account. */
+  setScope(scope: RemoteScope) {
+    const s = this.socket
+    if (s) this.send(s, { type: 'scope', scope })
   }
 
   /** Back online (the browser said so): try now instead of waiting for the backoff. */
@@ -153,7 +167,7 @@ export class RemoteBridge {
     socket.onopen = () => {
       this.attempt = 0
       this.setStatus('online')
-      this.send(socket, { type: 'hello', device: this.opts.device })
+      this.send(socket, { type: 'hello', ...this.opts.state() })
       if (this.ping) clearInterval(this.ping)
       this.ping = setInterval(() => {
         if (socket.readyState === OPEN) socket.send(PING)

@@ -552,6 +552,21 @@ const es: LocaleResource = {
     revoked: '{{name}} ya no tiene acceso',
     recent: 'Solicitudes recientes',
     refused: 'rechazada',
+    devices: 'Tus dispositivos que responden',
+    thisDeviceOff: 'Este dispositivo no responde: el acceso remoto está desactivado aquí.',
+    noDevices: 'Ahora mismo ninguno de tus dispositivos responde.',
+    multiDevice:
+      'Cada solicitud la responde un solo dispositivo: un ordenador antes que una pestaña del navegador, luego el sincronizado más recientemente. Las respuestas reflejan las notas de ese dispositivo según su última sincronización.',
+    scopeNote:
+      'Las apps de IA ven las notas elegidas en Ajustes → IA → Apps conectadas en el dispositivo donde las cambiaste por última vez con el acceso remoto activado. Un dispositivo nunca muestra más de lo que permiten sus propios ajustes.',
+    activity: '{{client}} · {{action}}',
+    activityLabel: '{{client}} está usando tus notas mediante el acceso remoto',
+    action_search_notes: 'buscando en las notas',
+    action_get_note: 'leyendo una nota',
+    action_list_recent: 'mirando las notas recientes',
+    action_list_folders: 'mirando las carpetas',
+    action_daily_note: 'leyendo la nota del día',
+    action_other: 'trabajando',
     privacy:
       'Lo que pasa por nuestro servidor: lo que pide la app de IA y las notas que tu dispositivo devuelve como respuesta. Solo pasan por la memoria, no se guardan ni se registran. Lo que recibe la app de IA queda sujeto a sus propias reglas.',
   },
