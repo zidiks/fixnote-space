@@ -6,6 +6,8 @@
  */
 import { NOTE_TOOL_SPECS, type ToolParameters } from '../agent/tool-specs'
 
+export * from './connect'
+
 /** WebSocket subprotocol of the device connection. */
 export const RELAY_PROTOCOL = 'fixnote.relay.v1'
 /**

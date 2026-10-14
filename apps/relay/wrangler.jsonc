@@ -9,9 +9,16 @@
   "compatibility_date": "2026-09-01",
   "routes": [{ "pattern": "mcp.fixnote.space", "custom_domain": true }],
   "durable_objects": {
-    "bindings": [{ "name": "RELAY", "class_name": "UserRelay" }]
+    "bindings": [
+      { "name": "RELAY", "class_name": "UserRelay" },
+      // The connect handoff (src/consent.ts): one per OAuth authorization id, 2 minutes at most.
+      { "name": "CONSENT", "class_name": "ConsentHandoff" }
+    ]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["UserRelay"] }],
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["UserRelay"] },
+    { "tag": "v2", "new_sqlite_classes": ["ConsentHandoff"] }
+  ],
   "vars": {
     "PUBLIC_URL": "https://mcp.fixnote.space",
     "SUPABASE_URL": "https://nsteehqbmljuczxgkvae.supabase.co",

@@ -1,11 +1,19 @@
-import { RELAY_AUTH_PREFIX, RELAY_CLOSE, RELAY_PROTOCOL } from '@fixnote/core/remote-mcp'
+import {
+  isAuthorizationId,
+  RELAY_AUTH_PREFIX,
+  RELAY_CLOSE,
+  RELAY_PROTOCOL,
+} from '@fixnote/core/remote-mcp'
 import { type AuthEnv, challenge, checkToken, issuer, resourceMetadata, TokenCache } from './auth'
+import { consentPoll, consentPost } from './consent'
+import type { HandoffEnv } from './handoff'
 import { answerBody } from './mcp'
 import type { RelayEnv } from './relay'
 
+export { ConsentHandoff } from './handoff'
 export { UserRelay } from './relay'
 
-export interface Env extends AuthEnv, RelayEnv {
+export interface Env extends AuthEnv, RelayEnv, HandoffEnv {
   /** Origins of the FixNote app allowed to call /api (comma-separated). */
   APP_ORIGINS: string
 }
@@ -48,7 +56,7 @@ function appCors(req: Request, env: Env): Record<string, string> {
   return allowed.includes(origin)
     ? {
         'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'authorization, content-type',
         Vary: 'Origin',
       }
@@ -56,6 +64,8 @@ function appCors(req: Request, env: Env): Record<string, string> {
 }
 
 const stub = (env: Env, userId: string) => env.RELAY.get(env.RELAY.idFromName(userId))
+const handoff = (env: Env, authorizationId: string) =>
+  env.CONSENT.get(env.CONSENT.idFromName(authorizationId))
 
 /** POST /mcp: MCP Streamable HTTP, answered with JSON (no server-sent events, no session). */
 async function mcp(req: Request, env: Env): Promise<Response> {
@@ -130,6 +140,13 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
   const token = bearer(req)
   const caller = token ? await checkToken(token, 'device', env, deps()) : null
   if (!caller?.ok) return json({ error: 'unauthorized' }, { status: 401, headers: cors })
+  const consent = path.match(/^\/api\/consent\/([^/]+)$/)
+  if (consent?.[1] && req.method === 'POST') {
+    const id = consent[1]
+    if (!isAuthorizationId(id))
+      return json({ error: 'bad_request' }, { status: 400, headers: cors })
+    return consentPost(req, handoff(env, id), cors)
+  }
   const relay = stub(env, caller.userId)
   if (path === '/api/clients' && req.method === 'GET') {
     return json(await relay.overview(), { headers: cors })
@@ -140,6 +157,20 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
     return new Response(null, { status: 204, headers: cors })
   }
   return json({ error: 'not_found' }, { status: 404, headers: cors })
+}
+
+/**
+ * GET /consent/<authorization id>: the connect page waits for the app's answer (see consent.ts).
+ * No auth: the id is the handle. The page asks every 1.5 s for at most 3 minutes.
+ */
+async function consentGet(req: Request, env: Env, path: string): Promise<Response> {
+  const cors = appCors(req, env)
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
+  const id = path.slice('/consent/'.length)
+  if (req.method !== 'GET' || !isAuthorizationId(id)) {
+    return json({ error: 'bad_request' }, { status: 400, headers: cors })
+  }
+  return consentPoll(handoff(env, id), cors)
 }
 
 /** Older MCP clients look for the authorization server on the MCP origin: hand them Supabase's. */
@@ -156,6 +187,7 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(req.url)
     if (pathname.startsWith('/api/')) return api(req, env, pathname)
+    if (pathname.startsWith('/consent/')) return consentGet(req, env, pathname)
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: MCP_CORS })
     if (pathname === '/mcp') return mcp(req, env)
     if (pathname === '/device') return device(req, env)
