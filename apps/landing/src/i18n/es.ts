@@ -591,7 +591,7 @@ export const es: Dict = {
       {
         title: 'Apps de IA (acceso remoto)',
         text: [
-          'Si conectas una app de IA a FixNote, como ChatGPT o Claude, sus solicitudes llegan a nuestro servidor mcp.fixnote.space y se pasan a tu dispositivo donde FixNote está abierto. El dispositivo descifra las notas y responde, y la respuesta con las notas necesarias pasa por nuestro servidor hasta esa app. Las solicitudes y respuestas solo pasan por la memoria: no las guardamos ni las registramos. El servidor no tiene las llaves de tus notas.',
+          'Si conectas una app de IA a FixNote, como ChatGPT o Claude, sus solicitudes llegan a nuestro servidor mcp.fixnote.space y se pasan a tu dispositivo donde FixNote está abierto. El dispositivo descifra las notas y responde, y la respuesta con las notas necesarias pasa por nuestro servidor hasta esa app. Las solicitudes y respuestas solo pasan por la memoria: no las guardamos ni las registramos. El servidor no tiene las llaves de tus notas. Cuando apruebas la conexión en la app de FixNote, el servidor guarda la dirección de vuelta a la app de IA como máximo dos minutos, hasta que la recoge la página de conexión de tu navegador.',
           'Solo guardamos lo necesario para que funcione: qué apps conectaste, cuándo preguntaron por última vez, qué accesos revocaste y los identificadores de las carpetas y notas que les dejas ver. Puedes revocar el acceso en Ajustes → Integraciones. Lo que recibe la app de IA queda sujeto a las reglas de su proveedor.',
         ],
       },

@@ -31,7 +31,10 @@ ChatGPT / Claude ──HTTPS (MCP Streamable HTTP) + OAuth 2.1──▶ mcp.fixn
 | `apps/web/src/lib/remote-mcp/` | `api.ts` (grants from Supabase, overview from the relay), `bridge.ts` (runs the bridge when signed in + unlocked + Remote access on + not Free + not local-only; activity store), `dev.ts` (in-page relay for `?dev-backend`; `fixnoteRemote.call(tool, args)` in the console). |
 | `apps/web/src/components/settings/RemoteMcpCard.tsx` | Settings → Integrations → Remote access. |
 | `apps/web/src/components/RemoteActivityPill.tsx` | The quiet "Claude · searching notes" pill while a call runs here (also in the tray menu). |
-| `apps/web/src/components/OAuthConsentPage.tsx` | `/oauth/consent`, Supabase Auth's consent step. |
+| `apps/web/src/components/connect/` | `ConnectPage` (`/oauth/consent`, Supabase Auth's consent step, a page of its own), `ConnectDialog` (the app answers `fixnote://connect`), shared `ConnectParts`. |
+| `apps/web/src/lib/remote-mcp/connect*.ts`, `consent.ts` | The page's steps (`connectReducer`, `waitForAnswer`), its backend (tab-only session, relay polling, dev fakes), the dialog's logic (`loadConnect`, `answerConnect`), Supabase's consent API. |
+| `packages/core/src/remote-mcp/connect.ts` | `fixnote://connect` links, the handoff format and timings (shared by relay, page and app). |
+| `apps/relay/src/consent.ts`, `handoff.ts` | The connect handoff: `ConsentHandoff` Durable Object per authorization id. |
 | `supabase/migrations/20261014090000_remote_mcp.sql` | Keeps AI-app tokens out of the API; `remote_mcp_allowed()`. |
 
 ## OAuth: Supabase Auth's OAuth 2.1 server
@@ -56,11 +59,9 @@ Flow:
    `/.well-known/oauth-authorization-server` on the MCP origin get Supabase's document proxied.)
 3. The app registers itself (DCR), sends the person to Supabase's authorize endpoint with PKCE;
    Supabase redirects to `https://app.fixnote.space/oauth/consent?authorization_id=…`.
-4. The consent page (no local DB, like the shared-link page) uses the web app's session if this
-   browser has one, otherwise an email code sign-in that lives only in that tab. It shows the
-   client's name, the redirect host (a look-alike name is not enough), "read your notes", the scope
-   rule, the privacy line and a Pro warning; Allow/Deny → `approveAuthorization` /
-   `denyAuthorization` → back to the app with a code.
+4. The connect page answers it, usually through the FixNote app (see **Connecting** below):
+   Allow/Deny → `approveAuthorization` / `denyAuthorization` → back to the AI app with a code (or
+   `error=access_denied`).
 5. The app exchanges the code at Supabase; its access token is a normal Supabase user JWT plus a
    `client_id` claim (`aud` = `authenticated`).
 
@@ -78,6 +79,62 @@ hook (`guard_oauth_clients`) refuses any request with `client_id` except
 `storage.objects` and `realtime.messages`; edge functions treat such tokens as signed out
 (`_shared/auth.ts`). Checked on PGlite with stubbed `auth`/`storage`/`realtime` schemas; still run
 it on the local Supabase stack before pushing.
+
+## Connecting (the consent step)
+
+People are usually signed in only in the desktop app, so the consent step must not look like (or
+be) the web app. `/oauth/consent` is `ConnectPage`, a page of its own like `PaidPage`/`SharePage`:
+no sidebar, no local database, no account store, no sync.
+
+```
+AI app ──authorize (PKCE)──▶ Supabase Auth ──302──▶ app.fixnote.space/oauth/consent?authorization_id=A
+                                                     │ ConnectPage: "An AI app wants to read your notes"
+            "Approve in the FixNote app" ────────────┤ opens fixnote://connect?authorization_id=A
+                                                     ▼
+ FixNote desktop (deep_link.rs → tray::show → webview) ConnectDialog, always asks:
+   getAuthorizationDetails(A) with the app's session → client, can/cannot, redirect host, account
+   Allow / Deny → approveAuthorization / denyAuthorization(A) → redirect R (code or access_denied)
+   POST mcp.fixnote.space/api/consent/A {approved, redirect: R}   (app session bearer)
+                                                     │  ConsentHandoff DO "A": R, ≤ 2 min, read once
+ ConnectPage polls GET mcp.fixnote.space/consent/A every 1.5 s (≤ 3 min) ◀─┘
+   → location.replace(R): back to ChatGPT / Claude in the same tab
+```
+
+- **Before sign-in** Supabase shows nothing (`getAuthorizationDetails` needs a session), so the page
+  says "An AI app wants to read your notes" with what it can do (search and read; only what
+  Settings → AI → Connected apps allows) and cannot (change or delete; read while FixNote is
+  closed). The client's name, site, logo and redirect host appear in the app's dialog, or on the
+  page once signed in there. A browser with the web app's session goes straight to Allow/Deny.
+- **Fallback / phones**: "Sign in with an email code instead": an OTP session that lives only in
+  that tab (`persistSession: false`), then the same card with Allow/Deny.
+- After 5 s without an answer the page offers "Open FixNote again", the download page
+  (fixnote.space/download) and the email code; after 3 min it stops polling.
+- **The app** (`App.tsx` deep-link listener, also on a cold start: links wait in Rust until the
+  webview takes them; the window comes to the front from the tray) parses the link
+  (`parseConnectLink`, ids `[A-Za-z0-9_-]{8,128}`) and opens `ConnectDialog`. Signed out, or
+  "Only on this device": it says so and points to the email code. An id that is not pending (wrong,
+  expired, answered, another account's) shows an error. A client allowed before (Supabase answers
+  with a redirect at once) gets "connecting again → Continue / Cancel"; Cancel hands over
+  `{approved: false, redirect: null}` and the page shows "Not connected".
+- **Never automatic**: any web page can open a `fixnote://` link, so the dialog always asks and
+  shows the redirect host with "Allow only if you just connected FixNote in <host> yourself". This
+  is the same risk as any OAuth consent screen reached by a link (consent phishing); the host line
+  is what protects it.
+- **The handoff** (`apps/relay/src/consent.ts`): one `ConsentHandoff` Durable Object per
+  authorization id stores only `{approved, redirect}`; the first answer wins (409 after), the
+  first read deletes it, an alarm deletes it after 2 min, and more than 200 reads answer 429.
+  `GET /consent/<id>` needs no auth and allows the app origins (CORS); `POST /api/consent/<id>`
+  takes the app's own session like the rest of `/api` (never an AI app's token). Handing the
+  redirect to whoever knows the id is harmless: the id is an unguessable handle only that browser
+  has, the code in it is useless without the PKCE verifier only the AI app holds, and the redirect
+  goes to the AI app's registered callback anyway. Only http(s) redirects are accepted and
+  followed.
+- Cost: a connect is 1 POST + one GET per 1.5 s while waiting (typically 5–15, at most ~120), on a
+  short-lived object: negligible on Workers Free.
+- `?dev-backend`: any authorization id is a pending request from "Claude" (`again…` = allowed
+  before, `expired…` = gone); the page hands links to an open `?dev-backend` app tab over
+  BroadcastChannel and the handoff lives in localStorage. `&dev-signed-out` makes the page ignore
+  the app tab's session.
 
 ## What Claude and ChatGPT require (checked Oct 2026)
 
@@ -148,7 +205,7 @@ sees the code).
 - **Observability**: the Worker keeps request logs (method, path, status) at 10 % sampling. It never
   logs bodies or headers; keep it that way.
 - The relay trusts the client name a client gives at `initialize` / registration only as a label;
-  the consent page shows the redirect host.
+  the connect page and the app's dialog show the redirect host.
 
 ## Cloudflare cost (Workers Free)
 
@@ -181,9 +238,12 @@ then $0.15/M requests) when daily requests approach 100k or before launch to the
    local stack; deploy the edge functions (`_shared/auth.ts` changed).
 2. Cloudflare: `cd apps/relay && npx wrangler secret put SUPABASE_ANON_KEY`, then
    `pnpm --filter @fixnote/relay deploy` (custom domain `mcp.fixnote.space`, created from the
-   route on deploy). Check `SUPABASE_URL` / `APP_ORIGINS` vars in `wrangler.jsonc`.
+   route on deploy; it also applies Durable Object migration `v2`, the `ConsentHandoff` class). Check `SUPABASE_URL` / `APP_ORIGINS` vars in `wrangler.jsonc`.
 3. Web app: `VITE_MCP_URL` (defaults to `https://mcp.fixnote.space`), rebuild and deploy; the
    consent page lives at `https://app.fixnote.space/oauth/consent` (SPA fallback serves it).
+   Desktop: a release with `fixnote://connect` handling (`ConnectDialog`) and `connect-src`
+   `https://mcp.fixnote.space wss://mcp.fixnote.space` in the CSP; older desktop builds ignore the
+   link, so the page's email code stays the fallback.
 4. Try: Claude → Settings → Connectors → Add custom connector → `https://mcp.fixnote.space/mcp`;
    ChatGPT → developer mode → add connector with the same URL.
 
