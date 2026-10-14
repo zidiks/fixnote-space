@@ -13,7 +13,10 @@ import { McpScopePicker } from './McpScopePicker'
 const ACCESS: readonly McpAccess[] = ['off', 'read', 'write', 'full']
 const KEY = ['mcp', 'access'] as const
 
-/** Connect Claude Desktop, Cursor and other MCP apps to the notes (desktop only). */
+/**
+ * What MCP apps may do with the notes (also remote ones, see RemoteMcpCard) and, in the desktop
+ * app, adding the local server to Claude Desktop, Cursor and Codex.
+ */
 export function McpSection() {
   const { t } = useTranslation()
   const platform = usePlatform()
@@ -66,80 +69,77 @@ export function McpSection() {
         <h3 className="font-medium">{t('mcp.title')}</h3>
         <p className="max-w-md text-sm text-muted-foreground">{t('mcp.body')}</p>
       </div>
+      {/* Access and scope apply to remote access too (docs/remote-mcp.md), so also on the web. */}
+      <div className="space-y-1.5">
+        <span className="block text-sm">{t('mcp.access')}</span>
+        <div
+          role="radiogroup"
+          aria-label={t('mcp.access')}
+          className="inline-flex max-w-full rounded-lg border p-0.5"
+        >
+          {ACCESS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              aria-pressed={access === a}
+              onClick={() => void setAccess(a)}
+              className={cn(
+                'whitespace-nowrap rounded-md px-3 py-1 text-[13px] text-muted-foreground',
+                access === a && 'bg-accent font-medium text-foreground',
+              )}
+            >
+              {t(`mcp.${a}`)}
+            </button>
+          ))}
+        </div>
+      </div>
+      {access === 'write' || access === 'full' ? (
+        <p className="max-w-md text-xs text-muted-foreground">
+          {t(access === 'full' ? 'mcp.fullNote' : 'mcp.writeNote')}
+        </p>
+      ) : null}
+      {access !== 'off' ? <McpScopePicker /> : null}
       {!mcp ? (
         <p className="text-sm text-muted-foreground">{t('mcp.webOnly')}</p>
+      ) : info && !info.built ? (
+        <p className="text-sm text-muted-foreground">{t('mcp.notBuilt')}</p>
       ) : (
-        <>
-          <div className="space-y-1.5">
-            <span className="block text-sm">{t('mcp.access')}</span>
-            <div
-              role="radiogroup"
-              aria-label={t('mcp.access')}
-              className="inline-flex max-w-full rounded-lg border p-0.5"
-            >
-              {ACCESS.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  aria-pressed={access === a}
-                  onClick={() => void setAccess(a)}
-                  className={cn(
-                    'whitespace-nowrap rounded-md px-3 py-1 text-[13px] text-muted-foreground',
-                    access === a && 'bg-accent font-medium text-foreground',
-                  )}
-                >
-                  {t(`mcp.${a}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {access === 'write' || access === 'full' ? (
-            <p className="max-w-md text-xs text-muted-foreground">
-              {t(access === 'full' ? 'mcp.fullNote' : 'mcp.writeNote')}
-            </p>
-          ) : null}
-          {access !== 'off' ? <McpScopePicker /> : null}
-          {info && !info.built ? (
-            <p className="text-sm text-muted-foreground">{t('mcp.notBuilt')}</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={access === 'off' || connecting !== null}
-                loading={connecting === 'claude'}
-                onClick={() => void connect('claude')}
-              >
-                <Plug />
-                {t('mcp.claude')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={access === 'off' || connecting !== null}
-                loading={connecting === 'cursor'}
-                onClick={() => void connect('cursor')}
-              >
-                <Plug />
-                {t('mcp.cursor')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={access === 'off' || connecting !== null}
-                loading={connecting === 'codex'}
-                onClick={() => void connect('codex')}
-              >
-                <Plug />
-                {t('mcp.codex')}
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => void copy()}>
-                <Copy />
-                {t('mcp.copy')}
-              </Button>
-            </div>
-          )}
-        </>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={access === 'off' || connecting !== null}
+            loading={connecting === 'claude'}
+            onClick={() => void connect('claude')}
+          >
+            <Plug />
+            {t('mcp.claude')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={access === 'off' || connecting !== null}
+            loading={connecting === 'cursor'}
+            onClick={() => void connect('cursor')}
+          >
+            <Plug />
+            {t('mcp.cursor')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={access === 'off' || connecting !== null}
+            loading={connecting === 'codex'}
+            onClick={() => void connect('codex')}
+          >
+            <Plug />
+            {t('mcp.codex')}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => void copy()}>
+            <Copy />
+            {t('mcp.copy')}
+          </Button>
+        </div>
       )}
     </div>
   )

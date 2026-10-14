@@ -10,6 +10,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { BillingApi, BillingOverview } from '../billing'
 import { realtimeTransport } from '../collab/transport'
 import { toError } from '../errors'
+import { type RemoteMcpApi, supabaseRemoteMcp } from '../remote-mcp/api'
 import { supabaseSharedRemote } from '../sync/shared-remote'
 import { supabaseRemote } from '../sync/supabase-remote'
 
@@ -119,6 +120,8 @@ export interface AccountBackend {
   collab(sharedId: string): CollabTransport
   /** Notes shared with other people, as this user. */
   shared(userId: string): SharedRemote
+  /** ChatGPT, claude.ai… through the relay (docs/remote-mcp.md); null without a relay. */
+  remoteMcp: RemoteMcpApi | null
 }
 
 async function billingCall<T>(client: SupabaseClient, body: Record<string, unknown>): Promise<T> {
@@ -129,7 +132,7 @@ async function billingCall<T>(client: SupabaseClient, body: Record<string, unkno
 
 export function supabaseBackend(
   client: SupabaseClient,
-  config: { url: string; anonKey: string },
+  config: { url: string; anonKey: string; mcpUrl?: string },
 ): AccountBackend {
   const session = (s: { user: { id: string; email?: string } } | null): Session | null =>
     s ? { userId: s.user.id, email: s.user.email ?? '' } : null
@@ -384,6 +387,7 @@ export function supabaseBackend(
     },
     collab: (sharedId) => realtimeTransport(client, sharedId),
     shared: (userId) => supabaseSharedRemote(client, userId),
+    remoteMcp: config.mcpUrl ? supabaseRemoteMcp(client, config.mcpUrl) : null,
     subscribe(userId, onChange, onLive) {
       const channel = client
         .channel(`sync:${userId}`)

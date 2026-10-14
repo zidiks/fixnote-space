@@ -17,6 +17,7 @@ import {
   sealToPublicKey,
 } from '@fixnote/core'
 import { broadcastChannelTransport } from '../collab/transport'
+import { devRemoteMcp } from '../remote-mcp/dev'
 import { devRegisterUser, devSharedChanges, devSharedRemote } from '../shared/dev-remote'
 import type {
   AccountBackend,
@@ -574,6 +575,7 @@ export const devBackend: AccountBackend = {
   },
   collab: (sharedId) => broadcastChannelTransport(sharedId),
   shared: (userId) => devSharedRemote(userId),
+  remoteMcp: devRemoteMcp(() => Boolean(load().session)),
   subscribe: (_userId, onChange, onLive) => {
     onLive?.(true)
     const listener = () => onChange()

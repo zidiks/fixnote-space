@@ -494,7 +494,8 @@ const en = {
     'not-installed': 'Move FixNote to Applications and open it from there.',
     title: 'Connected apps (MCP)',
     body: 'Give Claude, Cursor, Codex and other MCP clients access to your notes. Runs locally.',
-    webOnly: 'Available in the desktop app.',
+    webOnly:
+      'Adding FixNote to Claude Desktop, Cursor or Codex is available in the desktop app. Access and visible notes also apply to remote access (Settings → Integrations).',
     notBuilt: 'The MCP server isn’t available in this build.',
     access: 'Access',
     off: 'Off',
@@ -519,6 +520,52 @@ const en = {
     removeNote: 'Remove',
     deletedNote: 'Deleted note',
     scopeNote: 'Nothing else is visible. New notes go only into the selected folders.',
+  },
+  remoteMcp: {
+    title: 'Remote access (ChatGPT, Claude…)',
+    body: 'Use your notes from ChatGPT, claude.ai and other AI apps, on any device. The notes are read here, on your device; only the answers go to the app.',
+    turnOn: 'Turn on',
+    turnOff: 'Turn off',
+    toggleBody:
+      'While FixNote is open here, AI apps you connect can search and read your notes. They see what Settings → AI → Connected apps allows, and can only read.',
+    url: 'Server address',
+    urlHint:
+      'In ChatGPT or Claude, add a custom connector with this address and sign in with your FixNote email.',
+    copy: 'Copy',
+    copied: 'Address copied',
+    status_online: 'Ready: AI apps can reach your notes through this device',
+    status_connecting: 'Connecting…',
+    status_offline: 'No connection to the server. Trying again…',
+    status_pro: 'Remote access is part of Pro',
+    status_denied: 'Sign in again to connect',
+    status_off: 'Off',
+    clients: 'Connected AI apps',
+    noClients: 'No AI apps connected yet.',
+    lastUsed: 'Last used {{time}}',
+    neverUsed: 'Not used yet',
+    revoke: 'Revoke',
+    revoked: '{{name}} no longer has access',
+    recent: 'Recent requests',
+    refused: 'refused',
+    privacy:
+      'What passes through our server: what the AI app asks and the notes your device sends back as the answer. They pass through memory only and are not stored or logged. What the AI app receives is then under its own rules.',
+  },
+  oauth: {
+    title: '{{client}} wants to read your notes',
+    body: 'It will be able to search and read your FixNote notes whenever FixNote is open with Remote access on, on one of your devices.',
+    scope:
+      'It sees only what Settings → AI → Connected apps on that device allows: all notes or the folders you chose. It cannot change or delete anything.',
+    returnTo: 'After you answer, you go back to {{host}}.',
+    account: 'Your FixNote account: {{email}}',
+    notPro:
+      'Remote access is part of FixNote Pro. Until you have it, the app gets an error instead of notes.',
+    allow: 'Allow',
+    deny: 'Deny',
+    signInTitle: 'Connect an AI app to FixNote',
+    signInBody: 'Sign in with your FixNote email to see what the app asks for.',
+    invalid:
+      'This request has expired or was already answered. Start connecting again in the AI app.',
+    returning: 'Going back to the app…',
   },
   aiProvider: {
     title: 'Model',
