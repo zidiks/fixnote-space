@@ -16,7 +16,8 @@ const shared = parseShareLocation(location.search, location.hash)
 // Back from paying in the desktop app (?billing=…&to=app): a page that opens the app, not the app.
 const params = new URLSearchParams(location.search)
 const billing = params.get('to') === 'app' ? params.get('billing') : null
-// An AI app asks to read the notes (Supabase Auth's OAuth consent step, docs/remote-mcp.md).
+// An AI app asks to read the notes (Supabase Auth's OAuth consent step, docs/remote-mcp.md): a page
+// that asks the FixNote app (fixnote://connect) or signs in for this tab only; not the app.
 const consent = location.pathname === '/oauth/consent' ? params.get('authorization_id') || '' : null
 const page = shared ? (
   await import('./components/SharePage').then(({ SharePage }) => (
@@ -25,8 +26,8 @@ const page = shared ? (
 ) : billing === 'success' || billing === 'cancel' ? (
   await import('./components/PaidPage').then(({ PaidPage }) => <PaidPage result={billing} />)
 ) : consent !== null ? (
-  await import('./components/OAuthConsentPage').then(({ OAuthConsentPage }) => (
-    <OAuthConsentPage authorizationId={consent} />
+  await import('./components/connect/ConnectPage').then(({ ConnectPage }) => (
+    <ConnectPage authorizationId={consent} />
   ))
 ) : (
   <App />

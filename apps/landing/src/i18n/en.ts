@@ -573,7 +573,7 @@ export const en: Dict = {
       {
         title: 'AI apps (remote access)',
         text: [
-          'If you connect an AI app such as ChatGPT or Claude to FixNote, its requests come to our server mcp.fixnote.space and are passed to your device where FixNote is open. The device decrypts the notes and answers, and the answer with the notes it needs passes through our server to that app. Requests and answers only pass through memory: we do not store or log them. The server has no keys to your notes.',
+          'If you connect an AI app such as ChatGPT or Claude to FixNote, its requests come to our server mcp.fixnote.space and are passed to your device where FixNote is open. The device decrypts the notes and answers, and the answer with the notes it needs passes through our server to that app. Requests and answers only pass through memory: we do not store or log them. The server has no keys to your notes. When you approve the connection in the FixNote app, the server keeps the address back to the AI app for at most two minutes, until the connect page in your browser picks it up.',
           'We keep only what is needed to run it: which apps you connected, when they last asked, which access you revoked, and the ids of the folders and notes you let them see. You can revoke access in Settings → Integrations. What the AI app receives is then handled under its provider’s own rules.',
         ],
       },

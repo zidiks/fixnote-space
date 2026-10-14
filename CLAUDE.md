@@ -139,7 +139,15 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   phase 1, `mcp.access`, device `mcp.scope` ∩ the account's remote scope kept by the relay as ids).
   The device side is `RemoteBridge` (core) started by `lib/remote-mcp/bridge.ts` when Remote access
   is on (kv `mcp.remote`, per device), signed in, not Free, not local-only. OAuth is Supabase Auth's
-  OAuth 2.1 server (`[auth.oauth_server]`, consent page `/oauth/consent`); its tokens carry
+  OAuth 2.1 server (`[auth.oauth_server]`). Its consent step `/oauth/consent` is `ConnectPage`, a
+  page of its own (no local DB, no account, like `PaidPage`): "Approve in the FixNote app" opens
+  `fixnote://connect?authorization_id=…` (core `remote-mcp/connect.ts`), the app shows
+  `ConnectDialog` (always asks: any page can open the link; client, can/cannot, redirect host),
+  answers Supabase with its own session and posts the redirect to the relay
+  (`POST /api/consent/<id>`, `ConsentHandoff` DO: redirect only, 2 min, read once); the page polls
+  `GET /consent/<id>` and goes back. The email code sign-in on the page (this tab only) is the
+  fallback and the phone path. With `?dev-backend`, links reach an app tab over BroadcastChannel
+  (`&dev-signed-out` ignores the stored session on the page). AI-app tokens carry
   `client_id` and are refused by PostgREST, RLS, Storage, Realtime and edge functions
   (`*_remote_mcp.sql`, `_shared/auth.ts`) except `remote_mcp_allowed()`: a new RLS table needs the
   `"no oauth clients"` restrictive policy too. Protocol types live in

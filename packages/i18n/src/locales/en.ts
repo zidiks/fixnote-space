@@ -530,7 +530,7 @@ const en = {
       'While FixNote is open here, AI apps you connect can search and read your notes. They see what Settings → AI → Connected apps allows, and can only read.',
     url: 'Server address',
     urlHint:
-      'In ChatGPT or Claude, add a custom connector with this address and sign in with your FixNote email.',
+      'In ChatGPT or Claude, add a custom connector with this address, then approve it here in FixNote.',
     copy: 'Copy',
     copied: 'Address copied',
     status_online: 'Ready: AI apps can reach your notes through this device',
@@ -565,22 +565,61 @@ const en = {
     privacy:
       'What passes through our server: what the AI app asks and the notes your device sends back as the answer. They pass through memory only and are not stored or logged. What the AI app receives is then under its own rules.',
   },
-  oauth: {
+  connect: {
+    pageTitle: 'Connect to FixNote',
+    titleAny: 'An AI app wants to read your notes',
     title: '{{client}} wants to read your notes',
-    body: 'It will be able to search and read your FixNote notes whenever FixNote is open with Remote access on, on one of your devices.',
-    scope:
-      'It sees only what Settings → AI → Connected apps on that device allows: all notes or the folders you chose. It cannot change or delete anything.',
-    returnTo: 'After you answer, you go back to {{host}}.',
-    account: 'Your FixNote account: {{email}}',
+    intro: 'Approve it in the FixNote app, where you are already signed in.',
+    can: 'It can',
+    cannot: 'It cannot',
+    canRead: 'Search and read your notes',
+    canScope:
+      'See only what Settings → AI → Connected apps allows: all notes or the folders you chose',
+    cannotChange: 'Change or delete anything',
+    cannotClosed: 'Read anything while FixNote is closed or Remote access is off',
+    privacy:
+      'Your device reads the notes and sends only the answers. Our server passes them through and keeps nothing.',
+    returnTo: 'Then you go back to {{host}}',
+    account: 'Account: {{email}}',
     notPro:
       'Remote access is part of FixNote Pro. Until you have it, the app gets an error instead of notes.',
+    openApp: 'Approve in the FixNote app',
+    useEmail: 'Sign in with an email code instead',
+    waitingTitle: 'Approve in FixNote on your computer',
+    waitingBody:
+      'FixNote shows who is asking. Once you answer there, this page goes back to the AI app by itself.',
+    waiting: 'Waiting for FixNote…',
+    notOpening: 'FixNote did not open?',
+    openAgain: 'Open FixNote again',
+    download: 'Get FixNote for your computer',
+    expiredTitle: 'No answer from FixNote yet',
+    expiredBody:
+      'Answer in the FixNote app or open it again. The request lasts a few minutes; after that, start connecting again in the AI app.',
+    declinedTitle: 'Not connected',
+    declinedBody: 'You declined in FixNote. You can close this page.',
+    emailTitle: 'Sign in with an email code',
+    emailBody: 'We send a code to your FixNote email. This sign-in stays in this tab only.',
+    back: 'Back',
     allow: 'Allow',
     deny: 'Deny',
-    signInTitle: 'Connect an AI app to FixNote',
-    signInBody: 'Sign in with your FixNote email to see what the app asks for.',
+    connected: 'Connected. Going back to the AI app…',
+    notConnected: 'Not connected. Going back to the AI app…',
     invalid:
       'This request has expired or was already answered. Start connecting again in the AI app.',
-    returning: 'Going back to the app…',
+    fromSite: 'from {{site}}',
+    dialogWarning:
+      'Allow only if you just connected FixNote in {{host}} yourself. Any web page can open this window.',
+    signedOut: 'Sign in to FixNote here first, or use the email code on the page in your browser.',
+    localOnly:
+      'FixNote is set to work only on this device, so it does not connect AI apps. Use the email code on the page in your browser.',
+    againTitle: 'An AI app you allowed before is connecting again',
+    againBody: 'It can already read your notes. Continue to go back to it in your browser.',
+    continue: 'Continue',
+    cancel: 'Cancel',
+    doneAllowed: 'Connected. Go back to your browser.',
+    doneDenied: 'Not connected.',
+    unsent:
+      'Answered, but the page in your browser did not get it. Click “Open FixNote again” there.',
   },
   aiProvider: {
     title: 'Model',

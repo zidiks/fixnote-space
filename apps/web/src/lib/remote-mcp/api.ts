@@ -1,6 +1,7 @@
-import type { DeviceKind, SocketFactory } from '@fixnote/core'
+import type { ConsentResult, DeviceKind, SocketFactory } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { toError } from '../errors'
+import { type ConsentAuth, postToRelay, supabaseConsent } from './consent'
 
 /** An AI app the account let in through remote MCP (docs/remote-mcp.md). */
 export interface RemoteMcpClient {
@@ -41,6 +42,10 @@ export interface RemoteMcpApi {
   overview(): Promise<RemoteOverview>
   /** Revokes the app's grant (its tokens stop at the relay right away). */
   revoke(clientId: string): Promise<void>
+  /** Answering an AI app's request to connect (`fixnote://connect`), as this account. */
+  consent: ConsentAuth
+  /** Leaves the answer at the relay for the connect page in the browser to pick up. */
+  handoff(authorizationId: string, result: ConsentResult): Promise<void>
 }
 
 const host = (uri: string) => {
@@ -93,6 +98,12 @@ export function supabaseRemoteMcp(client: SupabaseClient, relayUrl: string): Rem
         }
       })
       return { clients, devices: seen.devices ?? [] }
+    },
+    consent: supabaseConsent(client),
+    async handoff(authorizationId, result) {
+      const t = await token()
+      if (!t) throw new Error('Signed out')
+      await postToRelay(base, t, authorizationId, result)
     },
     async revoke(clientId) {
       const { error } = await client.auth.oauth.revokeGrant({ clientId })

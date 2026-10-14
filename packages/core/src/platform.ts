@@ -237,7 +237,9 @@ export interface GlobalShortcut {
 
 /**
  * fixnote:// links that reached the desktop app: after paying, the browser hands back to it with
- * `fixnote://billing/success`. Any page can open such a link, so it only ever triggers a check.
+ * `fixnote://billing/success`; the connect page asks it to let an AI app in with
+ * `fixnote://connect?authorization_id=…`. Any page can open such a link, so it only ever triggers
+ * a check or a question.
  */
 export interface DeepLinks {
   /** Calls `cb` with each link, also those that came before (the one that started the app). */
