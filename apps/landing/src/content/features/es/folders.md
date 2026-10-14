@@ -1,6 +1,6 @@
 ---
 title: Carpetas y subcarpetas
-metaTitle: 'Carpetas y subcarpetas para tus notas: orden rápido en FixNote'
+metaTitle: 'Carpetas y subcarpetas para tus notas | FixNote'
 description: Carpetas anidadas en FixNote. Mueve notas de una en una o en grupo, ve en cada carpeta todo lo de sus subcarpetas y deja que la IA sugiera dónde va cada nota.
 eyebrow: Orden
 intro: ¿Cómo repartes tus notas en carpetas sin dedicarle una tarde entera? FixNote tiene carpetas anidadas a cualquier profundidad, mueve muchas notas a la vez y cuenta con una IA que sugiere dónde va cada una.

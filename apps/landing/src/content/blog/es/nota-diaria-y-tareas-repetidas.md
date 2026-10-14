@@ -1,7 +1,8 @@
 ---
-title: "Nota del día y tareas que se repiten: una agenda diaria en FixNote"
+title: "Cómo crear tareas que se repiten en tu nota diaria"
 description: "Cómo llevar en FixNote una nota por día, pasar las tareas sin terminar y crear tareas que aparecen solas según un calendario: a diario, entre semana o cada mes."
 date: 2026-10-05
+updated: 2026-10-11
 translationKey: daily-note
 faq:
   - q: "¿Cómo creo una tarea que se repita en mis notas?"

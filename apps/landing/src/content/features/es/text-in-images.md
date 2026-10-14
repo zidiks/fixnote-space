@@ -1,7 +1,7 @@
 ---
-title: Texto en imágenes
-metaTitle: 'Busca el texto de tus capturas y fotos: OCR en FixNote'
-description: FixNote lee el texto de tus capturas y fotos en el propio dispositivo, y la búsqueda encuentra la imagen por sus palabras. Lee español, inglés y ruso.
+title: Extraer texto de imágenes en tus notas
+metaTitle: 'Extraer texto de imágenes y buscarlo en tus notas | FixNote'
+description: 'FixNote extrae el texto de tus capturas y fotos en el propio dispositivo: la búsqueda encuentra la imagen por sus palabras y puedes copiar el texto.'
 eyebrow: OCR
 intro: ¿Hiciste una captura con el número de reserva y ahora no la encuentras? FixNote lee el texto de las imágenes de tus notas, y la búsqueda las encuentra por las palabras que aparecen en ellas.
 card:

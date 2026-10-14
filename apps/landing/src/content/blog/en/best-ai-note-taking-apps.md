@@ -1,7 +1,8 @@
 ---
-title: "The best AI note-taking apps in 2026: an October comparison"
+title: "Best AI note-taking apps in 2026: 6 apps compared"
 description: "FixNote, Notion, Obsidian, Evernote, Apple Notes and Joplin: what their AI does, what it costs, whether notes are end-to-end encrypted and where each app runs."
 date: 2026-10-09
+updated: 2026-10-11
 translationKey: best-ai-note-apps
 faq:
   - q: "Which note-taking app has free AI?"

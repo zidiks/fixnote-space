@@ -1,7 +1,8 @@
 ---
-title: "Move notes from Notion, Obsidian, Bear and Apple Notes to FixNote"
+title: "How to move your notes from Notion, Obsidian and Bear"
 description: "Importing into FixNote step by step: what to export from Notion, Obsidian, Bear and Apple Notes, what comes across, and how to get your notes back as Markdown."
 date: 2026-10-01
+updated: 2026-10-11
 translationKey: import
 faq:
   - q: "Can I import my Notion workspace into FixNote?"

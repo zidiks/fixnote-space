@@ -1,0 +1,28 @@
+---
+import { type Lang, localePath, t } from '../i18n'
+
+/** The analytics question, shown until answered (script in Base.astro). */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).consent
+---
+
+<div
+  id="consent"
+  role="dialog"
+  aria-live="polite"
+  aria-label={c.title}
+  hidden
+  class="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-[560px] rounded-2xl border border-line bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
+>
+  <p class="typo-caption text-ink">
+    {c.text}{' '}
+    <a href={localePath(lang, '/privacy/')} class="link">{c.more}</a>
+  </p>
+  <div class="mt-4 flex flex-wrap gap-3">
+    <button type="button" data-consent="yes" class="btn btn-primary">{c.accept}</button>
+    <button type="button" data-consent="no" class="btn btn-neutral">{c.decline}</button>
+  </div>
+</div>

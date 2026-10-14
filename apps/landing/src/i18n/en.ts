@@ -4,17 +4,17 @@ export const en: Dict = {
   meta: {
     siteName: 'FixNote',
     home: {
-      title: 'FixNote: private notes with an assistant that remembers for you',
+      title: 'AI note-taking app with end-to-end encryption | FixNote',
       description:
-        'End-to-end encrypted notes for Windows, macOS and the web. Write or dictate, ask the assistant about your notes and get answers that cite their sources.',
+        'A private AI note-taking app for Windows, macOS and the web. Notes are end-to-end encrypted; type or dictate, and the assistant answers with sources.',
     },
     features: {
-      title: 'FixNote features: AI assistant, voice notes, search and encryption',
+      title: 'FixNote features: AI assistant, voice notes, meeting notes',
       description:
-        'Everything FixNote does: an assistant that answers from your notes, on-device dictation, call summaries, search in three languages, a Telegram bot, shared notes and end-to-end encryption.',
+        'An AI assistant for your notes, offline voice to text, bot-free meeting notes, OCR, a Telegram bot, shared notes and end-to-end encryption.',
     },
     security: {
-      title: 'FixNote security: end-to-end encrypted notes',
+      title: 'FixNote security: how your notes are protected',
       description:
         'How FixNote encrypts notes on your device, what the server stores, what the assistant sees and how to work fully offline.',
     },
@@ -23,12 +23,12 @@ export const en: Dict = {
       description: 'What data FixNote has, why it needs it and how to delete it.',
     },
     download: {
-      title: 'Download FixNote for Windows and macOS',
+      title: 'Download FixNote: notes app for Windows and Mac',
       description:
-        'FixNote installers for Windows and macOS (Apple Silicon and Intel), and a web version that runs right in your browser.',
+        'FixNote for Windows and macOS (Apple Silicon and Intel), plus a web version that runs in your browser. Free, no account needed.',
     },
     blog: {
-      title: 'FixNote blog: notes, memory and privacy',
+      title: 'FixNote blog: note-taking, AI and privacy',
       description:
         'How to keep notes you can find again, how end-to-end encryption works and how an assistant helps you remember.',
     },
@@ -395,6 +395,15 @@ export const en: Dict = {
     'The Pro trial starts in the app after you sign in. No card needed; when the week ends, the account goes back to Free unless you subscribe.',
   ],
 
+  consent: {
+    title: 'Cookies and analytics',
+    text: 'May we count visits to this site with Google Analytics? It sets cookies. It never sees your notes or the app.',
+    more: 'Learn more',
+    accept: 'Allow',
+    decline: 'No thanks',
+    settings: 'Cookies',
+  },
+
   footer: {
     notes: 'Footnotes',
     breadcrumbs: 'Breadcrumbs',
@@ -511,6 +520,9 @@ export const en: Dict = {
     minutes: 'min',
     back: 'All articles',
     published: 'Published',
+    updated: 'Updated',
+    author: 'Author',
+    authorPosts: 'Articles',
     empty: 'Articles are coming soon.',
     otherLanguages: 'This article in other languages',
   },
@@ -518,7 +530,7 @@ export const en: Dict = {
   privacyPage: {
     eyebrow: 'Privacy',
     title: 'Privacy policy',
-    updated: 'Updated September 28, 2026',
+    updated: 'Updated October 11, 2026',
     lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data FixNote has and why.',
     sections: [
       {
@@ -576,9 +588,11 @@ export const en: Dict = {
         ],
       },
       {
-        title: 'Ads and tracking',
+        title: 'Ads and analytics',
+        id: 'cookies',
         text: [
-          'There are no ads, analytics or trackers in the app or on the site. We do not sell data or share it for advertising.',
+          'There are no ads, analytics or trackers in the app. We do not sell data or share it for advertising.',
+          'On the fixnote.space website, if you allow it in the banner, Google Analytics counts visits: which pages people read, where they come from and how many click Download. It sets cookies for this. Without your consent it is not loaded. You can change your choice with "Cookies" at the bottom of any page. Your notes and anything you do in the app never reach it.',
         ],
       },
       {

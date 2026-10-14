@@ -1,6 +1,6 @@
 ---
-title: Tus notas en Claude, Cursor y Codex
-metaTitle: 'Servidor MCP para tus notas: FixNote en Claude, Cursor y Codex'
+title: 'Servidor MCP para tus notas: Claude, Cursor y Codex'
+metaTitle: 'Servidor MCP para notas: Claude, Cursor y Codex | FixNote'
 description: Conecta tus notas de FixNote a Claude Desktop, Cursor, Codex y otros clientes MCP. Tú decides qué pueden leer y cambiar, y cada cambio queda registrado.
 eyebrow: MCP
 intro: ¿Quieres que Claude o Cursor sepan qué decidiste sobre un proyecto sin contárselo cada vez? El servidor MCP integrado en FixNote deja que estas apps busquen y lean tus notas y, si lo permites, que las cambien.

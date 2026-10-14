@@ -1,6 +1,6 @@
 ---
-title: Daily notes
-metaTitle: 'Daily notes with recurring tasks: a daily journal in FixNote'
+title: Daily notes with recurring tasks
+metaTitle: 'Daily note app with recurring tasks | FixNote'
 description: One note per day. Ctrl+D opens today's, unfinished tasks move over with one click, and recurring tasks show up on the right days without you copying them.
 eyebrow: Every day
 intro: Where do you put a quick task, an order number or a thought after a call without making a whole new note for it? The daily note collects the small stuff in today's page, carries unfinished tasks forward and adds recurring ones by itself.

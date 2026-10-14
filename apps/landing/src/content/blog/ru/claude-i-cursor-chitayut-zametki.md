@@ -1,8 +1,8 @@
 ---
-title: 'MCP-сервер для заметок: подключаем FixNote к Claude, Cursor и Codex'
+title: 'Как подключить заметки к Claude, Cursor и Codex через MCP'
 description: 'Как дать Claude Desktop, Cursor и Codex доступ к заметкам FixNote через MCP-сервер, выбрать уровень доступа и показать программе только нужные папки.'
 date: 2026-10-03
-updated: 2026-10-09
+updated: 2026-10-11
 translationKey: mcp
 faq:
   - q: 'Нужна ли подписка Pro для MCP-сервера FixNote?'

@@ -1,7 +1,8 @@
 ---
-title: "Guardar mensajes de Telegram en tus notas con el bot de FixNote"
+title: "Cómo guardar mensajes de Telegram en tus notas"
 description: "Cómo conectar el bot de FixNote en Telegram, qué puedes enviarle, por qué el bot no puede leer tus mensajes y qué revisar si una nota no aparece."
 date: 2026-10-06
+updated: 2026-10-11
 translationKey: telegram-capture
 faq:
   - q: "¿Cómo guardo mensajes de Telegram en mis notas?"

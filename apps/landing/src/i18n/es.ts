@@ -4,17 +4,17 @@ export const es: Dict = {
   meta: {
     siteName: 'FixNote',
     home: {
-      title: 'FixNote: notas privadas con un asistente que recuerda por ti',
+      title: 'App de notas con IA y cifrado de extremo a extremo | FixNote',
       description:
-        'Notas con cifrado de extremo a extremo para Windows, macOS y el navegador. Escribe o dicta, pregunta al asistente por tus notas y recibe respuestas que citan sus fuentes.',
+        'App de notas con IA para Windows, macOS y navegador, con cifrado de extremo a extremo. Escribe o dicta y el asistente responde citando tus notas.',
     },
     features: {
-      title: 'Funciones de FixNote: asistente con IA, notas de voz, búsqueda y cifrado',
+      title: 'Funciones de FixNote: IA, notas de voz y reuniones',
       description:
-        'Todo lo que hace FixNote: un asistente que responde con tus notas, dictado en el dispositivo, resúmenes de llamadas, búsqueda en tres idiomas, un bot de Telegram, notas compartidas y cifrado de extremo a extremo.',
+        'Asistente de IA para tus notas, notas de voz sin internet, resumen de reuniones sin bot, texto de imágenes, bot de Telegram, notas compartidas y cifrado.',
     },
     security: {
-      title: 'Seguridad de FixNote: notas cifradas de extremo a extremo',
+      title: 'Seguridad de FixNote: cómo se protegen tus notas',
       description:
         'Cómo FixNote cifra las notas en tu dispositivo, qué guarda el servidor, qué ve el asistente y cómo trabajar totalmente sin conexión.',
     },
@@ -23,12 +23,12 @@ export const es: Dict = {
       description: 'Qué datos tiene FixNote, para qué los necesita y cómo borrarlos.',
     },
     download: {
-      title: 'Descargar FixNote para Windows y macOS',
+      title: 'Descargar FixNote: app de notas para Windows y Mac',
       description:
-        'Instaladores de FixNote para Windows y macOS (Apple Silicon e Intel) y una versión web que funciona en el navegador.',
+        'FixNote para Windows y macOS (Apple Silicon e Intel) y una versión web que funciona en el navegador. Gratis y sin cuenta.',
     },
     blog: {
-      title: 'Blog de FixNote: notas, memoria y privacidad',
+      title: 'Blog de FixNote: tomar notas, IA y privacidad',
       description:
         'Cómo tomar notas que luego encuentras, cómo funciona el cifrado de extremo a extremo y cómo un asistente te ayuda a recordar.',
     },
@@ -413,6 +413,15 @@ export const es: Dict = {
     'La prueba de Pro se activa en la app después de iniciar sesión. Sin tarjeta; al terminar la semana, la cuenta vuelve a Free si no te suscribes.',
   ],
 
+  consent: {
+    title: 'Cookies y analítica',
+    text: '¿Podemos contar las visitas a este sitio con Google Analytics? Usa cookies. Nunca ve tus notas ni la app.',
+    more: 'Más información',
+    accept: 'Permitir',
+    decline: 'No, gracias',
+    settings: 'Cookies',
+  },
+
   footer: {
     notes: 'Notas',
     breadcrumbs: 'Ruta',
@@ -529,6 +538,9 @@ export const es: Dict = {
     minutes: 'min',
     back: 'Todos los artículos',
     published: 'Publicado',
+    updated: 'Actualizado',
+    author: 'Autor',
+    authorPosts: 'Artículos',
     empty: 'Pronto habrá artículos aquí.',
     otherLanguages: 'Este artículo en otros idiomas',
   },
@@ -536,7 +548,7 @@ export const es: Dict = {
   privacyPage: {
     eyebrow: 'Privacidad',
     title: 'Política de privacidad',
-    updated: 'Actualizada el 28 de septiembre de 2026',
+    updated: 'Actualizada el 11 de octubre de 2026',
     lead: 'En resumen: no podemos leer tus notas, no vendemos datos y no mostramos anuncios. A continuación, qué datos tiene FixNote y para qué.',
     sections: [
       {
@@ -594,9 +606,11 @@ export const es: Dict = {
         ],
       },
       {
-        title: 'Publicidad y seguimiento',
+        title: 'Publicidad y analítica',
+        id: 'cookies',
         text: [
-          'No hay anuncios, analíticas ni rastreadores en la app ni en el sitio. No vendemos datos ni los compartimos con fines publicitarios.',
+          'En la app no hay anuncios, analíticas ni rastreadores. No vendemos datos ni los compartimos con fines publicitarios.',
+          'En el sitio fixnote.space, si lo permites en el aviso, Google Analytics cuenta las visitas: qué páginas se leen, de dónde llega la gente y cuántos pulsan Descargar. Para ello usa cookies. Sin tu permiso no se carga. Puedes cambiar tu decisión con «Cookies» al pie de cualquier página. Tus notas y lo que haces en la app nunca le llegan.',
         ],
       },
       {

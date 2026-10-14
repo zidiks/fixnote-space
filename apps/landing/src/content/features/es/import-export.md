@@ -1,6 +1,6 @@
 ---
-title: Importar y exportar
-metaTitle: 'Pasa tus notas de Notion, Obsidian, Bear o Apple Notes a FixNote'
+title: Importar notas de Notion, Obsidian, Bear y Notas de Apple
+metaTitle: 'Importa notas de Notion, Obsidian y Notas de Apple | FixNote'
 description: Trae tus notas a FixNote desde Obsidian, Bear, Notion y Notas de Apple con carpetas e imágenes, y expórtalo todo de vuelta a Markdown cuando quieras.
 eyebrow: Mudanza
 intro: ¿Cómo pasar años de notas desde otra app sin perder carpetas ni imágenes? FixNote lee las exportaciones de Obsidian, Bear y Notion, en Mac trae las notas directamente desde Notas de Apple y en cualquier momento lo exporta todo a Markdown.

@@ -1,7 +1,8 @@
 ---
-title: 'Shared notes with end-to-end encryption: shared folders in FixNote'
+title: 'How to share notes and folders in FixNote: roles and encryption'
 description: 'How to invite someone to a FixNote note or folder, how edit and view access differ, how live edits show up, and what the server knows without seeing the text.'
 date: 2026-10-04
+updated: 2026-10-11
 translationKey: shared-notes
 faq:
   - q: 'Does the person I invite need FixNote Pro?'

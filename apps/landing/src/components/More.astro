@@ -1,12 +1,17 @@
 ---
 import Chevron from './Chevron.astro'
 
-/** An orange text link with a chevron: "Learn more ›". */
+/**
+ * An orange text link with a chevron: "Learn more ›". `about` names what it leads to when the
+ * visible words alone don't ("Learn more" next to a card): read out by screen readers and search
+ * engines, hidden on screen.
+ */
 interface Props {
   href: string
   class?: string
+  about?: string
 }
-const { href, class: className = 'typo-cta' } = Astro.props
+const { href, class: className = 'typo-cta', about } = Astro.props
 ---
 
-<a href={href} class:list={['link', className]}><slot /><Chevron /></a>
+<a href={href} class:list={['link', className]}><slot />{about && <span class="sr-only">: {about}</span>}<Chevron /></a>

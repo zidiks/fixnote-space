@@ -1,7 +1,8 @@
 ---
-title: 'Offline notes app with no account: how FixNote works offline'
+title: 'FixNote offline: what works without internet, plus Ollama'
 description: 'What FixNote does without a connection or sign-up, what Only on this device mode switches off, and how to connect the assistant to a local model with Ollama.'
 date: 2026-09-27
+updated: 2026-10-11
 translationKey: offline
 faq:
   - q: 'Can I use FixNote without signing up?'

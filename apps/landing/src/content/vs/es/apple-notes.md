@@ -1,7 +1,7 @@
 ---
-title: "FixNote o Notas de Apple: cuál elegir para tus notas"
-metaTitle: "Alternativa a Notas de Apple para Windows con asistente de IA"
-description: "Notas de Apple o FixNote: Windows y navegador, asistente de IA, cifrado de extremo a extremo y llamadas. En qué gana cada app y cómo pasar tus notas a FixNote."
+title: "Alternativa a Notas de Apple para Windows: FixNote o Notas de Apple"
+metaTitle: "Alternativa a Notas de Apple para Windows | FixNote"
+description: "¿Buscas Notas de Apple en Windows? FixNote funciona en Windows, Mac y navegador, con asistente de IA, cifrado de extremo a extremo e importación de notas."
 intro: "Notas de Apple es gratis, ya viene en tu iPhone y tu Mac y funciona muy bien dentro del ecosistema de Apple. FixNote cubre lo que a Notas le falta: un ordenador con Windows, un asistente que responde a partir de todas tus notas y un cifrado que no hay que activar. Aquí tienes las diferencias, también donde Notas de Apple es mejor opción."
 steps:
   - title: "Mira tus dispositivos"

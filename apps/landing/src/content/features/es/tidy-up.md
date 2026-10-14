@@ -1,6 +1,6 @@
 ---
-title: Pon orden en tus notas
-metaTitle: 'Organizar notas en carpetas con IA: Poner orden en FixNote'
+title: Organiza tus notas con IA
+metaTitle: 'Organizar notas con IA: carpetas y títulos | FixNote'
 description: FixNote sugiere carpetas para notas sueltas, títulos para las que no tienen y busca duplicados. Nada cambia hasta que pulsas Aceptar y todo se puede deshacer.
 eyebrow: Orden
 intro: Las notas sin título, los duplicados y las notas que deberían estar en la carpeta Trabajo se acumulan solos. Poner orden revisa la lista y sugiere dónde va cada nota y cómo llamarla.

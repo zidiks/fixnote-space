@@ -1,7 +1,8 @@
 ---
-title: "Daily notes and recurring tasks: a simple daily planner in FixNote"
+title: "How to set up recurring tasks in your daily notes"
 description: "How to keep one note per day in FixNote, carry unfinished tasks over, and set up tasks that show up on schedule: every day, on weekdays, or once a month."
 date: 2026-10-05
+updated: 2026-10-11
 translationKey: daily-note
 faq:
   - q: "How do I make a recurring task in my notes?"

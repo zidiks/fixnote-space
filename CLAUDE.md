@@ -206,7 +206,13 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   the app is app.fixnote.space). Its copy
   lives in `apps/landing/src/i18n` (ru is the reference, en/es must match its shape), not in
   `@fixnote/i18n`. Keep pages script-free apart from the small inline scripts in `Base.astro` and
-  `Hero.astro`; only claim what the app does. No GitHub links on the site: downloads go through
+  `Hero.astro`; only claim what the app does. Analytics (Yandex Metrika, GA4) only on the site and
+  only after the consent banner (`src/data/analytics.ts`, privacy section `cookies`: change them
+  together); the app has none and stays `noindex`. schema.org data comes from `src/lib/schema.ts`
+  (fixed `@id`s); each page's Open Graph picture is drawn after the build from its <title> and the
+  `og` prop of `Base` (`og.mjs`), and changed pages go to IndexNow after the deploy
+  (`indexnow.mjs`). Blog authors: `src/data/authors.ts`, real people only. SEO plan, keyword
+  core and service setup: `docs/SEO.md`, `docs/seo/`. No GitHub links on the site: downloads go through
   `/download/*` in `public/_redirects`. Blog posts: `src/content/blog/<lang>/<slug>.md`, one
   `translationKey` per article across languages.
 

@@ -2,7 +2,7 @@
 // The app itself is a separate Worker (repository root wrangler.jsonc) on app.fixnote.space.
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
-  "name": "fixnote-landing",
+  "name": "fixnote-space-landing",
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./dist",

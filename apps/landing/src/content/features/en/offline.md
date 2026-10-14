@@ -1,6 +1,6 @@
 ---
-title: Notes without internet
-metaTitle: 'Offline notes app with no account needed: FixNote offline mode'
+title: Offline notes app, no account needed
+metaTitle: 'Offline notes app with no account needed | FixNote'
 description: FixNote works with no connection and no sign-up, and notes, search and dictation stay on your device. Only on this device mode cuts off our server entirely.
 eyebrow: Offline
 intro: Can you keep notes with no internet, no account, and an app that never talks to our cloud? Yes. Notes live on your device, and Only on this device mode switches off everything that reaches the FixNote server.
