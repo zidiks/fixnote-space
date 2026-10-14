@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { appendToToday, captureToDaily } from '../lib/daily'
 import { useDb, useRepo } from '../lib/db'
+import { listedFolderId } from '../lib/layout'
 import { usePlatform } from '../lib/platform'
 import { useInvalidateNotes, writableFolder } from '../lib/queries'
 import { cancelVoice, setVoiceDeps, stopVoice, useVoice } from '../lib/voice/voice'
@@ -58,10 +59,9 @@ export function VoiceBar() {
           toast(t('daily.savedToDaily'))
           return
         }
-        const route = useUi.getState().route
         const note = await repo.createNote({
           content: text,
-          folderId: await writableFolder(repo, route.kind === 'folder' ? route.id : null),
+          folderId: await writableFolder(repo, listedFolderId()),
         })
         await invalidate()
         useUi.getState().navigate({ kind: 'note', id: note.id })

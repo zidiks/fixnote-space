@@ -9,6 +9,7 @@ import {
   CloudOff,
   HardDrive,
   House,
+  LayoutDashboard,
   RefreshCw,
   Search,
   Settings,
@@ -18,6 +19,7 @@ import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { useTidy } from '../lib/assistant/tidy'
+import { useLayout, useListRoute } from '../lib/layout'
 import { usePlatform } from '../lib/platform'
 import { useCounts, useOpenDaily } from '../lib/queries'
 import { useShortcutLabel } from '../lib/shortcuts'
@@ -63,6 +65,18 @@ export function Sidebar() {
   const counts = useCounts().data
   const openDaily = useOpenDaily()
   const tidyPending = useTidy((s) => s.pending)
+  const layout = useLayout()
+  // The list on screen, or (notes layout) the one beside the open note.
+  const list = useListRoute()
+  const whole = route.kind === 'overview' || route.kind === 'tidy'
+  // Today: the daily note; in the notes layout also what was edited today, listed beside it.
+  const today = () =>
+    openDaily.mutate(undefined, {
+      onSuccess: (n) => {
+        if (layout === 'notes') navigate({ kind: 'today' })
+        navigate({ kind: 'note', id: n.id })
+      },
+    })
   return (
     <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
       <div className="px-2">
@@ -82,16 +96,23 @@ export function Sidebar() {
           icon={House}
           label={t('nav.home')}
           count={counts?.all}
-          active={route.kind === 'home'}
+          active={layout === 'notes' ? list?.kind === 'home' && !whole : route.kind === 'home'}
           onClick={() => navigate({ kind: 'home' })}
         />
         <NavItem
           icon={CalendarDays}
           label={t('sidebar.daily')}
-          onClick={() =>
-            openDaily.mutate(undefined, { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) })
-          }
+          active={layout === 'notes' && list?.kind === 'today' && !whole}
+          onClick={today}
         />
+        {layout === 'notes' ? (
+          <NavItem
+            icon={LayoutDashboard}
+            label={t('layout.overview')}
+            active={route.kind === 'overview'}
+            onClick={() => navigate({ kind: 'overview' })}
+          />
+        ) : null}
         <NavItem
           icon={WandSparkles}
           label={t('tidy.nav')}

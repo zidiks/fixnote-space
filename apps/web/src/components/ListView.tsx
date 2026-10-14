@@ -1,12 +1,15 @@
 import { subtreeCounts } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Folder } from 'lucide-react'
+import { CalendarDays, Folder } from 'lucide-react'
 import { useMemo } from 'react'
 import { type Route, useUi } from '../app/store'
+import { listFilter } from '../lib/layout'
 import { useCreateNote, useFolders } from '../lib/queries'
+import { startOfDay } from '../lib/time'
 import { EmptyState, NoteGrid, ViewMenu } from './NoteGrid'
 
-type ListRoute = Extract<Route, { kind: 'folder' }>
+/** A folder, or Today (reached in this layout only through the history of the notes layout). */
+type ListRoute = Extract<Route, { kind: 'folder' | 'today' }>
 
 export function ListView({ route }: { route: ListRoute }) {
   const { t } = useTranslation()
@@ -14,17 +17,19 @@ export function ListView({ route }: { route: ListRoute }) {
   const createNote = useCreateNote()
   const navigate = useUi((s) => s.navigate)
 
-  const filter = useMemo(() => ({ folderId: route.id }), [route.id])
-  const folder = folders?.find((f) => f.id === route.id)
-  const title = folder?.name ?? ''
+  const filter = useMemo(() => listFilter(route, startOfDay()), [route])
+  const folderId = route.kind === 'folder' ? route.id : null
+  const folder = folders?.find((f) => f.id === folderId)
+  const title = route.kind === 'today' ? t('sidebar.daily') : (folder?.name ?? '')
   const count = folder && folders ? subtreeCounts(folders).get(folder.id) : undefined
-  const empty = t('list.emptyFolder')
+  const empty = route.kind === 'today' ? t('layout.emptyToday') : t('list.emptyFolder')
+  const Icon = route.kind === 'today' ? CalendarDays : Folder
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 pt-6 pb-24">
       <header className="flex items-baseline gap-3">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          <Folder className="size-5 text-muted-foreground" />
+          <Icon className="size-5 text-muted-foreground" />
           {title}
         </h1>
         {count !== undefined ? (
@@ -48,7 +53,7 @@ export function ListView({ route }: { route: ListRoute }) {
           folder?.access !== 'view'
             ? () =>
                 createNote.mutate(
-                  { content: '', folderId: route.id },
+                  { content: '', folderId },
                   { onSuccess: (n) => navigate({ kind: 'note', id: n.id }) },
                 )
             : undefined

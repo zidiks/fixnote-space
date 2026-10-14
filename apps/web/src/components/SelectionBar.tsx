@@ -18,7 +18,14 @@ import {
   WandSparkles,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  createContext,
+  type RefObject,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { findSuggestions, refreshTidyCount } from '../lib/assistant/tidy'
@@ -26,6 +33,39 @@ import { useDb, useRepo } from '../lib/db'
 import { useBackLayer } from '../lib/nav-history'
 import { useFolders, useInvalidateNotes } from '../lib/queries'
 import { endSelection, selectAll, useSelection } from '../lib/selection'
+
+/**
+ * Where the bar is centred: this element (the notes layout: everything right of the sidebar), or
+ * the window when there is none.
+ */
+export const SelectionArea = createContext<RefObject<HTMLElement | null> | null>(null)
+
+/** The element's place across the window, kept up to date while `on`. */
+function useHorizontalBox(ref: RefObject<HTMLElement | null> | null, on: boolean) {
+  const [box, setBox] = useState<{ left: number; width: number } | null>(null)
+  useLayoutEffect(() => {
+    const el = ref?.current
+    if (!on || !el) {
+      setBox(null)
+      return
+    }
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      setBox((b) =>
+        b?.left === r.left && b.width === r.width ? b : { left: r.left, width: r.width },
+      )
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [ref, on])
+  return box
+}
 
 /**
  * What can be done with the notes picked in a list: pin, move, tidy up, delete (with Undo), pick
@@ -41,6 +81,7 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
   const active = useSelection((s) => s.active)
   const ids = useSelection((s) => s.ids)
   const [busy, setBusy] = useState<string | null>(null)
+  const box = useHorizontalBox(useContext(SelectionArea), active)
 
   // Back, Escape or leaving the list stops picking.
   useBackLayer(active, endSelection)
@@ -125,6 +166,7 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
     <div
       role="toolbar"
       aria-label={t('select.count', { count: picked.length })}
+      style={box ? { left: box.left + box.width / 2, maxWidth: box.width - 16 } : undefined}
       className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-1 rounded-full border bg-popover p-1.5 text-sm text-popover-foreground shadow-float animate-in fade-in-0 slide-in-from-bottom-2"
     >
       <Button

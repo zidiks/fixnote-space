@@ -4,6 +4,7 @@ import { Check, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useUi } from '../app/store'
 import { useRepo } from '../lib/db'
+import { listedFolderId } from '../lib/layout'
 import { usePlatform } from '../lib/platform'
 import { useInvalidateNotes, writableFolder } from '../lib/queries'
 import { cancelCall, setCallDeps, stopCall, useCall } from '../lib/voice/call'
@@ -53,10 +54,9 @@ export function CallBar() {
       ...(platform.systemAudio ? { systemAudio: platform.systemAudio } : {}),
       dictating: () => useVoice.getState().status !== 'idle',
       save: async (markdown) => {
-        const route = useUi.getState().route
         const note = await repo.createNote({
           content: markdown,
-          folderId: await writableFolder(repo, route.kind === 'folder' ? route.id : null),
+          folderId: await writableFolder(repo, listedFolderId()),
         })
         await invalidate()
         useUi.getState().navigate({ kind: 'note', id: note.id })

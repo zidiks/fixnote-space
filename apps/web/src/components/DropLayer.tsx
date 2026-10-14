@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useDb, useRepo } from '../lib/db'
 import { droppedMarkdown, dropSink, isExternalDrag } from '../lib/drop'
+import { listedFolderId } from '../lib/layout'
 import { useInvalidateNotes, writableFolder } from '../lib/queries'
 
 const isTextField = (el: EventTarget | null) =>
@@ -74,10 +75,9 @@ export function DropLayer() {
           target.insert(markdown, at)
           return
         }
-        const route = useUi.getState().route
         const note = await notes.createNote({
           content: markdown,
-          folderId: await writableFolder(notes, route.kind === 'folder' ? route.id : null),
+          folderId: await writableFolder(notes, listedFolderId()),
         })
         await refresh()
         useUi.getState().navigate({ kind: 'note', id: note.id })
