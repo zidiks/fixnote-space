@@ -198,11 +198,14 @@ export class NotesRepo {
    * change from another device while the user was typing), the two edits are merged three-way. If
    * they touch the same lines, the edit being typed wins and the other version is kept as a
    * separate conflict copy, so nothing is lost.
+   *
+   * `editedAt`: when the text was written, for a text that was written elsewhere (a shared note's
+   * server copy); the note's time is then that, not now.
    */
   async updateContent(
     id: string,
     content: string,
-    opts: { base?: string } & SharingWrite = {},
+    opts: { base?: string; editedAt?: number } & SharingWrite = {},
   ): Promise<Note> {
     if (!opts.fromSharing) await this.assertWritableNote(id)
     await this.db.transaction(async (tx) => {
@@ -223,6 +226,13 @@ export class NotesRepo {
           WHERE id = ?`,
         [next, deriveTitle(next), toPlainText(next), this.now(), id],
       )
+      // Set after the text, so the trigger (which fills in edited_at when a writer leaves it as it
+      // was) cannot take it back to now. A note is not made after its text was written.
+      if (opts.editedAt !== undefined && next === content)
+        await tx.execute(
+          'UPDATE notes SET edited_at = ?, created_at = min(created_at, ?) WHERE id = ?',
+          [opts.editedAt, opts.editedAt, id],
+        )
     })
     return this.getNoteOrThrow(id)
   }

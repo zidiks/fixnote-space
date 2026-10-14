@@ -120,12 +120,21 @@ export type SaveResult =
 /** The server side (Supabase in the app, a fake in dev and tests). */
 export interface SharedRemote {
   memberships(): Promise<SharedMembership[]>
-  state(sharedId: string): Promise<{ state: string | null; version: number } | null>
+  /**
+   * The note's document. `updatedAt` (ms): when it was last saved, which is when its text last
+   * changed as far as a device that takes it in can tell (null from an older fake).
+   */
+  state(
+    sharedId: string,
+  ): Promise<{ state: string | null; version: number; updatedAt?: number | null } | null>
   /**
    * The versions of these shared notes, without their documents: a sync fetches a document only
-   * when its version moved (documents keep their whole history and grow).
+   * when its version moved (documents keep their whole history and grow). `updatedAt` as in
+   * `state`.
    */
-  versions(sharedIds: string[]): Promise<{ sharedId: string; version: number }[]>
+  versions(
+    sharedIds: string[],
+  ): Promise<{ sharedId: string; version: number; updatedAt?: number | null }[]>
   /** Shares a note (or returns the id it already has); the caller is its owner. */
   share(originNoteId: string, wrappedKey: string): Promise<string>
   /** The invited account accepts; declining is removeMember on oneself. */
@@ -790,22 +799,39 @@ export class SharedNotes {
     // Versions first: a document is fetched only when someone saved it since.
     const docs = await this.db.query<DocRow>('SELECT shared_id FROM shared_docs')
     const versions = new Map(
-      (await this.remote.versions(docs.map((d) => d.shared_id))).map((v) => [
-        v.sharedId,
-        v.version,
-      ]),
+      (await this.remote.versions(docs.map((d) => d.shared_id))).map((v) => [v.sharedId, v]),
     )
     for (const { shared_id } of docs) {
       if (report.unreadable.includes(shared_id)) continue
       try {
-        if (await this.pull(shared_id, versions.get(shared_id) ?? 0)) report.pulled++
+        const server = versions.get(shared_id)
+        if (await this.pull(shared_id, server?.version ?? 0)) report.pulled++
         if (await this.push(shared_id)) report.pushed++
+        else if (server?.updatedAt) await this.settleTime(shared_id, server.updatedAt)
       } catch (err) {
         if (!(err instanceof DecryptionError)) throw err
         report.unreadable.push(shared_id)
       }
     }
     return report
+  }
+
+  /**
+   * A shared note's text is never newer than its last save on the server unless this device has
+   * an edit not saved yet. A time after that save is the time the text was taken in here (older
+   * versions of the app gave a pulled shared note the time of the sync): it goes back to the save.
+   * A minute of slack keeps the clocks of device and server apart.
+   */
+  private async settleTime(sharedId: string, savedAt: number) {
+    await this.locked(() =>
+      this.db.execute(
+        `UPDATE notes SET edited_at = ?, created_at = min(created_at, ?)
+          WHERE shared_id = ? AND deleted_at IS NULL AND edited_at > ?
+            AND EXISTS (SELECT 1 FROM shared_docs d WHERE d.shared_id = notes.shared_id
+                          AND d.dirty = 0 AND d.projected IS notes.content)`,
+        [savedAt, savedAt, sharedId, savedAt + 60_000],
+      ),
+    )
   }
 
   /**
@@ -1209,9 +1235,14 @@ export class SharedNotes {
       let state = absorbed ?? doc.state
       let version = doc.serverVersion
       const newer = remote && remote.version > doc.serverVersion && remote.state
+      // The note's time when its text changes here: when the server's copy was saved if that came
+      // in, else it stays (only the Markdown written from the document differs, or an edit made
+      // here outside the editor, which had its time when it was made).
+      let editedAt: number | null = null
       if (newer && remote.state) {
         try {
           state = merge(state, openSharedState(doc.noteKey, sharedId, remote.state))
+          editedAt = remote.updatedAt ?? this.now()
         } catch (err) {
           // Sealed with a key that is not the note's (a device that went wrong): only the owner
           // may set it right, by saving its copy over it and giving the members the key again.
@@ -1221,7 +1252,7 @@ export class SharedNotes {
         version = remote.version
       }
       if (!state) return false
-      const markdown = await this.writeNote(doc.noteId, state)
+      const markdown = await this.writeNote(doc.noteId, state, editedAt, Boolean(absorbed))
       await this.db.execute(
         `UPDATE shared_docs SET state = ?, server_version = ?, projected = ?,
                 dirty = CASE WHEN ? THEN 1 ELSE dirty END
@@ -1301,12 +1332,29 @@ export class SharedNotes {
     return this.projector.fromMarkdown(doc.state, note.content)
   }
 
-  /** Writes the document's Markdown to its note (if different); returns the Markdown. */
-  private async writeNote(noteId: string, state: Uint8Array): Promise<string> {
+  /**
+   * Writes the document's Markdown to its note (if different); returns the Markdown. The note's
+   * time becomes `editedAt`, or stays as it was when null: taking in a text is not writing it.
+   * `absorbed`: the text also has an edit made here, so the time does not go back before it.
+   */
+  private async writeNote(
+    noteId: string,
+    state: Uint8Array,
+    editedAt: number | null,
+    absorbed = false,
+  ): Promise<string> {
     const markdown = this.projector.toMarkdown(state)
     const note = await this.repo.getNote(noteId)
     if (note && note.content !== markdown)
-      await this.repo.updateContent(noteId, markdown, { fromSharing: true })
+      await this.repo.updateContent(noteId, markdown, {
+        fromSharing: true,
+        editedAt:
+          editedAt === null
+            ? note.updatedAt
+            : absorbed
+              ? Math.max(editedAt, note.updatedAt)
+              : editedAt,
+      })
     return markdown
   }
 
@@ -1335,7 +1383,8 @@ export class SharedNotes {
         let state = now.state
         if (res.state) state = merge(state, openSharedState(now.noteKey, sharedId, res.state))
         if (!state) return true
-        const markdown = await this.writeNote(now.noteId, state)
+        // Someone saved while this device was saving: both edits are recent, theirs just now.
+        const markdown = await this.writeNote(now.noteId, state, this.now(), true)
         await this.db.execute(
           'UPDATE shared_docs SET state = ?, server_version = ?, projected = ?, dirty = 1 WHERE shared_id = ?',
           [state, res.version, markdown, sharedId],

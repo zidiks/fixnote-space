@@ -25,6 +25,12 @@ const toMember = (r: MemberRow): SharedMember => ({
   invitedAt: Date.parse(r.invited_at),
 })
 
+/** When a shared note was last saved (`shared_notes.updated_at`): the time of its text. */
+const savedAt = (v: unknown): number | null => {
+  const ms = Date.parse(String(v))
+  return Number.isFinite(ms) ? ms : null
+}
+
 /**
  * Shared notes and folders on Supabase (supabase/migrations/*_shared_notes.sql,
  * *_shared_invites.sql, *_shared_folders.sql): tables read, RPCs write.
@@ -75,19 +81,28 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
     async state(id) {
       const { data, error } = await client
         .from('shared_notes')
-        .select('state, version')
+        .select('state, version, updated_at')
         .eq('id', id)
         .maybeSingle()
       if (error) throw toError(error)
-      return data ? { state: data.state as string | null, version: Number(data.version) } : null
+      if (!data) return null
+      return {
+        state: data.state as string | null,
+        version: Number(data.version),
+        updatedAt: savedAt(data.updated_at),
+      }
     },
     async versions(ids) {
       if (!ids.length) return []
-      const { data, error } = await client.from('shared_notes').select('id, version').in('id', ids)
+      const { data, error } = await client
+        .from('shared_notes')
+        .select('id, version, updated_at')
+        .in('id', ids)
       if (error) throw toError(error)
-      return ((data ?? []) as { id: string; version: number }[]).map((r) => ({
+      return ((data ?? []) as { id: string; version: number; updated_at: string }[]).map((r) => ({
         sharedId: r.id,
         version: Number(r.version),
+        updatedAt: savedAt(r.updated_at),
       }))
     },
     share: (origin, wrappedKey) =>
