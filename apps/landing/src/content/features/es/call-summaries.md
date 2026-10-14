@@ -1,7 +1,7 @@
 ---
-title: Resumen de llamadas
-metaTitle: 'Graba una llamada y obtén el resumen en tu ordenador: FixNote'
-description: FixNote graba llamadas en Windows y Mac, las transcribe en tu ordenador y escribe un resumen con decisiones y tareas. No guarda ningún archivo de audio.
+title: Resumen de reuniones con IA, sin bot en la llamada
+metaTitle: 'Resumen de reuniones con IA, sin bot en la llamada | FixNote'
+description: 'Ningún bot entra en la llamada: FixNote graba reuniones en Windows y Mac, las transcribe en tu ordenador y escribe un resumen con decisiones y tareas.'
 eyebrow: Llamadas
 intro: ¿Cómo salir de una llamada de Zoom o Telegram con un resumen breve y no con una grabación que nunca volverás a escuchar? FixNote te escucha a ti y a los demás, transcribe en tu ordenador y guarda una nota con decisiones y tareas.
 card:

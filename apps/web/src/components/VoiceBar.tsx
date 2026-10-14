@@ -1,5 +1,5 @@
 import { useTranslation } from '@fixnote/i18n'
-import { Button, isApple, Kbd } from '@fixnote/ui'
+import { Button, Kbd } from '@fixnote/ui'
 import { Check, LoaderCircle, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -10,8 +10,6 @@ import { listedFolderId } from '../lib/layout'
 import { usePlatform } from '../lib/platform'
 import { useInvalidateNotes, writableFolder } from '../lib/queries'
 import { cancelVoice, setVoiceDeps, stopVoice, useVoice } from '../lib/voice/voice'
-
-export const VOICE_KEYS = `${isApple ? '⌘' : 'Ctrl'}+Shift+Space`
 
 function elapsed(ms: number) {
   const s = Math.floor(ms / 1000)

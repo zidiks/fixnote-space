@@ -1,0 +1,178 @@
+query,priority,intent,cluster,url
+приложение для заметок,high,commercial,заметки с ии (главная),/ru/
+приложение для заметок с ии,med,commercial,заметки с ии (главная),/ru/
+заметки с ии,med,commercial,заметки с ии (главная),/ru/
+нейросеть для заметок,med,commercial,заметки с ии (главная),/ru/
+ии заметки,med,commercial,заметки с ии (главная),/ru/
+заметки ai,low,commercial,заметки с ии (главная),/ru/
+заметки с нейросетью,low,commercial,заметки с ии (главная),/ru/
+лучшее приложение для заметок,high,commercial,лучшие приложения для заметок,/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/
+лучшие приложения для заметок,med,commercial,лучшие приложения для заметок,/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/
+лучшее приложение для заметок на пк,med,commercial,лучшие приложения для заметок,/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/
+лучшее приложение для заметок на мак,low,commercial,лучшие приложения для заметок,/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/
+приложение для заметок на пк,high,commercial,заметки для windows,NEW:/ru/windows/
+заметки для windows 10,high,commercial,заметки для windows,NEW:/ru/windows/
+заметки для windows 11,high,commercial,заметки для windows,NEW:/ru/windows/
+заметки на пк,high,commercial,заметки для windows,NEW:/ru/windows/
+заметки на пк скачать,high,commercial,заметки для windows,NEW:/ru/windows/
+заметки для windows,high,commercial,заметки для windows,NEW:/ru/windows/
+программа для заметок,high,commercial,заметки для windows,NEW:/ru/windows/
+приложение для заметок на компьютер,high,commercial,заметки для windows,NEW:/ru/windows/
+приложение для заметок windows,high,commercial,заметки для windows,NEW:/ru/windows/
+приложение для заметок на рабочем столе,med,commercial,заметки для windows,NEW:/ru/windows/
+приложение для заметок на пк бесплатно,med,commercial,заметки для windows,NEW:/ru/windows/
+программа для заметок на пк,med,commercial,заметки для windows,NEW:/ru/windows/
+заметки на рабочий стол,med,commercial,заметки для windows,NEW:/ru/windows/
+скачать приложение для заметок на компьютер,low,commercial,заметки для windows,/ru/download/
+приложение для заметок на компьютер и телефон,low,commercial,синхронизация заметок,/ru/features/sync/
+заметки для mac,low,commercial,заметки для mac,NEW:/ru/mac/
+заметки с шифрованием,low,commercial,зашифрованные заметки,/ru/features/encryption/
+зашифрованные заметки,low,commercial,зашифрованные заметки,/ru/features/encryption/
+приватные заметки,low,commercial,зашифрованные заметки,/ru/features/encryption/
+защищенные заметки,low,commercial,зашифрованные заметки,/ru/features/encryption/
+сквозное шифрование заметок,low,informational,как устроено шифрование,/ru/blog/skvoznoe-shifrovanie-zametok/
+фраза восстановления,low,informational,фраза восстановления,/ru/blog/fraza-vosstanovleniya/
+заметки без интернета,med,commercial,заметки без интернета,/ru/features/offline/
+офлайн заметки,med,commercial,заметки без интернета,/ru/features/offline/
+заметки офлайн,med,commercial,заметки без интернета,/ru/features/offline/
+заметки без регистрации,low,commercial,заметки без интернета,/ru/features/offline/
+заметки без рекламы,low,commercial,заметки без интернета,/ru/features/offline/
+fixnote без интернета ollama,low,informational,fixnote офлайн и локальная модель,/ru/blog/fixnote-bez-interneta/
+голосовые заметки,high,commercial,голосовые заметки,/ru/features/voice-notes/
+заметки с голосовым вводом,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовые заметки в текст,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовые заметки ии,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовой ввод на компьютере,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовой ввод текста на компьютере,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовой ввод для windows,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовой ввод текста windows 10 на русском,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовой ввод текста windows 11 на русском,med,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовой ввод на маке,low,commercial,голосовые заметки,/ru/features/voice-notes/
+голосовой ввод без интернета,med,informational,распознавание речи без интернета,/ru/blog/diktovka-bez-interneta/
+распознавание речи без интернета,med,informational,распознавание речи без интернета,/ru/blog/diktovka-bez-interneta/
+голосовой ввод оффлайн,low,informational,распознавание речи без интернета,/ru/blog/diktovka-bez-interneta/
+диктовка текста,high,informational,распознавание речи без интернета,/ru/blog/diktovka-bez-interneta/
+перевод голоса в текст,high,informational,распознавание речи без интернета,/ru/blog/diktovka-bez-interneta/
+перевод голоса в текст программа,low,commercial,распознавание речи без интернета,/ru/blog/diktovka-bez-interneta/
+диктовка текста на русском,low,informational,распознавание речи без интернета,/ru/blog/diktovka-bez-interneta/
+расшифровка созвона,med,commercial,расшифровка созвона,/ru/features/call-summaries/
+расшифровка встречи,med,commercial,расшифровка созвона,/ru/features/call-summaries/
+саммари встречи,high,commercial,расшифровка созвона,/ru/features/call-summaries/
+итоги встречи,med,commercial,расшифровка созвона,/ru/features/call-summaries/
+конспект встречи,med,commercial,расшифровка созвона,/ru/features/call-summaries/
+ai конспект встречи,low,commercial,расшифровка созвона,/ru/features/call-summaries/
+расшифровка звонка,med,commercial,расшифровка созвона,/ru/features/call-summaries/
+расшифровка звонка в текст,med,commercial,расшифровка созвона,/ru/features/call-summaries/
+расшифровка записи встречи,low,commercial,расшифровка созвона,/ru/features/call-summaries/
+расшифровка zoom встречи,low,commercial,расшифровка созвона,/ru/features/call-summaries/
+транскрибация созвона,low,commercial,расшифровка созвона,/ru/features/call-summaries/
+протокол встречи нейросеть,low,commercial,расшифровка созвона,/ru/features/call-summaries/
+запись созвона,med,informational,как записать созвон,/ru/blog/itogi-vstrechi-na-kompyutere/
+как сделать запись созвона в зуме,med,informational,как записать созвон,/ru/blog/itogi-vstrechi-na-kompyutere/
+запись созвона в зум,low,informational,как записать созвон,/ru/blog/itogi-vstrechi-na-kompyutere/
+запись созвона в гугл мит,low,informational,как записать созвон,/ru/blog/itogi-vstrechi-na-kompyutere/
+запись звонка на компьютере,med,informational,как записать созвон,/ru/blog/itogi-vstrechi-na-kompyutere/
+запись созвона в телеграм,low,informational,как записать созвон,/ru/blog/itogi-vstrechi-na-kompyutere/
+распознавание текста с картинки,high,commercial,текст с картинки,/ru/features/text-in-images/
+текст с картинки,high,commercial,текст с картинки,/ru/features/text-in-images/
+распознать текст с фото,high,commercial,текст с картинки,/ru/features/text-in-images/
+скопировать текст с картинки,high,commercial,текст с картинки,/ru/features/text-in-images/
+текст с картинки скопировать,med,commercial,текст с картинки,/ru/features/text-in-images/
+распознавание текста с картинки программа на пк,low,commercial,текст с картинки,/ru/features/text-in-images/
+поиск текста на картинке,low,informational,поиск по тексту на картинках,/ru/blog/tekst-s-kartinok/
+поиск по скриншотам,low,informational,поиск по тексту на картинках,/ru/blog/tekst-s-kartinok/
+заметки в телеграм,med,commercial,бот для заметок в telegram,/ru/features/telegram/
+заметки в телеграмм,med,commercial,бот для заметок в telegram,/ru/features/telegram/
+бот для заметок в телеграмме,med,commercial,бот для заметок в telegram,/ru/features/telegram/
+телеграм бот для заметок,med,commercial,бот для заметок в telegram,/ru/features/telegram/
+мои заметки в телеграм,low,commercial,бот для заметок в telegram,/ru/features/telegram/
+заметки себе в телеграм,low,commercial,бот для заметок в telegram,/ru/features/telegram/
+как сохранить сообщения в телеграмме,med,informational,как сохранить сообщения telegram,/ru/blog/zametki-iz-telegram/
+сохранить сообщения телеграм,med,informational,как сохранить сообщения telegram,/ru/blog/zametki-iz-telegram/
+как сохранить голосовые сообщения в телеграмме,med,informational,как сохранить сообщения telegram,/ru/blog/zametki-iz-telegram/
+как сделать заметки в телеграмме,low,informational,как сохранить сообщения telegram,/ru/blog/zametki-iz-telegram/
+аналог notion,high,comparison,аналог notion,/ru/vs/notion/
+альтернатива notion,high,comparison,аналог notion,/ru/vs/notion/
+аналог notion в россии,high,comparison,аналог notion,/ru/vs/notion/
+альтернатива notion в россии,med,comparison,аналог notion,/ru/vs/notion/
+аналог notion на русском,med,comparison,аналог notion,/ru/vs/notion/
+аналог notion бесплатный,med,comparison,аналог notion,/ru/vs/notion/
+аналог notion для личного пользования,low,comparison,аналог notion,/ru/vs/notion/
+аналоги notion,med,comparison,аналоги notion (список),NEW:/ru/alternatives/notion/
+лучшая альтернатива notion,low,comparison,аналоги notion (список),NEW:/ru/alternatives/notion/
+аналог evernote,med,comparison,аналог evernote,/ru/vs/evernote/
+альтернатива evernote,med,comparison,аналог evernote,/ru/vs/evernote/
+бесплатный аналог evernote,med,comparison,аналог evernote,/ru/vs/evernote/
+аналог evernote в россии,low,comparison,аналог evernote,/ru/vs/evernote/
+экспорт заметок из evernote,low,informational,перенос заметок,/ru/blog/pereezd-iz-notion-bear-obsidian/
+аналог obsidian,high,comparison,аналог obsidian,/ru/vs/obsidian/
+альтернатива obsidian,med,comparison,аналог obsidian,/ru/vs/obsidian/
+аналог obsidian в россии,low,comparison,аналог obsidian,/ru/vs/obsidian/
+notion или obsidian,high,comparison,notion или obsidian,NEW:/ru/blog/notion-ili-obsidian/
+obsidian или notion,med,comparison,notion или obsidian,NEW:/ru/blog/notion-ili-obsidian/
+что лучше notion или obsidian,low,comparison,notion или obsidian,NEW:/ru/blog/notion-ili-obsidian/
+obsidian или joplin,low,comparison,аналог joplin,/ru/vs/joplin/
+аналог joplin,med,comparison,аналог joplin,/ru/vs/joplin/
+joplin аналоги,low,comparison,аналог joplin,/ru/vs/joplin/
+заметки apple на windows,high,comparison,аналог apple notes для windows,/ru/vs/apple-notes/
+заметки айфон на пк,med,comparison,аналог apple notes для windows,/ru/vs/apple-notes/
+заметки apple для windows скачать,med,comparison,аналог apple notes для windows,/ru/vs/apple-notes/
+как открыть заметки apple на windows,low,informational,аналог apple notes для windows,/ru/vs/apple-notes/
+заметки ios на windows,low,comparison,аналог apple notes для windows,/ru/vs/apple-notes/
+аналог apple notes,med,comparison,аналог apple notes для windows,/ru/vs/apple-notes/
+заметки с айфона на компьютер,med,informational,аналог apple notes для windows,/ru/vs/apple-notes/
+перенести заметки,low,informational,перенос заметок,/ru/blog/pereezd-iz-notion-bear-obsidian/
+как перенести из notion в obsidian,low,informational,перенос заметок,/ru/blog/pereezd-iz-notion-bear-obsidian/
+экспорт заметок mac,low,informational,перенос заметок,/ru/blog/pereezd-iz-notion-bear-obsidian/
+импорт заметок из notion,low,commercial,импорт заметок,/ru/features/import-export/
+импорт из apple notes,low,commercial,импорт заметок,/ru/features/import-export/
+mcp сервер,high,informational,что такое mcp,NEW:/ru/blog/chto-takoe-mcp-server/
+mcp сервер это,high,informational,что такое mcp,NEW:/ru/blog/chto-takoe-mcp-server/
+mcp сервер что это,med,informational,что такое mcp,NEW:/ru/blog/chto-takoe-mcp-server/
+mcp сервер это простыми словами,med,informational,что такое mcp,NEW:/ru/blog/chto-takoe-mcp-server/
+mcp сервер для заметок,low,commercial,mcp-сервер для заметок,/ru/features/mcp/
+mcp серверы для cursor,low,commercial,mcp-сервер для заметок,/ru/features/mcp/
+как подключить заметки к claude,low,informational,подключение к claude и cursor,/ru/blog/claude-i-cursor-chitayut-zametki/
+ежедневник,high,commercial,заметка дня,/ru/features/daily-notes/
+ежедневник онлайн,high,commercial,заметка дня,/ru/features/daily-notes/
+заметки ежедневник,med,commercial,заметка дня,/ru/features/daily-notes/
+заметка дня,med,commercial,заметка дня,/ru/features/daily-notes/
+повторяющиеся задачи,high,informational,повторяющиеся задачи,/ru/blog/zametka-dnya-i-povtoryayushchiesya-zadachi/
+повторяющиеся задачи в notion,low,informational,повторяющиеся задачи,/ru/blog/zametka-dnya-i-povtoryayushchiesya-zadachi/
+заметки с напоминанием,med,commercial,повторяющиеся задачи,/ru/blog/zametka-dnya-i-povtoryayushchiesya-zadachi/
+заметки с галочками,low,commercial,чек-листы и таблицы,/ru/features/checklists-and-tables/
+заметки с таблицами,med,commercial,чек-листы и таблицы,/ru/features/checklists-and-tables/
+совместные заметки,med,commercial,совместные заметки,/ru/features/shared-notes/
+общие заметки,med,commercial,совместные заметки,/ru/features/shared-notes/
+заметки с общим доступом,med,commercial,совместные заметки,/ru/features/shared-notes/
+совместные заметки приложение,med,commercial,совместные заметки,/ru/features/shared-notes/
+общие заметки онлайн,med,commercial,совместные заметки,/ru/features/shared-notes/
+приложение для общих заметок для двоих,med,commercial,совместные заметки,/ru/features/shared-notes/
+приложение для заметок с общим доступом,med,commercial,совместные заметки,/ru/features/shared-notes/
+как сделать совместные заметки,low,informational,как пригласить в заметку,/ru/blog/obshchie-zametki-i-papki/
+поделиться заметкой,med,commercial,ссылка на заметку,/ru/features/share-links/
+поделиться заметкой по ссылке,low,commercial,ссылка на заметку,/ru/features/share-links/
+как поделиться заметкой,low,informational,как создать ссылку на заметку,/ru/blog/ssylka-na-zametku/
+приложение для заметок с синхронизацией,med,commercial,синхронизация заметок,/ru/features/sync/
+приложение для заметок с синхронизацией между устройствами,med,commercial,синхронизация заметок,/ru/features/sync/
+заметки с синхронизацией,med,commercial,синхронизация заметок,/ru/features/sync/
+синхронизация заметок,med,commercial,синхронизация заметок,/ru/features/sync/
+заметки с синхронизацией android и пк,low,commercial,синхронизация заметок,/ru/features/sync/
+поиск по заметкам,low,commercial,поиск по заметкам,/ru/features/search/
+поиск по заметкам на разных языках,low,informational,поиск на трёх языках,/ru/blog/poisk-po-zametkam-na-treh-yazykah/
+второй мозг,high,informational,второй мозг,NEW:/ru/blog/vtoroj-mozg-v-zametkah/
+второй мозг obsidian,low,informational,второй мозг,NEW:/ru/blog/vtoroj-mozg-v-zametkah/
+второй мозг ии,low,informational,второй мозг,NEW:/ru/blog/vtoroj-mozg-v-zametkah/
+как вести заметки,low,informational,как вести заметки,/ru/blog/kak-vesti-zametki-chtoby-nahodit/
+заметки markdown,low,commercial,markdown,/ru/features/checklists-and-tables/
+разложить заметки по папкам,low,commercial,навести порядок с ии,/ru/features/tidy-up/
+навести порядок в заметках,low,informational,как навести порядок,/ru/blog/navesti-poryadok/
+папки для заметок,low,commercial,папки,/ru/features/folders/
+ии ассистент для заметок,low,commercial,ии-ассистент для заметок,/ru/features/ask-your-notes/
+вопросы к заметкам ии,low,commercial,ии-ассистент для заметок,/ru/features/ask-your-notes/
+написание заметки с помощью ии,low,commercial,правка текста с ии,/ru/features/ai-edits/
+переписать текст нейросетью,low,commercial,правка текста с ии,/ru/features/ai-edits/
+какую нейросеть выбрать,low,informational,модель для ассистента,/ru/blog/kakuyu-model-vybrat-dlya-assistenta/
+ollama для заметок,low,informational,модель для ассистента,/ru/blog/kakuyu-model-vybrat-dlya-assistenta/
+горячие клавиши fixnote,low,navigational,горячие клавиши,/ru/blog/goryachie-klavishi/
+скачать fixnote,low,navigational,скачать,/ru/download/

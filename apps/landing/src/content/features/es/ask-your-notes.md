@@ -1,6 +1,6 @@
 ---
-title: Pregunta a tus notas
-metaTitle: 'Pregunta a tus notas con IA: un asistente que cita sus fuentes'
+title: Un asistente de IA que responde con tus notas
+metaTitle: 'Asistente de notas con IA que cita sus fuentes | FixNote'
 description: El asistente de FixNote encuentra la respuesta en tus notas, enlaza las notas que usó y puede crear y editar notas por ti. Con FixNote AI, tu clave u Ollama.
 eyebrow: Asistente
 intro: Pregunta con tus palabras qué acordaste con el contratista o dónde apuntaste la contraseña del router. El asistente encuentra las notas, responde y te muestra de dónde sacó la respuesta.

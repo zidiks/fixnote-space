@@ -229,6 +229,58 @@ describe('SharedNotes', () => {
     expect(server.notes.get(id)?.version).toBe(before)
   })
 
+  it('a shared note has the time its text was saved, not when it reached a device', async () => {
+    const day = 86_400_000
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const bob = await (await account('bob', 'bob@x.io')).device()
+    offset = -10 * day
+    const note = await ann.repo.createNote({ content: 'Plan', createdAt: clock() })
+    const id = await ann.shared.share(note.id)
+    const shared = (await ann.repo.getNote(note.id))?.updatedAt
+    const saved = server.notes.get(id)?.updatedAt
+    await ann.shared.invite(id, 'bob@x.io', 'edit')
+
+    // Bob joins ten days later: his copy is as old as the text.
+    offset = 0
+    const bobNote = await bob.shared.accept(id)
+    expect(saved).toBeLessThan(Date.now() - 9 * day)
+    expect(await bob.repo.getNote(bobNote)).toMatchObject({
+      content: 'Plan',
+      createdAt: saved,
+      updatedAt: saved,
+    })
+    // Syncing again changes nothing, for the owner either.
+    await bob.shared.sync()
+    await ann.shared.sync()
+    expect((await bob.repo.getNote(bobNote))?.updatedAt).toBe(saved)
+    expect((await ann.repo.getNote(note.id))?.updatedAt).toBe(shared)
+
+    // Ann's next edit reaches Bob with the time it was saved, however late he syncs.
+    offset = -5 * day
+    await typeInEditor(ann, id, (t) => t.insert(t.length, ' v2'))
+    await ann.shared.sync()
+    const saved2 = server.notes.get(id)?.updatedAt
+    offset = 0
+    await bob.shared.sync()
+    expect(await bob.repo.getNote(bobNote)).toMatchObject({ content: 'Plan v2', updatedAt: saved2 })
+
+    // A copy that got the time of a sync from an older version of the app gets the save's back.
+    await bob.db.execute('UPDATE notes SET edited_at = ?, created_at = ? WHERE id = ?', [
+      Date.now(),
+      Date.now(),
+      bobNote,
+    ])
+    await bob.shared.sync()
+    expect(await bob.repo.getNote(bobNote)).toMatchObject({ updatedAt: saved2, createdAt: saved2 })
+    // Not while an edit made here waits to be saved.
+    await typeInEditor(bob, id, (t) => t.insert(0, 'Our '))
+    const typed = (await bob.repo.getNote(bobNote))?.updatedAt
+    expect(typed).toBeGreaterThan(Date.now() - day)
+    await bob.shared.sync()
+    await bob.shared.sync()
+    expect((await bob.repo.getNote(bobNote))?.updatedAt).toBe(typed)
+  })
+
   it('a sync fetches a document only when someone saved it since', async () => {
     const ann = await (await account('ann', 'ann@x.io')).device()
     const bob = await (await account('bob', 'bob@x.io')).device()

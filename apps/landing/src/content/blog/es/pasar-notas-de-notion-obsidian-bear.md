@@ -1,7 +1,8 @@
 ---
-title: "Pasar notas de Notion, Obsidian, Bear y Notas de Apple a FixNote"
+title: "Cómo pasar tus notas de Notion, Obsidian y Bear a FixNote"
 description: "Importar a FixNote paso a paso: qué exportar de Notion, Obsidian, Bear y Notas de Apple, qué se traspasa, qué se queda fuera y cómo exportar a Markdown."
 date: 2026-10-01
+updated: 2026-10-11
 translationKey: import
 faq:
   - q: "¿Puedo importar mis páginas de Notion a FixNote?"

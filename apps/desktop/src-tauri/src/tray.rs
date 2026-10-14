@@ -52,9 +52,11 @@ pub fn create(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-fn chosen(app: &AppHandle, id: &str) {
+/// A tray menu item or a system-wide shortcut (shortcuts.rs) with this action.
+pub fn chosen(app: &AppHandle, id: &str) {
     match id {
         "open" => show(app),
+        "toggle" => toggle(app),
         "quit" => quit(app),
         action => {
             // A call starts in the background (the person is in the call app); everything else,
@@ -73,6 +75,21 @@ pub fn show(app: &AppHandle) {
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
+    }
+}
+
+/// Hides the window when it is in front, else brings it back.
+fn toggle(app: &AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let in_front = window.is_visible().unwrap_or(false)
+        && window.is_focused().unwrap_or(false)
+        && !window.is_minimized().unwrap_or(false);
+    if in_front {
+        let _ = window.hide();
+    } else {
+        show(app);
     }
 }
 

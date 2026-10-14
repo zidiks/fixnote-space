@@ -1,8 +1,8 @@
 ---
-title: 'Search Notes in Several Languages: How FixNote Finds Them'
+title: 'Search notes in several languages: how FixNote finds them'
 description: 'How to find a note when you forget which language you wrote it in: FixNote keyword search with transliteration, on-device search by meaning, and the assistant.'
 date: 2026-09-22
-updated: 2026-10-09
+updated: 2026-10-11
 translationKey: search
 faq:
   - q: Does search find a word written in Latin letters when I type it in Cyrillic?

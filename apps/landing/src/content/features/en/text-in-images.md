@@ -1,6 +1,6 @@
 ---
-title: Text in images
-metaTitle: 'Search the text in screenshots and photos: OCR in FixNote'
+title: 'OCR in your notes: find the text in images'
+metaTitle: 'OCR notes app: find text in screenshots | FixNote'
 description: FixNote reads the text in your screenshots and photos on the device, so search finds an image by the words in it. Reads English, Russian and Spanish.
 eyebrow: OCR
 intro: Took a screenshot of a booking number and now can't find it? FixNote reads the text in the images of your notes, and search finds them by the words in the picture.

@@ -214,9 +214,10 @@ Markdown in `src/content/blog/<lang>/<slug>.md`; translations of one post share 
 The build also writes the sitemap and an RSS feed per language.
 
 `pnpm --filter @fixnote/landing dev` serves it on http://localhost:4321. To deploy, create a second
-Cloudflare Worker from the same repository with root directory `apps/landing`, build command
-`pnpm install --frozen-lockfile && pnpm --filter @fixnote/landing build` and deploy command
-`npx wrangler deploy`, then add `fixnote.space` to it. Download buttons link to
+Cloudflare Worker (`fixnote-space-landing`) from the same repository with root directory
+`apps/landing`, build command `pnpm install --frozen-lockfile && pnpm --filter @fixnote/landing build`
+and deploy command `npx wrangler deploy && node indexnow.mjs` (sends new and changed pages to
+IndexNow), then add `fixnote.space` to it. Search and analytics setup: `docs/seo/SETUP.md`. Download buttons link to
 `/download/windows`, `/download/mac-arm` and `/download/mac-intel`, which `public/_redirects` sends
 to the latest GitHub release's installers.
 

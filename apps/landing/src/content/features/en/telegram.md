@@ -1,6 +1,6 @@
 ---
-title: Notes from Telegram
-metaTitle: 'Save Telegram messages as notes with the FixNote bot'
+title: Telegram notes bot
+metaTitle: 'Telegram notes bot: save messages as notes | FixNote'
 description: Send or forward text, voice messages and photos to the FixNote bot in Telegram and they become notes on your device. The bot seals them and cannot read them.
 eyebrow: Telegram
 intro: Do you send things to your Saved Messages in Telegram and then never find them again? Send or forward a message to the FixNote bot and it becomes a note in the app, whether it is text, a voice message or a photo.

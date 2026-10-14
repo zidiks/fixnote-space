@@ -1,7 +1,8 @@
 ---
-title: 'AI Assistant for Notes: How FixNote Searches, Answers and Edits'
+title: 'How the FixNote AI assistant searches, answers and edits notes'
 description: 'What the FixNote assistant does with your notes: how it searches and cites sources, what it can change, when it asks first and how to undo its edits.'
 date: 2026-10-08
+updated: 2026-10-11
 translationKey: assistant-agent
 faq:
   - q: Can the AI delete a note without asking?

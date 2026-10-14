@@ -1,6 +1,6 @@
 ---
-title: Nota del día
-metaTitle: 'Nota diaria y tareas recurrentes: tu diario de notas en FixNote'
+title: Nota diaria con tareas recurrentes
+metaTitle: 'Nota diaria con tareas recurrentes | FixNote'
 description: Una nota por día. Ctrl+D abre la de hoy, las tareas pendientes pasan al día siguiente con un clic y las recurrentes aparecen solas en los días que tocan.
 eyebrow: Cada día
 intro: ¿Dónde apuntas una tarea pequeña, un número de pedido o una idea tras una llamada sin crear una nota solo para eso? La nota del día reúne todo lo pequeño en la página de hoy, trae las tareas sin terminar y añade sola las que se repiten.

@@ -323,6 +323,10 @@ export class SyncEngine {
         r.id,
       ],
     )
+    // The trigger fills in edited_at when a writer leaves it as it was, which a new text whose time
+    // happens to equal the old one looks like: set it again after the text.
+    if (content !== local.content && editedAt === localEdited)
+      await tx.execute('UPDATE notes SET edited_at = ? WHERE id = ?', [editedAt, r.id])
   }
 
   /** A folder id if it exists locally; otherwise null (the note shows in Inbox until it arrives). */

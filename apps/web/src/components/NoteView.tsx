@@ -46,6 +46,7 @@ import {
   useNote,
   useSetPinned,
 } from '../lib/queries'
+import { useShortcutLabel } from '../lib/shortcuts'
 import { formatRelative } from '../lib/time'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { ConflictBanner } from './ConflictBanner'
@@ -54,10 +55,10 @@ import { NoteEditor, type NoteEditorHandle, type SaveState } from './editor/Note
 import { LiveBar, useSharedLive } from './LiveBar'
 import { NewFolderDialog } from './NewFolderDialog'
 import { ShareDialog } from './ShareDialog'
-import { VOICE_KEYS } from './VoiceBar'
 
 export function NoteView({ id }: { id: string }) {
   const { t, i18n } = useTranslation()
+  const voiceKeys = useShortcutLabel('voice')
   const repo = useRepo()
   const { tidy, audit } = useDb()
   const qc = useQueryClient()
@@ -174,7 +175,9 @@ export function NoteView({ id }: { id: string }) {
                     <Mic />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>{t('voice.dictateHint', { keys: VOICE_KEYS })}</TooltipContent>
+                <TooltipContent>
+                  {voiceKeys ? t('voice.dictateHint', { keys: voiceKeys }) : t('voice.dictate')}
+                </TooltipContent>
               </Tooltip>
 
               <Tooltip>

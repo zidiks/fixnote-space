@@ -1,8 +1,8 @@
 ---
-title: 'Notas con cifrado de extremo a extremo: cómo funciona en FixNote'
+title: 'Cómo funciona el cifrado de extremo a extremo en FixNote'
 description: 'Una frase de 12 palabras, una clave nueva por versión de cada nota y un servidor que solo guarda texto cifrado: qué ve FixNote y qué pasa si pierdes la frase.'
 date: 2026-09-18
-updated: 2026-10-09
+updated: 2026-10-11
 translationKey: e2ee
 faq:
   - q: ¿Puede FixNote leer mis notas?

@@ -1,6 +1,6 @@
 ---
 title: Checklists and tables
-metaTitle: 'Checklists and tables in your notes: to-do lists in FixNote'
+metaTitle: 'Checklists and tables in your notes | FixNote'
 description: Checklists with nested items and tables right inside a FixNote note. The note card shows how many tasks are done, and everything is stored as plain Markdown.
 eyebrow: Lists
 intro: Where do you keep a shopping list, a renovation plan or a price comparison without opening a separate app for each? A FixNote note can hold a checklist with nested items and a table, and it all stays plain Markdown.

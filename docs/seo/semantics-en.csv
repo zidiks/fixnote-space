@@ -1,0 +1,196 @@
+query,priority,intent,cluster,url
+ai note taking app,high,commercial,ai note-taking app (home),/
+ai notes app,high,commercial,ai note-taking app (home),/
+note taking app with ai,high,commercial,ai note-taking app (home),/
+ai notes taking app,high,commercial,ai note-taking app (home),/
+ai note taking app free,high,commercial,ai note-taking app (home),/
+ai notes app free,med,commercial,ai note-taking app (home),/
+note taking app with ai integration,low,commercial,ai note-taking app (home),/
+ai notes app for mac,low,commercial,ai note-taking app (home),/
+ai notes app windows,low,commercial,ai note-taking app (home),/
+private ai notes app,low,commercial,ai note-taking app (home),/
+best ai notes app,high,commercial,best ai note-taking apps,/blog/best-ai-note-taking-apps/
+best note taking app with ai,high,commercial,best ai note-taking apps,/blog/best-ai-note-taking-apps/
+best ai notes app free,med,commercial,best ai note-taking apps,/blog/best-ai-note-taking-apps/
+best ai notes app reddit,low,commercial,best ai note-taking apps,/blog/best-ai-note-taking-apps/
+ai assistant for notes,med,commercial,ai assistant for notes,/features/ask-your-notes/
+ai assistant for note taking,med,commercial,ai assistant for notes,/features/ask-your-notes/
+chat with your notes,med,commercial,ai assistant for notes,/features/ask-your-notes/
+chat with notes ai,med,commercial,ai assistant for notes,/features/ask-your-notes/
+notes app with ai assistant,low,commercial,ai assistant for notes,/features/ask-your-notes/
+ai help with notes,low,commercial,ai assistant for notes,/features/ask-your-notes/
+how the ai assistant edits notes,low,informational,assistant how-to,/blog/ai-assistant-for-notes/
+ai text editing in notes,low,commercial,ai text edits,/features/ai-edits/
+rewrite text with ai,low,commercial,ai text edits,/features/ai-edits/
+notes app for windows,high,commercial,notes app for windows,NEW:/windows/
+note taking app for windows,high,commercial,notes app for windows,NEW:/windows/
+notes app for pc,high,commercial,notes app for windows,NEW:/windows/
+notes app for windows 11,high,commercial,notes app for windows,NEW:/windows/
+notes app for windows 10,high,commercial,notes app for windows,NEW:/windows/
+notes app for windows free,high,commercial,notes app for windows,NEW:/windows/
+notes app for windows desktop,med,commercial,notes app for windows,NEW:/windows/
+best note taking app for windows,high,commercial,notes app for windows,NEW:/windows/
+note taking app for windows free,med,commercial,notes app for windows,NEW:/windows/
+notes app for pc free,med,commercial,notes app for windows,NEW:/windows/
+markdown notes app windows,med,commercial,notes app for windows,NEW:/windows/
+is there a notes app for windows,low,informational,notes app for windows,NEW:/windows/
+does windows have a notes app,low,informational,notes app for windows,NEW:/windows/
+note taking app for windows and mac,med,commercial,notes app for windows,NEW:/windows/
+notes app for mac,high,commercial,notes app for mac,NEW:/mac/
+markdown notes app mac,low,commercial,notes app for mac,NEW:/mac/
+notes app for windows download,med,navigational,download,/download/
+end to end encrypted notes app,high,commercial,encrypted notes app,/features/encryption/
+encrypted notes app,high,commercial,encrypted notes app,/features/encryption/
+end to end encrypted notes,med,commercial,encrypted notes app,/features/encryption/
+end to end encrypted note taking app,med,commercial,encrypted notes app,/features/encryption/
+private notes app,high,commercial,encrypted notes app,/features/encryption/
+secure notes app,high,commercial,encrypted notes app,/features/encryption/
+encrypted notes app windows,med,commercial,encrypted notes app,/features/encryption/
+encrypted notes app mac,med,commercial,encrypted notes app,/features/encryption/
+encrypted notes app pc,med,commercial,encrypted notes app,/features/encryption/
+best end to end encrypted notes app,med,commercial,encrypted notes app,/features/encryption/
+is there an encrypted notes app,low,informational,encrypted notes app,/features/encryption/
+how end to end encryption works for notes,low,informational,how note encryption works,/blog/end-to-end-encrypted-notes/
+are apple notes end to end encrypted,med,informational,how note encryption works,/blog/end-to-end-encrypted-notes/
+recovery phrase notes app,low,informational,recovery phrase,/blog/recovery-phrase/
+offline notes app,high,commercial,offline notes app,/features/offline/
+offline notes app windows,med,commercial,offline notes app,/features/offline/
+offline notes app for windows,med,commercial,offline notes app,/features/offline/
+notes app for windows offline,med,commercial,offline notes app,/features/offline/
+encrypted offline notes app,low,commercial,offline notes app,/features/offline/
+notes app no account,low,commercial,offline notes app,/features/offline/
+use ai notes offline with ollama,low,informational,fixnote offline + ollama,/blog/offline-notes-app/
+voice notes app,high,commercial,voice to text notes,/features/voice-notes/
+voice to text notes app,high,commercial,voice to text notes,/features/voice-notes/
+voice to text notes,high,commercial,voice to text notes,/features/voice-notes/
+voice to text note taking app,high,commercial,voice to text notes,/features/voice-notes/
+voice notes app free,med,commercial,voice to text notes,/features/voice-notes/
+ai voice notes app,med,commercial,voice to text notes,/features/voice-notes/
+voice notes windows app,med,commercial,voice to text notes,/features/voice-notes/
+dictation app windows,high,commercial,voice to text notes,/features/voice-notes/
+dictation app for windows 10,med,commercial,voice to text notes,/features/voice-notes/
+speech to text offline,high,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+offline dictation,high,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+offline dictation software,high,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+speech to text offline software,high,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+offline dictation app,med,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+speech to text offline windows,med,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+offline speech to text software for windows,med,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+windows 11 offline speech to text,low,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+offline dictation software for windows,low,informational,offline speech to text,/blog/offline-speech-to-text-dictation/
+meeting notes without bot,med,commercial,bot-free meeting notes,/features/call-summaries/
+bot free meeting notes,med,commercial,bot-free meeting notes,/features/call-summaries/
+bot free meeting note taker,med,commercial,bot-free meeting notes,/features/call-summaries/
+bot free meeting transcription,med,commercial,bot-free meeting notes,/features/call-summaries/
+bot free ai meeting notes,med,commercial,bot-free meeting notes,/features/call-summaries/
+no bot meeting note taker ai,med,commercial,bot-free meeting notes,/features/call-summaries/
+ai meeting notes without bot,med,commercial,bot-free meeting notes,/features/call-summaries/
+meeting transcription without bot,low,commercial,bot-free meeting notes,/features/call-summaries/
+call summary ai,high,commercial,bot-free meeting notes,/features/call-summaries/
+call transcription ai,high,commercial,bot-free meeting notes,/features/call-summaries/
+meeting transcription app,high,commercial,bot-free meeting notes,/features/call-summaries/
+meeting transcription software,high,commercial,bot-free meeting notes,/features/call-summaries/
+meeting transcription ai,high,commercial,bot-free meeting notes,/features/call-summaries/
+ai notes app for meetings,med,commercial,bot-free meeting notes,/features/call-summaries/
+call transcription app,med,commercial,bot-free meeting notes,/features/call-summaries/
+call transcription software,med,commercial,bot-free meeting notes,/features/call-summaries/
+meeting transcription,high,informational,how to transcribe a meeting,/blog/call-transcription-and-summary/
+call transcription,high,informational,how to transcribe a meeting,/blog/call-transcription-and-summary/
+transcribe zoom call,high,informational,how to transcribe a meeting,/blog/call-transcription-and-summary/
+how to transcribe a meeting,med,informational,how to transcribe a meeting,/blog/call-transcription-and-summary/
+how to transcribe a recorded meeting,low,informational,how to transcribe a meeting,/blog/call-transcription-and-summary/
+transcribe meetings locally,low,informational,how to transcribe a meeting,/blog/call-transcription-and-summary/
+meeting transcription zoom,low,informational,how to transcribe a meeting,/blog/call-transcription-and-summary/
+ocr notes app,med,commercial,ocr notes app,/features/text-in-images/
+text from image,high,commercial,ocr notes app,/features/text-in-images/
+ocr notepad,low,commercial,ocr notes app,/features/text-in-images/
+evernote alternative with ocr,low,comparison,ocr notes app,/features/text-in-images/
+search text in images,med,informational,search text in images,/blog/search-text-in-images/
+search text in image,med,informational,search text in images,/blog/search-text-in-images/
+search text in images windows,low,informational,search text in images,/blog/search-text-in-images/
+find text in images,low,informational,search text in images,/blog/search-text-in-images/
+search words in images,low,informational,search text in images,/blog/search-text-in-images/
+telegram notes bot,med,commercial,telegram notes bot,/features/telegram/
+telegram note taking bot,low,commercial,telegram notes bot,/features/telegram/
+telegram notes app,low,commercial,telegram notes bot,/features/telegram/
+save telegram messages,med,informational,save telegram messages,/blog/save-telegram-messages-to-notes/
+telegram save messages bot,med,informational,save telegram messages,/blog/save-telegram-messages-to-notes/
+how do i save voice messages on telegram,low,informational,save telegram messages,/blog/save-telegram-messages-to-notes/
+notion alternative,high,comparison,notion alternative,/vs/notion/
+notion alternatives,high,comparison,notion alternatives (list),NEW:/alternatives/notion/
+notion alternative free,high,comparison,notion alternative,/vs/notion/
+notion alternative offline,high,comparison,notion alternative,/vs/notion/
+notion alternative that works offline,med,comparison,notion alternative,/vs/notion/
+notion alternative personal use,med,comparison,notion alternative,/vs/notion/
+local notion alternative,low,comparison,notion alternative,/vs/notion/
+notion alternative with mcp,low,comparison,notion alternative,/vs/notion/
+notion alternative no ai,low,comparison,notion alternative,/vs/notion/
+notion vs obsidian,high,comparison,notion vs obsidian,NEW:/blog/notion-vs-obsidian/
+obsidian vs notion,high,comparison,notion vs obsidian,NEW:/blog/notion-vs-obsidian/
+evernote alternative,high,comparison,evernote alternative,/vs/evernote/
+evernote alternative free,high,comparison,evernote alternative,/vs/evernote/
+evernote vs notion,med,comparison,evernote alternative,/vs/evernote/
+evernote vs obsidian,med,comparison,evernote alternative,/vs/evernote/
+evernote vs apple notes,low,comparison,evernote alternative,/vs/evernote/
+obsidian alternatives,high,comparison,obsidian alternative,/vs/obsidian/
+obsidian alternative with ai,med,comparison,obsidian alternative,/vs/obsidian/
+obsidian alternative with sync,med,comparison,obsidian alternative,/vs/obsidian/
+obsidian vs joplin,med,comparison,joplin alternative,/vs/joplin/
+obsidian vs apple notes,low,comparison,obsidian alternative,/vs/obsidian/
+joplin alternative,high,comparison,joplin alternative,/vs/joplin/
+joplin alternative open source,med,comparison,joplin alternative,/vs/joplin/
+apple notes for windows,high,comparison,apple notes alternative for windows,/vs/apple-notes/
+apple notes alternative for windows,high,comparison,apple notes alternative for windows,/vs/apple-notes/
+apple notes on windows,high,comparison,apple notes alternative for windows,/vs/apple-notes/
+apple notes for windows 11,high,comparison,apple notes alternative for windows,/vs/apple-notes/
+apple notes on windows pc,med,comparison,apple notes alternative for windows,/vs/apple-notes/
+windows app similar to apple notes,low,comparison,apple notes alternative for windows,/vs/apple-notes/
+mcp server notes,med,commercial,mcp server for notes,/features/mcp/
+mcp notes,med,commercial,mcp server for notes,/features/mcp/
+mcp notes server,low,commercial,mcp server for notes,/features/mcp/
+claude notes mcp,med,commercial,mcp server for notes,/features/mcp/
+claude one note mcp,low,comparison,mcp server for notes,/features/mcp/
+mcp server apple notes,low,comparison,mcp server for notes,/features/mcp/
+connect notes to claude desktop,low,informational,connect notes to claude and cursor,/blog/mcp-server-for-notes/
+cursor notes,low,informational,connect notes to claude and cursor,/blog/mcp-server-for-notes/
+daily note app,high,commercial,daily note app,/features/daily-notes/
+daily note app for windows,med,commercial,daily note app,/features/daily-notes/
+daily note taking app,low,commercial,daily note app,/features/daily-notes/
+note app for daily planning,low,commercial,daily note app,/features/daily-notes/
+recurring tasks in notes,low,informational,recurring tasks,/blog/daily-note-and-recurring-tasks/
+recurring tasks notion,med,informational,recurring tasks,/blog/daily-note-and-recurring-tasks/
+shared notes app,high,commercial,shared notes app,/features/shared-notes/
+shared notes app for couples,high,commercial,shared notes app,/features/shared-notes/
+encrypted shared notes app,low,commercial,shared notes app,/features/shared-notes/
+best shared notes app,low,commercial,shared notes app,/features/shared-notes/
+shared notes app for iphone and android,low,commercial,shared notes app,/features/shared-notes/
+notion alternative collaboration,low,comparison,shared notes app,/features/shared-notes/
+how to share a folder of notes,low,informational,shared notes how-to,/blog/shared-notes-and-folders/
+share note link,med,commercial,share a note by link,/features/share-links/
+share notes via link,low,commercial,share a note by link,/features/share-links/
+share note online link,low,commercial,share a note by link,/features/share-links/
+how to share a note with links,low,informational,note link how-to,/blog/share-a-note-by-link/
+notes app sync across devices,high,commercial,notes sync,/features/sync/
+notes app that syncs between devices,high,commercial,notes sync,/features/sync/
+notes app sync with computer,high,commercial,notes sync,/features/sync/
+notes app sync,low,commercial,notes sync,/features/sync/
+organize notes with ai,med,commercial,organize notes with ai,/features/tidy-up/
+organize notes ai,med,commercial,organize notes with ai,/features/tidy-up/
+organize my notes ai,low,commercial,organize notes with ai,/features/tidy-up/
+ai to help organize notes,low,informational,organize notes how-to,/blog/tidy-up-notes-with-ai/
+organize notes ai free,low,commercial,organize notes with ai,/features/tidy-up/
+import obsidian vault,med,informational,move notes,/blog/move-notes-from-notion-obsidian-bear/
+export bear notes,med,informational,move notes,/blog/move-notes-from-notion-obsidian-bear/
+notion import notes,low,informational,move notes,/blog/move-notes-from-notion-obsidian-bear/
+how to export notes from mac,low,informational,move notes,/blog/move-notes-from-notion-obsidian-bear/
+import notes from notion,low,commercial,import notes,/features/import-export/
+import apple notes,low,commercial,import notes,/features/import-export/
+search notes app,med,commercial,note search,/features/search/
+search notes in several languages,low,informational,search in several languages,/blog/searching-notes-in-three-languages/
+second brain app,high,commercial,second brain app,NEW:/blog/second-brain-app/
+second brain app free,med,commercial,second brain app,NEW:/blog/second-brain-app/
+second brain ai app,low,commercial,second brain app,NEW:/blog/second-brain-app/
+markdown notes app,high,commercial,markdown notes,/features/checklists-and-tables/
+how to take notes you can find,low,informational,findable notes,/blog/how-to-take-notes-you-can-find/
+which ai model for notes ollama,low,informational,ai model choice,/blog/which-ai-model-for-fixnote-assistant/
+fixnote keyboard shortcuts,low,navigational,shortcuts,/blog/fixnote-keyboard-shortcuts/

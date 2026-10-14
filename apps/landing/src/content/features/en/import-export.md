@@ -1,6 +1,6 @@
 ---
-title: Import and export
-metaTitle: 'Move notes from Notion, Obsidian, Bear or Apple Notes to FixNote'
+title: Import notes from Notion, Obsidian, Bear and Apple Notes
+metaTitle: 'Import notes from Notion, Obsidian and Apple Notes | FixNote'
 description: Bring your notes into FixNote from Obsidian, Bear, Notion and Apple Notes with folders and images, and export everything back to Markdown whenever you like.
 eyebrow: Moving in
 intro: How do you move years of notes out of another app without losing folders and images? FixNote reads Obsidian, Bear and Notion exports, pulls notes straight from Apple Notes on a Mac, and exports everything to Markdown at any time.

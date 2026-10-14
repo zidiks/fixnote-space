@@ -1,6 +1,6 @@
 ---
-title: Tidy up your notes
-metaTitle: 'Organize notes into folders with AI: Tidy up in FixNote'
+title: Organize your notes with AI
+metaTitle: 'Organize notes with AI: folders and titles | FixNote'
 description: FixNote suggests folders for loose notes, titles for untitled ones and finds duplicates. Nothing changes until you press Accept, and every change can be undone.
 eyebrow: Organize
 intro: Untitled notes, duplicates and notes that belong in your Work folder pile up on their own. Tidy up looks through the list and suggests where each note should go and what to call it.

@@ -1,6 +1,6 @@
 ---
-title: Edit text with AI
-metaTitle: 'Rewrite, shorten and fix text with AI right in your notes'
+title: Edit text with AI in your notes
+metaTitle: 'Rewrite and shorten text with AI in your notes | FixNote'
 description: Select text in a note and ask AI to rewrite, shorten or fix it. FixNote shows the change word by word, and the text changes only when you press Accept.
 eyebrow: AI edits
 intro: Want a paragraph clearer, an email shorter or the typos gone without pasting text into a chatbot? Select it, pick an action, and FixNote shows the suggested edit right in the note.

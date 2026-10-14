@@ -92,6 +92,7 @@ export type NoteView = 'cards' | 'list' | 'compact'
 
 export type SettingsSection =
   | 'general'
+  | 'shortcuts'
   | 'account'
   | 'plan'
   | 'integrations'

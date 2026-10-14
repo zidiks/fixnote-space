@@ -1,6 +1,6 @@
 ---
-title: Notas desde Telegram
-metaTitle: 'Guarda mensajes de Telegram como notas con el bot de FixNote'
+title: Bot de Telegram para tus notas
+metaTitle: 'Bot de Telegram para notas: guarda mensajes | FixNote'
 description: Envía o reenvía al bot de FixNote textos, audios y fotos de Telegram y se convierten en notas en tu dispositivo. El bot los cifra y no puede leerlos.
 eyebrow: Telegram
 intro: ¿Te mandas cosas a Mensajes guardados en Telegram y luego no encuentras nada? Envía o reenvía el mensaje al bot de FixNote y se convierte en una nota en la app, sea texto, audio o foto.

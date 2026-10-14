@@ -97,7 +97,7 @@ interface Deps {
   /** Speech to text for voice messages from capture channels; may fail (model unavailable). */
   transcribe: (audio: Blob) => Promise<string>
   /** Where a captured message goes (a new note, or today's note). */
-  saveCaptured?: (content: string) => Promise<void>
+  saveCaptured?: (content: string, receivedAt: number) => Promise<void>
   /** Messages from Telegram became notes. */
   onCaptured: (count: number) => void
   /** Refresh UI queries after remote changes arrived. */

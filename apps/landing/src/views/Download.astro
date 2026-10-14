@@ -20,7 +20,7 @@ const notes = [
 ]
 ---
 
-<Base lang={lang} title={d.meta.download.title} description={d.meta.download.description} path="/download/" crumb={d.nav.download}>
+<Base lang={lang} title={d.meta.download.title} description={d.meta.download.description} path="/download/" crumb={d.nav.download} og={{ shot: `${lang}/home` }}>
   <Article lang={lang} eyebrow={p.eyebrow} title={p.headline} intro={p.lead} cta={false}>
     <DownloadCards lang={lang} />
     {

@@ -38,7 +38,7 @@ const price = (id: AppId) => {
             <th class:list={['px-2 pt-6 pb-6 text-center align-top', id === 'fixnote' && 'rounded-t-[18px] bg-panel']}>
               <div class="flex flex-col items-center gap-2.5">
                 <AppIcon app={id} size={compact ? 40 : 48} />
-                <span class:list={['typo-caption leading-tight font-semibold', id === 'fixnote' ? 'text-brand' : 'text-ink']}>
+                <span class:list={['typo-caption leading-tight font-semibold', id === 'fixnote' ? 'text-link' : 'text-ink']}>
                   {APPS[id].name}
                 </span>
                 <span class="typo-caption leading-tight text-muted">{price(id)}</span>

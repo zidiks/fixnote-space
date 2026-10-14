@@ -1,7 +1,8 @@
 ---
-title: "How to share a note by link the server can't read: FixNote"
+title: "How to create, update and revoke a note link in FixNote"
 description: "FixNote's read-only links: how to create and update one, why the key lives after the # so the server never sees your text, and how to stop sharing a note."
 date: 2026-09-29
+updated: 2026-10-11
 translationKey: share-links
 faq:
   - q: "Does the person I send the link to need a FixNote account?"

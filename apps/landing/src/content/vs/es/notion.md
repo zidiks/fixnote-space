@@ -1,6 +1,6 @@
 ---
-title: "FixNote o Notion: cuál elegir para tus notas"
-metaTitle: "Alternativa a Notion para notas personales: FixNote y Notion"
+title: "Alternativa a Notion para notas personales: FixNote vs Notion"
+metaTitle: "Alternativa a Notion para notas personales | FixNote"
 description: "Notion o FixNote para notas personales: cifrado de extremo a extremo, asistente de IA, uso sin conexión y precio. En qué gana cada app y cómo pasar tus notas."
 intro: "Notion brilla cuando las notas conviven con bases de datos, tareas y la wiki de un equipo. FixNote está pensado para notas personales: se cifran en tu dispositivo, y un asistente responde a partir de ellas y las edita solo si das el visto bueno. Aquí tienes las diferencias, también donde Notion es mejor opción."
 steps:

@@ -1,6 +1,6 @@
 ---
-title: Search your notes
-metaTitle: 'Note search by words and by meaning, in three languages: FixNote'
+title: Search your notes by words and meaning
+metaTitle: 'Search notes by words and meaning, in 3 languages | FixNote'
 description: FixNote searches your notes on the device by word beginnings, across Cyrillic and Latin, in the text of images and by meaning, even in another language.
 eyebrow: Search
 intro: You remember writing something about the holiday, but not which word you used or in which language? FixNote search finds the note by the start of a word, across Cyrillic and Latin spellings, by the text in its images and by meaning.

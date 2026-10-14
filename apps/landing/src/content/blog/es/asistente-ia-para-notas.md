@@ -1,7 +1,8 @@
 ---
-title: 'Asistente de IA para notas: cómo FixNote busca, responde y edita'
+title: 'Cómo busca, responde y edita notas el asistente de FixNote'
 description: 'Qué hace el asistente de FixNote con tus notas: cómo busca y cita fuentes, qué puede cambiar, cuándo pide permiso y cómo deshacer sus cambios.'
 date: 2026-10-08
+updated: 2026-10-11
 translationKey: assistant-agent
 faq:
   - q: ¿Puede la IA borrar una nota sin preguntar?

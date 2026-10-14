@@ -221,6 +221,18 @@ export interface DesktopTray {
   /** Quitting was asked for during a call; returns the unsubscribe. */
   onQuitRequested(cb: () => void): Promise<() => void>
   quit(): Promise<void>
+  /**
+   * System-wide shortcuts, replacing the earlier set (empty: none). A press runs the tray action
+   * with that `id` (it arrives through `onAction`), or shows/hides the window (`toggle`). `keys`
+   * as the global-shortcut plugin reads them ("Control+Alt+KeyN"). Returns the ones the OS
+   * refused, e.g. because another app holds them.
+   */
+  shortcuts(items: GlobalShortcut[]): Promise<{ id: string; error: string }[]>
+}
+
+export interface GlobalShortcut {
+  id: string
+  keys: string
 }
 
 /**

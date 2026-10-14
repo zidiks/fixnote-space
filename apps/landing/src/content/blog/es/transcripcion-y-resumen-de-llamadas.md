@@ -1,7 +1,8 @@
 ---
-title: 'Transcripción y resumen de llamadas en tu ordenador con FixNote'
+title: 'Cómo transcribir una reunión de Zoom o Meet en tu ordenador'
 description: 'Graba una llamada de Zoom, Meet o Telegram y obtén una nota con resumen, decisiones y tareas. La transcripción se hace en tu ordenador y no se guarda audio.'
 date: 2026-10-09
+updated: 2026-10-11
 translationKey: call-notes
 faq:
   - q: '¿FixNote guarda una grabación de la llamada?'

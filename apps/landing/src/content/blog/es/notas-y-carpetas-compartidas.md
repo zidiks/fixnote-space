@@ -1,7 +1,8 @@
 ---
-title: 'Notas compartidas con cifrado de extremo a extremo en FixNote'
+title: 'Cómo compartir una nota o carpeta en FixNote: permisos y cifrado'
 description: 'Cómo invitar a alguien a una nota o carpeta de FixNote, en qué se diferencian los permisos, cómo se edita a la vez y qué sabe el servidor sin ver el texto.'
 date: 2026-10-04
+updated: 2026-10-11
 translationKey: shared-notes
 faq:
   - q: '¿La persona a la que invito necesita FixNote Pro?'
