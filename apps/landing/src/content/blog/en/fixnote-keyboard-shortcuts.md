@@ -1,7 +1,8 @@
 ---
 title: 'FixNote keyboard shortcuts for Windows and Mac, in any layout'
-description: 'Every FixNote keyboard shortcut for Windows and Mac: search, daily note, assistant, dictation and formatting, and why they keep working in any keyboard layout.'
+description: 'Every FixNote keyboard shortcut for Windows and Mac, system-wide ones included: how to change them, and why they keep working in any keyboard layout.'
 date: 2026-09-24
+updated: 2026-10-13
 translationKey: hotkeys
 faq:
   - q: 'Why do FixNote shortcuts work with a Russian or Spanish keyboard layout?'
@@ -9,12 +10,14 @@ faq:
   - q: "How do I open today's note from the keyboard?"
     a: "Press Ctrl+D on Windows or ⌘+D on Mac. If today's note doesn't exist yet, FixNote creates it."
   - q: "Why doesn't Ctrl+N create a note in the browser?"
-    a: 'The browser keeps Ctrl+N for a new window. In the web app, press Ctrl+K and choose "New note"; in the desktop app Ctrl+N works.'
+    a: 'The browser keeps Ctrl+N for a new window. In the web app, press Ctrl+K and choose "New note", or give "New note" a shortcut of your own in Settings → Shortcuts; in the desktop app Ctrl+N works.'
   - q: 'Can I change the keyboard shortcuts in FixNote?'
-    a: 'No. The shortcuts are fixed and the same on every device. You can see them next to the commands in the right-click menu.'
+    a: 'Yes. In Settings → Shortcuts, click a shortcut and press the new keys. FixNote warns when another command already uses them, and each one can be reset. The changes stay on that device. Editor shortcuts such as Ctrl+B stay as they are.'
+  - q: 'Can I create a note in FixNote while working in another app?'
+    a: 'Yes, in the desktop app. Ctrl+Alt+N on Windows (⌃⌥N on a Mac) opens the window with a new note, even when FixNote is hidden in the tray.'
 ---
 
-Which keyboard shortcuts does FixNote have, and will they still work if you switch to another keyboard layout? Here is the full list for Windows and Mac: app-wide shortcuts, editor shortcuts and picking several notes at once, plus a short explanation of how the app recognizes a key.
+Which keyboard shortcuts does FixNote have, and will they still work if you switch to another keyboard layout? Here is the full list for Windows and Mac: app-wide shortcuts, editor shortcuts, system-wide shortcuts that work from any app, how to change them, and picking several notes at once, plus a short explanation of how the app recognizes a key.
 
 ## The main shortcuts
 
@@ -31,7 +34,7 @@ On Windows shortcuts start with Ctrl, on Mac with ⌘. The table shows the Windo
 | Ctrl+[ and Ctrl+] | Go back and forward |
 | Esc | Cancels dictation, closes a dialog or ends picking notes |
 
-Ctrl+N only works in the desktop app. In a browser it opens a new window, and a web page can't take it over, so in the web app you create a note with Ctrl+K and the "New note" command.
+Ctrl+N only works in the desktop app. In a browser it opens a new window, and a web page can't take it over, so in the web app you create a note with Ctrl+K and the "New note" command, or give that command a shortcut of your own (see below).
 
 In the desktop app Ctrl+F opens search too. You can also go back and forward with Alt+← and Alt+→ (Option on a Mac) or with the side buttons of your mouse. Ctrl+K lists notes that match your words first, then notes that are similar in meaning; the [search page](/features/search/) explains how both work.
 
@@ -58,6 +61,27 @@ When you press a key, the browser reports two things: the character it produced 
 
 FixNote checks both. Ctrl+K, Ctrl+J and even Ctrl+[ work without switching back to English, on Russian, Spanish and other layouts alike. Editor shortcuts such as Ctrl+B are recognized by the key as well.
 
+## Shortcuts that work from any app
+
+The desktop app has four more shortcuts that work while FixNote is hidden in the tray or another app is in front. They bring the window up and do the rest there.
+
+| Windows | Mac | What it does |
+|---|---|---|
+| Ctrl+Alt+N | ⌃⌥N | Opens FixNote with a new note |
+| Ctrl+Alt+R | ⌃⌥R | Opens FixNote and starts a voice note; press again to finish |
+| Ctrl+Alt+K | ⌃⌥K | Opens FixNote with search |
+| Ctrl+Alt+Space | ⌃⌥Space | Shows FixNote, or hides it when it is in front |
+
+On a Mac these use Control and Option (⌃⌥), not ⌘: few apps use that pair, while ⌘ shortcuts belong to the app in front. A browser tab can't hear keys while another app is in front, so the web app doesn't have these.
+
+## Changing shortcuts
+
+Open Settings → Shortcuts. It lists the app-wide shortcuts and, in the desktop app, the system-wide ones. Click a shortcut, press the new keys, and that's it; Esc cancels. A shortcut is tied to the place of the key on the keyboard, so one you set on a Spanish layout works the same after switching to Russian.
+
+FixNote doesn't let one combination run two commands: if the keys are already taken, it says by which command. It also refuses keys that the system, the browser or the editor keeps for themselves, such as Ctrl+C. Each system-wide shortcut can be switched off on its own, and if another program already holds its keys, the settings say so and you can pick others. Every shortcut has a reset button, and "Reset all shortcuts" brings back the defaults.
+
+The changes are kept on that device. The editor shortcuts from the table above can't be changed.
+
 ## Picking several notes
 
 In a list of notes, Ctrl+click (⌘+click on a Mac) starts picking, and plain clicks then check and uncheck notes. On a phone, a long press starts it. You can pin the picked notes, move them to a folder, send them to [Tidy up](/blog/tidy-up-notes-with-ai/) or delete them. Deleting can be undone from the notification; shared notes are left as they are and are deleted one at a time.
@@ -66,6 +90,6 @@ Esc or the "Done" button ends picking.
 
 ## The tray and menu bar icon
 
-When you close the FixNote window on a computer, the app moves to the Windows tray (the menu bar on a Mac) and keeps running. From the icon's menu you can create a note, start a voice note, open today's note or search, and record a call without looking for the window. Launching FixNote again shows the window that is already open instead of starting a second copy.
+When you close the FixNote window on a computer, the app moves to the Windows tray (the menu bar on a Mac) and keeps running. From the icon's menu you can create a note, start a voice note, open today's note or search, and record a call without looking for the window. The system-wide shortcuts above do the same from the keyboard. Launching FixNote again shows the window that is already open instead of starting a second copy.
 
 To start, open FixNote, press Ctrl+D and write one task in today's note. Then press Ctrl+K, type a word from that task and check that the note comes up.

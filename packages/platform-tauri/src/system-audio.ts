@@ -33,4 +33,5 @@ export const tray: DesktopTray = {
   onAction: (cb) => listen<string>('tray-action', (e) => cb(e.payload)),
   onQuitRequested: (cb) => listen('quit-requested', () => cb()),
   quit: () => invoke('app_quit'),
+  shortcuts: (items) => invoke('global_shortcuts', { items }),
 }

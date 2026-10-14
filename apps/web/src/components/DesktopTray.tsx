@@ -1,10 +1,12 @@
 import type { TrayMenuItem } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { ConfirmDialog } from '@fixnote/ui'
+import { ConfirmDialog, isApple } from '@fixnote/ui'
 import { useEffect, useRef, useState } from 'react'
 import { useUi } from '../app/store'
+import { accelerator, TRAY_ACTION } from '../lib/hotkeys'
 import { usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
+import { activeGlobals, bindingsOf, useShortcuts } from '../lib/shortcuts'
 import { cancelCall, startCall, stopCall, useCall } from '../lib/voice/call'
 import { useCallSupport } from '../lib/voice/call-support'
 import { toggleVoice, useVoice } from '../lib/voice/voice'
@@ -23,6 +25,38 @@ export function DesktopTray() {
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const [asking, setAsking] = useState(false)
+  // The system-wide shortcuts as the plugin takes them; one string, so the effect runs on changes.
+  const globals = useShortcuts((s) => {
+    const bindings = bindingsOf(s)
+    return JSON.stringify(
+      activeGlobals(s).map((a) => {
+        const b = bindings[a]
+        return { id: TRAY_ACTION[a], keys: b ? accelerator(b, isApple) : '' }
+      }),
+    )
+  })
+
+  // Hold them while the app runs (also hidden in the tray); let go while one is being recorded.
+  useEffect(() => {
+    if (!tray) return
+    let stale = false
+    void tray
+      .shortcuts(JSON.parse(globals))
+      .then((refused) => {
+        if (stale || useShortcuts.getState().recording) return
+        const failed = Object.fromEntries(
+          refused.flatMap((r) => {
+            const action = Object.entries(TRAY_ACTION).find(([, id]) => id === r.id)?.[0]
+            return action ? [[action, r.error]] : []
+          }),
+        )
+        useShortcuts.setState({ failed })
+      })
+      .catch(() => undefined)
+    return () => {
+      stale = true
+    }
+  }, [tray, globals])
 
   useEffect(() => {
     if (!tray) return
