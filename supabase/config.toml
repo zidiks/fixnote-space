@@ -32,6 +32,17 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 
+# Remote MCP (docs/remote-mcp.md): Supabase Auth is the OAuth 2.1 server of mcp.fixnote.space.
+# AI apps (ChatGPT, claude.ai) register themselves (dynamic registration), the person approves on
+# the app's consent page (site_url + authorization_url_path: apps/web OAuthConsentPage), and their
+# tokens carry `client_id`, which the database refuses except for remote_mcp_allowed()
+# (*_remote_mcp.sql) and the edge functions refuse (_shared/auth.ts). Needs asymmetric JWT signing
+# keys (ES256) in the dashboard: clients ask for the `openid` scope.
+[auth.oauth_server]
+enabled = true
+authorization_url_path = "/oauth/consent"
+allow_dynamic_registration = true
+
 [auth.rate_limit]
 email_sent = 30
 token_verifications = 30

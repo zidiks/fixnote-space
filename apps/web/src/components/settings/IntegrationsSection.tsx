@@ -13,6 +13,7 @@ import { env } from '../../lib/env'
 import { kvStore } from '../../lib/kv'
 import { withPro } from '../../lib/plan'
 import { usePlatform } from '../../lib/platform'
+import { RemoteMcpCard } from './RemoteMcpCard'
 
 /**
  * Services that send things into FixNote. One card each; more messengers and social networks go
@@ -22,6 +23,7 @@ export function IntegrationsSection() {
   return (
     <div className="space-y-3">
       <TelegramCard />
+      <RemoteMcpCard card={IntegrationCard} />
     </div>
   )
 }

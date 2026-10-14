@@ -1,0 +1,23 @@
+// Remote MCP relay (apps/relay): https://mcp.fixnote.space/mcp for ChatGPT, claude.ai and other
+// remote MCP clients. It forwards tool calls to the person's online FixNote device and stores no
+// note content. Deploy: `pnpm --filter @fixnote/relay deploy` (see docs/remote-mcp.md).
+// Fits the Workers Free plan: SQLite-backed Durable Objects + WebSocket hibernation.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "fixnote-mcp-relay",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "routes": [{ "pattern": "mcp.fixnote.space", "custom_domain": true }],
+  "durable_objects": {
+    "bindings": [{ "name": "RELAY", "class_name": "UserRelay" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["UserRelay"] }],
+  "vars": {
+    "PUBLIC_URL": "https://mcp.fixnote.space",
+    "SUPABASE_URL": "https://nsteehqbmljuczxgkvae.supabase.co",
+    // The public anon key (the same one the web app ships). Set it before deploying:
+    // `npx wrangler secret put SUPABASE_ANON_KEY` keeps it out of the repository.
+    "APP_ORIGINS": "https://app.fixnote.space,http://tauri.localhost,tauri://localhost,http://localhost:5173"
+  },
+  "observability": { "enabled": true, "head_sampling_rate": 0.1 }
+}

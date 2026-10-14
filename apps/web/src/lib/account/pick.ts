@@ -13,6 +13,7 @@ export async function pickBackend(): Promise<AccountBackend | null> {
     ? supabaseBackend(supabase, {
         url: env.supabaseUrl as string,
         anonKey: env.supabaseAnonKey as string,
+        mcpUrl: env.mcpUrl,
       })
     : null
 }

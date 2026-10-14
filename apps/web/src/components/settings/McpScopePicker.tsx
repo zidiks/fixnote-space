@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react'
 import { useDb, useRepo } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
 import { useFolders, useSearch } from '../../lib/queries'
+import { remoteScopeChanged } from '../../lib/remote-mcp/bridge'
 
 const KEY = ['mcp', 'scope'] as const
 
@@ -67,6 +68,8 @@ export function McpScopePicker() {
     const value = serializeMcpScope(next)
     if (value === null) await kv.delete(MCP_SCOPE_KEY)
     else await kv.set(MCP_SCOPE_KEY, value)
+    // Remote apps (ChatGPT, claude.ai) see the same choice, kept for the account by the relay.
+    await remoteScopeChanged(driver)
   }
   const toggleFolder = (id: string, on: boolean) =>
     void save({

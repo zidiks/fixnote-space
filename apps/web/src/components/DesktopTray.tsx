@@ -6,10 +6,12 @@ import { useUi } from '../app/store'
 import { accelerator, TRAY_ACTION } from '../lib/hotkeys'
 import { usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
+import { useRemoteActivity } from '../lib/remote-mcp/bridge'
 import { activeGlobals, bindingsOf, useShortcuts } from '../lib/shortcuts'
 import { cancelCall, startCall, stopCall, useCall } from '../lib/voice/call'
 import { useCallSupport } from '../lib/voice/call-support'
 import { toggleVoice, useVoice } from '../lib/voice/voice'
+import { useActivityText } from './RemoteActivityPill'
 
 /**
  * The desktop app's tray (menu bar) icon: its menu in the app's language, following dictation and
@@ -25,6 +27,8 @@ export function DesktopTray() {
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const [asking, setAsking] = useState(false)
+  // A remote AI app reading notes here right now (RemoteActivityPill), shown in the menu too.
+  const remote = useActivityText(useRemoteActivity((s) => (s.running.length ? s.shown : null)))
   // The system-wide shortcuts as the plugin takes them; one string, so the effect runs on changes.
   const globals = useShortcuts((s) => {
     const bindings = bindingsOf(s)
@@ -61,6 +65,7 @@ export function DesktopTray() {
   useEffect(() => {
     if (!tray) return
     const items: TrayMenuItem[] = [
+      ...(remote ? [{ id: 'remote', text: remote, enabled: false }, {}] : []),
       { id: 'open', text: t('tray.open') },
       {},
       { id: 'new-note', text: t('tray.newNote') },
@@ -89,9 +94,9 @@ export function DesktopTray() {
       { id: 'quit', text: t('tray.quit') },
     ]
     void tray
-      .menu(items, call === 'recording' ? t('tray.recording') : 'FixNote')
+      .menu(items, call === 'recording' ? t('tray.recording') : remote || 'FixNote')
       .catch(() => undefined)
-  }, [tray, t, canCall, call, voice])
+  }, [tray, t, canCall, call, voice, remote])
 
   // The latest handlers, for the one subscription below.
   const act = useRef<(id: string) => void>(() => {})

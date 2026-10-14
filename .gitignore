@@ -17,6 +17,8 @@ apps/desktop/src-tauri/binaries/
 
 # Astro generated types
 .astro/
+.wrangler/
+.dev.vars
 # IndexNow: pages the last landing build found changed (apps/landing/indexnow.mjs)
 .indexnow-pending.json
 

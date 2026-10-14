@@ -131,6 +131,21 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `packages/core/src/mcp.ts`); outside the scope a note or folder must look like it does not exist.
   Build the desktop sidecar with `pnpm --filter @fixnote/mcp build:sea` (build.rs uses a
   placeholder otherwise).
+- Remote MCP (ChatGPT, claude.ai; docs/remote-mcp.md): `apps/relay` is a Cloudflare Worker
+  (`mcp.fixnote.space`, MCP Streamable HTTP, JSON answers) with one SQLite-backed Durable Object per
+  account holding the devices' hibernatable WebSockets. It stores no note content and no keys: each
+  `tools/call` goes to exactly one device (desktop, then freshest sync; a read retries once on the
+  next device, a change never), which runs it with core `RemoteExecutor` (`NoteTools`, read-only in
+  phase 1, `mcp.access`, device `mcp.scope` ∩ the account's remote scope kept by the relay as ids).
+  The device side is `RemoteBridge` (core) started by `lib/remote-mcp/bridge.ts` when Remote access
+  is on (kv `mcp.remote`, per device), signed in, not Free, not local-only. OAuth is Supabase Auth's
+  OAuth 2.1 server (`[auth.oauth_server]`, consent page `/oauth/consent`); its tokens carry
+  `client_id` and are refused by PostgREST, RLS, Storage, Realtime and edge functions
+  (`*_remote_mcp.sql`, `_shared/auth.ts`) except `remote_mcp_allowed()`: a new RLS table needs the
+  `"no oauth clients"` restrictive policy too. Protocol types live in
+  `packages/core/src/remote-mcp/protocol.ts` (the relay imports only that, as
+  `@fixnote/core/remote-mcp`). Keep the relay within Workers Free: hibernation, auto-answered pings,
+  few row writes. Try it with `?dev-backend` (in-page relay, `fixnoteRemote.call(...)`).
 - Phones (web): the browser/OS back button drives the in-app history (`lib/nav-history.ts`, web
   only); in-app back goes through `navBack()`, never `goBack()` directly. An overlay that back should
   close uses `useBackLayer(open, close)` (and `data-back-layer` on Radix dialog content); other

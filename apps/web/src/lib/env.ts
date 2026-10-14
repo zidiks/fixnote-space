@@ -6,6 +6,8 @@ export const env = {
   telegramBot: (import.meta.env.VITE_TELEGRAM_BOT as string | undefined) || undefined,
   /** Where the web app is hosted; shared links open there. The desktop app needs it. */
   webUrl: (import.meta.env.VITE_WEB_URL as string | undefined) || undefined,
+  /** The remote MCP relay (apps/relay, docs/remote-mcp.md). */
+  mcpUrl: (import.meta.env.VITE_MCP_URL as string | undefined) || 'https://mcp.fixnote.space',
 }
 
 export const isSupabaseConfigured = Boolean(env.supabaseUrl && env.supabaseAnonKey)

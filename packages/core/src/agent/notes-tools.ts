@@ -6,9 +6,7 @@ import { type McpScope, scopeFolderIds } from '../mcp'
 import type { NotesRepo } from '../notes/repo'
 import type { Folder, Note } from '../notes/types'
 import type { SqlDriver } from '../platform'
-
-/** What a tool needs: reading, adding and changing, or deleting. */
-export type ToolLevel = 'read' | 'write' | 'full'
+import type { ToolLevel } from './tool-specs'
 
 /** A tool was refused by the user's settings; the message says where to change them. */
 export class AccessError extends Error {}

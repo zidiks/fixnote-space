@@ -43,7 +43,7 @@ export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise
     ])
       await tx.execute(`DELETE FROM ${table}`)
     await tx.execute(
-      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key IN ('mcp.scope', '${CHAT_SUMMARY_KEY}')`,
+      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key LIKE 'mcp.remote%' OR key IN ('mcp.scope', '${CHAT_SUMMARY_KEY}')`,
     )
   })
   for (const { id } of files) await blobs.delete(`att/${id}`).catch(() => undefined)

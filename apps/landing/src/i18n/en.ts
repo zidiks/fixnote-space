@@ -530,7 +530,7 @@ export const en: Dict = {
   privacyPage: {
     eyebrow: 'Privacy',
     title: 'Privacy policy',
-    updated: 'Updated October 11, 2026',
+    updated: 'Updated October 14, 2026',
     lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data FixNote has and why.',
     sections: [
       {
@@ -568,6 +568,13 @@ export const en: Dict = {
         text: [
           'Search across your notes runs on your device. When you ask FixNote AI, your question and the matching note excerpts pass through our server to a language model provider to get the answer. We do not store or log what is in these requests.',
           'With your own key, requests go straight to the service you chose and follow its terms. With Ollama everything stays on your computer.',
+        ],
+      },
+      {
+        title: 'AI apps (remote access)',
+        text: [
+          'If you connect an AI app such as ChatGPT or Claude to FixNote, its requests come to our server mcp.fixnote.space and are passed to your device where FixNote is open. The device decrypts the notes and answers, and the answer with the notes it needs passes through our server to that app. Requests and answers only pass through memory: we do not store or log them. The server has no keys to your notes.',
+          'We keep only what is needed to run it: which apps you connected, when they last asked, which access you revoked, and the ids of the folders and notes you let them see. You can revoke access in Settings → Integrations. What the AI app receives is then handled under its provider’s own rules.',
         ],
       },
       {

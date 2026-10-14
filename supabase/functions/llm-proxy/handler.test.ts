@@ -110,6 +110,11 @@ Deno.test('rejects anonymous callers and bad input', async () => {
   assertEquals((await handle(post(ok, {}), env())).status, 401)
   const anon = { Authorization: `Bearer ${token({ role: 'anon' })}` }
   assertEquals((await handle(post(ok, anon), env())).status, 401)
+  // An AI app's OAuth token (remote MCP) may not spend the account's allowance.
+  const aiApp = {
+    Authorization: `Bearer ${token({ sub: 'user-1', role: 'authenticated', client_id: 'claude' })}`,
+  }
+  assertEquals((await handle(post(ok, aiApp), env())).status, 401)
   assertEquals(
     (await handle(post({ messages: [{ role: 'hacker', content: 1 }] }, auth('u2')), env())).status,
     400,

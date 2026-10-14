@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./remote-mcp": "./src/remote-mcp/protocol.ts",
     "./testing": "./src/testing/memory-driver.ts"
   },
   "scripts": {

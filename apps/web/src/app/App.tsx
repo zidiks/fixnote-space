@@ -34,6 +34,7 @@ import { navBack, navForward, useBackLayer, useNavHistory } from '../lib/nav-his
 import { billingLink } from '../lib/payment'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
+import { RemoteMcpBridge } from '../lib/remote-mcp/bridge'
 import { initShortcuts, useShortcut } from '../lib/shortcuts'
 import { appShown } from '../lib/shown'
 import { useAutoUpdateCheck } from '../lib/updates'
@@ -303,6 +304,7 @@ function AppShell() {
       <VoiceBar />
       <CallBar />
       <DesktopTray />
+      <RemoteMcpBridge />
       <DropLayer />
       <PairingRequestDialog />
       <LayoutOnboarding />
