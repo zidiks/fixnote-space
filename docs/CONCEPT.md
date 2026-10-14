@@ -163,7 +163,7 @@ UI: список карточек с Approve / Reject / Approve all, кажда�
 Заметки — контекст для других ассистентов (Claude Desktop, Cursor и т.д.):
 
 - **Local MCP server** (stdio) — отдельный бинарь/сайдкар `fixnote-mcp`, читает локальную БД напрямую. Работает в local-only режиме.
-- **Remote MCP** (HTTP + OAuth через Supabase Auth) — позже.
+- **Remote MCP** (ChatGPT, claude.ai): ретранслятор `mcp.fixnote.space` (Cloudflare Worker + Durable Object) пересылает вызовы на устройство пользователя, где FixNote расшифровывает заметки и отвечает; OAuth 2.1 через Supabase Auth. Фаза 1 только чтение, Pro. Подробно: `docs/remote-mcp.md`.
 - Tools: `search_notes(query, scope?)`, `get_note(id)`, `create_note(content, folder?)`, `append_to_note(id, content)`, `list_recent(n)`, `daily_note(date)`.
 - Каждый вызов извне попадает в AI audit log; запись через MCP по умолчанию идёт в Inbox с пометкой источника.
 
