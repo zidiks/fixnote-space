@@ -22,15 +22,16 @@ import { VoiceBar } from '../components/VoiceBar'
 import { paymentReturned } from '../lib/account/account'
 import { AccountProvider } from '../lib/account/provider'
 import { AssistantProvider } from '../lib/assistant/provider'
-import { DbProvider } from '../lib/db'
+import { DbProvider, useDb } from '../lib/db'
 import { useExternalChanges } from '../lib/external-changes'
-import { useHotkey } from '../lib/hotkeys'
+import { kvStore } from '../lib/kv'
 import { useNativeFeel } from '../lib/native'
 import { navBack, navForward, useBackLayer, useNavHistory } from '../lib/nav-history'
 import { billingLink } from '../lib/payment'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
 import { RemoteMcpBridge } from '../lib/remote-mcp/bridge'
+import { initShortcuts, useShortcut } from '../lib/shortcuts'
 import { appShown } from '../lib/shown'
 import { useAutoUpdateCheck } from '../lib/updates'
 import { useVisualViewport } from '../lib/viewport'
@@ -46,19 +47,6 @@ const queryClient = new QueryClient({
     queries: { staleTime: Number.POSITIVE_INFINITY, retry: false, refetchOnWindowFocus: false },
   },
 })
-
-const HK = {
-  chat: { key: 'j', mod: true },
-  sidebar: { key: '\\', mod: true },
-  spotlight: { key: 'k', mod: true },
-  back: { key: '[', mod: true },
-  forward: { key: ']', mod: true },
-  daily: { key: 'd', mod: true },
-  newNote: { key: 'n', mod: true },
-  voice: { key: ' ', mod: true, shift: true },
-} as const
-
-const NONE = { key: '\u0000' } as const
 
 function Content() {
   const route = useUi((s) => s.route)
@@ -86,6 +74,7 @@ function AppShell() {
   const ui = useUi()
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
+  const { driver } = useDb()
   const { sidebarOpen, chatOpen, theme, narrow, drawerOpen } = ui
   // Back from Suby's payment page (supabase/functions/billing): the dialog, then Pro.
   useEffect(() => {
@@ -142,6 +131,11 @@ function AppShell() {
     [],
   )
 
+  // Shortcuts the person changed (Settings → Shortcuts), kept on this device.
+  useEffect(() => {
+    void initShortcuts(kvStore(driver))
+  }, [driver])
+
   useNavHistory(platform.kind === 'web')
   useVisualViewport(platform.kind === 'web')
   // On a phone, back closes the panels that open over the content.
@@ -150,28 +144,24 @@ function AppShell() {
   useNativeFeel(platform, isApple, nativeActions)
   useExternalChanges()
   useAutoUpdateCheck()
-  useHotkey(HK.chat, ui.toggleChat, isApple)
-  useHotkey(HK.sidebar, ui.toggleSidebar, isApple)
-  useHotkey(HK.spotlight, () => ui.setSpotlightOpen(!ui.spotlightOpen), isApple)
-  useHotkey(HK.back, navBack, isApple)
-  useHotkey(HK.forward, navForward, isApple)
-  useHotkey(
-    HK.daily,
-    () =>
-      openDaily.mutate(undefined, { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) }),
-    isApple,
+  useShortcut('chat', ui.toggleChat)
+  useShortcut('sidebar', ui.toggleSidebar)
+  useShortcut('search', () => ui.setSpotlightOpen(!ui.spotlightOpen))
+  useShortcut('back', navBack)
+  useShortcut('forward', navForward)
+  useShortcut('today', () =>
+    openDaily.mutate(undefined, { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) }),
   )
   // Dictation: into the chat input when it has focus, else into the open note or a new one.
-  useHotkey(
-    HK.voice,
+  useShortcut(
+    'voice',
     () =>
       void toggleVoice(
         document.activeElement?.closest('[data-voice-target="chat"]') ? 'chat' : 'auto',
       ),
-    isApple,
   )
-  // Browsers reserve Ctrl/⌘+N for a new window; only the desktop app can take it.
-  useHotkey(platform.kind === 'desktop' ? HK.newNote : NONE, newNote, isApple)
+  // Browsers keep Ctrl/⌘+N for a new window: on the web it has no shortcut unless one is picked.
+  useShortcut('newNote', newNote)
 
   // The app is on screen: the desktop window may appear (it waits hidden until now).
   useEffect(() => appShown(), [])

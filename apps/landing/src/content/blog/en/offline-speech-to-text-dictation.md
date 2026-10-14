@@ -1,7 +1,8 @@
 ---
-title: 'Offline speech to text: how dictation works in FixNote'
+title: 'Offline speech to text on Windows and Mac: FixNote dictation'
 description: 'How to dictate notes in FixNote, which speech recognition model suits your computer, and why the recording of your voice never leaves your device.'
 date: 2026-10-07
+updated: 2026-10-11
 translationKey: voice-on-device
 faq:
   - q: 'Does FixNote dictation need an internet connection?'

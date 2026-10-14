@@ -1,6 +1,7 @@
 ---
 import { type Lang, t } from '../i18n'
 import Base from '../layouts/Base.astro'
+import { app, faqPage, ogImagePath } from '../lib/schema'
 import Blog from './home/Blog.astro'
 import Compare from './home/Compare.astro'
 import Faq from './home/Faq.astro'
@@ -16,34 +17,19 @@ interface Props {
 const { lang } = Astro.props
 const d = t(lang)
 const site = Astro.site ?? new URL('https://fixnote.space')
-const jsonLd = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'FixNote',
-    description: d.meta.home.description,
-    applicationCategory: 'ProductivityApplication',
-    operatingSystem: 'Windows, macOS, Web',
-    url: site.href,
-    inLanguage: lang,
-    offers: [
-      { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD' },
-      { '@type': 'Offer', name: 'Pro', price: '7', priceCurrency: 'USD' },
-    ],
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: d.faq.items.map((item) => ({
-      '@type': 'Question',
-      name: item.q,
-      acceptedAnswer: { '@type': 'Answer', text: item.a },
-    })),
-  },
-]
+const image = new URL(ogImagePath(lang, '/'), site).href
+const jsonLd = [app(lang, d.meta.home.description, image), faqPage(d.faq.items)]
 ---
 
-<Base lang={lang} title={d.meta.home.title} description={d.meta.home.description} path="/" jsonLd={jsonLd} notes={d.notes}>
+<Base
+  lang={lang}
+  title={d.meta.home.title}
+  description={d.meta.home.description}
+  path="/"
+  jsonLd={jsonLd}
+  notes={d.notes}
+  og={{ eyebrow: d.hero.eyebrow, title: d.hero.subtitle, shot: `${lang}/home` }}
+>
   <Overview lang={lang} />
   <Features lang={lang} />
   <Reasons lang={lang} />

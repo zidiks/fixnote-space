@@ -1,7 +1,8 @@
 ---
-title: "Save Telegram messages to your notes with the FixNote bot"
+title: "How to save Telegram messages to your notes"
 description: "How to connect the FixNote bot in Telegram, what you can send it, why the bot can't read your messages, and what to check when a note doesn't show up."
 date: 2026-10-06
+updated: 2026-10-11
 translationKey: telegram-capture
 faq:
   - q: "How do I save Telegram messages to my notes?"

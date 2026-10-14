@@ -37,9 +37,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         keyStore: platform.keyStore,
         attachments,
         repo,
-        saveCaptured: async (content) => {
+        saveCaptured: async (content, receivedAt) => {
           if (await captureToDaily(driver, 'telegram')) await appendToToday(repo, content)
-          else await repo.createNote({ content })
+          else await repo.createNote({ content, createdAt: receivedAt })
         },
         transcribe: async (audio) =>
           (

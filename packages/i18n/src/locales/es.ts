@@ -776,6 +776,46 @@ const es: LocaleResource = {
     integrations: 'Integraciones',
     plan: 'Facturación',
     advanced: 'Avanzado',
+    shortcuts: 'Atajos',
+  },
+  shortcuts: {
+    inApp: 'En la app',
+    inAppBody:
+      'Funcionan con FixNote al frente. Un atajo sigue el lugar de la tecla en el teclado, así que es el mismo en cualquier distribución.',
+    global: 'En todo el sistema',
+    globalBody:
+      'Funcionan con FixNote oculto en la bandeja o con otra app al frente, y traen la ventana.',
+    webOnly:
+      'Los atajos de todo el sistema solo están en la app de escritorio: una pestaña del navegador solo oye las teclas cuando está al frente.',
+    actions: {
+      search: 'Buscar',
+      newNote: 'Nueva nota',
+      today: 'Nota de hoy',
+      voice: 'Dictado',
+      chat: 'Mostrar u ocultar el asistente',
+      sidebar: 'Mostrar u ocultar la barra lateral',
+      back: 'Atrás',
+      forward: 'Adelante',
+      global: {
+        newNote: 'Nueva nota',
+        voice: 'Nota de voz',
+        search: 'Buscar',
+        toggle: 'Mostrar u ocultar FixNote',
+      },
+    },
+    none: 'Ninguno',
+    change: 'Cambiar el atajo: {{action}}',
+    recording: 'Pulsa las teclas…',
+    recordHint: 'Pulsa las nuevas teclas, o Esc para cancelar.',
+    reset: 'Restablecer',
+    resetAll: 'Restablecer todos los atajos',
+    use: 'Usar en todo el sistema: {{action}}',
+    taken: 'Ya lo usa «{{action}}».',
+    reserved: 'El sistema, el navegador o el editor se quedan con estas teclas. Elige otras.',
+    modifierApp: 'Añade {{mod}}, para que escribir nunca lo active.',
+    modifierGlobal:
+      'Usa dos teclas modificadoras, como {{example}}, para que las otras apps conserven sus atajos.',
+    failed: 'Otra app ya usa estas teclas. Elige otras.',
   },
   models: {
     title: 'Modelos en este dispositivo',

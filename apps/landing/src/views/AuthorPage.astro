@@ -1,0 +1,76 @@
+---
+import Article from '../components/Article.astro'
+import More from '../components/More.astro'
+import { type Author, authorOf } from '../data/authors'
+import { type Lang, localePath, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import { formatDate, getPosts, postPath } from '../lib/blog'
+import { authorPath, breadcrumbs, person } from '../lib/schema'
+
+/** Who writes the blog: name, role, a few words, their profiles and their articles. */
+interface Props {
+  lang: Lang
+  id: string
+  author: Author & { bio: Record<Lang, string> }
+}
+const { lang, id, author } = Astro.props
+const d = t(lang)
+const p = d.blogPage
+const posts = (await getPosts(lang)).filter((post) => authorOf(post.data.author)?.id === id)
+const site = Astro.site ?? new URL('https://fixnote.space')
+const me = person(lang, id, author)
+const jsonLd = [
+  { '@context': 'https://schema.org', '@type': 'ProfilePage', mainEntity: me },
+  breadcrumbs([
+    { name: d.nav.blog, url: new URL(localePath(lang, '/blog/'), site).href },
+    { name: author.name[lang], url: new URL(authorPath(lang, id), site).href },
+  ]),
+]
+---
+
+<Base
+  lang={lang}
+  title={`${author.name[lang]} · FixNote`}
+  description={author.bio[lang]}
+  path={`/authors/${id}/`}
+  crumb={d.nav.blog}
+  jsonLd={jsonLd}
+  image={author.photo}
+  aboutApp={false}
+>
+  <Article lang={lang} eyebrow={p.author} title={author.name[lang]} intro={author.role[lang]} cta={false}>
+    {author.photo && <img src={author.photo} alt={author.name[lang]} width="120" height="120" class="mt-8 rounded-full" />}
+    <p class="typo-body mt-8 text-ink">{author.bio[lang]}</p>
+    {
+      author.links && author.links.length > 0 && (
+        <p class="typo-caption mt-4 text-muted">
+          {author.links?.map((href, i) => (
+            <>
+              {i > 0 && ' · '}
+              <a href={href} rel="me noopener" class="link">
+                {new URL(href).hostname.replace(/^www\./, '')}
+              </a>
+            </>
+          ))}
+        </p>
+      )
+    }
+    {
+      posts.length > 0 && (
+        <section class="mt-14">
+          <h2 class="typo-subhead text-ink">{p.authorPosts}</h2>
+          <ul class="mt-6 border-t border-line">
+            {posts.map((post) => (
+              <li class="border-b border-line py-5">
+                <p class="typo-caption text-muted">{formatDate(post.data.date, lang)}</p>
+                <More href={postPath(post)} class="typo-body mt-1 inline-block">
+                  {post.data.title}
+                </More>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </Article>
+</Base>

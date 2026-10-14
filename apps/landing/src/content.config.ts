@@ -14,6 +14,8 @@ const blog = defineCollection({
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
     translationKey: z.string(),
+    /** Who wrote it: an id in src/data/authors.ts (DEFAULT_AUTHOR when left out). */
+    author: z.string().optional(),
     draft: z.boolean().default(false),
     /** Questions answered at the end of the article, also given to search engines (FAQPage). */
     faq: z.array(z.object({ q: z.string(), a: z.string() })).default([]),

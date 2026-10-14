@@ -1,6 +1,6 @@
 ---
 title: Compartir una nota con un enlace
-metaTitle: 'Compartir una nota por enlace sin que el servidor la lea: FixNote'
+metaTitle: 'Compartir notas por enlace cifrado | FixNote'
 description: Crea un enlace de solo lectura y envía una nota a quien quieras. La clave va en la parte del enlace tras #, así el servidor guarda una copia que no puede leer.
 eyebrow: Enlaces
 intro: ¿Cómo mandas una receta o la lista para un viaje a alguien que no usa FixNote? Crea un enlace de solo lectura. Se abre en cualquier navegador, y el servidor solo guarda una copia cifrada de la nota.

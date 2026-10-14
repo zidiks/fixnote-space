@@ -11,12 +11,12 @@ const d = t(lang)
 const p = d.privacyPage
 ---
 
-<Base lang={lang} title={d.meta.privacy.title} description={d.meta.privacy.description} path="/privacy/" crumb={d.footer.privacy}>
+<Base lang={lang} title={d.meta.privacy.title} description={d.meta.privacy.description} path="/privacy/" crumb={d.footer.privacy} aboutApp={false}>
   <Article lang={lang} eyebrow={p.eyebrow} title={p.title} intro={p.lead} cta={false}>
     <p slot="meta" class="typo-caption mt-4 text-muted">{p.updated}</p>
     {
       p.sections.map((s) => (
-        <section class="mt-14">
+        <section class="mt-14 scroll-mt-20" id={"id" in s ? s.id : undefined}>
           <h2 class="typo-subhead text-ink">{s.title}</h2>
           {s.text.map((para) => (
             <p class="typo-body mt-4 text-ink">{para}</p>

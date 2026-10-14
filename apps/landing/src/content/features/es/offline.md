@@ -1,6 +1,6 @@
 ---
-title: Notas sin internet
-metaTitle: 'Notas sin internet y sin cuenta: el modo sin conexión de FixNote'
+title: App de notas sin internet y sin cuenta
+metaTitle: 'App de notas sin internet y sin cuenta | FixNote'
 description: FixNote funciona sin conexión y sin registro, y notas, búsqueda y dictado se quedan en tu dispositivo. El modo Solo en este dispositivo corta nuestro servidor.
 eyebrow: Sin conexión
 intro: ¿Se pueden tomar notas sin internet, sin cuenta y con una app que no hable nunca con nuestra nube? Sí. Las notas viven en tu dispositivo, y el modo Solo en este dispositivo apaga todo lo que llega al servidor de FixNote.

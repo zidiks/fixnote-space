@@ -1,6 +1,6 @@
 ---
-title: "FixNote vs Joplin: which is better for your notes"
-metaTitle: "Joplin alternative with an AI assistant and dictation: FixNote"
+title: "Joplin alternative with AI: FixNote vs Joplin"
+metaTitle: "Joplin alternative with AI and dictation: FixNote vs Joplin"
 description: "Joplin or FixNote: open source, end-to-end encryption, AI in Joplin 3.7, platforms and price. Where each app is stronger and how to move your notebooks over."
 intro: "Joplin is free and open source, supports end-to-end encryption and syncs through your own cloud or Joplin Cloud. FixNote also encrypts notes on your device, but it is built around an assistant that works across all your notes, on-device dictation and call summaries. Here is how the two differ, including where Joplin is the better pick."
 steps:

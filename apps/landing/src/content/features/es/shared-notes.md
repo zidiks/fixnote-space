@@ -1,6 +1,6 @@
 ---
-title: Notas y carpetas compartidas
-metaTitle: 'Notas compartidas con cifrado: edición en tiempo real en FixNote'
+title: Notas y carpetas compartidas, con cifrado
+metaTitle: 'App de notas compartidas con cifrado | FixNote'
 description: Invita a alguien por correo a una nota o carpeta, elige qué puede hacer y editad juntos en directo. El servidor guarda texto cifrado; solo los miembros lo leen.
 eyebrow: En equipo
 intro: ¿Cómo llevar la lista de la compra o el plan de un viaje entre dos sin que el texto quede legible en un servidor? Invita a la otra persona por correo a una nota o a una carpeta entera, y veréis los cambios del otro al momento.

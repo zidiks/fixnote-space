@@ -25,7 +25,7 @@ const row = `{
 }`
 ---
 
-<Base lang={lang} title={d.meta.security.title} description={d.meta.security.description} path="/security/" crumb={d.nav.security}>
+<Base lang={lang} title={d.meta.security.title} description={d.meta.security.description} path="/security/" crumb={d.nav.security} og={{ shot: `${lang}/settings-data` }}>
   <Article lang={lang} eyebrow={p.eyebrow} title={p.headline} intro={p.lead}>
     {
       p.sections.map((s) => (

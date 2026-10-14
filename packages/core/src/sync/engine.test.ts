@@ -1,5 +1,11 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { type AccountKeys, cryptoReady, deriveKeys, newRecoverySecret } from '../crypto'
+import {
+  type AccountKeys,
+  cryptoReady,
+  deriveKeys,
+  encryptNote,
+  newRecoverySecret,
+} from '../crypto'
 import { prepareDatabase } from '../db/migrate'
 import { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
@@ -99,6 +105,43 @@ describe('SyncEngine', () => {
     await b.engine.sync()
     await a.engine.sync()
     expect(await a.repo.getNote(note.id)).toMatchObject({ folderId: null, updatedAt: edited })
+  })
+
+  it('a new device gets every note with its own time, not the time of the sync', async () => {
+    const a = await device('a')
+    for (let i = 0; i < 205; i++)
+      await a.repo.createNote({ content: `note ${i}`, createdAt: 100 + i, updatedAt: 300 + i })
+    await a.engine.sync()
+    clock = 9_000_000
+    const b = await device('b')
+    await b.engine.sync()
+    const { items } = await b.repo.listNotes({ limit: 200 })
+    expect(items.slice(0, 2).map((n) => [n.title, n.createdAt, n.updatedAt])).toEqual([
+      ['note 204', 304, 504],
+      ['note 203', 303, 503],
+    ])
+    expect(items.every((n) => n.updatedAt < 9_000_000)).toBe(true)
+  })
+
+  it('a pulled text keeps its time even when it equals the time of the text it replaces', async () => {
+    const a = await device('a')
+    const b = await device('b')
+    const note = await a.repo.createNote({ content: 'old', createdAt: 100, updatedAt: 200 })
+    await a.engine.sync()
+    await b.engine.sync()
+    // The server's copy gets another text with the same time (a later move made it newer).
+    const row = remote.notes.get(note.id)
+    if (!row) throw new Error('not pushed')
+    remote.notes.set(note.id, {
+      ...row,
+      ...encryptNote(keys, note.id, 'new'),
+      updatedAt: 5_000,
+      editedAt: 200,
+      version: row.version + 1,
+      seq: ++remote.seq,
+    })
+    await b.engine.sync()
+    expect(await b.repo.getNote(note.id)).toMatchObject({ content: 'new', updatedAt: 200 })
   })
 
   it('only downloads when told not to push, and sends the waiting changes later', async () => {

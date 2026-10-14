@@ -1,6 +1,6 @@
 ---
-title: Sync across devices
-metaTitle: 'Sync notes between computer and phone, end-to-end encrypted'
+title: Sync notes across devices
+metaTitle: 'Notes app that syncs across devices, encrypted | FixNote'
 description: FixNote syncs your notes between Windows, Mac and the browser on your phone. Everything is encrypted on the device, and edits from two devices merge safely.
 eyebrow: Sync
 intro: How do you start a note on your work computer and have it at home and on your phone too? With Pro, FixNote syncs notes, folders and files across your devices and encrypts them before they leave.

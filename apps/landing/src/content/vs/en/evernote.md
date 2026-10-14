@@ -1,6 +1,6 @@
 ---
-title: "FixNote vs Evernote: which is better for your notes"
-metaTitle: "Evernote alternative with AI and encryption: FixNote vs Evernote"
+title: "Free Evernote alternative: FixNote vs Evernote"
+metaTitle: "Free Evernote alternative with AI: FixNote vs Evernote"
 description: "Evernote or FixNote: the free plan, AI assistant, end-to-end encryption, MCP and price. Where each app is stronger and how to move your notebooks over."
 intro: "Evernote has been one of the best-known note apps for years, with its web clipper, tasks and calendar. FixNote is younger and narrower: it focuses on personal notes encrypted on your device and on an assistant that answers from them. Here is how the two differ, including where Evernote is the better pick."
 steps:

@@ -1,7 +1,7 @@
 ---
-title: Cifrado de extremo a extremo
-metaTitle: 'Notas con cifrado de extremo a extremo: cómo FixNote las protege'
-description: FixNote cifra cada nota en tu dispositivo con su propia clave. El servidor guarda solo texto cifrado y tu clave es una frase de 12 palabras que solo tienes tú.
+title: Notas cifradas de extremo a extremo
+metaTitle: 'App de notas cifradas de extremo a extremo | FixNote'
+description: Notas cifradas en tu dispositivo, cada una con su propia clave. El servidor de FixNote guarda solo texto cifrado y tu clave es una frase de 12 palabras.
 eyebrow: Cifrado
 intro: ¿Puede alguien de una app de notas, o quien robe su base de datos, leer lo que escribes? En FixNote la nota se cifra en tu dispositivo, y al servidor solo llega texto cifrado que no se abre sin tu clave.
 card:

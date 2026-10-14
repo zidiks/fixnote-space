@@ -14,7 +14,7 @@ const p = d.blogPage
 const posts = await getPosts(lang)
 ---
 
-<Base lang={lang} title={d.meta.blog.title} description={d.meta.blog.description} path="/blog/" crumb={d.nav.blog}>
+<Base lang={lang} title={d.meta.blog.title} description={d.meta.blog.description} path="/blog/" crumb={d.nav.blog} og={{ eyebrow: d.nav.blog }}>
   <Article lang={lang} eyebrow={p.eyebrow} title={p.headline} intro={p.lead} cta={false}>
     {
       posts.length === 0 ? (

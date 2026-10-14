@@ -1,6 +1,6 @@
 ---
-title: "FixNote o Obsidian: cuál elegir para tus notas"
-metaTitle: "Alternativa a Obsidian con asistente de IA integrado: FixNote"
+title: "Alternativa a Obsidian con IA integrada: FixNote vs Obsidian"
+metaTitle: "Alternativa a Obsidian con IA integrada: FixNote vs Obsidian"
 description: "Obsidian o FixNote: IA sin plugins, sincronización cifrada de extremo a extremo, versión web y precio. En qué gana cada app y cómo traer tu bóveda a FixNote."
 intro: "Obsidian guarda las notas como archivos Markdown y crece con los plugins de su comunidad. FixNote también escribe en Markdown, pero su asistente, el dictado y la sincronización funcionan nada más instalarlo, sin configurar nada. Aquí tienes las diferencias, también donde Obsidian es mejor opción."
 steps:

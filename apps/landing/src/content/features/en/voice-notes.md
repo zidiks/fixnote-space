@@ -1,6 +1,6 @@
 ---
-title: Voice notes that stay on your device
-metaTitle: 'Offline voice notes: on-device speech to text in FixNote'
+title: Voice to text notes that stay on your device
+metaTitle: 'Voice to text notes app that works offline | FixNote'
 description: Dictate a note and FixNote turns speech into text on your device as you talk. The audio never leaves it, and after a one-time model download it works offline.
 eyebrow: Dictation
 intro: Want to dictate a thought or a to-do list without sending your voice to someone else's server? FixNote recognizes speech on your computer or in your browser and turns it straight into a note.

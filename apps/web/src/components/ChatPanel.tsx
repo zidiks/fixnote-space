@@ -15,7 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Kbd,
-  shortcutLabel,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -48,13 +47,13 @@ import { useLlm } from '../lib/assistant/llm'
 import { fileSize } from '../lib/attachments'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote } from '../lib/queries'
+import { useShortcutLabel } from '../lib/shortcuts'
 import { isTouch } from '../lib/touch'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { AgentActivity, AgentConfirm, AnswerChanges, ContextRing } from './chat/AgentParts'
 import { AnswerText } from './chat/AnswerText'
 import { VoiceMessage } from './chat/VoiceMessage'
-import { VOICE_KEYS } from './VoiceBar'
 import { WindowControls } from './WindowControls'
 
 /** Scope that follows what is open: the note, the folder, or everything. */
@@ -274,6 +273,8 @@ const INPUT_LINE_PX = 20
 
 export function ChatPanel() {
   const { t } = useTranslation()
+  const chatKeys = useShortcutLabel('chat')
+  const voiceKeys = useShortcutLabel('voice')
   const platform = usePlatform()
   const drag = platform.kind === 'desktop' ? { 'data-tauri-drag-region': true } : {}
   const setChatOpen = useUi((s) => s.setChatOpen)
@@ -408,7 +409,7 @@ export function ChatPanel() {
           <TooltipContent>
             {t('chat.close')}{' '}
             <Kbd className="border-transparent bg-primary-foreground/15 text-primary-foreground">
-              {shortcutLabel('J')}
+              {chatKeys}
             </Kbd>
           </TooltipContent>
         </Tooltip>
@@ -500,7 +501,7 @@ export function ChatPanel() {
                 onClick={() => void toggleVoice('chat')}
                 aria-label={t('voice.message')}
                 aria-pressed={voice === 'recording'}
-                title={t('voice.dictateHint', { keys: VOICE_KEYS })}
+                title={voiceKeys ? t('voice.dictateHint', { keys: voiceKeys }) : t('voice.message')}
               >
                 <Mic />
               </Button>

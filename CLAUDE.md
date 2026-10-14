@@ -20,6 +20,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   not a button shows `Spinner` next to its text. Nothing may look frozen.
 - Hotkeys: Mod = Ctrl on Windows/Linux, ⌘ on macOS. Windows is the primary desktop target. Match
   letters by physical key (`e.code`, see `hotkeys.ts`), never only by `e.key`: users type in RU/ES layouts.
+  App shortcuts run through `useShortcut(action, …)` (`lib/shortcuts.ts`): bindings are the person's
+  own (Settings → Shortcuts, kv `shortcuts`, per device) or the defaults in `hotkeys.ts`; tooltips
+  use `useShortcutLabel`. System-wide ones (desktop) are registered from `DesktopTray` through
+  `global_shortcuts` (`shortcuts.rs`, global-shortcut plugin) and run the tray actions.
 - Local DB: schema and all SQL live in `packages/core` (`db/schema.ts`, `notes/repo.ts`). Append
   migrations, never edit a shipped one. Inside `db.transaction(fn)` use only the `tx` argument;
   calling the driver itself there deadlocks.
@@ -32,7 +36,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - A note's time (`updatedAt` in the app, `edited_at` in SQL) moves only when its text changes;
   `updated_at` moves with any change and settles moves and deletes in sync. Triggers keep `edited_at`
   unless a writer sets it; sync carries it (`editedAt`, server `notes.edited_at`), so a moved or
-  pulled note keeps its time. Lists join their pages with `joinPages` (each note once, re-sorted):
+  pulled note keeps its time. A shared note's text taken in from the server gets the time it was
+  saved there (`shared_notes.updated_at`, `updatedAt` of `state`/`versions`), never the time of the
+  sync; Telegram notes get the time the message was sent. Lists join their pages with `joinPages` (each note once, re-sorted):
   pages refetched after a sync can overlap.
 - Picking notes in a list (`lib/selection.ts`, `SelectionBar`): a long press or Ctrl/⌘+click
   starts it, clicks then check and uncheck; bulk pin, move, tidy up, delete (Undo; shared notes
@@ -219,7 +225,13 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   the app is app.fixnote.space). Its copy
   lives in `apps/landing/src/i18n` (ru is the reference, en/es must match its shape), not in
   `@fixnote/i18n`. Keep pages script-free apart from the small inline scripts in `Base.astro` and
-  `Hero.astro`; only claim what the app does. No GitHub links on the site: downloads go through
+  `Hero.astro`; only claim what the app does. Analytics (Yandex Metrika, GA4) only on the site and
+  only after the consent banner (`src/data/analytics.ts`, privacy section `cookies`: change them
+  together); the app has none and stays `noindex`. schema.org data comes from `src/lib/schema.ts`
+  (fixed `@id`s); each page's Open Graph picture is drawn after the build from its <title> and the
+  `og` prop of `Base` (`og.mjs`), and changed pages go to IndexNow after the deploy
+  (`indexnow.mjs`). Blog authors: `src/data/authors.ts`, real people only. SEO plan, keyword
+  core and service setup: `docs/SEO.md`, `docs/seo/`. No GitHub links on the site: downloads go through
   `/download/*` in `public/_redirects`. Blog posts: `src/content/blog/<lang>/<slug>.md`, one
   `translationKey` per article across languages.
 

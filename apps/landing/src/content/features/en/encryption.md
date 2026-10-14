@@ -1,7 +1,7 @@
 ---
-title: End-to-end encryption
-metaTitle: 'End-to-end encrypted notes: how FixNote keeps your text private'
-description: FixNote encrypts every note on your device with its own key. The server stores only ciphertext, and the account key is a 12-word phrase that only you hold.
+title: End-to-end encrypted notes
+metaTitle: 'End-to-end encrypted notes app: how it works | FixNote'
+description: 'End-to-end encrypted notes: FixNote encrypts every note on your device with its own key, the server stores only ciphertext, and only you hold the key.'
 eyebrow: Encryption
 intro: Could someone at a notes company, or whoever steals its database, read what you wrote? In FixNote a note is encrypted on your device, and the server only receives ciphertext it can't open without your key.
 card:

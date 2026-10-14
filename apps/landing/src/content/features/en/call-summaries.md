@@ -1,7 +1,7 @@
 ---
-title: Call summaries
-metaTitle: 'Record a call and get a summary on your computer: FixNote'
-description: FixNote records calls on Windows and Mac, transcribes them on your computer and writes a summary with decisions and tasks. No audio file is kept.
+title: Bot-free meeting notes and call summaries
+metaTitle: 'Bot-free AI meeting notes and call transcription | FixNote'
+description: 'No bot joins the call: FixNote records calls on Windows and Mac, transcribes them on your computer and writes a summary with tasks. No audio is kept.'
 eyebrow: Calls
 intro: How do you come out of a Zoom or Telegram call with a short summary instead of a recording you will never replay? FixNote listens to you and the other side, transcribes on your computer and saves a note with decisions and tasks.
 card:

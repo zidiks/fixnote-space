@@ -1,6 +1,6 @@
 ---
 title: Sincronización entre dispositivos
-metaTitle: 'Sincroniza notas entre ordenador y móvil con cifrado: FixNote'
+metaTitle: 'Sincronizar notas entre PC y móvil, con cifrado | FixNote'
 description: FixNote sincroniza tus notas entre Windows, Mac y el navegador del móvil. Todo se cifra en el dispositivo y los cambios de dos sitios se unen sin pérdidas.
 eyebrow: Sincronización
 intro: ¿Cómo empiezas una nota en el ordenador del trabajo y la tienes también en casa y en el móvil? Con Pro, FixNote sincroniza notas, carpetas y archivos entre tus dispositivos y los cifra antes de que salgan.

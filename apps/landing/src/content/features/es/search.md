@@ -1,6 +1,6 @@
 ---
-title: Buscar en tus notas
-metaTitle: 'Búsqueda en notas por palabras y por significado en tres idiomas'
+title: Buscar en tus notas por palabras y por significado
+metaTitle: 'Buscar en tus notas por palabras y significado | FixNote'
 description: FixNote busca en tus notas desde el dispositivo por el inicio de las palabras, en cirílico y latino, en el texto de las imágenes y por significado.
 eyebrow: Búsqueda
 intro: ¿Recuerdas que apuntaste algo sobre las vacaciones, pero no con qué palabra ni en qué idioma? La búsqueda de FixNote encuentra la nota por el inicio de una palabra, en alfabeto cirílico o latino, por el texto de sus imágenes y por significado.

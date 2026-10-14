@@ -1,8 +1,8 @@
 ---
-title: 'How to Take Notes You Can Find Later: 7 Habits and FixNote'
+title: 'How to take notes you can find later: 7 habits'
 description: 'Seven habits that stop notes from getting lost: capture right away, write the context, keep few folders, keep a daily note and search with questions.'
 date: 2026-09-25
-updated: 2026-10-09
+updated: 2026-10-11
 translationKey: findable-notes
 faq:
   - q: How many folders do I need for my notes?

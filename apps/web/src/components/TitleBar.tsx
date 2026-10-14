@@ -9,7 +9,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Kbd,
-  shortcutLabel,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -31,6 +30,7 @@ import { type Route, useUi } from '../app/store'
 import { navBack, navForward } from '../lib/nav-history'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote, useRecents } from '../lib/queries'
+import { useShortcutLabel } from '../lib/shortcuts'
 import { formatCardDate } from '../lib/time'
 import { NotificationsButton } from './Notifications'
 import { RemoteActivityPill } from './RemoteActivityPill'
@@ -114,6 +114,13 @@ function PlaceMenu() {
  */
 export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
   const { t } = useTranslation()
+  const keys = {
+    newNote: useShortcutLabel('newNote'),
+    sidebar: useShortcutLabel('sidebar'),
+    back: useShortcutLabel('back'),
+    forward: useShortcutLabel('forward'),
+    chat: useShortcutLabel('chat'),
+  }
   const platform = usePlatform()
   const ui = useUi()
   const drag = platform.kind === 'desktop' ? { 'data-tauri-drag-region': true } : {}
@@ -140,10 +147,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
             {t('app.name')}
           </button>
         ) : null}
-        <Tip
-          label={t('sidebar.newNote')}
-          hint={platform.kind === 'desktop' ? shortcutLabel('N') : undefined}
-        >
+        <Tip label={t('sidebar.newNote')} hint={keys.newNote}>
           <Button
             variant="ghost"
             size="icon-xs"
@@ -153,7 +157,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
             <SquarePen />
           </Button>
         </Tip>
-        <Tip label={shown ? t('sidebar.collapse') : t('sidebar.expand')} hint={shortcutLabel('\\')}>
+        <Tip label={shown ? t('sidebar.collapse') : t('sidebar.expand')} hint={keys.sidebar}>
           <Button
             variant="ghost"
             size="icon-xs"
@@ -167,7 +171,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
 
       <div {...drag} className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center px-2">
         <div {...drag} className="flex items-center gap-0.5">
-          <Tip label={t('nav.back')} hint={shortcutLabel('[')}>
+          <Tip label={t('nav.back')} hint={keys.back}>
             <Button
               variant="ghost"
               size="icon-xs"
@@ -178,7 +182,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
               <ArrowLeft />
             </Button>
           </Tip>
-          <Tip label={t('nav.forward')} hint={shortcutLabel(']')}>
+          <Tip label={t('nav.forward')} hint={keys.forward}>
             <Button
               variant="ghost"
               size="icon-xs"
@@ -194,7 +198,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         <div {...drag} className="flex items-center justify-end gap-1">
           <RemoteActivityPill />
           <NotificationsButton />
-          <Tip label={ui.chatOpen ? t('chat.close') : t('chat.open')} hint={shortcutLabel('J')}>
+          <Tip label={ui.chatOpen ? t('chat.close') : t('chat.open')} hint={keys.chat}>
             <Button
               variant="ghost"
               size="icon-xs"

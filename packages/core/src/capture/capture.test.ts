@@ -105,6 +105,13 @@ describe('importInbox', () => {
       ].sort(),
     )
     expect(await attachments.pendingCount()).toBe(2)
+    // Each note has the time the message was sent, not when this device took it in.
+    const { items } = await repo.listNotes()
+    expect(items.map((n) => [n.createdAt, n.updatedAt])).toEqual([
+      [1, 1],
+      [1, 1],
+      [1, 1],
+    ])
   })
 
   it('does not import an item twice after an interrupted removal', async () => {

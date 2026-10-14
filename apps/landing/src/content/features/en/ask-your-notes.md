@@ -1,7 +1,7 @@
 ---
-title: Ask your notes
-metaTitle: 'Ask your notes with AI: an assistant that cites its sources'
-description: The FixNote assistant finds answers in your notes, links to the notes it used and can create and edit notes. Works with FixNote AI, your own key or Ollama.
+title: An AI assistant that answers from your notes
+metaTitle: 'AI assistant for notes: chat with your notes | FixNote'
+description: 'Chat with your notes: the FixNote assistant answers from them, links the notes it used and can create and edit notes. FixNote AI, your own key or Ollama.'
 eyebrow: Assistant
 intro: Ask in plain words what you agreed with the contractor or where you wrote down the router password. The assistant finds the right notes, answers and shows where the answer came from.
 card:
