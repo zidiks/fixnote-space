@@ -170,7 +170,7 @@ export function ConnectPage({ authorizationId }: { authorizationId: string }) {
           {step.kind === 'waiting' ? (
             <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Spinner />
-              {t('connect.waitingTitle')}…
+              {t('connect.waiting')}
             </p>
           ) : null}
           {step.kind === 'expired' || step.slow ? (

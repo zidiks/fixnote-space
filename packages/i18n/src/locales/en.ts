@@ -588,6 +588,7 @@ const en = {
     waitingTitle: 'Approve in FixNote on your computer',
     waitingBody:
       'FixNote shows who is asking. Once you answer there, this page goes back to the AI app by itself.',
+    waiting: 'Waiting for FixNote…',
     notOpening: 'FixNote did not open?',
     openAgain: 'Open FixNote again',
     download: 'Get FixNote for your computer',

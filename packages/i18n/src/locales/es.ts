@@ -593,6 +593,7 @@ const es: LocaleResource = {
     waitingTitle: 'Aprueba en FixNote en tu ordenador',
     waitingBody:
       'FixNote muestra quién lo pide. Cuando respondas allí, esta página vuelve sola a la app de IA.',
+    waiting: 'Esperando a FixNote…',
     notOpening: '¿No se abrió FixNote?',
     openAgain: 'Abrir FixNote otra vez',
     download: 'Descargar FixNote para tu ordenador',

@@ -1,7 +1,9 @@
-//! fixnote:// links. After paying, the page the browser lands on opens `fixnote://billing/success`,
-//! which brings the app back to the front. Links wait here until the webview takes them
-//! (`deep_links_take`), so the one that started the app is not lost while the page loads. What a
-//! link means is up to the webview; any page can open one, so it only ever triggers a check.
+//! fixnote:// links. After paying, the page the browser lands on opens `fixnote://billing/success`;
+//! when an AI app connects, the connect page opens `fixnote://connect?authorization_id=…`. Either
+//! brings the app back to the front (also from the tray). Links wait here until the webview takes
+//! them (`deep_links_take`), so the one that started the app is not lost while the page loads. What a
+//! link means is up to the webview; any page can open one, so it only ever triggers a check or a
+//! question the person answers.
 
 use std::sync::Mutex;
 

@@ -592,6 +592,7 @@ const ru: LocaleResource = {
     waitingTitle: 'Подтвердите в FixNote на компьютере',
     waitingBody:
       'FixNote покажет, кто просит доступ. Когда вы ответите там, эта страница сама вернётся в AI-приложение.',
+    waiting: 'Ждём ответа FixNote…',
     notOpening: 'FixNote не открылся?',
     openAgain: 'Открыть FixNote ещё раз',
     download: 'Скачать FixNote для компьютера',
