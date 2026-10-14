@@ -70,5 +70,5 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tauri-plugin-deep-link = "2"
 # System-wide shortcuts (new note, dictation, search, show/hide) while the app is hidden or
 # another app has focus (src/shortcuts.rs).
-tauri-plugin-global-shortcut = "2"
+tauri-plugin-global-shortcut = "~2.3.1"
 tauri-plugin-updater = { version = "2", default-features = false, features = ["native-tls", "system-proxy", "zip"] }
