@@ -535,7 +535,7 @@ const es: LocaleResource = {
       'Mientras FixNote esté abierto aquí, las apps de IA que conectes pueden buscar y leer tus notas. Ven lo que permite Ajustes → IA → Apps conectadas y solo pueden leer.',
     url: 'Dirección del servidor',
     urlHint:
-      'En ChatGPT o Claude, añade un conector personalizado con esta dirección y entra con tu correo de FixNote.',
+      'En ChatGPT o Claude, añade un conector personalizado con esta dirección y apruébalo aquí, en FixNote.',
     copy: 'Copiar',
     copied: 'Dirección copiada',
     status_online: 'Listo: las apps de IA pueden llegar a tus notas a través de este dispositivo',
@@ -570,21 +570,60 @@ const es: LocaleResource = {
     privacy:
       'Lo que pasa por nuestro servidor: lo que pide la app de IA y las notas que tu dispositivo devuelve como respuesta. Solo pasan por la memoria, no se guardan ni se registran. Lo que recibe la app de IA queda sujeto a sus propias reglas.',
   },
-  oauth: {
+  connect: {
+    pageTitle: 'Conectar con FixNote',
+    titleAny: 'Una app de IA quiere leer tus notas',
     title: '{{client}} quiere leer tus notas',
-    body: 'Podrá buscar y leer tus notas de FixNote siempre que FixNote esté abierto con el acceso remoto activado en uno de tus dispositivos.',
-    scope:
-      'Solo ve lo que permite Ajustes → IA → Apps conectadas en ese dispositivo: todas las notas o las carpetas que elegiste. No puede cambiar ni borrar nada.',
-    returnTo: 'Después de responder, vuelves a {{host}}.',
-    account: 'Tu cuenta de FixNote: {{email}}',
+    intro: 'Apruébalo en la app de FixNote, donde ya tienes la sesión iniciada.',
+    can: 'Puede',
+    cannot: 'No puede',
+    canRead: 'Buscar y leer tus notas',
+    canScope:
+      'Ver solo lo que permite Ajustes → IA → Apps conectadas: todas las notas o las carpetas que elegiste',
+    cannotChange: 'Cambiar ni borrar nada',
+    cannotClosed: 'Leer nada mientras FixNote está cerrado o el acceso remoto está desactivado',
+    privacy:
+      'Tu dispositivo lee las notas y envía solo las respuestas. Nuestro servidor las deja pasar y no guarda nada.',
+    returnTo: 'Después vuelves a {{host}}',
+    account: 'Cuenta: {{email}}',
     notPro:
       'El acceso remoto es parte de FixNote Pro. Hasta que lo tengas, la app recibe un error en lugar de notas.',
+    openApp: 'Aprobar en la app de FixNote',
+    useEmail: 'Entrar con un código por correo',
+    waitingTitle: 'Aprueba en FixNote en tu ordenador',
+    waitingBody:
+      'FixNote muestra quién lo pide. Cuando respondas allí, esta página vuelve sola a la app de IA.',
+    notOpening: '¿No se abrió FixNote?',
+    openAgain: 'Abrir FixNote otra vez',
+    download: 'Descargar FixNote para tu ordenador',
+    expiredTitle: 'FixNote aún no ha respondido',
+    expiredBody:
+      'Responde en la app de FixNote o ábrela otra vez. La solicitud dura unos minutos; después, vuelve a conectar desde la app de IA.',
+    declinedTitle: 'No conectado',
+    declinedBody: 'Lo rechazaste en FixNote. Puedes cerrar esta página.',
+    emailTitle: 'Entrar con un código por correo',
+    emailBody: 'Enviamos un código a tu correo de FixNote. Esta sesión vale solo en esta pestaña.',
+    back: 'Atrás',
     allow: 'Permitir',
     deny: 'Denegar',
-    signInTitle: 'Conecta una app de IA a FixNote',
-    signInBody: 'Entra con tu correo de FixNote para ver qué pide la app.',
+    connected: 'Conectado. Volviendo a la app de IA…',
+    notConnected: 'No conectado. Volviendo a la app de IA…',
     invalid: 'Esta solicitud ha caducado o ya se respondió. Vuelve a conectar desde la app de IA.',
-    returning: 'Volviendo a la app…',
+    fromSite: 'de {{site}}',
+    dialogWarning:
+      'Permite solo si acabas de conectar FixNote en {{host}} tú mismo. Cualquier página web puede abrir esta ventana.',
+    signedOut:
+      'Primero inicia sesión en FixNote aquí, o usa el código por correo en la página de tu navegador.',
+    localOnly:
+      'FixNote está configurado para funcionar solo en este dispositivo, así que no conecta apps de IA. Usa el código por correo en la página de tu navegador.',
+    againTitle: 'Una app de IA que ya permitiste se conecta otra vez',
+    againBody: 'Ya puede leer tus notas. Continúa para volver a ella en tu navegador.',
+    continue: 'Continuar',
+    cancel: 'Cancelar',
+    doneAllowed: 'Conectado. Vuelve a tu navegador.',
+    doneDenied: 'No conectado.',
+    unsent:
+      'Respondido, pero la página de tu navegador no lo recibió. Pulsa allí «Abrir FixNote otra vez».',
   },
   aiProvider: {
     title: 'Modelo',

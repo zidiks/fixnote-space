@@ -695,6 +695,11 @@ export function billingApi() {
   return session ? (deps?.backend?.billing ?? null) : null
 }
 
+/** The server as the signed-in account, also while this device is locked; null when signed out. */
+export function sessionBackend() {
+  return session ? (deps?.backend ?? null) : null
+}
+
 export function captureBackend() {
   return engine ? (deps?.backend ?? null) : null
 }

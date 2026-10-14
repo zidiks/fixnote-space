@@ -575,7 +575,7 @@ export const devBackend: AccountBackend = {
   },
   collab: (sharedId) => broadcastChannelTransport(sharedId),
   shared: (userId) => devSharedRemote(userId),
-  remoteMcp: devRemoteMcp(() => Boolean(load().session)),
+  remoteMcp: devRemoteMcp(() => load().session?.email ?? null),
   subscribe: (_userId, onChange, onLive) => {
     onLive?.(true)
     const listener = () => onChange()

@@ -1,3 +1,4 @@
+import { parseConnectLink } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -5,6 +6,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
 import { Toaster } from 'sonner'
 import { CallBar } from '../components/CallBar'
 import { ChatPanel } from '../components/ChatPanel'
+import { ConnectDialog } from '../components/connect/ConnectDialog'
 import { DesktopTray } from '../components/DesktopTray'
 import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
@@ -23,6 +25,7 @@ import { TidyView } from '../components/TidyView'
 import { TitleBar } from '../components/TitleBar'
 import { VoiceBar } from '../components/VoiceBar'
 import { paymentReturned } from '../lib/account/account'
+import { usesDevBackend } from '../lib/account/pick'
 import { AccountProvider } from '../lib/account/provider'
 import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider, useDb } from '../lib/db'
@@ -35,6 +38,7 @@ import { billingLink } from '../lib/payment'
 import { PlatformProvider, usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
 import { RemoteMcpBridge } from '../lib/remote-mcp/bridge'
+import { askToConnect } from '../lib/remote-mcp/connect'
 import { initShortcuts, useShortcut } from '../lib/shortcuts'
 import { appShown } from '../lib/shown'
 import { useAutoUpdateCheck } from '../lib/updates'
@@ -146,19 +150,24 @@ function AppShell() {
     history.replaceState(history.state, '', url)
     if (billing === 'success' || billing === 'cancel') paymentReturned(billing)
   }, [])
-  // The desktop app: the page after paying hands back with fixnote://billing/….
+  // The desktop app: the page after paying hands back with fixnote://billing/…, the connect page
+  // asks with fixnote://connect?authorization_id=… (`?dev-backend`: from another tab).
   useEffect(() => {
-    const links = platform.deepLinks
-    if (!links) return
     let off: (() => void) | undefined
     let gone = false
-    void links
-      .listen((link) => {
-        const result = billingLink(link)
-        if (result) paymentReturned(result)
-      })
+    void (async () =>
+      platform.deepLinks ??
+      (usesDevBackend() ? (await import('../lib/remote-mcp/dev')).devDeepLinks : null))()
+      .then((links) =>
+        links?.listen((link) => {
+          const result = billingLink(link)
+          if (result) paymentReturned(result)
+          const connect = parseConnectLink(link)
+          if (connect) askToConnect(connect)
+        }),
+      )
       .then((unlisten) => {
-        if (gone) unlisten()
+        if (gone) unlisten?.()
         else off = unlisten
       })
     return () => {
@@ -307,6 +316,7 @@ function AppShell() {
       <RemoteMcpBridge />
       <DropLayer />
       <PairingRequestDialog />
+      <ConnectDialog />
       <LayoutOnboarding />
       <Toaster
         theme={theme}
