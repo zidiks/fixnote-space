@@ -87,6 +87,15 @@ Deno.test('"hard" thinks on the larger model, gets its reasoning back and weighs
             reasoning_content: 'Look first.',
           },
           { role: 'tool', tool_call_id: 'c1', content: 'Work (id: 1): 3 notes' },
+          { role: 'assistant', content: 'Three notes.', reasoning_content: 'Count them.' },
+          { role: 'user', content: 'and in Home?' },
+          {
+            role: 'assistant',
+            content: null,
+            tool_calls: [{ ...call, id: 'c2' }],
+            reasoning_content: 'Look again.',
+          },
+          { role: 'tool', tool_call_id: 'c2', content: 'Home (id: 2): 1 note' },
         ],
       },
       auth('h1'),
@@ -102,6 +111,8 @@ Deno.test('"hard" thinks on the larger model, gets its reasoning back and weighs
   assertEquals(seen?.body.temperature, undefined)
   const sent = seen?.body.messages as { reasoning_content?: string }[]
   assertEquals(sent[1]?.reasoning_content, 'Look first.')
+  // Earlier answers keep theirs too: DeepSeek refuses tool requests without it.
+  assertEquals(sent[3]?.reasoning_content, 'Count them.')
   // 42 tokens at four times the weight; a step with tool results is no new request.
   assertEquals(charged, [['h1', 168]])
 })
@@ -120,10 +131,33 @@ Deno.test('rejects anonymous callers and bad input', async () => {
     400,
   )
   assertEquals((await handle(post({ messages: [] }, auth('u2')), env())).status, 400)
-  const big = { messages: [{ role: 'user', content: 'x'.repeat(600_000) }] }
+  const big = { messages: [{ role: 'user', content: 'x'.repeat(1_600_000) }] }
   assertEquals((await handle(post(big, auth('u2')), env())).status, 413)
   assertEquals((await handle(new Request('http://fn', { method: 'GET' }), env())).status, 405)
   assertEquals((await handle(new Request('http://fn', { method: 'OPTIONS' }), env())).status, 200)
+})
+
+Deno.test('takes a long chat with its tool steps (bounded by size, not by count)', async () => {
+  const call = (i: number) => ({
+    id: `c${i}`,
+    type: 'function',
+    function: { name: 'get_note', arguments: '{"id":"n"}' },
+  })
+  const messages: Record<string, unknown>[] = [{ role: 'system', content: 'rules' }]
+  for (let i = 0; i < 100; i++) {
+    messages.push(
+      { role: 'user', content: `q${i}` },
+      { role: 'assistant', content: null, tool_calls: [call(i)] },
+      { role: 'tool', tool_call_id: `c${i}`, content: 'note text' },
+      { role: 'assistant', content: `a${i}` },
+    )
+  }
+  const res = await handle(post({ messages }, auth('long')), env())
+  assertEquals(res.status, 200)
+  await res.text()
+  assertEquals((seen?.body.messages as unknown[] | undefined)?.length, 401)
+  const tooMany = Array.from({ length: 1001 }, () => ({ role: 'user', content: 'x' }))
+  assertEquals((await handle(post({ messages: tooMany }, auth('long2')), env())).status, 400)
 })
 
 Deno.test('is unavailable without a server key', async () => {
