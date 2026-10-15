@@ -305,9 +305,33 @@ the sidebar card, "This is part of Pro", the note at the end of the trial).
   wallet set in Suby): such subscriptions are renewed by hand from Suby's reminder email, a
   renewal not paid by the due date turns into `PAST_DUE` (Pro off, back on when paid), and crypto
   payments cannot be refunded. Settings → Plan says so under the buttons (`plan.payCrypto`).
+- Card payments go through [ListoPays](https://docs.listopays.com/docs/intro/), next to Suby: at
+  checkout the person picks "Card" (default) or "Crypto". ListoPays has no subscriptions, so a card
+  payment buys a prepaid month ($7) or year ($60) that runs from the end of what is already paid
+  (`subscriptions.prepaid_until`, `supabase/migrations/*_card_payments.sql`); nothing is charged
+  again, and the app reminds the person 3 days before the end (Pro card, Settings → Billing; no
+  email). `billing` (`card-checkout`) opens an order (`card_orders`) and ListoPays' payment page
+  for it; `listopays-webhook` settles the order once ListoPays reports it paid (`card_order_paid`:
+  our order, the same currency, at least its amount, once per order and per transaction). The
+  device that started the payment waits for its order (`order-status`), so nothing depends on the
+  return pages. Card payments are in the history with a receipt the `billing` function writes
+  (ListoPays has none). Set up once:
+  1. ListoPays dashboard → the website (fixnote.space) → Edit Website Configuration:
+     - Webhook URL: `https://nsteehqbmljuczxgkvae.supabase.co/functions/v1/listopays-webhook`
+     - Success URL: `https://app.fixnote.space/?billing=success&via=card`
+     - Fail URL: `https://app.fixnote.space/?billing=cancel&via=card`
+     "Commission In Price" is a business choice: the webhook accepts a paid amount at or above
+     the order's, never below.
+  2. `pnpm sb secrets set LISTOPAYS_PUBLIC_KEY=... LISTOPAYS_PRIVATE_KEY=...` (the Website Public
+     Key opens payment pages; the Website Private Key arrives in every webhook and is how it is
+     checked: keep both out of the app and the repository), then `pnpm sb:migrate` and
+     `pnpm sb:functions`.
+  ListoPays has no test mode: try it end to end with `?dev-backend` (a fake payment page), then
+  with one real $7 payment.
 - Try every state without Supabase: `?dev-backend`, then Settings → Plan has a switch
-  (trial, pro, free, "use up AI", "trial ends tomorrow", "new account"); switching to free
-  ends the trial, and the fake checkout turns Pro on.
+  (trial, pro, free, "use up AI", "trial ends tomorrow", "card time ends in 2 days", "new
+  account"); switching to free ends the trial, the fake crypto checkout turns Pro on, and "Card"
+  opens a fake payment page in a new tab.
 
 ## Supabase
 

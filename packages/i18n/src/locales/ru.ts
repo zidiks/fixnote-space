@@ -829,7 +829,7 @@ const ru: LocaleResource = {
     extendedTitle: 'Pro продлён',
     cardPaidUntil: 'Pro до {{date}}. Само ничего не продлится: напомним за 3 дня.',
     paidCardWeb:
-      'Вернитесь во вкладку FixNote, где начали оплату: Pro включится там сам. Эту вкладку можно закрыть.',
+      'Вернитесь во вкладку FixNote, где начали оплату: Pro включится там сам.',
     paidCardAnywhere:
       'Вернитесь в FixNote: Pro включится сам в приложении или вкладке, где вы начали оплату.',
     continueInBrowser: 'Продолжить в браузере',

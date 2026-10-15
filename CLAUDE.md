@@ -222,6 +222,15 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `switch`/`keep-plan` (the other plan from the period end: crypto has no card to charge now) and
   `cancel` (Pro until the period end; cannot be undone, only subscribed again). `devBilling` in
   `dev-plan.ts` fakes it for `?dev-backend`.
+  Cards go through ListoPays instead (the person picks Card or Crypto; `_shared/listopays.ts`): no
+  subscriptions, a payment buys a prepaid month/year from the end of the paid time
+  (`subscriptions.prepaid_until`, which suby-webhook never writes; `my_plan().status` 'prepaid').
+  `billing` `card-checkout` opens a `card_orders` row and the payment page; `listopays-webhook`
+  (checked with the private key in the body, no signature) settles it only through
+  `card_order_paid` (our order, currency, amount at least the order's, once). ListoPays' return
+  pages are static (`?billing=…&via=card` → `PaidPage`), so the device that paid polls
+  `order-status` (`lib/card-payment.ts`, `CardPaymentDialog`); a reminder shows 3 days before the
+  end. No Suby checkout while card time runs, no card checkout while Suby renews.
   After paying, Suby sends the browser back to the web app (`?billing=success`) or, when bought in
   the desktop app, to `?billing=…&to=app` (`PaidPage`: no local DB, no account), which opens the
   app with `fixnote://billing/…` (deep-link plugin, `deep_link.rs`; the scheme is in

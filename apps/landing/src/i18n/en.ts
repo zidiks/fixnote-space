@@ -530,7 +530,7 @@ export const en: Dict = {
   privacyPage: {
     eyebrow: 'Privacy',
     title: 'Privacy policy',
-    updated: 'Updated October 14, 2026',
+    updated: 'Updated October 15, 2026',
     lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data FixNote has and why.',
     sections: [
       {
@@ -590,7 +590,7 @@ export const en: Dict = {
       {
         title: 'Other services',
         text: [
-          'Account data and encrypted notes are stored with Supabase, and sign-in emails are sent by Resend. Payments for Pro are handled by Suby: we get the state of the subscription, never the card.',
+          'Account data and encrypted notes are stored with Supabase, and sign-in emails are sent by Resend. Card payments for Pro are processed by ListoPays and crypto payments by Suby: we get the status of the payment or subscription, never the card details.',
           'The app downloads its search and speech models from Hugging Face. Link cards in the browser are fetched through our server (URLs are not logged), and directly in the desktop app. The desktop app checks for updates at fixnote.space and GitHub; the Microsoft Store version gets them from the Store.',
         ],
       },

@@ -821,7 +821,7 @@ const en = {
     cardPaidUntil:
       'Pro until {{date}}. Nothing renews by itself: we will remind you 3 days before.',
     paidCardWeb:
-      'Go back to the FixNote tab where you started: Pro turns on there by itself. You can close this one.',
+      'Go back to the FixNote tab where you started: Pro turns on there by itself.',
     paidCardAnywhere:
       'Go back to FixNote: Pro turns on by itself in the app or tab where you started the payment.',
     continueInBrowser: 'Continue in the browser',
