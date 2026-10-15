@@ -391,7 +391,8 @@ async function cardAction(
       const id = typeof body.order === 'string' ? body.order : ''
       const order = id ? await card.store.order(user, id) : null
       if (!order) return jsonError(404, 'No such order')
-      const stale = order.status === 'pending' && now - Date.parse(order.createdAt) > ORDER_PENDING_FOR
+      const stale =
+        order.status === 'pending' && now - Date.parse(order.createdAt) > ORDER_PENDING_FOR
       return json({
         status: stale ? 'expired' : order.status,
         plan: order.plan,
@@ -400,13 +401,16 @@ async function cardAction(
     }
     case 'overview': {
       const orders = await card.store.paidOrders(user, HISTORY)
-      return json({ subscription: null, payments: orders.map(cardPayment) } satisfies BillingOverview)
+      return json({
+        subscription: null,
+        payments: orders.map(cardPayment),
+      } satisfies BillingOverview)
     }
     case 'receipt': {
       const id = typeof body.paymentId === 'string' ? body.paymentId.slice(CARD_ID.length) : ''
       const order = id ? await card.store.order(user, id) : null
       // Only the account's own, paid orders.
-      if (!order || order.status !== 'paid') return jsonError(404, 'No such payment')
+      if (order?.status !== 'paid') return jsonError(404, 'No such payment')
       const date = (iso: string | null) => (iso ?? '').slice(0, 10)
       const paid = (order.paidAmount ?? order.amount).toFixed(2)
       const pdf = receiptPdf([

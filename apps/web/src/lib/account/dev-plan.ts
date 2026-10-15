@@ -1,4 +1,4 @@
-import type { BillingApi, BillingOverview } from '../billing'
+import { type BillingApi, type BillingOverview, CheckoutRefused } from '../billing'
 
 /**
  * `?dev-backend`: the account's plan on the fake server, with the rules of the real one
@@ -23,8 +23,18 @@ interface DevPlanState {
     next: 'month' | 'year' | null
     canceled: boolean
     periodEnd: number
-    payments: { id: string; at: number; plan: 'month' | 'year' }[]
+    payments: { id: string; at: number; plan: 'month' | 'year'; method?: 'card' | 'crypto' }[]
   }
+  /** Paid by card (ListoPays): Pro until then, nothing renews (the fake `prepaid_until`). */
+  prepaidUntil?: number
+  /** Card orders on the fake server (`card_orders`). */
+  cardOrders?: {
+    id: string
+    plan: 'month' | 'year'
+    at: number
+    status: 'pending' | 'paid' | 'failed'
+    periodEnd?: number
+  }[]
   day: string
   requests: number
 }
@@ -97,6 +107,8 @@ export function devStartTrial() {
 
 /** The fake checkout: paying turns Pro on, and it is a payment in the history. */
 export function devCheckout(plan: 'month' | 'year' = 'month') {
+  // As the real one: no subscription beside card time that still runs.
+  if (prepaidNow(load())) throw new CheckoutRefused('prepaid_active')
   setDevPlanMode('pro')
   const s = load()
   const now = Date.now()
@@ -115,9 +127,79 @@ export function devCheckout(plan: 'month' | 'year' = 'month') {
 
 const PRICE = { month: 700, year: 6000 }
 
+/** Card time runs (the fake `prepaid_now`). */
+const prepaidNow = (s: DevPlanState) => (s.prepaidUntil ?? 0) > Date.now()
+/** A Suby subscription renews (the fake `suby_renews`). */
+const subyRenews = (s: DevPlanState) => s.mode === 'pro' && !s.billing?.canceled
+/** A card order not paid within this long shows as expired (as `order-status` does). */
+const ORDER_PENDING_FOR = 3 * 3_600_000
+
+/**
+ * The fake ListoPays webhook (`card_order_paid`): the order is paid, and the card time grows from
+ * the end of what is paid (earlier card time, or a Suby period that does not renew).
+ */
+export function devCardPaid(orderId: string): boolean {
+  const s = load()
+  const order = s.cardOrders?.find((o) => o.id === orderId)
+  if (!order || order.status === 'paid') return false
+  const now = Date.now()
+  const subyEnd = s.mode === 'pro' && s.billing ? s.billing.periodEnd : 0
+  const base = Math.max(now, s.prepaidUntil ?? 0, subyEnd)
+  const end = new Date(base)
+  if (order.plan === 'year') end.setUTCFullYear(end.getUTCFullYear() + 1)
+  else end.setUTCMonth(end.getUTCMonth() + 1)
+  order.status = 'paid'
+  order.periodEnd = end.getTime()
+  const billing = s.billing ?? {
+    plan: order.plan,
+    next: null,
+    canceled: true,
+    periodEnd: now,
+    payments: [],
+  }
+  save({
+    ...s,
+    prepaidUntil: end.getTime(),
+    subscribed: true,
+    trialUsed: true,
+    billing: {
+      ...billing,
+      payments: [
+        { id: `card_${order.id}`, at: now, plan: order.plan, method: 'card' },
+        ...billing.payments,
+      ],
+    },
+  })
+  return true
+}
+
 /** The fake `billing` function (supabase/functions/billing). */
 export const devBilling: BillingApi = {
   overview: async () => devOverview(),
+  cardCheckout: async (plan) => {
+    const s = load()
+    if (subyRenews(s)) throw new CheckoutRefused('subscription_active')
+    const id = crypto.randomUUID()
+    save({
+      ...s,
+      cardOrders: [...(s.cardOrders ?? []), { id, plan, at: Date.now(), status: 'pending' }],
+    })
+    // ListoPays' page, faked by the app itself (`DevCardPage`).
+    const url = new URL(location.href)
+    url.search = `?dev-backend&dev-card=${id}`
+    url.hash = ''
+    return { url: url.toString(), order: id }
+  },
+  orderStatus: async (id) => {
+    const order = load().cardOrders?.find((o) => o.id === id)
+    if (!order) throw new Error('No such order')
+    const stale = order.status === 'pending' && Date.now() - order.at > ORDER_PENDING_FOR
+    return {
+      status: stale ? 'expired' : order.status,
+      plan: order.plan,
+      periodEnd: order.periodEnd ? new Date(order.periodEnd).toISOString() : null,
+    }
+  },
   receipt: async (id) => {
     if (!load().billing?.payments.some((p) => p.id === id)) throw new Error('No such payment')
     // A tiny real PDF, so saving and opening it works.
@@ -162,7 +244,7 @@ function devOverview(): BillingOverview {
       amountCents: PRICE[p.plan],
       currency: 'USD',
       status: 'paid',
-      method: 'crypto',
+      method: p.method ?? 'crypto',
       plan: p.plan,
     })),
   }
@@ -187,7 +269,15 @@ export function endDevTrialSoon() {
 
 /** Back to a new account: Free, never paid, the trial still to take. */
 export function resetDevAccount() {
-  save({ ...load(), mode: 'free', subscribed: false, trialUsed: false })
+  save({
+    ...load(),
+    mode: 'free',
+    subscribed: false,
+    trialUsed: false,
+    billing: undefined,
+    prepaidUntil: undefined,
+    cardOrders: [],
+  })
 }
 
 /** Spends the whole month's AI allowance (to see what running out looks like). */
@@ -196,7 +286,16 @@ export function spendDevAi() {
   save({ ...s, tokens: s.mode === 'trial' ? LIMITS.trial : LIMITS.month })
 }
 
-export const devIsPro = () => load().mode !== 'free'
+/** Card time: two days left (to see the reminder before it ends). */
+export function endDevPrepaidSoon() {
+  save({ ...load(), prepaidUntil: Date.now() + 2 * DAY })
+}
+
+/** What the plan gives right now: card time counts as paid, also on top of a trial. */
+const tier = (s: DevPlanState): 'free' | 'trial' | 'paid' =>
+  s.mode === 'pro' || prepaidNow(s) ? 'paid' : s.mode === 'trial' ? 'trial' : 'free'
+
+export const devIsPro = () => tier(load()) !== 'free'
 
 /** What the real triggers raise when a Free account writes something that needs Pro. */
 export function devRequirePro() {
@@ -211,7 +310,7 @@ const resetsAt = () => {
 function aiStatus(s: DevPlanState) {
   return {
     used: s.tokens,
-    limit: s.mode === 'free' ? 0 : s.mode === 'trial' ? LIMITS.trial : LIMITS.month,
+    limit: tier(s) === 'free' ? 0 : tier(s) === 'trial' ? LIMITS.trial : LIMITS.month,
     today: s.requests,
     day_limit: LIMITS.dayRequests,
     resets_at: resetsAt(),
@@ -222,32 +321,35 @@ function aiStatus(s: DevPlanState) {
 export function devMyPlan(storageUsed: number, notes: number): Record<string, unknown> {
   const s = load()
   const filesDeleteAt =
-    s.mode === 'free' && !s.subscribed && storageUsed > 0
+    tier(s) === 'free' && !s.subscribed && storageUsed > 0
       ? new Date(s.trialEndsAt + LIMITS.freeFilesDays * DAY).toISOString()
       : null
   return {
-    plan: s.mode === 'free' ? 'free' : 'pro',
+    plan: tier(s) === 'free' ? 'free' : 'pro',
     status:
-      s.mode === 'trial'
-        ? 'trialing'
-        : s.mode === 'pro'
-          ? s.billing?.canceled
-            ? 'canceled'
-            : 'active'
-          : 'free',
+      prepaidNow(s) && !subyRenews(s)
+        ? 'prepaid'
+        : s.mode === 'trial'
+          ? 'trialing'
+          : s.mode === 'pro'
+            ? s.billing?.canceled
+              ? 'canceled'
+              : 'active'
+            : 'free',
     beta: true,
     trial_ends_at: new Date(s.trialEndsAt).toISOString(),
     current_period_end:
       s.mode === 'pro'
         ? new Date(s.billing?.periodEnd ?? Date.now() + 30 * DAY).toISOString()
         : null,
+    prepaid_until: s.prepaidUntil ? new Date(s.prepaidUntil).toISOString() : null,
     paid_before: s.subscribed,
     trial_available: !s.trialUsed && !s.subscribed,
     files_delete_at: filesDeleteAt,
     ai: aiStatus(s),
     storage: {
       used: storageUsed,
-      limit: s.mode === 'free' ? 0 : s.mode === 'trial' ? LIMITS.trialStorage : LIMITS.storage,
+      limit: tier(s) === 'free' ? 0 : tier(s) === 'trial' ? LIMITS.trialStorage : LIMITS.storage,
     },
     usage: { notes, ai_answers: s.requests, files: storageUsed },
   }
@@ -262,7 +364,7 @@ export function devAiRefusal(): Response | null {
       status,
       headers: { 'Content-Type': 'application/json' },
     })
-  if (s.mode === 'free') return refuse(402, 'pro_required', 'The assistant is part of FixNote Pro')
+  if (tier(s) === 'free') return refuse(402, 'pro_required', 'The assistant is part of FixNote Pro')
   if (ai.used >= ai.limit) return refuse(429, 'month_limit', 'This month’s AI allowance is used up')
   if (ai.today >= ai.day_limit) return refuse(429, 'day_limit', 'Today’s AI allowance is used up')
   return null

@@ -370,7 +370,10 @@ Deno.test('no card checkout while a subscription renews, no Suby one while card 
   assertEquals(renewing.calls, [])
   const prepaid = cardSetup({ prepaidUntil: '2026-11-01T00:00:00Z' })
   const { suby, calls } = fakeSuby()
-  assertEquals((await handle(post({ plan: 'month' }), env, suby, undefined, prepaid.card)).status, 409)
+  assertEquals(
+    (await handle(post({ plan: 'month' }), env, suby, undefined, prepaid.card)).status,
+    409,
+  )
   assertEquals(calls, [])
   // Card time over: the subscription may start.
   const over = cardSetup({ prepaidUntil: '2026-10-01T00:00:00Z' })

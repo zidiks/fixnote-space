@@ -14,7 +14,7 @@ const HIDE_FOR = 14 * 86_400_000
 const DAY = 86_400_000
 
 /** What the card is about: each can be hidden on its own. */
-type CardKind = 'offer' | 'ending' | 'files'
+type CardKind = 'offer' | 'ending' | 'renew' | 'files'
 
 const hiddenKey = (kind: CardKind) => (kind === 'offer' ? HIDDEN_KEY : `${HIDDEN_KEY}.${kind}`)
 
@@ -28,7 +28,8 @@ const hiddenRecently = (kind: CardKind) => {
 
 /**
  * Bottom of the sidebar: Pro for someone not signed in or signed in on Free; on the trial's last
- * two days, a reminder that it ends; on Free, a month before the server copy of the files goes, a
+ * two days, a reminder that it ends; with Pro paid by card (no renewal), 3 days before it ends, a
+ * reminder to extend it; on Free, a month before the server copy of the files goes, a
  * note about that. Not shown in "only on this device" mode, which chose to keep away from the
  * server. Hiding it keeps it away for two weeks.
  */
@@ -53,19 +54,26 @@ export function ProCard() {
           title: t('plan.cardTrialEnds', { date: date(info.trialEndsAt) }),
           body: t('plan.cardKeepPro'),
         }
-      : info?.plan === 'free' && info.filesDeleteAt && info.filesDeleteAt - now < 30 * DAY
+      : // Paid by card: nothing renews, so 3 days before the end a reminder to extend.
+        info?.status === 'prepaid' && info.prepaidUntil && info.prepaidUntil - now < 3 * DAY
         ? {
-            kind: 'files',
-            title: t('plan.cardTitle'),
-            body: t('plan.cardFiles', { date: date(info.filesDeleteAt) }),
+            kind: 'renew',
+            title: t('plan.cardTrialEnds', { date: date(info.prepaidUntil) }),
+            body: t('plan.cardExtend'),
           }
-        : info?.plan === 'free'
+        : info?.plan === 'free' && info.filesDeleteAt && info.filesDeleteAt - now < 30 * DAY
           ? {
-              kind: 'offer',
+              kind: 'files',
               title: t('plan.cardTitle'),
-              body: info.trialAvailable ? t('plan.cardBody') : t('plan.cardBodyFree'),
+              body: t('plan.cardFiles', { date: date(info.filesDeleteAt) }),
             }
-          : null
+          : info?.plan === 'free'
+            ? {
+                kind: 'offer',
+                title: t('plan.cardTitle'),
+                body: info.trialAvailable ? t('plan.cardBody') : t('plan.cardBodyFree'),
+              }
+            : null
   // Nothing while the app starts: the account and this device's settings are not known yet.
   if (phase === 'loading' || !settingsLoaded) return null
   if (!card || localOnly || phase === 'disabled' || hiddenRecently(card.kind)) return null

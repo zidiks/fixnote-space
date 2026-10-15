@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
 import { Toaster } from 'sonner'
 import { CallBar } from '../components/CallBar'
+import { CardPaymentDialog } from '../components/CardPaymentDialog'
 import { ChatPanel } from '../components/ChatPanel'
 import { ConnectDialog } from '../components/connect/ConnectDialog'
 import { DesktopTray } from '../components/DesktopTray'
@@ -310,6 +311,7 @@ function AppShell() {
       <TrialEndedDialog />
       <Paywall />
       <PaymentDialog />
+      <CardPaymentDialog />
       <VoiceBar />
       <CallBar />
       <DesktopTray />

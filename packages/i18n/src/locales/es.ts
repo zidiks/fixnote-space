@@ -799,6 +799,45 @@ const es: LocaleResource = {
     endedKeepPro: 'Mantener Pro',
     devTrialEnding: 'La prueba acaba mañana',
     devNewAccount: 'Cuenta nueva',
+    payBy: 'Pagar con',
+    payCard: 'Tarjeta',
+    payCryptoTab: 'Cripto',
+    payCardHint:
+      'Pago con tarjeta a través de ListoPays, por un mes o un año por adelantado. No se renueva solo: te lo recordamos 3 días antes del final.',
+    statusPrepaid: 'Pro hasta el {{date}} · pagado con tarjeta · sin renovación automática.',
+    extend: 'Ampliar Pro',
+    extendMonth: '+1 mes · $7',
+    extendYear: '+1 año · $60',
+    extendHint: 'Pago con tarjeta. El tiempo nuevo empieza después del {{date}}.',
+    prepaidEnding:
+      'Pro termina el {{date}}. Amplíalo para conservar la sincronización, el asistente de IA y la colaboración.',
+    cardExtend: 'Pagado con tarjeta, sin renovación automática. Amplíalo para conservar Pro.',
+    subscriptionRunning: 'Tu suscripción está activa, así que no hay nada que pagar ahora.',
+    prepaidRunning: 'Pro está pagado con tarjeta. Amplíalo con tarjeta en Ajustes → Facturación.',
+    cardWaitTitle: 'Esperando tu pago',
+    cardWaitBody:
+      'Paga en la página de ListoPays que se abrió en tu navegador. Esta ventana se actualiza sola cuando el pago se complete.',
+    cardWaitLate:
+      'Todavía no hay pago. Si ya pagaste, puede tardar unos minutos; esta ventana sigue comprobando. También puedes cerrarla: Pro se activa solo.',
+    cardOpenAgain: 'Abrir la página de pago',
+    cardIPaid: 'Ya he pagado',
+    cardNotYet: 'Aún no ha llegado. Puede tardar un minuto.',
+    cardExpiredTitle: 'La página de pago ha caducado',
+    cardExpiredBody:
+      'No se ha cobrado nada. Abre una página de pago nueva para intentarlo otra vez.',
+    cardFailedBody: 'No se pudo abrir la página de pago. No se ha cobrado nada.',
+    cardTryAgain: 'Intentar de nuevo',
+    extendedTitle: 'Pro ampliado',
+    cardPaidUntil: 'Pro hasta el {{date}}. No se renueva solo: te lo recordaremos 3 días antes.',
+    paidCardWeb:
+      'Vuelve a la pestaña de FixNote donde empezaste: Pro se activa allí solo. Puedes cerrar esta.',
+    paidCardAnywhere:
+      'Vuelve a FixNote: Pro se activa solo en la app o la pestaña donde empezaste el pago.',
+    continueInBrowser: 'Seguir en el navegador',
+    devCardTitle: 'Página de pago de prueba',
+    devCardPay: 'Pagar {{price}}',
+    devCardLeave: 'Salir sin pagar',
+    devPrepaidEnding: 'El tiempo pagado con tarjeta termina en 2 días',
   },
   layout: {
     title: '¿Cómo prefieres trabajar?',
