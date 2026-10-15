@@ -1,5 +1,6 @@
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
+import { readMemory, writeMemory } from './memory'
 
 /** A note as far as undo is concerned; null = the note did not exist (or was deleted). */
 export interface NoteState {
@@ -44,6 +45,14 @@ export type AiActionKind =
   | 'chat.move'
   | 'chat.delete'
   | 'chat.folder'
+  /** The assistant remembered something about the user (its memory, not a note). */
+  | 'chat.memory'
+
+/** The assistant's memory of the user before and after a change. */
+export interface MemoryChange {
+  before: string
+  after: string
+}
 
 export interface AiAction {
   id: string
@@ -54,6 +63,8 @@ export interface AiAction {
   provider: string
   changes: NoteChange[]
   folderChanges: FolderChange[]
+  /** A change to the assistant's memory of the user. */
+  memory?: MemoryChange | null
   createdAt: number
   undoneAt: number | null
 }
@@ -67,6 +78,7 @@ interface Row {
   provider: string
   changes: string
   folder_changes: string | null
+  memory: string | null
   created_at: number
   undone_at: number | null
 }
@@ -83,6 +95,7 @@ const toAction = (r: Row): AiAction => ({
   provider: r.provider,
   changes: JSON.parse(r.changes) as NoteChange[],
   folderChanges: r.folder_changes ? (JSON.parse(r.folder_changes) as FolderChange[]) : [],
+  memory: r.memory ? (JSON.parse(r.memory) as MemoryChange) : null,
   createdAt: Number(r.created_at),
   undoneAt: r.undone_at === null ? null : Number(r.undone_at),
 })
@@ -198,6 +211,39 @@ export class AuditLog {
     return id
   }
 
+  /** Changes the assistant's memory of the user to `after`, logged so it can be undone. */
+  async recordMemory(
+    meta: { kind: AiActionKind; summary: string; provider: string },
+    after: string,
+  ): Promise<AiAction | null> {
+    const before = await readMemory(this.db)
+    if (before === after.trim()) return null
+    await writeMemory(this.db, after)
+    const action: AiAction = {
+      id: (this.opts.newId ?? (() => crypto.randomUUID()))(),
+      ...meta,
+      changes: [],
+      folderChanges: [],
+      memory: { before, after: after.trim() },
+      createdAt: this.now(),
+      undoneAt: null,
+    }
+    await this.db.execute(
+      `INSERT INTO ai_actions (id, kind, summary, provider, changes, memory, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        action.id,
+        action.kind,
+        action.summary,
+        action.provider,
+        '[]',
+        JSON.stringify(action.memory),
+        action.createdAt,
+      ],
+    )
+    return action
+  }
+
   async list(limit = 100): Promise<AiAction[]> {
     const rows = await this.db.query<Row & Record<string, string | number | null>>(
       'SELECT * FROM ai_actions ORDER BY created_at DESC LIMIT ?',
@@ -213,7 +259,14 @@ export class AuditLog {
     )
     if (!row) return { ok: false, reason: 'missing' }
     if (row.undone_at !== null) return { ok: false, reason: 'already' }
-    const { changes, folderChanges } = toAction(row)
+    const { changes, folderChanges, memory } = toAction(row)
+    if (memory) {
+      // The user may have edited the memory since: then it stays as they left it.
+      if ((await readMemory(this.db)) !== memory.after) return { ok: false, reason: 'changed' }
+      await writeMemory(this.db, memory.before)
+      await this.db.execute('UPDATE ai_actions SET undone_at = ? WHERE id = ?', [this.now(), id])
+      return { ok: true }
+    }
     const now = await this.states(changes.map((c) => c.noteId))
     const foldersNow = await this.folderStates(folderChanges.map((c) => c.folderId))
     if (

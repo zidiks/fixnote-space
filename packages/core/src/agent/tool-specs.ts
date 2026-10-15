@@ -34,7 +34,7 @@ export const NOTE_TOOL_SPECS: readonly ToolSpec[] = [
   {
     name: 'search_notes',
     description:
-      'Full-text search over the notes (Russian, English, Spanish; word forms and the other alphabet match too). Returns the best passage of each matching note with its id and folder. Notes mix languages: if nothing matches, try translations and synonyms (e.g. "giveaway" for "розыгрыш").',
+      'Searches the notes by words (Russian, English, Spanish; word forms and the other alphabet match too) and, where the app has it, by meaning. Returns the best passage of each matching note with its id and folder. Notes mix languages: if nothing matches, try translations and synonyms (e.g. "giveaway" for "розыгрыш").',
     parameters: params(
       {
         query: { type: 'string', description: 'Words to look for' },

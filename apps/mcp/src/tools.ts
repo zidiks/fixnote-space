@@ -108,6 +108,7 @@ export class NotesTools extends NoteTools {
       provider: () => `${client()} (MCP)`,
       kinds: 'mcp',
       attachments: blobs ? new Attachments(db, blobs) : null,
+      attachmentTool: true,
     })
   }
 

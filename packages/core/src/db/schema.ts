@@ -287,6 +287,13 @@ export const MIGRATIONS: readonly string[] = [
     UPDATE notes SET edited_at = NEW.updated_at WHERE id = NEW.id;
   END;
   `,
+  // 20: the assistant remembers how it got to each answer (its tool calls and their results, and a
+  // thinking model's reasoning) to send them again in later turns; an AI change can be to the
+  // assistant's memory of the user (kv \`assistant.memory\`) rather than to notes.
+  `
+  ALTER TABLE chat_messages ADD COLUMN trace TEXT;
+  ALTER TABLE ai_actions ADD COLUMN memory TEXT;
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

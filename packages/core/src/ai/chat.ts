@@ -35,8 +35,42 @@ export interface ChatActions {
   undone: boolean
 }
 
+/** One tool call of an answer, with what it returned to the model. */
+export interface ChatTraceCall {
+  id: string
+  name: string
+  /** JSON text, as the model wrote it. */
+  arguments: string
+  result: string
+}
+
+/** A step of an answer in which the model called tools. */
+export interface ChatTraceStep {
+  /** What the model said before the calls ("Let me look…"); not part of the answer. */
+  text?: string
+  /** A thinking model's reasoning before the calls (it must get it back in later turns). */
+  reasoning?: string
+  calls: ChatTraceCall[]
+}
+
+/**
+ * How the assistant got to an answer, sent to the model again in later turns so it remembers what
+ * it read and did: its tool steps, the reasoning before the answer, and the notes found for the
+ * question.
+ */
+export interface ChatTrace {
+  steps: ChatTraceStep[]
+  reasoning?: string
+  found?: { n: number; noteId: string; title: string }[]
+}
+
 /** What the start of a long thread was about, once it no longer fits the model (kv). */
 export const CHAT_SUMMARY_KEY = 'chat.summary'
+/**
+ * Up to which entry (created_at) old tool results are sent as a short stub to save room (kv). It
+ * only moves forward, so the start of the conversation stays the same from turn to turn (cache).
+ */
+export const CHAT_CLEARED_KEY = 'chat.cleared'
 
 export interface ChatSummary {
   text: string
@@ -56,6 +90,8 @@ export interface ChatEntry {
   status: ChatStatus | null
   /** Changes the assistant made in this answer. */
   actions?: ChatActions | null
+  /** How the answer was reached (tool steps), for later turns. */
+  trace?: ChatTrace | null
   createdAt: number
 }
 
@@ -68,6 +104,7 @@ interface Row extends SqlRow {
   status: string | null
   voice: string | null
   actions: string | null
+  trace: string | null
   created_at: number
 }
 
@@ -85,6 +122,7 @@ const toEntry = (r: Row): ChatEntry => {
     status: (r.status as ChatStatus | null) ?? null,
     voice: r.voice ? (JSON.parse(r.voice) as VoiceClip) : null,
     actions: r.actions ? (JSON.parse(r.actions) as ChatActions) : null,
+    trace: r.trace ? (JSON.parse(r.trace) as ChatTrace) : null,
     createdAt: Number(r.created_at),
   }
 }
@@ -146,15 +184,20 @@ export class ChatRepo {
       status: ChatStatus
       citations?: StoredCitation[]
       confidence?: ChatEntry['confidence']
+      trace?: ChatTrace | null
     },
   ): Promise<void> {
     await this.db.execute(
-      'UPDATE chat_messages SET content = ?, status = ?, citations = ? WHERE id = ?',
+      'UPDATE chat_messages SET content = ?, status = ?, citations = ?, trace = ? WHERE id = ?',
       [
         patch.content,
         patch.status,
         patch.citations?.length || patch.confidence
           ? JSON.stringify({ items: patch.citations ?? [], confidence: patch.confidence ?? null })
+          : null,
+        patch.trace &&
+        (patch.trace.steps.length || patch.trace.reasoning || patch.trace.found?.length)
+          ? JSON.stringify(patch.trace)
           : null,
         id,
       ],
@@ -186,11 +229,29 @@ export class ChatRepo {
     )
   }
 
+  /** Entries up to this time have their tool results sent as stubs (0 = none). */
+  async cleared(): Promise<number> {
+    const [row] = await this.db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
+      CHAT_CLEARED_KEY,
+    ])
+    return Number(row?.value ?? 0) || 0
+  }
+
+  async setCleared(upTo: number): Promise<void> {
+    await this.db.execute(
+      'INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+      [CHAT_CLEARED_KEY, String(upTo)],
+    )
+  }
+
   /** Empties the thread; returns the BlobStore keys of its recordings, for the caller to remove. */
   async clear(): Promise<string[]> {
     const keys = await voiceKeys(this.db)
     await this.db.execute('DELETE FROM chat_messages')
-    await this.db.execute('DELETE FROM kv WHERE key = ?', [CHAT_SUMMARY_KEY])
+    await this.db.execute('DELETE FROM kv WHERE key IN (?, ?)', [
+      CHAT_SUMMARY_KEY,
+      CHAT_CLEARED_KEY,
+    ])
     return keys
   }
 }
