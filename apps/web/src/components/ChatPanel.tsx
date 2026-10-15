@@ -32,7 +32,15 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import {
@@ -47,6 +55,7 @@ import { useLlm } from '../lib/assistant/llm'
 import { fileSize } from '../lib/attachments'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote } from '../lib/queries'
+import { useReveal } from '../lib/reveal'
 import { useShortcutLabel } from '../lib/shortcuts'
 import { isTouch } from '../lib/touch'
 import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
@@ -113,13 +122,68 @@ function Sources({ citations }: { citations: StoredCitation[] }) {
   )
 }
 
-function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
+/** The answer itself: typed in smoothly while it streams, at once from history. */
+function Answer({ m }: { m: ChatEntry }) {
   const { t } = useTranslation()
   const navigate = useUi((s) => s.navigate)
+  const activity = useAssistant((s) => s.activity)
+  const streaming = m.status === 'streaming'
+  const { shown, clock, typing } = useReveal(m.content, streaming)
+  const onCite = useCallback(
+    (c: StoredCitation) => navigate({ kind: 'note', id: c.noteId }),
+    [navigate],
+  )
+  return (
+    <>
+      {streaming && !shown ? (
+        activity ? null : (
+          <p className="fx-shimmer w-fit text-sm">{t('chat.thinking')}</p>
+        )
+      ) : (
+        <AnswerText
+          text={shown}
+          citations={m.citations}
+          onCite={onCite}
+          clock={clock}
+          typing={typing && !activity}
+        />
+      )}
+      {streaming ? <AgentActivity /> : null}
+      <AnswerChanges m={m} />
+      {m.status === 'done' && !typing ? <AnswerFooter m={m} /> : null}
+    </>
+  )
+}
+
+/** Sources and confidence under a finished answer; they come in once its text has typed in. */
+function AnswerFooter({ m }: { m: ChatEntry }) {
+  const { t } = useTranslation()
+  return (
+    <div className="fx-fade-in">
+      <Sources citations={m.citations} />
+      {m.confidence && !m.actions?.items.length ? (
+        <p
+          className={cn(
+            'mt-2 text-[11px]',
+            m.confidence === 'high'
+              ? 'text-muted-foreground'
+              : m.confidence === 'medium'
+                ? 'text-brand'
+                : 'text-muted-foreground italic',
+          )}
+        >
+          {t(`chat.confidence.${m.confidence}`)}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
+  const { t } = useTranslation()
   const label = useScopeLabel()
   const error = useAssistant((s) => s.error)
   const refused = useAssistant((s) => s.refused)
-  const activity = useAssistant((s) => s.activity)
 
   if (m.kind === 'divider') {
     return (
@@ -144,41 +208,9 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
       </div>
     )
   }
-  const streaming = m.status === 'streaming'
   return (
     <div className="max-w-full">
-      {streaming && !m.content ? (
-        activity ? null : (
-          <p className="animate-pulse text-sm text-muted-foreground">{t('chat.thinking')}</p>
-        )
-      ) : (
-        <AnswerText
-          text={m.content + (streaming && !activity ? ' ▍' : '')}
-          citations={m.citations}
-          onCite={(c) => navigate({ kind: 'note', id: c.noteId })}
-        />
-      )}
-      {streaming ? <AgentActivity /> : null}
-      <AnswerChanges m={m} />
-      {m.status === 'done' ? (
-        <>
-          <Sources citations={m.citations} />
-          {m.confidence && !m.actions?.items.length ? (
-            <p
-              className={cn(
-                'mt-2 text-[11px]',
-                m.confidence === 'high'
-                  ? 'text-muted-foreground'
-                  : m.confidence === 'medium'
-                    ? 'text-brand'
-                    : 'text-muted-foreground italic',
-              )}
-            >
-              {t(`chat.confidence.${m.confidence}`)}
-            </p>
-          ) : null}
-        </>
-      ) : null}
+      <Answer m={m} />
       {m.status === 'stopped' ? (
         <p className="mt-1 text-[11px] text-muted-foreground">{t('chat.stopped')}</p>
       ) : null}
@@ -338,11 +370,33 @@ export function ChatPanel() {
     el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden'
   }, [draft])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run to follow new messages and streamed text
-  useEffect(() => {
+  // The thread follows what is being written while it is scrolled to the bottom; scrolling up
+  // reads in peace until the bottom is reached again. A new question always brings it down.
+  const stick = useRef(true)
+  const thread = useRef<HTMLDivElement>(null)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new message re-attaches and sticks
+  useLayoutEffect(() => {
     const el = list.current
-    if (el) el.scrollTop = el.scrollHeight
-  }, [messages.length, last?.content, last?.actions?.items.length])
+    const content = thread.current
+    stick.current = true
+    if (!el) return
+    el.scrollTop = el.scrollHeight
+    if (!content) return
+    const follow = new ResizeObserver(() => {
+      if (stick.current) el.scrollTop = el.scrollHeight
+    })
+    follow.observe(content)
+    return () => follow.disconnect()
+  }, [messages.length])
+  // Only a move up lets go: text that grew since the last frame must not count as scrolling away.
+  const lastTop = useRef(0)
+  const onScroll = () => {
+    const el = list.current
+    if (!el) return
+    if (el.scrollTop < lastTop.current - 1) stick.current = false
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 24) stick.current = true
+    lastTop.current = el.scrollTop
+  }
 
   const send = () => {
     const q = draft.trim()
@@ -416,9 +470,9 @@ export function ChatPanel() {
       </header>
       <IndexStatus />
 
-      <div ref={list} className="flex-1 overflow-y-auto px-4 py-4">
+      <div ref={list} onScroll={onScroll} className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length ? (
-          <div className="space-y-4">
+          <div ref={thread} className="space-y-4">
             {messages.map((m) => (
               <Message key={m.id} m={m} onRetry={() => retry(m)} />
             ))}

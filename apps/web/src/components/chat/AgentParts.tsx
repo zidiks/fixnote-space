@@ -6,16 +6,19 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { answerConfirm, undoAnswer, useAssistant } from '../../lib/assistant/assistant'
 
-/** What the assistant is doing right now, under the answer it is writing. */
+/** What the assistant is doing right now, under the answer it is writing: each step fades in. */
 export function AgentActivity() {
   const activity = useAssistant((s) => s.activity)
   // While a change waits for a yes, the question below says what is going on.
   const waiting = useAssistant((s) => s.confirm !== null)
   if (!activity || waiting) return null
   return (
-    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-      <Spinner className="size-3" />
-      <span className="truncate">{activity}</span>
+    <p
+      key={activity}
+      className="fx-fade-in mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground"
+    >
+      <Spinner className="size-3 shrink-0" />
+      <span className="fx-shimmer truncate">{activity}</span>
     </p>
   )
 }
