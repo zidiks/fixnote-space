@@ -36,7 +36,7 @@ export function listoPaysApi(
   fetcher: typeof fetch = fetch,
   base = LISTOPAYS_API,
 ): ListoPays {
-  const call = async <T>(path: string, body: Record<string, unknown>): Promise<T | null> => {
+  const call = async (path: string, body: Record<string, unknown>): Promise<Answer> => {
     const res = await fetcher(`${base}${path}`, {
       method: 'POST',
       headers: {
@@ -46,11 +46,7 @@ export function listoPaysApi(
       },
       body: JSON.stringify({ ...body, public_key: publicKey }),
     })
-    const answer = (await res.json().catch(() => null)) as {
-      success?: boolean
-      data?: T
-      error?: unknown
-    } | null
+    const answer = (await res.json().catch(() => null)) as Answer | null
     if (!res.ok || !answer?.success) {
       const error = answer?.error
       const message =
@@ -61,20 +57,59 @@ export function listoPaysApi(
             : 'request failed'
       throw new Error(`ListoPays ${res.status}: ${message}`)
     }
-    return answer.data ?? null
+    return answer
   }
   return {
     async createCustomer({ name, email }) {
-      const data = await call<{ uuid?: string }>('/customers', { name, email })
-      if (!data?.uuid) throw new Error('ListoPays: no customer uuid')
-      return data.uuid
+      // ListoPays wants a name of at least 3 characters.
+      const answer = await call('/customers', { name: name.length >= 3 ? name : email, email })
+      const uuid = pick(answer, ['uuid', 'id', 'customer_uuid', 'customer_id', 'customer'])
+      if (!uuid) throw new Error(`ListoPays: no customer uuid in ${shape(answer)}`)
+      return uuid
     },
     async createPayment({ customer, order, amount, currency }) {
-      const data = await call<{ url?: string }>('/payments', { customer, order, amount, currency })
-      if (!data?.url) throw new Error('ListoPays: no payment URL')
-      return data.url
+      const answer = await call('/payments', { customer, order, amount, currency })
+      const url = pick(answer, ['url', 'payment_url', 'link', 'redirect_url', 'checkout_url'])
+      if (!url) throw new Error(`ListoPays: no payment URL in ${shape(answer)}`)
+      return url
     },
   }
+}
+
+/** A successful answer: the docs put the result in `data`, but the live API may not. */
+type Answer = { success?: boolean; error?: unknown; data?: unknown; [key: string]: unknown }
+
+/**
+ * The first string found under one of `keys`: in `data` (an object, or `data` itself when it is a
+ * string, or `data.customer`/`data.payment`), then at the top level.
+ */
+export function pick(answer: Answer, keys: string[]): string | null {
+  const str = (v: unknown) => (typeof v === 'string' && v ? v : null)
+  const from = (o: unknown): string | null => {
+    if (!o || typeof o !== 'object') return null
+    for (const k of keys) {
+      const v = (o as Record<string, unknown>)[k]
+      if (str(v)) return v as string
+      if (v && typeof v === 'object') {
+        const inner = from(v)
+        if (inner) return inner
+      }
+    }
+    return null
+  }
+  return str(answer.data) ?? from(answer.data) ?? from(answer)
+}
+
+/** The answer's structure without its values, for the log (no keys or personal data). */
+export function shape(v: unknown, depth = 0): string {
+  if (Array.isArray(v)) return `[${v.length ? shape(v[0], depth + 1) : ''}]`
+  if (v && typeof v === 'object') {
+    if (depth > 2) return '{…}'
+    return `{${Object.entries(v)
+      .map(([k, x]) => `${k}:${shape(x, depth + 1)}`)
+      .join(',')}}`
+  }
+  return typeof v
 }
 
 /** Constant time: the same length and every character compared. */
