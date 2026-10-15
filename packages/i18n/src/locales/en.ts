@@ -268,6 +268,16 @@ const en = {
     tooLarge: '{{name}} is larger than 20 MB',
     fileMissing: 'This file is not available on this device yet.',
   },
+  aiMemory: {
+    title: 'What the assistant knows about me',
+    body: 'Preferences and facts the assistant keeps across chats, one per line. It adds to them when you ask it to remember something; each addition is in the log below and can be undone.',
+    local: 'Kept on this device only, not synced. Removed when the device is unbound.',
+    placeholder: '- Answer in English\n- My manager is Anna',
+    save: 'Save',
+    saved: 'Saved',
+    clear: 'Forget everything',
+    cleared: 'The assistant forgot everything it knew about you',
+  },
   aiLevel: {
     title: 'Thinking',
     body: 'How long FixNote AI thinks over an answer in the chat.',
@@ -635,6 +645,9 @@ const en = {
     other: 'Other (OpenAI-compatible)',
     address: 'Address',
     model: 'Model',
+    context: 'Context',
+    contextHint:
+      'How many tokens the model takes at once (Ollama: num_ctx). Empty: a guess from the model name.',
     key: 'API key',
     keySaved: 'Key saved on this device',
     replaceKey: 'Replace',
@@ -943,6 +956,7 @@ const en = {
       look: 'Looking through notes',
       daily: 'Opening the daily note',
       write: 'Making changes',
+      remember: 'Remembering',
     },
     did: {
       create_note: 'Created «{{title}}»',
@@ -955,6 +969,7 @@ const en = {
       rename_folder: 'Renamed the folder «{{title}}»',
       delete_folder: 'Deleted the folder «{{title}}»',
       daily_note: 'Added to the daily note ({{title}})',
+      remember: 'Remembered «{{title}}»',
     },
     ask: {
       create_note: 'Create the note «{{title}}»?',

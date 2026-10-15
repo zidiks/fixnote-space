@@ -1,13 +1,21 @@
 import {
+  type AgentInput,
   buildAgentMessages,
   buildSummaryMessages,
   ChatError,
   type ChatRequest,
   confidence,
-  expandQuery,
+  estimateTokens,
+  historyAnswer,
+  historyMessages,
+  messagesTokens,
+  overflow,
+  type PastTurn,
   parseCitations,
+  planContext,
+  planSearch,
   streamChat,
-  type Turn,
+  summaryBatches,
 } from '@fixnote/ai'
 import {
   type AuditLog,
@@ -15,17 +23,20 @@ import {
   type ChatEntry,
   ChatRepo,
   type ChatScope,
+  type ChatTrace,
   type Embedder,
   Indexer,
   type NotesRepo,
   NoteTools,
   OPEN_GATE,
+  readMemory,
   retrieve,
   type SimilarNote,
   type SqlDriver,
   sameScope,
   similarNotes,
   type VoiceClip,
+  withFact,
 } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
@@ -37,7 +48,15 @@ import {
   runAgent,
   TOOLS_TOKENS,
 } from './agent'
-import { contextWindow, type LlmUnavailable, llm as llmRoute, providerLabel, useLlm } from './llm'
+import { pastTurns } from './history'
+import {
+  type ContextLimits,
+  contextLimits,
+  type LlmUnavailable,
+  llm as llmRoute,
+  providerLabel,
+  useLlm,
+} from './llm'
 import { openNote } from './open-notes'
 
 export type AssistantStatus = 'idle' | 'thinking' | 'answering' | 'done' | 'error'
@@ -59,6 +78,8 @@ interface AssistantState {
   confirm: ConfirmRequest | null
   /** How full the model's context is with this conversation, 0..1. */
   context: number
+  /** What the assistant knows about the user (Settings → AI), sent with every message. */
+  memoryText: string
 }
 
 export const useAssistant = create<AssistantState>()(() => ({
@@ -73,6 +94,7 @@ export const useAssistant = create<AssistantState>()(() => ({
   activity: null,
   confirm: null,
   context: 0,
+  memoryText: '',
 }))
 
 const set = useAssistant.setState
@@ -105,6 +127,7 @@ export async function initAssistant(d: Deps) {
   deps = d
   chat = new ChatRepo(d.db)
   set({ messages: await chat.recent() })
+  await loadAssistantMemory()
   void measureContext()
   const [row] = await d.db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
     SEMANTIC_KEY,
@@ -188,92 +211,116 @@ const errorText = (err: unknown) =>
   aiRefusalText(err) ??
   (err instanceof ChatError ? err.message : err instanceof Error ? err.message : String(err))
 
-/** Rough share of the model's context the conversation takes (the ring by the input). */
-const SYSTEM_TOKENS = 700
-/** Past this share of the context, the start of the thread is summarized. */
-const HISTORY_SHARE = 0.45
-/** What the summary leaves of the thread word for word. */
-const KEEP_SHARE = 0.2
+/** What the rules and the tools take of the context, roughly (the ring by the input). */
+const SYSTEM_TOKENS = 1500
 
-/** An answer as the model will remember it: its text and what it changed. */
-function turnOf(m: ChatEntry): Turn {
-  if (m.kind === 'user') return { role: 'user', content: m.content }
-  const done = m.actions?.items.length
-    ? `\n\n[${m.actions.undone ? 'Undone by the user' : 'Done'}: ${m.actions.items.map((a) => a.label).join('; ')}]`
-    : ''
-  return { role: 'assistant', content: m.content + done }
+interface Memory {
+  summary: string | null
+  turns: PastTurn[]
+  /** Turns asked up to this time have their tool results cleared. */
+  cleared: number
 }
 
-/** The thread since "new chat" (after the summary, when there is one), as turns. */
-async function memory(): Promise<{ summary: string | null; turns: Turn[]; upTo: number[] }> {
+/** The thread since "new chat" (after the summary, when there is one). */
+async function memory(): Promise<Memory> {
   const saved = await chat?.summary()
-  const entries = useAssistant
-    .getState()
-    .messages.filter(
-      (m) =>
-        (m.kind === 'user' || m.kind === 'assistant') &&
-        m.status !== 'error' &&
-        m.status !== 'streaming' &&
-        (m.content || m.actions?.items.length) &&
-        m.createdAt > (saved?.upTo ?? 0),
-    )
-  return {
-    summary: saved?.text ?? null,
-    turns: entries.map(turnOf),
-    upTo: entries.map((m) => m.createdAt),
-  }
+  const cleared = (await chat?.cleared()) ?? 0
+  const turns = pastTurns(useAssistant.getState().messages).filter((t) => t.at > (saved?.upTo ?? 0))
+  return { summary: saved?.text ?? null, turns, cleared }
 }
-
-const turnsTokens = (turns: Turn[]) => turns.reduce((n, t) => n + 4 + t.content.length / 3, 0)
 
 /**
- * When the thread no longer fits comfortably, its older part becomes a short summary the model
- * reads instead (kept until "new chat"). On failure the older part is just left out.
+ * Folds `turns` into the running summary, in rounds that fit a small model. Null when the model
+ * fails: then nothing is lost, the turns stay and it is tried again on the next message.
  */
-async function compact(
+async function summarize(
   request: Omit<ChatRequest, 'messages'>,
-  mem: Awaited<ReturnType<typeof memory>>,
-): Promise<{ summary: string | null; turns: Turn[] }> {
-  const window = contextWindow()
-  if (turnsTokens(mem.turns) <= window * HISTORY_SHARE) return mem
-  let keep = mem.turns.length
-  while (keep > 0 && turnsTokens(mem.turns.slice(keep - 1)) <= window * KEEP_SHARE) keep--
-  // Whole exchanges only: the kept part starts with a question.
-  while (keep < mem.turns.length && mem.turns[keep]?.role !== 'user') keep++
-  const older = mem.turns.slice(0, keep)
-  const kept = mem.turns.slice(keep)
-  const upTo = mem.upTo[keep - 1] ?? 0
-  set({ activity: i18n.t('agent.compacting') })
-  try {
+  previous: string | null,
+  turns: PastTurn[],
+  limits: ContextLimits,
+): Promise<string | null> {
+  const target = Math.max(300, Math.min(1500, Math.floor(limits.prompt * 0.08)))
+  let summary = previous
+  for (const batch of summaryBatches(turns, Math.floor(limits.prompt * 3 * 0.5))) {
     let text = ''
     for await (const d of streamChat({
       ...request,
-      messages: buildSummaryMessages(mem.summary, older),
-      maxTokens: 400,
+      messages: buildSummaryMessages(summary, batch, target),
+      maxTokens: target * 2,
     })) {
       text += d
     }
-    if (text.trim()) {
-      await chat?.setSummary({ text: text.trim(), upTo })
-      return { summary: text.trim(), turns: kept }
-    }
-  } catch (err) {
-    if (request.signal?.aborted) throw err
-  } finally {
-    set({ activity: null })
+    if (!text.trim()) return null
+    summary = text.trim()
   }
-  return { summary: mem.summary, turns: kept }
+  return summary
+}
+
+/**
+ * Makes the thread fit the model before a request, the way Claude Code does: old tool results
+ * become a stub first; when that is not enough, the oldest turns are summarized (kept until "new
+ * chat"); if summarizing fails, the oldest turns are left out of this one request only.
+ */
+async function fitContext(
+  request: Omit<ChatRequest, 'messages'>,
+  mem: Memory,
+  fixed: number,
+  limits: ContextLimits,
+  reasoning: boolean,
+): Promise<Memory> {
+  let { summary, turns, cleared } = mem
+  const tokens = () => fixed + (summary ? estimateTokens(summary) : 0)
+  const plan = planContext(turns, {
+    fixed: tokens(),
+    prompt: limits.prompt,
+    clearedUpTo: cleared,
+    reasoning,
+  })
+  if (plan.clearedUpTo !== cleared) {
+    cleared = plan.clearedUpTo
+    await chat?.setCleared(cleared)
+  }
+  if (plan.compact > 0) {
+    const older = turns.slice(0, plan.compact)
+    set({ activity: i18n.t('agent.compacting') })
+    try {
+      const next = await summarize(request, summary, older, limits)
+      if (next) {
+        summary = next
+        turns = turns.slice(plan.compact)
+        await chat?.setSummary({ text: next, upTo: older.at(-1)?.at ?? 0 })
+      }
+    } catch (err) {
+      if (request.signal?.aborted) throw err
+    } finally {
+      set({ activity: null })
+    }
+  }
+  const skip = overflow(turns, {
+    fixed: tokens(),
+    prompt: limits.prompt,
+    clearedUpTo: cleared,
+    reasoning,
+  })
+  return { summary, turns: turns.slice(skip), cleared }
 }
 
 /** Updates the ring by the input: how much of the context the thread takes now. */
 async function measureContext() {
   const mem = await memory()
+  const { settings, level } = useLlm.getState()
   const tokens =
     SYSTEM_TOKENS +
     TOOLS_TOKENS +
-    (mem.summary ? mem.summary.length / 3 : 0) +
-    turnsTokens(mem.turns)
-  set({ context: Math.min(1, tokens / contextWindow()) })
+    estimateTokens(useAssistant.getState().memoryText) +
+    (mem.summary ? estimateTokens(mem.summary) : 0) +
+    messagesTokens(
+      historyMessages(mem.turns, {
+        clearedUpTo: mem.cleared,
+        reasoning: settings.kind === 'fixnote' && level === 'hard',
+      }),
+    )
+  set({ context: Math.min(1, tokens / contextLimits().prompt) })
 }
 
 let confirming: ((answer: ConfirmAnswer) => void) | null = null
@@ -295,6 +342,16 @@ function askUser(request: ConfirmRequest, signal: AbortSignal): Promise<ConfirmA
     signal.addEventListener('abort', () => answerConfirm('deny'), { once: true })
   })
 }
+
+/** What the assistant knows about the user (Settings → AI), as the next chat will see it. */
+export async function loadAssistantMemory(): Promise<string> {
+  const text = deps ? await readMemory(deps.db) : ''
+  set({ memoryText: text })
+  return text
+}
+
+/** A remembered fact as it is listed under the answer. */
+const shortFact = (fact: string) => (fact.length > 60 ? `${fact.slice(0, 59)}…` : fact)
 
 /**
  * Asks the assistant something in `scope`, streaming the answer into the thread. It reads the
@@ -341,14 +398,20 @@ export async function ask(
   controller?.abort()
   const ctrl = new AbortController()
   controller = ctrl
+  const llm = { ...route, signal: ctrl.signal }
   let text = ''
+  const trace: ChatTrace = { steps: [] }
   const done = actionCollector()
+  const semantic = () => (useAssistant.getState().semantic === 'ready' ? indexer : null)
   /** The note the assistant is changing now, if it is open. */
   let editing: string | null = null
   const tools = new NoteTools(d.db, d.repo, d.audit, {
     gate: OPEN_GATE,
     provider: providerLabel,
     kinds: 'chat',
+    // search_notes finds what the look-up before each answer finds: by meaning too, in all languages.
+    semantic,
+    expand: async (query) => (await planSearch(llm, query, [], 4000)).keywords,
     onChange: (action) => {
       done.add(action.id)
       // A note open on screen shows the change as it happens.
@@ -361,40 +424,82 @@ export async function ask(
     },
   })
   try {
-    const llm = { ...route, signal: ctrl.signal }
-    const { summary, turns } = await compact(llm, mem)
-    // Notes mix languages ("giveaway" vs "розыгрыш"): ask the model for translations and synonyms
-    // of the question first. Best effort — on failure or timeout it's just the question's words.
-    const extraKeywords = scope.kind === 'note' ? [] : await expandQuery(llm, question)
-    const fragments = await retrieve(
-      d.db,
-      useAssistant.getState().semantic === 'ready' ? indexer : null,
-      question,
-      scope,
-      { extraKeywords },
-    )
+    const limits = contextLimits()
     // "Think harder" (Settings → AI) is for FixNote AI; other models are what the person chose.
     const { settings, level } = useLlm.getState()
     const hard = settings.kind === 'fixnote' && level === 'hard'
-    const messages = buildAgentMessages({
+    // A follow-up ("and what else was there?") is searched as the question it stands for; notes
+    // mix languages, so the same short call adds translations and synonyms. Best effort: on
+    // failure or timeout it is the question as typed.
+    const plan =
+      scope.kind === 'note'
+        ? { query: question, keywords: [], search: true }
+        : await planSearch(
+            llm,
+            question,
+            mem.turns.slice(-3).flatMap((t) => [
+              { role: 'user' as const, content: t.question },
+              { role: 'assistant' as const, content: historyAnswer(t) },
+            ]),
+          )
+    const followUp = !plan.search && mem.turns.length > 0
+    const fragments = await retrieve(d.db, semantic(), plan.query, scope, {
+      extraKeywords: plan.keywords,
+      limit: followUp ? 3 : limits.prompt < 16_000 ? 4 : 8,
+      // The open note is given whole when it fits comfortably.
+      wholeNoteChars: Math.min(20_000, Math.floor(limits.prompt * 3 * 0.3)),
+    })
+    const found = new Map<string, { n: number; noteId: string; title: string }>()
+    for (const [i, f] of fragments.entries()) {
+      if (!found.has(f.noteId)) found.set(f.noteId, { n: i + 1, noteId: f.noteId, title: f.title })
+    }
+    trace.found = [...found.values()]
+    const memoryText = await loadAssistantMemory()
+    const base: AgentInput = {
       question: question.trim(),
       fragments,
       scope,
-      history: turns,
-      summary,
+      history: [],
+      memory: memoryText,
       language: (opts.language ?? i18n.language).slice(0, 2),
       spoken: Boolean(opts.voice),
       // The folders at a glance, so "what is in Work" needs no guessing.
       folders: await tools.folders().catch(() => ''),
-      historyAsText: hard,
-    })
+      reasoning: hard,
+      followUp,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }
+    const fixed = messagesTokens(buildAgentMessages(base)) + TOOLS_TOKENS
+    const fit = await fitContext(llm, mem, fixed, limits, hard)
+    const input: AgentInput = {
+      ...base,
+      history: fit.turns,
+      summary: fit.summary,
+      clearedUpTo: fit.cleared,
+    }
     text = await runAgent(
       {
         request: hard ? { ...llm, body: { ...llm.body, level: 'hard' } } : llm,
-        messages,
+        messages: buildAgentMessages(input),
+        fallback: () => buildAgentMessages({ ...input, historyAsText: true }),
+        maxTokens: limits.answer,
         tools,
         repo: d.repo,
         mode: useLlm.getState().mode,
+        remember: async (fact, replaces) => {
+          const after = withFact(await readMemory(d.db), fact, replaces)
+          const label = i18n.t('agent.did.remember', { title: shortFact(fact.trim()) })
+          const action = await d.audit.recordMemory(
+            { kind: 'chat.memory', summary: label, provider: providerLabel() },
+            after,
+          )
+          if (!action) return 'This is already in the memory.'
+          done.label.current = label
+          done.add(action.id)
+          patchMessage(answer.id, { actions: { items: [...done.items], undone: false } })
+          void loadAssistantMemory()
+          return `Remembered: "${fact.trim()}". It comes with every chat from now on.`
+        },
         onText: (t) => {
           if (!text) set({ status: 'answering' })
           text = t
@@ -413,18 +518,25 @@ export async function ask(
         confirm: (request) => askUser(request, ctrl.signal),
       },
       done.label,
+      trace,
     )
     const citations = parseCitations(text, fragments)
     const conf = confidence(citations, fragments)
-    await repo.finish(answer.id, { content: text, status: 'done', citations, confidence: conf })
-    patchMessage(answer.id, { content: text, status: 'done', citations, confidence: conf })
+    await repo.finish(answer.id, {
+      content: text,
+      status: 'done',
+      citations,
+      confidence: conf,
+      trace,
+    })
+    patchMessage(answer.id, { content: text, status: 'done', citations, confidence: conf, trace })
     set({ status: 'done' })
     doneTimer = setTimeout(() => set({ status: 'idle' }), 1600)
   } catch (err) {
     const aborted = ctrl.signal.aborted
     const status = aborted ? 'stopped' : 'error'
-    await repo.finish(answer.id, { content: text, status })
-    patchMessage(answer.id, { content: text, status })
+    await repo.finish(answer.id, { content: text, status, trace })
+    patchMessage(answer.id, { content: text, status, trace })
     set({
       status: aborted ? 'idle' : 'error',
       error: aborted ? null : errorText(err),
@@ -464,6 +576,8 @@ export async function undoAnswer(id: string): Promise<'ok' | 'changed'> {
     patchMessage(id, { actions })
   }
   d.onNotesChanged()
+  // An answer may have remembered something about the user: Settings → AI shows it as it is now.
+  await loadAssistantMemory()
   return result
 }
 

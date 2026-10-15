@@ -1,15 +1,9 @@
 import { type Fragment, NOTE_TOOL_SPECS } from '@fixnote/core'
 import { describe, expect, it } from 'vitest'
-import {
-  AGENT_MARKER,
-  buildAgentMessages,
-  buildSummaryMessages,
-  messagesTokens,
-  SUMMARY_MARKER,
-  toolDefs,
-} from './agent'
+import { AGENT_MARKER, buildAgentMessages, toolDefs } from './agent'
 import { confidence, parseCitations } from './citations'
 import { ChatError, streamChat, streamTurn, type TurnEvent } from './client'
+import { buildSummaryMessages, messagesTokens, type PastTurn, SUMMARY_MARKER } from './context'
 import { buildMessages } from './prompt'
 
 function sse(chunks: string[], status = 200): typeof fetch {
@@ -148,9 +142,14 @@ describe('citations', () => {
 })
 
 describe('query expansion', async () => {
-  const { expandQuery, parseKeywords, buildExpansionMessages, EXPANSION_MARKER } = await import(
-    './expand'
-  )
+  const {
+    expandQuery,
+    parseKeywords,
+    parseSearchPlan,
+    planSearch,
+    buildExpansionMessages,
+    EXPANSION_MARKER,
+  } = await import('./expand')
 
   it('parses JSON, tolerates noise and plain lists', () => {
     expect(
@@ -174,6 +173,33 @@ describe('query expansion', async () => {
         init?.signal?.addEventListener('abort', () => reject(new Error('aborted'))),
       )
     expect(await expandQuery({ url: 'x', model: 'm', fetch: hanging }, 'q', 50)).toEqual([])
+  })
+
+  it('rewrites a follow-up as a standalone question with the conversation in mind', async () => {
+    const messages = buildExpansionMessages('а что ещё там было?', [
+      { role: 'user', content: 'Что я записал про отпуск в Грузии?' },
+      { role: 'assistant', content: 'Билеты на 12 мая.' },
+    ])
+    expect(messages[1]?.content).toContain('User: Что я записал про отпуск в Грузии?')
+    expect(messages[1]?.content).toMatch(/Latest message: а что ещё там было\?$/)
+    const reply =
+      '{"query": "Что ещё я записал про отпуск в Грузии?", "keywords": ["отпуск", "Georgia"], "search": true}'
+    const plan = await planSearch(
+      { url: 'x', model: 'm', fetch: sse([delta(reply), 'data: [DONE]\n\n']) },
+      'а что ещё там было?',
+    )
+    expect(plan).toEqual({
+      query: 'Что ещё я записал про отпуск в Грузии?',
+      keywords: ['отпуск', 'georgia'],
+      search: true,
+    })
+    expect(parseSearchPlan('{"query": "", "keywords": [], "search": false}', 'shorter')).toEqual({
+      query: 'shorter',
+      keywords: [],
+      search: false,
+    })
+    // A broken reply: the question as typed, searched as usual.
+    expect(parseSearchPlan('no idea', 'q').query).toBe('q')
   })
 })
 
@@ -287,9 +313,10 @@ describe('agent turns', () => {
       got.body = JSON.parse(String(init?.body))
       return sse([delta('ok'), 'data: [DONE]\n\n'])('')
     }
-    const history = Array.from({ length: 10 }, (_, i) => ({
-      role: i % 2 ? ('assistant' as const) : ('user' as const),
-      content: `turn ${i}`,
+    const history: PastTurn[] = Array.from({ length: 5 }, (_, i) => ({
+      at: i + 1,
+      question: `question ${i}`,
+      answer: `answer ${i}`,
     }))
     const messages = buildAgentMessages({
       question: 'Удали заметку про бота',
@@ -297,24 +324,29 @@ describe('agent turns', () => {
       scope: { kind: 'all' },
       history,
       summary: 'The user plans a Telegram bot.',
+      memory: '- Answer in Russian',
     })
     await collect(
       streamChat({ url: 'x', model: 'm', messages, tools: toolDefs(NOTE_TOOL_SPECS), fetch: f }),
     )
     expect(got.body?.tools?.length).toBe(NOTE_TOOL_SPECS.length)
     expect(got.body?.messages[0]?.content).toContain(AGENT_MARKER)
-    expect(got.body?.messages[0]?.content).toContain('The user plans a Telegram bot.')
+    expect(got.body?.messages[0]?.content).toContain('- Answer in Russian')
+    // The summary opens the conversation, outside the rules (they stay cacheable).
+    expect(got.body?.messages[0]?.content).not.toContain('Telegram bot')
+    expect(got.body?.messages[1]?.content).toContain('The user plans a Telegram bot.')
     expect(got.body?.messages).toHaveLength(12)
     expect(got.body?.messages[11]?.content).toContain('[1] "Бот" (id: n7')
     expect(messagesTokens(messages)).toBeGreaterThan(100)
   })
 
-  it('asks for a summary of the turns that no longer fit', () => {
+  it('asks for a structured summary that keeps the summary so far', () => {
     const [system, user] = buildSummaryMessages('Earlier: groceries.', [
-      { role: 'user', content: 'Add eggs' },
-      { role: 'assistant', content: 'Added eggs to "Shopping".' },
+      { at: 1, question: 'Add eggs', answer: 'Added eggs to "Shopping".' },
     ])
     expect(system?.content).toContain(SUMMARY_MARKER)
+    expect(system?.content).toContain('## Notes touched')
+    expect(system?.content).toContain('never drop its sections')
     expect(user?.content).toContain('Earlier: groceries.')
     expect(user?.content).toContain('Assistant: Added eggs')
   })

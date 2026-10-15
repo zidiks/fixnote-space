@@ -12,6 +12,11 @@ export interface ProviderSettings {
   /** OpenAI-compatible base URL (…/v1) for `custom`, the Ollama address for `ollama`. */
   baseUrl: string
   model: string
+  /**
+   * How many tokens the model takes at once, when the person knows better than the guess from the
+   * model's name (Ollama's num_ctx, a model we do not know). Not for FixNote AI.
+   */
+  contextTokens?: number | null
 }
 
 export const PRESETS: Record<
@@ -202,18 +207,53 @@ export async function llm(): Promise<
   }
 }
 
-/** How many tokens the current model takes at once (roughly; small when unknown). */
-export function contextWindow(): number {
-  const s = useLlm.getState().settings
-  // FixNote AI's models take far more; this is how much of it a chat uses before it is shortened.
-  if (s.kind === 'fixnote') return 64_000
-  // Ollama runs with a short context unless its num_ctx is raised.
-  if (s.kind === 'ollama') return 8_000
+/** What a chat may send and get back, in tokens. */
+export interface ContextLimits {
+  /** What the model takes at once (prompt and answer). */
+  window: number
+  /** What a chat's prompt may take: the window less the answer, or less where it costs. */
+  prompt: number
+  /** The longest answer of one step (`max_tokens`; a thinking model's reasoning counts in it). */
+  answer: number
+}
+
+/** FixNote AI's models (deepseek-flash, deepseek-v4-pro) take 1M tokens (DeepSeek docs, 2026). */
+export const FIXNOTE_WINDOW = 1_000_000
+/**
+ * What a chat with FixNote AI sends at most. Every step of an answer sends the whole prompt and
+ * counts against the monthly allowance (cached tokens a tenth), so a chat is summarized long
+ * before the window is full.
+ */
+export const FIXNOTE_CHAT_TOKENS = 64_000
+/** Answers: medium leaves room for rewriting a long note in one call; hard also reasons. */
+export const FIXNOTE_ANSWER = { medium: 8192, hard: 16_000 } as const
+/** With the person's own key, a chat still stops growing here (their money, and slower answers). */
+const OWN_KEY_CHAT_TOKENS = 128_000
+/** Ollama runs with a short context unless its num_ctx is raised (then set it in Settings). */
+export const OLLAMA_WINDOW = 8192
+
+/** The context of a model by its name (known families; small when unknown). */
+export function modelWindow(s: ProviderSettings): number {
+  if (s.kind === 'fixnote') return FIXNOTE_WINDOW
+  if (s.kind === 'ollama') return OLLAMA_WINDOW
   const model = modelOf(s).toLowerCase()
-  if (/gpt-4o|gpt-4\.1|gpt-5|(^|\/)o\d|claude|gemini|llama-3\.[1-3]|qwen|mistral-large/.test(model))
+  if (/gpt-4\.1|gemini|deepseek-(flash|v4)/.test(model)) return 1_000_000
+  if (/gpt-5/.test(model)) return 400_000
+  if (/claude/.test(model)) return 200_000
+  if (/gpt-4o|(^|\/)o\d|llama-3\.[1-3]|llama-4|qwen|mistral-large|deepseek/.test(model))
     return 128_000
-  if (model.includes('deepseek')) return 64_000
   return 32_000
+}
+
+/** How much the current model takes and gives, for the chat (configurable in Settings → AI). */
+export function contextLimits(): ContextLimits {
+  const { settings: s, level } = useLlm.getState()
+  if (s.kind === 'fixnote') {
+    return { window: FIXNOTE_WINDOW, prompt: FIXNOTE_CHAT_TOKENS, answer: FIXNOTE_ANSWER[level] }
+  }
+  const window = s.contextTokens && s.contextTokens >= 2048 ? s.contextTokens : modelWindow(s)
+  const answer = Math.min(8192, Math.max(1024, Math.floor(window / 4)))
+  return { window, prompt: Math.min(window - answer, OWN_KEY_CHAT_TOKENS), answer }
 }
 
 /** Who answers, for the AI activity log. */
