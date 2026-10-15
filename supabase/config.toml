@@ -128,6 +128,13 @@ verify_jwt = true
 enabled = true
 verify_jwt = false
 
+# Card payments (ListoPays) next to Suby: billing opens ListoPays' payment page for an order;
+# listopays-webhook takes ListoPays' reports (no user JWT; checked with the Website Private Key).
+# Secrets: `pnpm sb secrets set LISTOPAYS_PUBLIC_KEY=... LISTOPAYS_PRIVATE_KEY=...` (README → Payments).
+[functions.listopays-webhook]
+enabled = true
+verify_jwt = false
+
 [functions.storage-cleanup]
 enabled = true
 verify_jwt = false
