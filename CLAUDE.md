@@ -67,19 +67,33 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`mergeDailyNotes`, deterministic so devices converge), the one with the larger id is deleted.
 - Try sync UI without Supabase: `pnpm dev` + `?dev-backend` (code 123456).
 - Assistant: retrieval in `packages/core/src/ai`, LLM client/prompt/citations in `packages/ai`,
-  app wiring in `apps/web/src/lib/assistant`. Query expansion (`expandQuery`) only adds FTS keywords;
-  embeddings always use the question as typed. Model output is rendered as React elements only
+  app wiring in `apps/web/src/lib/assistant`. Before retrieval one short call (`planSearch`) rewrites
+  the message as a standalone question with the last turns in mind (FTS and embeddings use it, never
+  the expansion keywords, which only add FTS words) and says whether new notes are needed at all
+  (`search: false`: a few fragments only). Model output is rendered as React elements only
   (`AnswerText`), never as HTML. The LLM key stays in the `llm-proxy` edge function.
 - The assistant is an agent: it calls the note tools of `packages/core/src/agent` (`NoteTools`,
   `NOTE_TOOL_SPECS`; the MCP server uses the same ones, so a tool added there reaches both) in a
-  loop (`apps/web/src/lib/assistant/agent.ts`). It remembers the thread until "new chat"; older
-  turns become a summary (`chat.summary` kv) near the context limit. Deleting, and more than a few
+  loop (`apps/web/src/lib/assistant/agent.ts`). It remembers the thread until "new chat" like Claude
+  Code (`packages/ai/src/context.ts`): each answer's tool steps (`chat_messages.trace`) go back as
+  real tool messages, earlier `[n]` become note names; past `clearAt` of the budget
+  (`contextLimits()` in `llm.ts`, per model) old tool results become a stub (mark `chat.cleared`,
+  only moves forward: the prompt's start stays cacheable), past `compactAt` the oldest turns become
+  a structured summary (`chat.summary`) that opens the history, never the system prompt; a failed
+  summary drops nothing. Only the last step's text is the answer. `search_notes` in the chat is
+  hybrid (semantic + expansion through `NoteToolsOptions`), like the look-up before each answer.
+  What it knows about the user (kv `assistant.memory`, per device, Settings → AI, removed by
+  `forgetLocalNotes`) goes with the rules; its `remember` tool is the assistant's own (not in
+  `NOTE_TOOL_SPECS`: MCP clients must not write what the in-app assistant obeys), logged in
+  `AuditLog` (`chat.memory`, `ai_actions.memory`) and listed with the answer's changes. Deleting, and more than a few
   changes in one answer, always ask; in "ask" mode every change asks. Each answer lists its changes
   (`chat_messages.actions`) with Undo all. llm-proxy takes tools; a step that only returns tool
   results is not a new request, and cached prompt tokens count a tenth. FixNote AI has two levels
   (Settings → AI, `useLlm().level`): medium = `LLM_MODEL` (deepseek-flash, thinking off), hard =
   `LLM_MODEL_HARD` (deepseek-v4-pro, thinking on; tokens weighed by `LLM_HARD_WEIGHT`). A thinking
-  model gets its `reasoning_content` back with its tool calls, and earlier turns go as text. Each
+  model gets its `reasoning_content` back with every earlier call and answer (DeepSeek with tools
+  refuses the request otherwise); when an earlier turn has none, the provider's 400 makes the agent
+  send the history as text (`fallback`). Each
   turn carries the folder list (`tools.folders()`); `search_notes` and `list_recent` take `folder`.
   A change to a note open on screen goes through `registerOpenNote` (`lib/assistant/open-notes.ts`):
   solo it is one editor step that types in (`editor/ai-typing.ts`); in a shared note it is written
