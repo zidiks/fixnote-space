@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { billingApi, refreshPlan, runSync } from './account/account'
+import { billingApi, refreshPlan, runSync, useAccount } from './account/account'
 import type { BillingPlan } from './billing'
 import { type SavedCardOrder, saveCardOrder, savedCardOrder } from './card-order'
 import { usePlan } from './plan'
@@ -82,6 +82,13 @@ export function closeCardPayment() {
 
 /** The payment page again (closed by mistake, or the pop-up was blocked). */
 export const cardPaymentUrl = () => useCardPayment.getState().order?.url ?? null
+
+// The order belongs to the account that opened it: signing out forgets it.
+useAccount.subscribe((s, prev) => {
+  if (s.phase !== 'signed-out' || prev.phase === 'signed-out') return
+  saveCardOrder(null)
+  useCardPayment.setState({ open: false, order: null, phase: 'waiting', until: null })
+})
 
 // Back to the app with an order still open (paid in the browser meanwhile): ask, and once it is
 // paid the welcome shows by itself.
