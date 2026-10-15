@@ -829,8 +829,7 @@ const es: LocaleResource = {
     cardTryAgain: 'Intentar de nuevo',
     extendedTitle: 'Pro ampliado',
     cardPaidUntil: 'Pro hasta el {{date}}. No se renueva solo: te lo recordaremos 3 días antes.',
-    paidCardWeb:
-      'Vuelve a la pestaña de FixNote donde empezaste: Pro se activa allí solo.',
+    paidCardWeb: 'Vuelve a la pestaña de FixNote donde empezaste: Pro se activa allí solo.',
     paidCardAnywhere:
       'Vuelve a FixNote: Pro se activa solo en la app o la pestaña donde empezaste el pago.',
     continueInBrowser: 'Seguir en el navegador',
