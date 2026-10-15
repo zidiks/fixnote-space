@@ -9,11 +9,14 @@ import { create } from 'zustand'
  */
 export interface PlanInfo {
   plan: 'free' | 'pro'
-  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'free'
+  /** 'prepaid': paid by card (ListoPays) until `prepaidUntil`, nothing renews by itself. */
+  status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'prepaid' | 'free'
   /** Only a label ("Beta"): plans work the same either way. */
   beta: boolean
   trialEndsAt: number | null
   periodEnd: number | null
+  /** End of the time paid by card (a prepaid month or year), also once it is over. */
+  prepaidUntil: number | null
   /** Paid at least once: its files are never removed from the server. */
   paidBefore: boolean
   /** The 7 free days of Pro are still there to take (`begin_trial`). */
@@ -119,6 +122,7 @@ export function toPlanInfo(raw: Record<string, unknown>): PlanInfo {
     beta: raw.beta === true,
     trialEndsAt: time(raw.trial_ends_at),
     periodEnd: time(raw.current_period_end),
+    prepaidUntil: time(raw.prepaid_until),
     paidBefore: raw.paid_before === true,
     trialAvailable: raw.trial_available === true,
     filesDeleteAt: time(raw.files_delete_at),

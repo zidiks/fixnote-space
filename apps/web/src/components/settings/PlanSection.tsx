@@ -1,4 +1,4 @@
-import { useTranslation } from '@fixnote/i18n'
+import { i18n, useTranslation } from '@fixnote/i18n'
 import { Button, ConfirmDialog, cn, Spinner } from '@fixnote/ui'
 import { Download } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
@@ -8,13 +8,20 @@ import { billingApi, refreshPlan, startCheckout, useAccount } from '../../lib/ac
 import {
   type DevPlanMode,
   devPlanMode,
+  endDevPrepaidSoon,
   endDevTrialSoon,
   resetDevAccount,
   setDevPlanMode,
   spendDevAi,
 } from '../../lib/account/dev-plan'
 import { usesDevBackend } from '../../lib/account/pick'
-import { type BillingOverview, type BillingPayment, money } from '../../lib/billing'
+import {
+  type BillingOverview,
+  type BillingPayment,
+  CheckoutRefused,
+  money,
+} from '../../lib/billing'
+import { startCardPayment } from '../../lib/card-payment'
 import { usePlan } from '../../lib/plan'
 import { usePlatform } from '../../lib/platform'
 import { TrialButton } from '../ProCard'
@@ -134,7 +141,9 @@ export function PlanSection() {
           ? t('plan.statusPastDue')
           : info.status === 'active'
             ? t('plan.statusActive', { date: date(info.periodEnd) })
-            : t('plan.statusFree')
+            : info.status === 'prepaid'
+              ? t('plan.statusPrepaid', { date: date(info.prepaidUntil) })
+              : t('plan.statusFree')
   const pro = info.plan === 'pro'
   const sub = overview?.subscription ?? null
   // A subscription that still runs (also one cancelled, until its period ends): no new checkout.
@@ -143,9 +152,11 @@ export function PlanSection() {
   // Our server says Pro is paid for: active, waiting for its renewal, or cancelled with time left.
   // No checkout then, even when Suby does not know the subscription (test data, a manual grant):
   // the buttons show only when both sides agree there is none, so nobody pays twice.
+  // Paid by card: no subscription, only more prepaid time (by card) can be added.
   const paid =
     info.status === 'active' ||
     info.status === 'past_due' ||
+    info.status === 'prepaid' ||
     (info.status === 'canceled' && (info.periodEnd ?? 0) > Date.now())
 
   return (
@@ -201,6 +212,7 @@ export function PlanSection() {
         </div>
       ) : null}
       {sub && live ? <Subscription sub={sub} onChange={changed} /> : null}
+      {info.status === 'prepaid' && !live ? <Extend until={info.prepaidUntil} /> : null}
       {!live && !paid ? <Upgrade /> : null}
       <History overview={overview} state={billing} onRetry={loadBilling} />
       {sub && live && !sub.cancelAtPeriodEnd ? (
@@ -447,21 +459,87 @@ function CancelSubscription({
   )
 }
 
-/** Monthly or yearly: opens Suby's payment page in the browser; Pro turns on when it is paid. */
+type PayMethod = 'card' | 'crypto'
+
+/** What a refused or failed checkout says. */
+function checkoutError(err: unknown): string {
+  if (err instanceof CheckoutRefused) {
+    return err.code === 'prepaid_active'
+      ? i18n.t('plan.prepaidRunning')
+      : i18n.t('plan.subscriptionRunning')
+  }
+  const unset = /not set up|503/i.test(err instanceof Error ? err.message : String(err))
+  return unset ? i18n.t('plan.soon') : i18n.t('plan.checkoutFailed')
+}
+
+/** Card time runs (no renewal): pay ahead by card; the reminder shows 3 days before the end. */
+function Extend({ until }: { until: number | null }) {
+  const { t, i18n } = useTranslation()
+  const platform = usePlatform()
+  const [busy, setBusy] = useState<'month' | 'year' | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const end = until
+    ? new Date(until).toLocaleDateString(i18n.resolvedLanguage, { day: 'numeric', month: 'long' })
+    : ''
+  const ending = until !== null && until - Date.now() < 3 * 86_400_000
+  const buy = async (plan: 'month' | 'year') => {
+    setBusy(plan)
+    setError(null)
+    try {
+      await startCardPayment(plan, (url) => platform.openExternal(url))
+    } catch (err) {
+      setError(checkoutError(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+  return (
+    <div className="max-w-md space-y-3 rounded-lg border p-4">
+      <p className="text-sm font-medium">{t('plan.extend')}</p>
+      {ending ? (
+        <p className="text-sm text-brand">{t('plan.prepaidEnding', { date: end })}</p>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <Button loading={busy === 'year'} disabled={busy !== null} onClick={() => void buy('year')}>
+          {t('plan.extendYear')}
+        </Button>
+        <Button
+          variant="outline"
+          loading={busy === 'month'}
+          disabled={busy !== null}
+          onClick={() => void buy('month')}
+        >
+          {t('plan.extendMonth')}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">{t('plan.extendHint', { date: end })}</p>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+    </div>
+  )
+}
+
+/**
+ * Monthly or yearly, by card (ListoPays: a prepaid period, the default) or in crypto (a Suby
+ * subscription). Both open the payment page in the browser; Pro turns on here when it is paid.
+ */
 function Upgrade() {
   const { t } = useTranslation()
   const platform = usePlatform()
+  const [method, setMethod] = useState<PayMethod>('card')
   const [busy, setBusy] = useState<'month' | 'year' | null>(null)
   const [note, setNote] = useState<{ text: string; error: boolean } | null>(null)
   const buy = async (plan: 'month' | 'year') => {
     setBusy(plan)
     setNote(null)
     try {
-      await startCheckout(plan, (url) => platform.openExternal(url), platform.kind === 'desktop')
-      setNote({ text: t('plan.paymentOpened'), error: false })
+      if (method === 'card') {
+        await startCardPayment(plan, (url) => platform.openExternal(url))
+      } else {
+        await startCheckout(plan, (url) => platform.openExternal(url), platform.kind === 'desktop')
+        setNote({ text: t('plan.paymentOpened'), error: false })
+      }
     } catch (err) {
-      const unset = /not set up|503/i.test(err instanceof Error ? err.message : String(err))
-      setNote({ text: unset ? t('plan.soon') : t('plan.checkoutFailed'), error: true })
+      setNote({ text: checkoutError(err), error: true })
     } finally {
       setBusy(null)
     }
@@ -469,6 +547,34 @@ function Upgrade() {
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium">{t('plan.upgrade')}</p>
+      <div
+        role="radiogroup"
+        aria-label={t('plan.payBy')}
+        className="inline-flex rounded-lg border bg-muted/40 p-0.5"
+      >
+        {(['card', 'crypto'] as const).map((m) => (
+          // biome-ignore lint/a11y/useSemanticElements: a segmented control, styled as one
+          <button
+            key={m}
+            type="button"
+            role="radio"
+            aria-checked={method === m}
+            disabled={busy !== null}
+            onClick={() => {
+              setMethod(m)
+              setNote(null)
+            }}
+            className={cn(
+              'rounded-md px-3 py-1 text-sm transition-colors',
+              method === m
+                ? 'bg-card font-medium text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {m === 'card' ? t('plan.payCard') : t('plan.payCryptoTab')}
+          </button>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-2">
         <Button loading={busy === 'year'} disabled={busy !== null} onClick={() => void buy('year')}>
           {t('plan.yearly')}
@@ -485,8 +591,10 @@ function Upgrade() {
           {t('plan.monthly')}
         </Button>
       </div>
-      {/* Suby takes stablecoins for now (cards need a company): no automatic renewal. */}
-      <p className="max-w-md text-xs text-muted-foreground">{t('plan.payCrypto')}</p>
+      {/* Card: a prepaid period through ListoPays. Crypto: Suby, renewed by a link it emails. */}
+      <p className="max-w-md text-xs text-muted-foreground">
+        {method === 'card' ? t('plan.payCardHint') : t('plan.payCrypto')}
+      </p>
       {note ? (
         <p className={cn('text-xs', note.error ? 'text-destructive' : 'text-muted-foreground')}>
           {note.text}
@@ -543,6 +651,9 @@ function DevPlanSwitch() {
         </Button>
         <Button size="sm" variant="ghost" onClick={() => void apply(endDevTrialSoon)}>
           {t('plan.devTrialEnding')}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => void apply(endDevPrepaidSoon)}>
+          {t('plan.devPrepaidEnding')}
         </Button>
         <Button size="sm" variant="ghost" onClick={() => void apply(resetDevAccount)}>
           {t('plan.devNewAccount')}

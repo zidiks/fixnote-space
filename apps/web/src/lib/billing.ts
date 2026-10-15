@@ -41,6 +41,27 @@ export interface BillingApi {
   keepPlan(): Promise<BillingOverview>
   /** No renewal: Pro until the end of the paid period. */
   cancel(): Promise<BillingOverview>
+  /**
+   * A card payment (ListoPays): our order and its payment page. It buys a prepaid month or year
+   * from the end of the paid time; nothing renews by itself.
+   */
+  cardCheckout(plan: BillingPlan): Promise<{ url: string; order: string }>
+  /** The order as the server has it, asked until it is paid (`order-status`). */
+  orderStatus(order: string): Promise<CardOrderStatus>
+}
+
+export interface CardOrderStatus {
+  status: 'pending' | 'paid' | 'failed' | 'expired'
+  plan: BillingPlan
+  /** Paid: Pro until then. */
+  periodEnd: string | null
+}
+
+/** The server refused a checkout: a subscription renews, or card time runs (`code` of a 409). */
+export class CheckoutRefused extends Error {
+  constructor(readonly code: 'subscription_active' | 'prepaid_active') {
+    super(code)
+  }
 }
 
 /** "$7.00" in the UI language. */

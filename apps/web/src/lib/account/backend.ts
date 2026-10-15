@@ -7,7 +7,12 @@ import type {
   SyncRemote,
 } from '@fixnote/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { BillingApi, BillingOverview } from '../billing'
+import {
+  type BillingApi,
+  type BillingOverview,
+  type CardOrderStatus,
+  CheckoutRefused,
+} from '../billing'
 import { realtimeTransport } from '../collab/transport'
 import { toError } from '../errors'
 import { type RemoteMcpApi, supabaseRemoteMcp } from '../remote-mcp/api'
@@ -173,8 +178,9 @@ export function supabaseBackend(
         body: { plan, app },
       })
       if (error) {
-        // 503: the payment keys are not on the server yet.
+        // 503: the payment keys are not on the server yet; 409: Pro is paid by card until then.
         const status = (error as { context?: { status?: number } }).context?.status
+        if (status === 409) throw new CheckoutRefused('prepaid_active')
         throw status === 503 ? new Error('Payments are not set up yet') : toError(error)
       }
       return data?.url ?? null
@@ -188,6 +194,29 @@ export function supabaseBackend(
       switchPlan: (plan) => billingCall<BillingOverview>(client, { action: 'switch', plan }),
       keepPlan: () => billingCall<BillingOverview>(client, { action: 'keep-plan' }),
       cancel: () => billingCall<BillingOverview>(client, { action: 'cancel' }),
+      async cardCheckout(plan) {
+        const { data, error } = await client.functions.invoke<{ url: string; order: string }>(
+          'billing',
+          { body: { action: 'card-checkout', plan } },
+        )
+        if (error || !data) {
+          const res = (error as { context?: Response } | null)?.context
+          if (res?.status === 503) throw new Error('Payments are not set up yet')
+          if (res?.status === 409) {
+            const body = (await res.json().catch(() => null)) as {
+              error?: { code?: string }
+            } | null
+            const code = body?.error?.code
+            if (code === 'subscription_active' || code === 'prepaid_active') {
+              throw new CheckoutRefused(code)
+            }
+          }
+          throw error ? toError(error) : new Error('No answer')
+        }
+        return data
+      },
+      orderStatus: (order) =>
+        billingCall<CardOrderStatus>(client, { action: 'order-status', order }),
     },
     async startTrial() {
       const { error } = await client.rpc('begin_trial')

@@ -548,7 +548,7 @@ export const es: Dict = {
   privacyPage: {
     eyebrow: 'Privacidad',
     title: 'Política de privacidad',
-    updated: 'Actualizada el 14 de octubre de 2026',
+    updated: 'Actualizada el 15 de octubre de 2026',
     lead: 'En resumen: no podemos leer tus notas, no vendemos datos y no mostramos anuncios. A continuación, qué datos tiene FixNote y para qué.',
     sections: [
       {
@@ -608,7 +608,7 @@ export const es: Dict = {
       {
         title: 'Otros servicios',
         text: [
-          'Los datos de la cuenta y las notas cifradas se guardan en Supabase, y los correos con el código los envía Resend. Los pagos de Pro los gestiona Suby: recibimos el estado de la suscripción, nunca la tarjeta.',
+          'Los datos de la cuenta y las notas cifradas se guardan en Supabase, y los correos con el código los envía Resend. Los pagos de Pro con tarjeta los procesa ListoPays y los pagos en cripto, Suby: recibimos el estado del pago o de la suscripción, nunca los datos de la tarjeta.',
           'La app descarga sus modelos de búsqueda y de voz desde Hugging Face. Las tarjetas de enlaces en el navegador se obtienen a través de nuestro servidor (sin registrar las direcciones) y directamente en la app de escritorio. La app de escritorio busca actualizaciones en fixnote.space y GitHub; la versión de Microsoft Store las recibe desde la Store.',
         ],
       },
