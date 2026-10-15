@@ -168,6 +168,19 @@ describe('retrieve', () => {
     expect(await retrieve(db, indexer, 'intro', { kind: 'all' })).toEqual([])
   })
 
+  it('gives the open note whole when it fits, else its start marked as partial', async () => {
+    const content = `Intro\n\n${'x'.repeat(900)}\n\nOutro`
+    const n = await repo.createNote({ content })
+    const scope = { kind: 'note' as const, id: n.id, title: n.title }
+    const whole = await retrieve(db, null, 'anything', scope, { wholeNoteChars: 20_000 })
+    expect(whole.map((h) => h.text)).toEqual([content])
+    expect(whole[0]?.partial).toBeUndefined()
+    const start = await retrieve(db, null, 'anything', scope, { wholeNoteChars: 600 })
+    expect(start.length).toBeGreaterThan(0)
+    expect(start.map((h) => h.text).join('')).not.toContain('Outro')
+    expect(start.every((h) => h.partial)).toBe(true)
+  })
+
   it('falls back to keywords when the embedder fails', async () => {
     await repo.createNote({ content: 'Flight to Madrid' })
     embedder.fail = true

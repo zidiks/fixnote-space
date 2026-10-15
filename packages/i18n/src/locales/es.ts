@@ -270,6 +270,16 @@ const es: LocaleResource = {
     tooLarge: '{{name}} ocupa más de 20 MB',
     fileMissing: 'Este archivo aún no está disponible en este dispositivo.',
   },
+  aiMemory: {
+    title: 'Lo que el asistente sabe de mí',
+    body: 'Preferencias y datos que el asistente conserva entre chats, uno por línea. Los añade cuando le pides que recuerde algo; cada cambio aparece en el registro de abajo y se puede deshacer.',
+    local: 'Solo en este dispositivo, sin sincronizar. Se borra al desvincular el dispositivo.',
+    placeholder: '- Responde en español\n- Mi jefa se llama Ana',
+    save: 'Guardar',
+    saved: 'Guardado',
+    clear: 'Olvidarlo todo',
+    cleared: 'El asistente olvidó todo lo que sabía de ti',
+  },
   aiLevel: {
     title: 'Razonamiento',
     body: 'Cuánto piensa FixNote AI una respuesta en el chat.',
@@ -640,6 +650,9 @@ const es: LocaleResource = {
     other: 'Otro (compatible con OpenAI)',
     address: 'Dirección',
     model: 'Modelo',
+    context: 'Contexto',
+    contextHint:
+      'Cuántos tokens admite el modelo a la vez (Ollama: num_ctx). Vacío: se estima por el nombre del modelo.',
     key: 'Clave de API',
     keySaved: 'Clave guardada en este dispositivo',
     replaceKey: 'Cambiar',
@@ -953,6 +966,7 @@ const es: LocaleResource = {
       look: 'Revisando las notas',
       daily: 'Abriendo la nota diaria',
       write: 'Haciendo cambios',
+      remember: 'Recordando',
     },
     did: {
       create_note: 'Nota creada «{{title}}»',
@@ -965,6 +979,7 @@ const es: LocaleResource = {
       rename_folder: 'Carpeta renombrada «{{title}}»',
       delete_folder: 'Carpeta eliminada «{{title}}»',
       daily_note: 'Añadido a la nota diaria ({{title}})',
+      remember: 'Recordado «{{title}}»',
     },
     ask: {
       create_note: '¿Crear la nota «{{title}}»?',

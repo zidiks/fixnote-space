@@ -61,7 +61,8 @@ export function envFromDeno(): ProxyEnv {
     baseUrl: Deno.env.get('LLM_BASE_URL') ?? 'https://api.deepseek.com',
     // deepseek-chat and deepseek-reasoner were retired on 2026-07-24.
     model: Deno.env.get('LLM_MODEL') ?? 'deepseek-flash',
-    maxTokens: Number(Deno.env.get('LLM_MAX_TOKENS') ?? 2048),
+    // Room to rewrite a long note in one tool call (its JSON is cut off past the cap).
+    maxTokens: Number(Deno.env.get('LLM_MAX_TOKENS') ?? 8192),
     hardModel: Deno.env.get('LLM_MODEL_HARD') ?? 'deepseek-v4-pro',
     maxTokensHard: Number(Deno.env.get('LLM_MAX_TOKENS_HARD') ?? 16384),
     hardWeight: Number(Deno.env.get('LLM_HARD_WEIGHT') ?? 4),
@@ -69,8 +70,13 @@ export function envFromDeno(): ProxyEnv {
   }
 }
 
-const MAX_BODY = 512 * 1024
-const MAX_MESSAGES = 120
+/**
+ * A request is bounded by its size: a chat keeps its tool calls and results, so a long one has many
+ * messages but stays within what the app sends (it summarizes past ~64k tokens). The count is only
+ * a sanity cap.
+ */
+const MAX_BODY = 1536 * 1024
+const MAX_MESSAGES = 1000
 const MAX_TOOLS = 32
 const MAX_CALLS = 16
 
@@ -88,6 +94,7 @@ interface Incoming {
 type Message =
   | { role: 'system' | 'user'; content: string }
   | { role: 'assistant'; content: string | null; tool_calls?: Call[]; reasoning_content?: string }
+  | { role: 'assistant'; content: string; reasoning_content?: string }
   | { role: 'tool'; tool_call_id: string; content: string }
 
 interface Call {
@@ -134,7 +141,14 @@ function messages(v: unknown): Message[] | null {
           : {}),
       })
     } else if (role === 'assistant' && typeof content === 'string') {
-      out.push({ role, content })
+      // A thinking model's earlier answers carry their reasoning (DeepSeek wants it back with tools).
+      out.push({
+        role,
+        content,
+        ...(typeof m.reasoning_content === 'string'
+          ? { reasoning_content: m.reasoning_content }
+          : {}),
+      })
     } else if (
       role === 'tool' &&
       typeof m.tool_call_id === 'string' &&

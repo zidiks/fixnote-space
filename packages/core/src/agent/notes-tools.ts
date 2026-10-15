@@ -1,4 +1,5 @@
 import type { AiAction, AiActionKind, AuditLog } from '../ai/audit'
+import type { Indexer } from '../ai/indexer'
 import { retrieve } from '../ai/retrieve'
 import { type AttachmentInfo, type Attachments, attachmentIds, attachmentUrl } from '../attachments'
 import { ImageTexts } from '../attachments/image-text'
@@ -40,6 +41,15 @@ export interface NoteToolsOptions {
   attachments?: Attachments | null
   /** Each change as it is logged (the assistant lists them under its answer, with Undo all). */
   onChange?: (action: AiAction) => void
+  /**
+   * The semantic index when it is ready: search_notes then also finds notes by meaning (the
+   * assistant chat). Without it, search is by words only (the MCP server).
+   */
+  semantic?: () => Indexer | null
+  /** More words for search_notes: translations and synonyms of the query (best effort). */
+  expand?: (query: string) => Promise<readonly string[]>
+  /** The client can read attachments with get_attachment (the MCP server; not the chat). */
+  attachmentTool?: boolean
 }
 
 /** "340 KB", "1.2 MB": the size a file link carries as its title, as the app writes it. */
@@ -221,7 +231,9 @@ export class NoteTools {
   private async attachmentList(n: Note): Promise<string> {
     const ids = attachmentIds(n.content)
     if (!ids.length) return ''
-    const lines = ['attachments (read with get_attachment):']
+    const lines = [
+      this.opts.attachmentTool ? 'attachments (read with get_attachment):' : 'attachments:',
+    ]
     for (const id of ids) {
       const info = await this.attachments?.info(id)
       const named = attachmentName(n.content, id)
@@ -296,18 +308,22 @@ export class NoteTools {
     return `Attached ${name} (${fileSize(bytes.length)}) to "${title(note)}".`
   }
 
-  /** Full-text search, in one folder (and its subfolders) when `folder` is given. */
+  /**
+   * Search by words (and by meaning, with the semantic index), in one folder (and its subfolders)
+   * when `folder` is given: the same search as the assistant's own look-up before each answer.
+   */
   async search(query: string, limit = 8, folder?: string): Promise<string> {
     await this.need('read')
     const reach = await this.reach()
     const within = folder?.trim() ? this.folderRef(reach, folder) : null
+    const extraKeywords = (await this.opts.expand?.(query).catch(() => [])) ?? []
     // Ask for more when only part of the notes is visible, then keep the visible ones.
     let hits = await retrieve(
       this.db,
-      null,
+      this.opts.semantic?.() ?? null,
       query,
       within ? { kind: 'folder', id: within.id, name: within.name } : { kind: 'all' },
-      { limit: reach.folderIds ? 60 : limit },
+      { limit: reach.folderIds ? 60 : limit, extraKeywords },
     )
     const ids = [...new Set(hits.map((h) => h.noteId))]
     const rows = ids.length

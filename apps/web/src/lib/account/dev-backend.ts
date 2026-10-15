@@ -193,14 +193,31 @@ const DEV_SYNONYMS: Record<string, string[]> = {
   покупки: ['shopping', 'compras'],
 }
 
-function devKeywords(question: string): string {
-  const words = question.toLowerCase().split(/[^\p{L}\p{N}]+/u)
+/**
+ * The search plan for a message: keywords from the synonyms above; a short follow-up ("а что ещё?")
+ * is resolved with the last question of the conversation, and "shorter", "translate" need no search.
+ */
+function devKeywords(prompt: string): string {
+  const question = prompt.match(/Latest message: ([\s\S]*)$/)?.[1]?.trim() ?? prompt
+  const lastUser = [...prompt.matchAll(/^User: (.*)$/gm)].at(-1)?.[1]?.trim()
+  const short = question.split(/\s+/).length <= 4
+  const query = short && lastUser ? `${lastUser} — ${question}` : question
+  const search = !/^(короче|сократи|переведи|спасибо|shorter|translate|thanks)/i.test(question)
+  const words = query.toLowerCase().split(/[^\p{L}\p{N}]+/u)
   const keywords = words.flatMap((w) =>
     Object.entries(DEV_SYNONYMS)
       .filter(([k]) => w.startsWith(k.slice(0, Math.max(4, k.length - 2))))
       .flatMap(([, v]) => v),
   )
-  return JSON.stringify({ keywords: [...new Set(keywords)] })
+  return JSON.stringify({ query, keywords: [...new Set(keywords)], search })
+}
+
+/** A summary in the shape the real prompt asks for, from the questions it was given. */
+function devSummary(prompt: string): string {
+  const previous = prompt.match(/^Summary so far:\n([\s\S]*?)\n\nConversation:/m)?.[1] ?? ''
+  const asked = [...prompt.matchAll(/^User: (.*)$/gm)].map((m) => m[1]).join('; ')
+  const before = previous.match(/## Goal\n([^\n]*)/)?.[1]
+  return `## Goal\n${[before, asked].filter(Boolean).join('; ')}\n## Open questions\nNone.`
 }
 
 /** Predictable stand-ins for AI edits, enough to see the diff and accept flow. */
@@ -277,6 +294,10 @@ function devAgent(messages: DevMessage[]): { text: string } | { calls: DevCall[]
   const message = prompt.match(/Message: ([\s\S]*)$/)?.[1]?.trim() ?? ''
   const rest = message.includes(':') ? message.slice(message.indexOf(':') + 1).trim() : ''
   const first = prompt.match(/\[1\] "[^"]*" \(id: ([^,]+),/)?.[1]
+  const remember = message.match(/^(?:запомни|remember)[,:]?\s+(?:что\s+|that\s+)?(.+)$/i)
+  if (remember?.[1]) {
+    return { calls: [{ name: 'remember', args: { fact: remember[1] } }] }
+  }
   const many = message.match(/(?:создай|create)\s+(\d+)/i)
   if (many) {
     const n = Math.min(Number(many[1]), 12)
@@ -332,7 +353,7 @@ const devLlm: typeof fetch = async (_url, init) => {
       : call
         ? DEV_CALL
         : summary
-          ? 'The user asked about their notes; nothing is pending.'
+          ? devSummary(prompt)
           : tidy
             ? devTidy(prompt)
             : expansion

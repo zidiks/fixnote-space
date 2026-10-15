@@ -51,3 +51,30 @@ describe('ChatRepo agent answers', () => {
     expect(await repo.summary()).toBeNull()
   })
 })
+
+describe('ChatRepo traces', () => {
+  it('keeps how an answer was reached, and the cleared mark until the chat is cleared', async () => {
+    const db = await createMemoryDriver()
+    await prepareDatabase(db)
+    const repo = new ChatRepo(db)
+    const answer = await repo.add({ kind: 'assistant', content: '', scope: { kind: 'all' } })
+    const trace = {
+      steps: [
+        {
+          text: 'Let me look.',
+          reasoning: 'think',
+          calls: [{ id: 'c1', name: 'get_note', arguments: '{"id":"n1"}', result: '# Plan' }],
+        },
+      ],
+      reasoning: 'answer',
+      found: [{ n: 1, noteId: 'n1', title: 'Plan' }],
+    }
+    await repo.finish(answer.id, { content: 'Done.', status: 'done', trace })
+    expect((await repo.recent())[0]?.trace).toEqual(trace)
+    expect(await repo.cleared()).toBe(0)
+    await repo.setCleared(42)
+    expect(await repo.cleared()).toBe(42)
+    await repo.clear()
+    expect(await repo.cleared()).toBe(0)
+  })
+})

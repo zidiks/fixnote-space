@@ -1,4 +1,5 @@
-import { CHAT_SUMMARY_KEY, voiceKeys } from './ai/chat'
+import { CHAT_CLEARED_KEY, CHAT_SUMMARY_KEY, voiceKeys } from './ai/chat'
+import { ASSISTANT_MEMORY_KEY } from './ai/memory'
 import type { BlobStore, SqlDriver } from './platform'
 
 /**
@@ -17,7 +18,7 @@ export async function unsyncedChanges(db: SqlDriver): Promise<number> {
 
 /**
  * Removes an account's notes from this device: notes, folders, files and everything made from
- * them (the search index, the assistant's chat, the AI log, tidy suggestions, conflicts, shared
+ * them (the search index, the assistant's chat and its memory of the user, the AI log, tidy suggestions, conflicts, shared
  * notes and the sync position), so another account can start here or nothing stays on a computer
  * that is not yours. Device settings (AI, MCP access) stay. The account's copy on the server is
  * untouched.
@@ -43,7 +44,9 @@ export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise
     ])
       await tx.execute(`DELETE FROM ${table}`)
     await tx.execute(
-      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key LIKE 'mcp.remote%' OR key IN ('mcp.scope', '${CHAT_SUMMARY_KEY}')`,
+      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key LIKE 'mcp.remote%' OR key IN (?, ?, ?, ?)`,
+      // What the assistant knows about the user is about this account, not the device.
+      ['mcp.scope', CHAT_SUMMARY_KEY, CHAT_CLEARED_KEY, ASSISTANT_MEMORY_KEY],
     )
   })
   for (const { id } of files) await blobs.delete(`att/${id}`).catch(() => undefined)

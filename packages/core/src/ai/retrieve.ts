@@ -15,6 +15,8 @@ export interface Fragment {
   /** Which searches found it; both means stronger evidence. */
   via: { keyword: boolean; semantic: boolean }
   score: number
+  /** In a single-note scope: the note goes on past what is shown (read it whole with get_note). */
+  partial?: boolean
 }
 
 const STOPWORDS = new Set(
@@ -154,6 +156,11 @@ export async function retrieve(
     now?: number
     /** More words for full-text recall only, e.g. translations of the question. */
     extraKeywords?: readonly string[]
+    /**
+     * Single-note scope: a note up to this long is given whole, as one fragment; a longer one is
+     * given from the start up to this much. Default: its first `limit` passages.
+     */
+    wholeNoteChars?: number
   } = {},
 ): Promise<Fragment[]> {
   const limit = opts.limit ?? 8
@@ -203,17 +210,41 @@ export async function retrieve(
     await loadNotes([scope.id])
     const note = notes.get(scope.id)
     if (!note) return []
-    return chunkNote(note.content)
-      .slice(0, limit)
-      .map((c) => ({
-        noteId: note.id,
-        title: note.title,
-        ord: c.ord,
-        text: c.text,
-        updatedAt: Number(note.updated_at),
-        via: { keyword: true, semantic: false },
-        score: 1,
-      }))
+    const whole = opts.wholeNoteChars
+    if (whole !== undefined && note.content.length <= whole) {
+      return [
+        {
+          noteId: note.id,
+          title: note.title,
+          ord: 0,
+          text: note.content,
+          updatedAt: Number(note.updated_at),
+          via: { keyword: true, semantic: false },
+          score: 1,
+        },
+      ]
+    }
+    const chunks = chunkNote(note.content)
+    let shown = chunks.slice(0, limit)
+    if (whole !== undefined) {
+      let used = 0
+      shown = chunks.filter((c) => {
+        used += c.text.length
+        return used <= whole
+      })
+      if (!shown.length) shown = chunks.slice(0, 1)
+    }
+    const partial = shown.length < chunks.length
+    return shown.map((c) => ({
+      noteId: note.id,
+      title: note.title,
+      ord: c.ord,
+      text: c.text,
+      updatedAt: Number(note.updated_at),
+      via: { keyword: true, semantic: false },
+      score: 1,
+      ...(partial ? { partial: true } : {}),
+    }))
   }
 
   // Keyword recall at note level, then the best-matching passage of each note.

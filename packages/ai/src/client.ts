@@ -18,6 +18,8 @@ export interface ToolCall {
 /** Messages of a conversation with tools: the model's calls and what each call returned. */
 export type AgentMessage =
   | ChatMessage
+  /** An answer of a thinking model, with the reasoning it must get back in later turns (DeepSeek). */
+  | { role: 'assistant'; content: string; reasoning_content?: string }
   | {
       role: 'assistant'
       content: string | null

@@ -41,6 +41,8 @@ describe('local notes of an account', () => {
     await kv('mcp.scope', '["f"]')
     await kv('mcp.access', 'read')
     await kv('chat.summary', '{"text":"About the plan","upTo":1}')
+    await kv('chat.cleared', '1')
+    await kv('assistant.memory', '- Call me Sasha')
     expect(await unsyncedChanges(db)).toBe(3)
 
     await forgetLocalNotes(db, blobs)

@@ -9,10 +9,12 @@ import {
   baseUrlOf,
   llm,
   modelOf,
+  modelWindow,
   ollamaModels,
   PRESETS,
   type Preset,
   type ProviderKind,
+  type ProviderSettings,
   saveApiKey,
   saveProvider,
   setLocalOnly,
@@ -57,6 +59,33 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <span className="w-28 shrink-0 text-sm text-muted-foreground">{label}</span>
       <div className="min-w-0 flex-1">{children}</div>
     </div>
+  )
+}
+
+/** How many tokens the model takes at once; empty = the guess from its name. Saved on blur. */
+function ContextField({ settings }: { settings: ProviderSettings }) {
+  const { t } = useTranslation()
+  const [value, setValue] = useState(settings.contextTokens ? String(settings.contextTokens) : '')
+  const save = () => {
+    const n = Math.round(Number(value))
+    const tokens = value.trim() && Number.isFinite(n) && n >= 2048 ? n : null
+    setValue(tokens ? String(tokens) : '')
+    if (tokens !== (settings.contextTokens ?? null)) void saveProvider({ contextTokens: tokens })
+  }
+  return (
+    <Field label={t('aiProvider.context')}>
+      <Input
+        type="number"
+        inputMode="numeric"
+        min={2048}
+        step={1024}
+        value={value}
+        placeholder={String(modelWindow(settings))}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+      />
+      <p className="mt-1 text-xs text-muted-foreground">{t('aiProvider.contextHint')}</p>
+    </Field>
   )
 }
 
@@ -264,6 +293,10 @@ export function ProviderSection() {
             ) : null}
           </Field>
         </div>
+      ) : null}
+
+      {settings.kind === 'custom' || (settings.kind === 'ollama' && desktop) ? (
+        <ContextField key={`${settings.kind}:${modelOf(settings)}`} settings={settings} />
       ) : null}
 
       {settings.kind !== 'fixnote' ? (

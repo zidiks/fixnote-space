@@ -26,6 +26,31 @@ beforeEach(async () => {
 })
 
 describe('NoteTools for the assistant', () => {
+  it('searches with the extra words the chat adds (translations, synonyms)', async () => {
+    await repo.createNote({ content: 'Giveaway в канале\n\nПриз — наушники' })
+    expect(await tools.search('розыгрыши')).toMatch(/^No notes match/)
+    const chat = new NoteTools(db, repo, audit, {
+      gate: OPEN_GATE,
+      provider: () => 'Test model',
+      kinds: 'chat',
+      expand: async () => ['giveaway'],
+      semantic: () => null,
+    })
+    expect(await chat.search('розыгрыши')).toContain('Giveaway в канале')
+  })
+
+  it('mentions get_attachment only to clients that have it', async () => {
+    const n = await repo.createNote({ content: '# Photo\n\n![](attachment:abc)' })
+    expect(await tools.get(n.id)).not.toContain('get_attachment')
+    const mcp = new NoteTools(db, repo, audit, {
+      gate: OPEN_GATE,
+      provider: () => 'Claude (MCP)',
+      kinds: 'mcp',
+      attachmentTool: true,
+    })
+    expect(await mcp.get(n.id)).toContain('get_attachment')
+  })
+
   it('edits one exact passage and logs it for undo', async () => {
     const n = await repo.createNote({ content: '# Shopping\n\n- milk\n- bread' })
     expect(await tools.edit(n.id, '- bread', '- bread\n- eggs')).toBe('Edited "Shopping".')
