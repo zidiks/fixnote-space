@@ -2,6 +2,7 @@ import {
   type ModelInfo,
   OCR_MODEL,
   type Platform,
+  RUSSIAN_SPEECH_MODEL,
   SEARCH_MODEL,
   SPEECH_MODELS,
   type SpeechModelKey,
@@ -14,11 +15,12 @@ import { toast } from 'sonner'
 import { fileSize } from '../../lib/attachments'
 import { usePlatform } from '../../lib/platform'
 
-type Kind = 'search' | 'ocr' | SpeechModelKey
+type Kind = 'search' | 'ocr' | 'russian' | SpeechModelKey
 
 const ROWS: { kind: Kind; model: ModelInfo }[] = [
   { kind: 'search', model: SEARCH_MODEL },
   { kind: 'ocr', model: OCR_MODEL },
+  { kind: 'russian', model: RUSSIAN_SPEECH_MODEL },
   ...(Object.keys(SPEECH_MODELS) as SpeechModelKey[]).map((kind) => ({
     kind,
     model: SPEECH_MODELS[kind],
@@ -37,6 +39,10 @@ async function download(platform: Platform, kind: Kind, onProgress: (p: number) 
     return
   }
   const transcriber = await platform.transcriber()
+  if (kind === 'russian') {
+    await transcriber.prepare?.(RUSSIAN_SPEECH_MODEL.id, onProgress)
+    return
+  }
   transcriber.setModel?.(SPEECH_MODELS[kind].id)
   await transcriber.ready(onProgress)
 }
@@ -46,8 +52,21 @@ async function unload(platform: Platform, kind: Kind) {
   else if (kind === 'ocr') (await platform.ocr?.())?.unload?.()
   else {
     const transcriber = await platform.transcriber()
-    if (transcriber.modelId === SPEECH_MODELS[kind].id) transcriber.unload?.()
+    if (kind === 'russian' || transcriber.modelId === SPEECH_MODELS[kind].id) transcriber.unload?.()
   }
+}
+
+/** WebGPU takes the larger build of the speech models; the row shows what this device gets. */
+function useWebGpu(): boolean {
+  const [gpu, setGpu] = useState(false)
+  useEffect(() => {
+    const nav = navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }
+    void nav.gpu
+      ?.requestAdapter()
+      .then((adapter) => setGpu(Boolean(adapter)))
+      .catch(() => undefined)
+  }, [])
+  return gpu
 }
 
 /** Settings → Advanced: the models that run on this device, with their size on disk. */
@@ -59,6 +78,7 @@ function ModelsSection() {
   const [sizes, setSizes] = useState<Record<string, number>>({})
   const [speech, setSpeech] = useState<string | null>(null)
   const [busy, setBusy] = useState<{ kind: Kind; progress: number | null } | null>(null)
+  const gpu = useWebGpu()
 
   const refresh = useCallback(async () => {
     if (!models) return
@@ -86,7 +106,8 @@ function ModelsSection() {
     setBusy({ kind, progress: null })
     try {
       await download(platform, kind, (p) => setBusy({ kind, progress: p }))
-      if (kind !== 'search' && kind !== 'ocr') setSpeech(SPEECH_MODELS[kind].id)
+      if (kind !== 'search' && kind !== 'ocr' && kind !== 'russian')
+        setSpeech(SPEECH_MODELS[kind].id)
     } catch (err) {
       toast(t('models.failed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
@@ -122,7 +143,7 @@ function ModelsSection() {
         <span className="text-xs text-muted-foreground tabular-nums">
           {size > 0
             ? t('models.downloaded', { size: fileSize(size) })
-            : fileSize(model.approxBytes)}
+            : fileSize((gpu && model.gpuBytes) || model.approxBytes)}
         </span>
         {size > 0 ? (
           <Button
@@ -154,7 +175,7 @@ function ModelsSection() {
     )
   }
 
-  const single = (kind: 'search' | 'ocr', model: ModelInfo) => (
+  const single = (kind: 'search' | 'ocr' | 'russian', model: ModelInfo) => (
     <div className="flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5">
       <span className="min-w-0 flex-1 basis-48 space-y-0.5">
         <span className="block text-sm font-medium">{t(`models.${kind}`)}</span>
@@ -178,7 +199,13 @@ function ModelsSection() {
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium">{t('models.speech')}</h4>
-        <div role="radiogroup" aria-label={t('models.speech')} className="max-w-xl space-y-2">
+        {single('russian', RUSSIAN_SPEECH_MODEL)}
+        <h5 className="pt-2 text-sm text-muted-foreground">{t('models.otherLanguages')}</h5>
+        <div
+          role="radiogroup"
+          aria-label={t('models.otherLanguages')}
+          className="max-w-xl space-y-2"
+        >
           {(Object.keys(SPEECH_MODELS) as SpeechModelKey[]).map((kind) => {
             const model = SPEECH_MODELS[kind]
             const active = speech === model.id

@@ -9,7 +9,7 @@ import type {
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
 import { localModels } from '@fixnote/platform-web/models'
 import { createTesseractRecognizer } from '@fixnote/platform-web/ocr'
-import { createWhisperTranscriber } from '@fixnote/platform-web/whisper'
+import { createSpeechTranscriber } from '@fixnote/platform-web/speech'
 import { invoke, isTauri } from '@tauri-apps/api/core'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { appDataBlobStore } from './blobs'
@@ -61,7 +61,7 @@ export function createTauriPlatform(): Platform {
   const sql = openTauriSqlDriver()
   const chrome = detectChrome()
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
-  let transcriber: ReturnType<typeof createWhisperTranscriber> | null = null
+  let transcriber: ReturnType<typeof createSpeechTranscriber> | null = null
   let ocr: ReturnType<typeof createTesseractRecognizer> | null = null
   return {
     kind: 'desktop',
@@ -82,7 +82,7 @@ export function createTauriPlatform(): Platform {
     },
     // Same engine as the web app; WebView2 has WebGPU, so dictation runs on the GPU when it can.
     transcriber: () => {
-      transcriber ??= createWhisperTranscriber()
+      transcriber ??= createSpeechTranscriber()
       return Promise.resolve(transcriber)
     },
     models: localModels,

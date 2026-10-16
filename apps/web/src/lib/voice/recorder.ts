@@ -1,4 +1,4 @@
-import { downsample, RATE, Segmenter } from './segments'
+import { RATE, Resampler, Segmenter } from './segments'
 
 /** Longest recording we keep going; a dictated note, not a meeting. */
 export const MAX_RECORDING_MS = 10 * 60_000
@@ -30,6 +30,28 @@ export async function openMicrophone(): Promise<MediaStream> {
       err instanceof Error ? err.message : String(err),
     )
   }
+}
+
+/**
+ * Audio at 16 kHz, so the browser resamples the microphone with its own proper filter. Firefox
+ * cannot connect a stream to a context of another rate: then the device's rate, and `Resampler`.
+ */
+function openAudio(stream: MediaStream): {
+  audio: AudioContext
+  source: MediaStreamAudioSourceNode
+} {
+  try {
+    const audio = new AudioContext({ sampleRate: RATE })
+    try {
+      return { audio, source: audio.createMediaStreamSource(stream) }
+    } catch {
+      void audio.close()
+    }
+  } catch {
+    // A rate the browser does not offer.
+  }
+  const audio = new AudioContext()
+  return { audio, source: audio.createMediaStreamSource(stream) }
 }
 
 /**
@@ -66,28 +88,29 @@ export class Recorder {
       this.recorder.start(1000)
     }
 
-    const audio = new AudioContext()
+    const { audio, source } = openAudio(this.stream)
     this.audio = audio
     const analyser = audio.createAnalyser()
     analyser.fftSize = 512
-    const source = audio.createMediaStreamSource(this.stream)
     source.connect(analyser)
     if (onPiece) {
       const segmenter = new Segmenter({ dropSilent: opts.dropSilent ?? false })
       this.segmenter = segmenter
       this.onPiece = onPiece
-      const node = audio.createScriptProcessor(4096, 1, 1)
+      // About 64-85 ms a block either way, so pauses are timed as before.
+      const node = audio.createScriptProcessor(audio.sampleRate > RATE ? 4096 : 1024, 1, 1)
       // It only runs when connected to the output: through a silent gain.
       const mute = audio.createGain()
       mute.gain.value = 0
       source.connect(node)
       node.connect(mute)
       mute.connect(audio.destination)
+      const resampler = new Resampler(audio.sampleRate, RATE)
       node.onaudioprocess = (e) => {
         const input = e.inputBuffer.getChannelData(0)
         let sum = 0
         for (const v of input) sum += v * v
-        const pcm = downsample(new Float32Array(input), audio.sampleRate, RATE)
+        const pcm = resampler.push(new Float32Array(input))
         const piece = segmenter.push(pcm, Math.sqrt(sum / input.length), audio.currentTime * 1000)
         if (piece) onPiece(piece)
       }

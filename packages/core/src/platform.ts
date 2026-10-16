@@ -48,29 +48,38 @@ export interface TranscriptionResult {
   text: string
   language: string
   durationMs: number
+  /** The model that wrote the text (Russian goes to its own); none when nobody spoke. */
+  modelId?: string
 }
 
 /**
- * Speech to text on the device (Whisper through transformers.js on both platforms): audio never
- * leaves the machine. The model downloads once, on first use.
+ * Speech to text on the device, in a worker on both platforms: audio never leaves the machine.
+ * Russian goes to GigaAM (`RUSSIAN_SPEECH_MODEL`), other languages to the Whisper model the
+ * person picked (`SPEECH_MODELS`); silence never reaches either (`VOICE_ACTIVITY_MODEL`). Models
+ * download once, on first use.
  */
 export interface Transcriber {
+  /** The Whisper model in use (the one Settings shows as picked). */
   readonly modelId: string
   /** Always true today; false would mean audio is sent to a server and the UI must say so. */
   readonly local: boolean
+  /** Loads the model the next dictation will likely need (the last language's, else the app's). */
   ready(onProgress?: ProgressListener): Promise<void>
+  /** Loads one model (`SPEECH_MODELS` or `RUSSIAN_SPEECH_MODEL`), e.g. from Settings. */
+  prepare?(modelId: string, onProgress?: ProgressListener): Promise<void>
   /**
-   * `language` fixes the language; otherwise it is detected among `languages` (the ones the
-   * person speaks, default en, ru and es). `prefer` (the app's language, or the one spoken last)
-   * wins unless detection clearly hears another one: short phrases are often misheard as English.
+   * `language` fixes the language; otherwise it is the expected one (the last dictation's, else
+   * `prefer`, the app's), checked by detection among `languages` (the ones the person speaks,
+   * default en, ru and es): short phrases are often misheard as English. `prompt` is what the
+   * model should expect (the person's own words, what was said just before).
    */
   transcribe(
     audio: Blob,
-    opts?: { language?: string; languages?: string[]; prefer?: string },
+    opts?: { language?: string; languages?: string[]; prefer?: string; prompt?: string },
   ): Promise<TranscriptionResult>
-  /** Switches the speech model (`SPEECH_MODELS`); it downloads on next use. Remembered. */
+  /** Switches the Whisper model (`SPEECH_MODELS`); it downloads on next use. Remembered. */
   setModel?(modelId: string): void
-  /** Frees the model (after its files were removed); the next use loads it again. */
+  /** Frees the models (after files were removed); the next use loads them again. */
   unload?(): void
 }
 

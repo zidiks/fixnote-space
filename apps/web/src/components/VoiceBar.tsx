@@ -9,6 +9,7 @@ import { useDb, useRepo } from '../lib/db'
 import { listedFolderId } from '../lib/layout'
 import { usePlatform } from '../lib/platform'
 import { useInvalidateNotes, writableFolder } from '../lib/queries'
+import { speechWords } from '../lib/voice/vocabulary'
 import { cancelVoice, setVoiceDeps, stopVoice, useVoice } from '../lib/voice/voice'
 
 function elapsed(ms: number) {
@@ -51,6 +52,7 @@ export function VoiceBar() {
   useEffect(() => {
     setVoiceDeps({
       transcriber: platform.transcriber,
+      vocabulary: () => speechWords(repo),
       createNote: async (text) => {
         if (await captureToDaily(driver, 'voice')) {
           const daily = await appendToToday(repo, text)

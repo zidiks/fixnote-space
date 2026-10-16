@@ -115,13 +115,20 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Speech and embeddings run in the webview on both platforms (transformers.js workers in
   `platform-web`); the Rust side only fetches pages, streams HTTP for the user's own LLM key,
   stores files, holds keys and edits MCP client configs. Every on-device model is listed in
-  `packages/core/src/models.ts` (Settings → Advanced shows size, download, remove); the speech model
-  the person picked is kept by the Whisper client (`setModel`).
+  `packages/core/src/models.ts` (Settings → Advanced shows size, download, remove); the Whisper model
+  the person picked is kept by the speech client (`setModel`).
 - Dictation is cut at pauses while recording (`Segmenter` in `lib/voice/segments.ts`, fed by
-  `Recorder`) and each piece is transcribed right away, so only the last one is left when the person
-  stops. Speech never leaves the device, and there is no spoken reply (decided: CONCEPT.md §10). The
-  default model is `fast`; after two slow dictations out of three the app offers the next lighter one
-  once (`noteSpeed` in `voice.ts`).
+  `Recorder` at 16 kHz; pieces of 10–20 s, a forced cut at the quietest place) and each piece is
+  transcribed right away, so only the last one is left when the person stops. Speech never leaves the
+  device, and there is no spoken reply (decided: CONCEPT.md §10). One worker
+  (`platform-web/src/speech`) runs Silero VAD first (no speech → no text), then Russian on GigaAM v3
+  (CTC, own log-mel in `features.ts`, matched to onnx-asr) and other languages on Whisper. The
+  language is the one asked for, else the last dictation's, else the app's; GigaAM unsure (low
+  confidence, Latin text) or Whisper hearing Russian hands over to the other model. Whisper pieces get
+  a prompt (`speechPrompt`: folder names and names from notes, `speechWords`, then the text so far);
+  every transcript goes through `cleanTranscript` (subtitle credits, sound tags, loops). The default
+  Whisper is `fast` (`accurate` with WebGPU and a Russian interface); after two slow Whisper
+  dictations out of three the app offers the next lighter one once (`noteSpeed` in `voice.ts`).
 - Call notes (desktop: Windows, macOS 14.2+): the chevron on "Voice note" → "Call summary". The mic
   (`Recorder`, "me") and what the computer plays (`platform.systemAudio`, `system_audio.rs`: WASAPI
   loopback on Windows; on macOS a Core Audio tap whose API is looked up with `dlsym`, never linked,

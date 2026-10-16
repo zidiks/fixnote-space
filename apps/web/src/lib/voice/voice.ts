@@ -1,4 +1,4 @@
-import { type ModelInfo, SPEECH_MODELS, type Transcriber } from '@fixnote/core'
+import { type ModelInfo, SPEECH_MODELS, speechPrompt, type Transcriber } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
 import { create } from 'zustand'
@@ -67,6 +67,8 @@ interface Deps {
   transcriber: () => Promise<Transcriber>
   /** Saves a transcript as a new note in the Inbox and opens it. */
   createNote: (text: string) => Promise<void>
+  /** The person's own words (folders, names in their notes) the speech model should expect. */
+  vocabulary?: () => Promise<string[]>
 }
 
 let deps: Deps | null = null
@@ -79,19 +81,22 @@ let limitTimer: ReturnType<typeof setTimeout> | undefined
 
 /**
  * Transcribes a dictation piece by piece while it is being recorded (cut at pauses, see
- * `Segmenter`): the first piece finds the language, the others keep it. When the person stops,
- * only the last piece is left, so the text comes almost at once however long they spoke.
+ * `Segmenter`): the first piece that says something finds the language, the others keep it, and
+ * each is told the end of the text before it. When the person stops, only the last piece is left,
+ * so the text comes almost at once however long they spoke.
  */
 class Pieces {
   private texts: string[] = []
   private chain: Promise<void> = Promise.resolve()
   private failed = false
   private language: string | null = null
+  private modelId: string | undefined
   private count = 0
 
   constructor(
     private readonly transcriber: () => Promise<Transcriber>,
     private readonly prefer: string,
+    private readonly words: Promise<string[]>,
   ) {}
 
   add(pcm: Float32Array) {
@@ -102,12 +107,16 @@ class Pieces {
       try {
         const tr = await this.transcriber()
         await tr.ready()
-        const r = await tr.transcribe(
-          audio,
-          this.language ? { language: this.language } : { prefer: this.prefer },
-        )
-        this.language ??= r.language
+        const prompt = speechPrompt(await this.words, this.texts.filter(Boolean).join(' '))
+        const r = await tr.transcribe(audio, {
+          ...(this.language ? { language: this.language } : { prefer: this.prefer }),
+          ...(prompt ? { prompt } : {}),
+        })
         this.texts[i] = r.text.trim()
+        if (this.texts[i]) {
+          this.language ??= r.language
+          this.modelId = r.modelId
+        }
       } catch {
         this.failed = true
       }
@@ -115,10 +124,14 @@ class Pieces {
   }
 
   /** The whole text; null when there were no pieces or one failed (then the recording is used). */
-  async done(): Promise<{ text: string; language: string } | null> {
+  async done(): Promise<{ text: string; language: string; modelId?: string } | null> {
     await this.chain
     if (this.failed || !this.count) return null
-    return { text: this.texts.filter(Boolean).join(' '), language: this.language ?? this.prefer }
+    return {
+      text: this.texts.filter(Boolean).join(' '),
+      language: this.language ?? this.prefer,
+      ...(this.modelId ? { modelId: this.modelId } : {}),
+    }
   }
 }
 
@@ -217,7 +230,8 @@ export async function toggleVoice(target: VoiceTarget = 'auto') {
   recorder = rec
   set({ status: 'recording', target, level: 0, startedAt: Date.now() })
   levels = []
-  const piecesNow = new Pieces(d.transcriber, i18n.language.slice(0, 2))
+  const words = d.vocabulary?.() ?? Promise.resolve([])
+  const piecesNow = new Pieces(d.transcriber, i18n.language.slice(0, 2), words)
   pieces = piecesNow
   modelReady = false
   try {
@@ -272,11 +286,17 @@ export async function stopVoice() {
     // The last piece goes to `pieces` as it stops; the others are mostly done by now.
     const audio = await rec.stop()
     const transcriber = await d.transcriber()
-    const { text, language } =
+    const words = await (d.vocabulary?.() ?? Promise.resolve([]))
+    const { text, language, modelId } =
       (await piecesNow?.done()) ??
-      (await transcriber.transcribe(audio, { prefer: i18n.language.slice(0, 2) }))
+      (await transcriber.transcribe(audio, {
+        prefer: i18n.language.slice(0, 2),
+        ...(words.length ? { prompt: speechPrompt(words, '') } : {}),
+      }))
     set({ status: 'idle', download: null })
-    if (ready) noteSpeed(transcriber, performance.now() - stoppedAt)
+    // Only Whisper's speed: a lighter Whisper does not help when GigaAM wrote the text.
+    if (ready && modelId === transcriber.modelId)
+      noteSpeed(transcriber, performance.now() - stoppedAt)
     try {
       localStorage.setItem(USED_KEY, '1')
     } catch {

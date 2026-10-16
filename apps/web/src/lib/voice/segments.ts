@@ -1,11 +1,21 @@
+import { quietestCut } from '@fixnote/core'
 import { Vad } from './vad'
 
-/** What Whisper takes. */
+/** What the speech models take. */
 export const RATE = 16_000
-/** A piece shorter than this is not cut off yet: Whisper hears words better with some context. */
-const MIN_SEGMENT_S = 3
-/** Cut here even without a pause (Whisper hears 30 s at a time). */
-const MAX_SEGMENT_S = 25
+/**
+ * A piece is cut at a pause once it is this long: speech models hear words better with context,
+ * and only the last piece is left to transcribe when the person stops, however long the pieces.
+ */
+const MIN_SEGMENT_S = 10
+/** Cut here even without a pause, at the quietest place of the last few seconds. */
+const MAX_SEGMENT_S = 20
+const LOOK_BACK_S = 4
+/**
+ * A piece however short ends after this much more quiet once its phrase ended (2.5 s of quiet in
+ * all): a call's turn, a thought.
+ */
+const LONG_PAUSE_MS = 1500
 
 /**
  * Cuts a dictation into pieces at pauses while it is being recorded, so each piece is transcribed
@@ -18,7 +28,9 @@ export class Segmenter {
   private cuts = 0
   /** Speech was heard in the piece being collected. */
   private speech = false
-  private readonly vad = new Vad({ endSilenceMs: 700 })
+  /** When the last phrase of a piece too short to cut ended. */
+  private endedAt: number | null = null
+  private readonly vad = new Vad({ endSilenceMs: 1000 })
 
   /**
    * `dropSilent`: a piece in which nobody spoke is dropped, not returned (a call, where one side
@@ -31,22 +43,35 @@ export class Segmenter {
     this.parts.push(samples)
     this.length += samples.length
     const event = this.vad.push(rms, timeMs)
-    if (event === 'start') this.speech = true
+    if (event === 'start') {
+      this.speech = true
+      this.endedAt = null
+    }
+    if (event === 'end') this.endedAt = timeMs
     // Nobody speaks on this side yet: keep only the last second, the lead-in to what comes.
     if (this.opts.dropSilent && !this.speech && !this.vad.speaking) this.keepLast(RATE)
-    if (
-      (event === 'end' && this.length >= MIN_SEGMENT_S * RATE) ||
-      this.length >= MAX_SEGMENT_S * RATE
-    ) {
-      const piece = concat(this.parts)
-      const heard = this.speech || this.vad.speaking
-      this.parts = []
-      this.length = 0
-      this.cuts++
-      this.speech = this.vad.speaking
-      return heard || !this.opts.dropSilent ? piece : null
+    const paused =
+      event === 'end' ||
+      (this.endedAt !== null && !this.vad.speaking && timeMs - this.endedAt >= LONG_PAUSE_MS)
+    if (paused && (this.length >= MIN_SEGMENT_S * RATE || event !== 'end')) return this.cut(null)
+    if (this.length >= MAX_SEGMENT_S * RATE) {
+      const all = concat(this.parts)
+      return this.cut(quietestCut(all, all.length - LOOK_BACK_S * RATE, all.length, RATE), all)
     }
     return null
+  }
+
+  /** Hands over the piece (up to `at`, the rest starts the next one). */
+  private cut(at: number | null, all = concat(this.parts)): Float32Array | null {
+    const piece = at === null ? all : all.slice(0, at)
+    const rest = at === null ? null : all.slice(at)
+    const heard = this.speech || this.vad.speaking
+    this.parts = rest?.length ? [rest] : []
+    this.length = rest?.length ?? 0
+    this.cuts++
+    this.speech = this.vad.speaking
+    this.endedAt = null
+    return heard || !this.opts.dropSilent ? piece : null
   }
 
   private keepLast(samples: number) {
@@ -79,19 +104,76 @@ function concat(parts: Float32Array[]): Float32Array {
   return out
 }
 
-/** Averages the samples down to `to` Hz (enough for speech). */
-export function downsample(samples: Float32Array, from: number, to: number): Float32Array {
-  if (from === to) return samples
-  const ratio = from / to
-  const out = new Float32Array(Math.floor(samples.length / ratio))
-  for (let i = 0; i < out.length; i++) {
-    const start = Math.floor(i * ratio)
-    const end = Math.min(samples.length, Math.floor((i + 1) * ratio))
-    let sum = 0
-    for (let j = start; j < end; j++) sum += samples[j] ?? 0
-    out[i] = end > start ? sum / (end - start) : 0
+/** Zero crossings of the filter on each side: steep enough to keep 7 kHz and drop 8 kHz. */
+const ZEROS = 16
+/** Steps of the filter table per input sample (the rest is interpolated). */
+const STEPS = 64
+
+/**
+ * Converts a stream to `to` Hz with a windowed-sinc low-pass (Blackman window):
+ * what is above the new Nyquist is filtered out first, so it does not fold back as hiss over
+ * "с", "ш" and "щ" the way plain averaging let it. Keeps its state between blocks.
+ */
+export class Resampler {
+  private readonly step: number
+  private readonly cutoff: number
+  private readonly half: number
+  private readonly table: Float32Array
+  /** Input not consumed yet, with `half` samples of history before `pos`. */
+  private buffer = new Float32Array(0)
+  /** Position of the next output sample in `buffer`, in input samples. */
+  private pos: number
+
+  constructor(
+    readonly from: number,
+    readonly to: number,
+  ) {
+    this.step = from / to
+    this.cutoff = Math.min(1, to / from) * 0.94
+    this.half = Math.ceil(ZEROS / this.cutoff)
+    this.pos = this.half
+    this.buffer = new Float32Array(this.half)
+    const size = this.half * STEPS + 1
+    this.table = new Float32Array(size)
+    for (let i = 0; i < size; i++) {
+      const x = i / STEPS
+      const sinc = x === 0 ? 1 : Math.sin(Math.PI * x * this.cutoff) / (Math.PI * x * this.cutoff)
+      const w = x / this.half
+      const blackman = 0.42 + 0.5 * Math.cos(Math.PI * w) + 0.08 * Math.cos(2 * Math.PI * w)
+      this.table[i] = this.cutoff * sinc * blackman
+    }
   }
-  return out
+
+  private tap(distance: number): number {
+    const at = Math.abs(distance) * STEPS
+    const i = Math.floor(at)
+    if (i >= this.table.length - 1) return 0
+    const f = at - i
+    return (this.table[i] as number) * (1 - f) + (this.table[i + 1] as number) * f
+  }
+
+  push(input: Float32Array): Float32Array {
+    if (this.from === this.to) return input
+    const buffer = new Float32Array(this.buffer.length + input.length)
+    buffer.set(this.buffer)
+    buffer.set(input, this.buffer.length)
+    const out: number[] = []
+    while (this.pos + this.half < buffer.length) {
+      const center = Math.floor(this.pos)
+      const frac = this.pos - center
+      let sum = 0
+      for (let k = -this.half + 1; k <= this.half; k++) {
+        sum += (buffer[center + k] ?? 0) * this.tap(k - frac)
+      }
+      out.push(sum)
+      this.pos += this.step
+    }
+    // Keep the history the next block's first outputs need.
+    const keep = Math.max(0, Math.floor(this.pos) - this.half)
+    this.buffer = buffer.slice(keep)
+    this.pos -= keep
+    return Float32Array.from(out)
+  }
 }
 
 /** 16-bit PCM WAV. */
