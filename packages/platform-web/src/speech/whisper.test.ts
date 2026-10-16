@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { type AutomaticSpeechRecognitionPipeline, env, pipeline } from '@huggingface/transformers'
 import { describe, expect, it } from 'vitest'
-import { pickLanguage, transcribe } from './transcribe'
+import { pickLanguage, transcribe } from './whisper'
 
 /**
  * Downloads Whisper (~80 MB), so it runs only when asked: ASR_TEST=<folder with ru.json, es.json,

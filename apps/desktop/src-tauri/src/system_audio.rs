@@ -96,35 +96,85 @@ fn stop() {
     }
 }
 
-/// Averages samples down to a lower rate (enough for speech), like `downsample` in the web app.
+/// Zero crossings of the filter on each side: steep enough to keep 7 kHz and drop 8 kHz.
+const ZEROS: f64 = 16.0;
+/// Steps of the filter table per input sample (the rest is interpolated).
+const STEPS: usize = 64;
+
+/// Converts to a lower rate with a windowed-sinc low-pass (Blackman window), like `Resampler`
+/// in the web app: what is above the new Nyquist is filtered out first, so it does not fold back
+/// as hiss over "s" and "sh" the way plain averaging let it.
 struct Downsampler {
-    from: u32,
-    to: u32,
-    phase: u32,
-    sum: f32,
-    count: u32,
+    step: f64,
+    half: usize,
+    table: Vec<f32>,
+    /// Input not consumed yet, with `half` samples of history before `pos`.
+    buf: Vec<f32>,
+    /// Position of the next output sample in `buf`, in input samples.
+    pos: f64,
 }
 
 impl Downsampler {
     fn new(from: u32, to: u32) -> Self {
+        let from = from.max(to);
+        let cutoff = (to as f64 / from as f64) * 0.94;
+        let half = if from == to { 0 } else { (ZEROS / cutoff).ceil() as usize };
+        let table = (0..=half * STEPS)
+            .map(|i| {
+                let x = i as f64 / STEPS as f64;
+                let sinc = if x == 0.0 {
+                    1.0
+                } else {
+                    (std::f64::consts::PI * x * cutoff).sin() / (std::f64::consts::PI * x * cutoff)
+                };
+                let w = x / half.max(1) as f64;
+                let blackman = 0.42
+                    + 0.5 * (std::f64::consts::PI * w).cos()
+                    + 0.08 * (2.0 * std::f64::consts::PI * w).cos();
+                (cutoff * sinc * blackman) as f32
+            })
+            .collect();
         Self {
-            from: from.max(to),
-            to,
-            phase: 0,
-            sum: 0.0,
-            count: 0,
+            step: from as f64 / to as f64,
+            half,
+            table,
+            buf: vec![0.0; half],
+            pos: half as f64,
         }
     }
 
+    fn tap(&self, distance: f64) -> f32 {
+        let at = distance.abs() * STEPS as f64;
+        let i = at.floor() as usize;
+        if i + 1 >= self.table.len() {
+            return 0.0;
+        }
+        let f = (at - i as f64) as f32;
+        self.table[i] * (1.0 - f) + self.table[i + 1] * f
+    }
+
     fn push(&mut self, sample: f32, out: &mut Vec<f32>) {
-        self.sum += sample;
-        self.count += 1;
-        self.phase += self.to;
-        if self.phase >= self.from {
-            self.phase -= self.from;
-            out.push(self.sum / self.count as f32);
-            self.sum = 0.0;
-            self.count = 0;
+        if self.half == 0 {
+            out.push(sample);
+            return;
+        }
+        self.buf.push(sample);
+        while self.pos + (self.half as f64) < self.buf.len() as f64 {
+            let center = self.pos.floor() as usize;
+            let frac = self.pos - center as f64;
+            let mut sum = 0.0;
+            for k in 1..=2 * self.half {
+                let index = center + k - self.half;
+                sum += self.buf[index] * self.tap(k as f64 - self.half as f64 - frac);
+            }
+            out.push(sum);
+            self.pos += self.step;
+        }
+        // Keep only the history the next outputs need.
+        if self.buf.len() > 8192 {
+            let keep = self.pos.floor() as usize - self.half;
+            self.buf.drain(..keep);
+            self.pos -= keep as f64;
         }
     }
 }
@@ -755,26 +805,48 @@ mod imp {
 mod tests {
     use super::*;
 
+    fn tone(hz: f64, rate: u32, seconds: u32) -> impl Iterator<Item = f32> {
+        (0..rate * seconds)
+            .map(move |i| (2.0 * std::f64::consts::PI * hz * i as f64 / rate as f64).sin() as f32)
+    }
+
+    fn rms(x: &[f32]) -> f32 {
+        (x.iter().map(|v| v * v).sum::<f32>() / x.len() as f32).sqrt()
+    }
+
     #[test]
     fn downsamples_48k_to_16k() {
         let mut d = Downsampler::new(48_000, 16_000);
         let mut out = Vec::new();
-        for i in 0..48_000 {
-            d.push(if i % 3 == 0 { 0.2 } else { 0.65 }, &mut out);
+        for _ in 0..48_000 {
+            d.push(0.5, &mut out);
         }
-        assert_eq!(out.len(), 16_000);
-        // Each output averages three inputs.
-        assert!(out.iter().all(|v| (v - 0.5).abs() < 1e-6));
+        // A few samples wait for the filter's look-ahead.
+        assert!((15_950..=16_000).contains(&out.len()));
+        assert!(out[100..].iter().all(|v| (v - 0.5).abs() < 1e-3));
+        // Speech passes, what 16 kHz cannot hold is filtered out instead of folding back.
+        let mut d = Downsampler::new(48_000, 16_000);
+        let mut low = Vec::new();
+        tone(1000.0, 48_000, 1).for_each(|s| d.push(s, &mut low));
+        assert!((rms(&low[200..]) - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.02);
+        let mut d = Downsampler::new(48_000, 16_000);
+        let mut high = Vec::new();
+        tone(12_000.0, 48_000, 1).for_each(|s| d.push(s, &mut high));
+        assert!(rms(&high[200..]) < 0.01);
     }
 
     #[test]
     fn downsamples_44_1k() {
         let mut d = Downsampler::new(44_100, 16_000);
         let mut out = Vec::new();
-        for _ in 0..44_100 {
-            d.push(0.25, &mut out);
-        }
-        assert!((15_999..=16_000).contains(&out.len()));
+        tone(1000.0, 44_100, 2).for_each(|s| d.push(s, &mut out));
+        assert!((31_950..=32_000).contains(&out.len()));
+        assert!((rms(&out[200..]) - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.02);
+        // The same rate passes through.
+        let mut same = Downsampler::new(16_000, 16_000);
+        let mut out = Vec::new();
+        same.push(0.25, &mut out);
+        assert_eq!(out, vec![0.25]);
     }
 
     #[test]

@@ -8,6 +8,7 @@ import { listedFolderId } from '../lib/layout'
 import { usePlatform } from '../lib/platform'
 import { useInvalidateNotes, writableFolder } from '../lib/queries'
 import { cancelCall, setCallDeps, stopCall, useCall } from '../lib/voice/call'
+import { speechWords } from '../lib/voice/vocabulary'
 import { useVoice } from '../lib/voice/voice'
 
 function elapsed(ms: number) {
@@ -51,6 +52,7 @@ export function CallBar() {
   useEffect(() => {
     setCallDeps({
       transcriber: platform.transcriber,
+      vocabulary: () => speechWords(repo),
       ...(platform.systemAudio ? { systemAudio: platform.systemAudio } : {}),
       dictating: () => useVoice.getState().status !== 'idle',
       save: async (markdown) => {

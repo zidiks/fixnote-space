@@ -8,7 +8,7 @@
     "./embed": "./src/embed/client.ts",
     "./models": "./src/models.ts",
     "./ocr": "./src/ocr/client.ts",
-    "./whisper": "./src/whisper/client.ts"
+    "./speech": "./src/speech/client.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

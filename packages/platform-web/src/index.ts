@@ -4,8 +4,8 @@ import { createTransformersEmbedder } from './embed/client'
 import { webKeyStore, webSecretStore } from './keys'
 import { localModels } from './models'
 import { createTesseractRecognizer } from './ocr/client'
+import { createSpeechTranscriber } from './speech/client'
 import { openWebSqlDriver } from './sqlite/client'
-import { createWhisperTranscriber } from './whisper/client'
 
 /**
  * Browser / PWA adapters.
@@ -15,7 +15,7 @@ import { createWhisperTranscriber } from './whisper/client'
 export function createWebPlatform(): Platform {
   let sql: Promise<SqlDriver> | null = null
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
-  let transcriber: ReturnType<typeof createWhisperTranscriber> | null = null
+  let transcriber: ReturnType<typeof createSpeechTranscriber> | null = null
   let ocr: ReturnType<typeof createTesseractRecognizer> | null = null
   return {
     kind: 'web',
@@ -35,7 +35,7 @@ export function createWebPlatform(): Platform {
       return Promise.resolve(embedder)
     },
     transcriber: () => {
-      transcriber ??= createWhisperTranscriber()
+      transcriber ??= createSpeechTranscriber()
       return Promise.resolve(transcriber)
     },
     models: localModels,

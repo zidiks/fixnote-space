@@ -14,6 +14,7 @@ import {
   dropEcho,
   type Speaker,
   type SystemAudio,
+  speechPrompt,
   type Transcriber,
   transcriptText,
 } from '@fixnote/core'
@@ -61,6 +62,8 @@ interface Deps {
   dictating: () => boolean
   /** Saves the call's note and opens it. */
   save: (markdown: string) => Promise<void>
+  /** The person's own words (folders, names in their notes) the speech model should expect. */
+  vocabulary?: () => Promise<string[]>
 }
 
 let deps: Deps | null = null
@@ -82,6 +85,7 @@ class CallTranscripts {
   constructor(
     private readonly transcriber: () => Promise<Transcriber>,
     private readonly prefer: string,
+    private readonly words: Promise<string[]>,
   ) {}
 
   add(speaker: Speaker, pcm: Float32Array, endMs: number) {
@@ -92,10 +96,16 @@ class CallTranscripts {
       try {
         const tr = await this.transcriber()
         await tr.ready()
-        const r = await tr.transcribe(
-          audio,
-          this.language ? { language: this.language } : { prefer: this.prefer },
-        )
+        // What was said last, by either side: names and topic carry over.
+        const before = this.pieces
+          .slice(-3)
+          .map((p) => p.text)
+          .join(' ')
+        const prompt = speechPrompt(await this.words, before)
+        const r = await tr.transcribe(audio, {
+          ...(this.language ? { language: this.language } : { prefer: this.prefer }),
+          ...(prompt ? { prompt } : {}),
+        })
         const text = r.text.trim()
         // The language is settled by the first real sentence, not by "hello?".
         if (!this.language && text.split(/\s+/).length >= 5) this.language = r.language
@@ -143,7 +153,11 @@ export async function startCall() {
   if (d.dictating()) return
   const started = performance.now()
   const since = () => performance.now() - started
-  const transcripts = new CallTranscripts(d.transcriber, i18n.language.slice(0, 2))
+  const transcripts = new CallTranscripts(
+    d.transcriber,
+    i18n.language.slice(0, 2),
+    d.vocabulary?.() ?? Promise.resolve([]),
+  )
   const mic = new Recorder()
   const current: Session = {
     mic,
