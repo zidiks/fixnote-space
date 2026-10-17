@@ -390,7 +390,7 @@ export const ru = {
   consent: {
     title: 'Cookie и аналитика',
     text: 'Можно мы будем считать посещения сайта с Google Analytics? Он ставит cookie. В заметки и приложение он не заглядывает.',
-    more: 'Подробнее',
+    more: 'Как мы используем cookie',
     accept: 'Разрешить',
     decline: 'Не надо',
     settings: 'Cookie',

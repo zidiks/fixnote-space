@@ -416,7 +416,7 @@ export const es: Dict = {
   consent: {
     title: 'Cookies y analítica',
     text: '¿Podemos contar las visitas a este sitio con Google Analytics? Usa cookies. Nunca ve tus notas ni la app.',
-    more: 'Más información',
+    more: 'Cómo usamos las cookies',
     accept: 'Permitir',
     decline: 'No, gracias',
     settings: 'Cookies',
