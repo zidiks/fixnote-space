@@ -421,7 +421,7 @@ export const es: Dict = {
 
   consent: {
     title: 'Cookies y analítica',
-    text: '¿Podemos contar las visitas a este sitio con Google Analytics? Usa cookies. Nunca ve tus notas ni la app.',
+    text: '¿Podemos contar las visitas a este sitio con Yandex Metrica y Google Analytics? Usan cookies. Nunca ven tus notas ni la app.',
     more: 'Cómo usamos las cookies',
     accept: 'Permitir',
     decline: 'No, gracias',
@@ -555,7 +555,7 @@ export const es: Dict = {
   privacyPage: {
     eyebrow: 'Privacidad',
     title: 'Política de privacidad',
-    updated: 'Actualizada el 15 de octubre de 2026',
+    updated: 'Actualizada el 17 de octubre de 2026',
     lead: 'En resumen: no podemos leer tus notas, no vendemos datos y no mostramos anuncios. A continuación, qué datos tiene FixNote y para qué.',
     sections: [
       {
@@ -624,7 +624,7 @@ export const es: Dict = {
         id: 'cookies',
         text: [
           'En la app no hay anuncios, analíticas ni rastreadores. No vendemos datos ni los compartimos con fines publicitarios.',
-          'En el sitio fixnote.space, si lo permites en el aviso, Google Analytics cuenta las visitas: qué páginas se leen, de dónde llega la gente y cuántos pulsan Descargar. Para ello usa cookies. Sin tu permiso no se carga. Puedes cambiar tu decisión con «Cookies» al pie de cualquier página. Tus notas y lo que haces en la app nunca le llegan.',
+          'En el sitio fixnote.space, si lo permites en el aviso, Yandex Metrica y Google Analytics cuentan las visitas: qué páginas se leen, de dónde llega la gente y cuántos pulsan Descargar. Para ello usan cookies. La grabación de sesiones (Webvisor) está desactivada. Sin tu permiso no se cargan. Puedes cambiar tu decisión con «Cookies» al pie de cualquier página. Tus notas y lo que haces en la app nunca le llegan.',
         ],
       },
       {
