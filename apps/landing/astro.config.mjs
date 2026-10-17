@@ -37,6 +37,8 @@ const localized404 = {
  * A page asked for without its trailing slash (/ru, /features/voice-notes) gets a permanent
  * redirect. Cloudflare's own trailing-slash handling answers 307, which search engines treat as
  * temporary; an exact rule in _redirects runs first and does not match the URL with the slash.
+ * The rules go at the top of the file: Cloudflare counts every rule after the first splat or
+ * placeholder (`/en/*`) as dynamic, and allows only 100 of those (2,000 static).
  */
 const slashRedirects = {
   name: 'slash-redirects',
@@ -57,10 +59,10 @@ const slashRedirects = {
       }
       walk(root)
       const file = join(root, '_redirects')
-      const before = readFileSync(file, 'utf8').trimEnd()
+      const rest = readFileSync(file, 'utf8')
       writeFileSync(
         file,
-        `${before}\n# Pages without the trailing slash (slashRedirects in astro.config.mjs).\n${lines.sort().join('\n')}\n`,
+        `# Pages without the trailing slash (slashRedirects in astro.config.mjs).\n${lines.sort().join('\n')}\n\n${rest}`,
       )
     },
   },
