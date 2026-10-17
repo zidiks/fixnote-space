@@ -42,6 +42,11 @@ export const en: Dict = {
       description:
         'How to download and install FixNote, what to do about the macOS and SmartScreen warnings on first launch, and how to turn on Pro.',
     },
+    windows: {
+      title: 'Notes app for Windows 10 and 11, free and offline | FixNote',
+      description:
+        'A note-taking app for Windows 10 and 11: bot-free call summaries, offline dictation, system-wide shortcuts, MCP for Claude and encryption. Free to use.',
+    },
     notFound: { title: 'Page not found · FixNote', description: 'This page does not exist.' },
   },
 
@@ -63,6 +68,7 @@ export const en: Dict = {
     comparisons: 'Comparisons',
     skip: 'Skip to content',
     language: 'Language',
+    windows: 'FixNote for Windows',
   },
 
   hero: {
@@ -502,6 +508,7 @@ export const en: Dict = {
     eyebrow: 'Download',
     headline: ['FixNote for', { text: 'your', tone: 'brand' }, 'devices'],
     lead: 'Pick the installer for your system or open the web version. Once you sign in, notes sync between all your devices.',
+    windows: 'What FixNote does on Windows',
     requirementsTitle: 'System requirements',
     requirements: [
       'Windows 10 or 11 (64-bit); WebView2 installs automatically',
@@ -662,6 +669,88 @@ export const en: Dict = {
       'Click More info, then Run anyway. SmartScreen shows this window for programs that don’t have a publisher signature yet.',
     help: 'Can’t get it installed? Write to',
     helpAfter: 'with a screenshot of the system message.',
+  },
+
+  windowsPage: {
+    eyebrow: 'Windows',
+    headline: 'A notes app for your Windows PC',
+    lead: 'FixNote is a note-taking app for Windows 10 and 11 that works offline and without an account. It writes up your calls with no bot in the meeting, turns dictation into text on your own computer and opens with a shortcut over any window.',
+    facts: 'Windows 10 and 11, 64-bit · Free, no time limit · No account needed',
+    shotAlt: 'FixNote on Windows: today’s notes and the assistant answering with links to notes',
+    sections: [
+      {
+        id: 'calls',
+        title: 'Call summaries with no bot in the call',
+        text: 'Zoom, Teams, Telegram or any other app: FixNote takes the computer’s sound through WASAPI, the standard Windows audio interface, and your microphone. No bot joins, no drivers, no extensions. Speech is transcribed on your computer while you talk, and after “Finish” the model writes a summary, decisions and tasks. No audio is kept.',
+        link: 'How call summaries work',
+      },
+      {
+        id: 'shortcuts',
+        title: 'Shortcuts from any window and a tray icon',
+        text: 'FixNote does not need to stay on screen. Closing the window hides it in the tray, and the system-wide shortcuts work while a browser or an editor is in front. The tray icon’s menu has a new note, a voice note, today’s note, search and call recording. Shortcuts inside the app follow the key’s place on the keyboard, so Ctrl+K works in any layout. You can change each one in Settings → Shortcuts.',
+        link: 'How search works',
+      },
+      {
+        id: 'voice',
+        title: 'Dictation without the internet',
+        text: 'A voice note is transcribed on your computer while you speak: the recording is cut at pauses, so the text is almost ready when you finish. The sound goes nowhere. The speech model downloads once, and after that dictation works offline. Russian is recognized by GigaAM, English and Spanish by Whisper.',
+        link: 'More about voice notes',
+      },
+      {
+        id: 'mcp',
+        title: 'Your notes in Claude, Cursor and Codex',
+        text: 'The Windows app has its own MCP server. The “Add to Claude Desktop”, “Add to Cursor” and “Add to Codex” buttons in Settings → AI write it into that app’s settings for you. You pick the access level and the folders it can see, and every change lands in the AI log, where you can undo it. The server runs on your computer, with no account, on the free plan.',
+        link: 'How to connect the MCP server',
+      },
+      {
+        id: 'privacy',
+        title: 'Encryption, and a mode with no server at all',
+        text: 'For sync, notes are encrypted on your computer, and the key is kept in Windows Credential Manager and in a 12-word recovery phrase. The server stores only ciphertext. Want notes that never leave the computer? “Only on this device” turns off everything that reaches our server, and the assistant runs on Ollama.',
+        link: 'How the encryption works',
+      },
+      {
+        id: 'markdown',
+        title: 'Markdown, import and your other devices',
+        text: 'Notes are Markdown: headings, checklists, tables, images and files. You can bring them in from a Markdown or Obsidian folder, a Bear backup or a Notion export, and export everything back to Markdown at any time. With Pro, the same notes sync with your Mac and the web app.',
+        link: 'Importing and exporting notes',
+      },
+    ],
+    shortcutsTitle: 'System-wide shortcuts by default',
+    shortcuts: [
+      { keys: 'Ctrl+Alt+N', text: 'New note' },
+      { keys: 'Ctrl+Alt+R', text: 'Voice note' },
+      { keys: 'Ctrl+Alt+K', text: 'Search' },
+      { keys: 'Ctrl+Alt+Space', text: 'Show or hide FixNote' },
+    ],
+    installTitle: 'Installing and updates',
+    install:
+      'The .exe installer sets FixNote up on Windows 10 and 11 (64-bit) and adds WebView2 if it is missing. After that the app updates itself. On first launch Windows may show SmartScreen: click “More info”, then “Run anyway”. A Microsoft Store version is on its way: the Store signs it, updates come through the Store, and it shares notes with the version from this site.',
+    setup: 'How to install FixNote',
+    compareTitle: 'FixNote and other note-taking apps',
+    compareText:
+      'How FixNote differs from Notion, Obsidian, Evernote and Joplin on Windows, and what to use instead of Apple Notes when your computer is not a Mac.',
+    faq: [
+      {
+        q: 'Does Windows have a notes app?',
+        a: 'It has Notepad and Sticky Notes, which are enough for a line or two. FixNote is for when notes pile up: folders, a daily note, search by meaning, an assistant that answers from your notes, and call summaries.',
+      },
+      {
+        q: 'Is FixNote for Windows free?',
+        a: 'Yes. Everything that runs on your computer is free with no time limit: notes, search, dictation, call summaries with your own key or Ollama, MCP, import and export. Pro, at $7 a month, adds sync, FixNote AI, shared notes and the Telegram bot.',
+      },
+      {
+        q: 'Does FixNote work on Windows 10?',
+        a: 'Yes, on Windows 10 and 11, 64-bit. The installer adds WebView2, which the app’s window runs on, if it is missing.',
+      },
+      {
+        q: 'Can I use FixNote on both Windows and Mac?',
+        a: 'Yes. There are apps for Windows and macOS and a web app. With Pro, notes sync between them end-to-end encrypted.',
+      },
+      {
+        q: 'Does FixNote work offline?',
+        a: 'Yes. Notes are stored on your computer, and search and dictation run there too. You need the internet once to download the models, and for what goes through the server: sync and FixNote AI.',
+      },
+    ],
   },
 
   notFound: {
