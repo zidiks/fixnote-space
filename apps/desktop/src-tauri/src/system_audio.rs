@@ -118,7 +118,11 @@ impl Downsampler {
     fn new(from: u32, to: u32) -> Self {
         let from = from.max(to);
         let cutoff = (to as f64 / from as f64) * 0.94;
-        let half = if from == to { 0 } else { (ZEROS / cutoff).ceil() as usize };
+        let half = if from == to {
+            0
+        } else {
+            (ZEROS / cutoff).ceil() as usize
+        };
         let table = (0..=half * STEPS)
             .map(|i| {
                 let x = i as f64 / STEPS as f64;
