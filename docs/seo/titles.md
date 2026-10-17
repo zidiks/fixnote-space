@@ -27,6 +27,9 @@ Limits: title ≤ 65 characters for ru, ≤ 60 for en and es; description ≤ 15
 | `/setup/` | ru | как установить fixnote | keep current (Как установить FixNote на Windows и Mac) | keep current |
 | `/setup/` | en | how to install fixnote | keep current (How to install FixNote on Windows and Mac) | keep current |
 | `/setup/` | es | cómo instalar fixnote | keep current (Cómo instalar FixNote en Windows y Mac) | keep current |
+| `/windows/` (2026-10-17) | ru | заметки для windows | Заметки для Windows: программа для заметок на ПК — FixNote | Программа для заметок на ПК с Windows 10 и 11: итоги созвонов без бота, диктовка без интернета, горячие клавиши из любого окна и шифрование. Бесплатно. |
+| `/windows/` (2026-10-17) | en | notes app for windows | Notes app for Windows 10 and 11, free and offline \| FixNote | A note-taking app for Windows 10 and 11: bot-free call summaries, offline dictation, system-wide shortcuts, MCP for Claude and encryption. Free to use. |
+| `/windows/` (2026-10-17) | es | app de notas para windows | App de notas para PC con Windows 10 y 11, gratis \| FixNote | App de notas para Windows 10 y 11: resúmenes de llamadas sin bot, dictado sin internet, atajos desde cualquier ventana y cifrado. Gratis y sin cuenta. |
 
 ## Why these
 

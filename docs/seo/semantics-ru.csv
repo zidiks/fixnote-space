@@ -10,19 +10,19 @@ query,priority,intent,cluster,url
 лучшие приложения для заметок,med,commercial,лучшие приложения для заметок,/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/
 лучшее приложение для заметок на пк,med,commercial,лучшие приложения для заметок,/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/
 лучшее приложение для заметок на мак,low,commercial,лучшие приложения для заметок,/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/
-приложение для заметок на пк,high,commercial,заметки для windows,NEW:/ru/windows/
-заметки для windows 10,high,commercial,заметки для windows,NEW:/ru/windows/
-заметки для windows 11,high,commercial,заметки для windows,NEW:/ru/windows/
-заметки на пк,high,commercial,заметки для windows,NEW:/ru/windows/
-заметки на пк скачать,high,commercial,заметки для windows,NEW:/ru/windows/
-заметки для windows,high,commercial,заметки для windows,NEW:/ru/windows/
-программа для заметок,high,commercial,заметки для windows,NEW:/ru/windows/
-приложение для заметок на компьютер,high,commercial,заметки для windows,NEW:/ru/windows/
-приложение для заметок windows,high,commercial,заметки для windows,NEW:/ru/windows/
-приложение для заметок на рабочем столе,med,commercial,заметки для windows,NEW:/ru/windows/
-приложение для заметок на пк бесплатно,med,commercial,заметки для windows,NEW:/ru/windows/
-программа для заметок на пк,med,commercial,заметки для windows,NEW:/ru/windows/
-заметки на рабочий стол,med,commercial,заметки для windows,NEW:/ru/windows/
+приложение для заметок на пк,high,commercial,заметки для windows,/ru/windows/
+заметки для windows 10,high,commercial,заметки для windows,/ru/windows/
+заметки для windows 11,high,commercial,заметки для windows,/ru/windows/
+заметки на пк,high,commercial,заметки для windows,/ru/windows/
+заметки на пк скачать,high,commercial,заметки для windows,/ru/windows/
+заметки для windows,high,commercial,заметки для windows,/ru/windows/
+программа для заметок,high,commercial,заметки для windows,/ru/windows/
+приложение для заметок на компьютер,high,commercial,заметки для windows,/ru/windows/
+приложение для заметок windows,high,commercial,заметки для windows,/ru/windows/
+приложение для заметок на рабочем столе,med,commercial,заметки для windows,/ru/windows/
+приложение для заметок на пк бесплатно,med,commercial,заметки для windows,/ru/windows/
+программа для заметок на пк,med,commercial,заметки для windows,/ru/windows/
+заметки на рабочий стол,med,commercial,заметки для windows,/ru/windows/
 скачать приложение для заметок на компьютер,low,commercial,заметки для windows,/ru/download/
 приложение для заметок на компьютер и телефон,low,commercial,синхронизация заметок,/ru/features/sync/
 заметки для mac,low,commercial,заметки для mac,NEW:/ru/mac/

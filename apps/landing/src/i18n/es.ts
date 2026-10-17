@@ -42,6 +42,11 @@ export const es: Dict = {
       description:
         'Cómo descargar e instalar FixNote, qué hacer con el aviso de macOS y de SmartScreen la primera vez y cómo activar Pro.',
     },
+    windows: {
+      title: 'App de notas para PC con Windows 10 y 11, gratis | FixNote',
+      description:
+        'App de notas para Windows 10 y 11: resúmenes de llamadas sin bot, dictado sin internet, atajos desde cualquier ventana y cifrado. Gratis y sin cuenta.',
+    },
     notFound: { title: 'Página no encontrada · FixNote', description: 'Esta página no existe.' },
   },
 
@@ -63,6 +68,7 @@ export const es: Dict = {
     comparisons: 'Comparativas',
     skip: 'Ir al contenido',
     language: 'Idioma',
+    windows: 'FixNote para Windows',
   },
 
   hero: {
@@ -520,6 +526,7 @@ export const es: Dict = {
     eyebrow: 'Descargar',
     headline: ['FixNote para', { text: 'tus', tone: 'brand' }, 'dispositivos'],
     lead: 'Elige el instalador para tu sistema o abre la versión web. Al iniciar sesión, las notas se sincronizan entre todos tus dispositivos.',
+    windows: 'Qué hace FixNote en Windows',
     requirementsTitle: 'Requisitos del sistema',
     requirements: [
       'Windows 10 u 11 (64 bits); WebView2 se instala automáticamente',
@@ -680,6 +687,89 @@ export const es: Dict = {
       'Pulsa «Más información» y luego «Ejecutar de todas formas». SmartScreen muestra esta ventana con los programas que aún no tienen firma de editor.',
     help: '¿No consigues instalarlo? Escribe a',
     helpAfter: 'con una captura del mensaje del sistema.',
+  },
+
+  windowsPage: {
+    eyebrow: 'Windows',
+    headline: 'Una app de notas para tu PC con Windows',
+    lead: 'FixNote es una app de notas para Windows 10 y 11 que funciona sin internet y sin cuenta. Resume tus llamadas sin meter un bot en la reunión, convierte el dictado en texto en tu propio ordenador y se abre con un atajo sobre cualquier ventana.',
+    facts: 'Windows 10 y 11, 64 bits · Gratis y sin límite de tiempo · Sin cuenta',
+    shotAlt:
+      'FixNote en Windows: las notas de hoy y el asistente respondiendo con enlaces a las notas',
+    sections: [
+      {
+        id: 'calls',
+        title: 'Resumen de llamadas sin bot en la reunión',
+        text: 'Zoom, Teams, Telegram o cualquier otra app: FixNote toma el sonido del ordenador con WASAPI, la interfaz de audio estándar de Windows, y tu micrófono. Ningún bot entra en la llamada, sin drivers ni extensiones. La voz se transcribe en tu ordenador mientras hablas y, al pulsar «Terminar», el modelo escribe un resumen, las decisiones y las tareas. El audio no se guarda.',
+        link: 'Cómo funciona el resumen de llamadas',
+      },
+      {
+        id: 'shortcuts',
+        title: 'Atajos desde cualquier ventana e icono en la bandeja',
+        text: 'FixNote no tiene que estar en pantalla. Al cerrar la ventana se oculta en la bandeja del sistema, y los atajos globales funcionan aunque delante haya un navegador o un editor. El menú del icono tiene nota nueva, nota de voz, nota de hoy, búsqueda y grabación de llamadas. Los atajos dentro de la app siguen la posición de la tecla, así que Ctrl+K funciona con cualquier distribución de teclado. Puedes cambiar cada uno en Ajustes → Atajos.',
+        link: 'Cómo funciona la búsqueda',
+      },
+      {
+        id: 'voice',
+        title: 'Dictado sin internet',
+        text: 'Una nota de voz se transcribe en tu ordenador mientras hablas: la grabación se corta en las pausas, así que el texto está casi listo cuando terminas. El sonido no sale a ninguna parte. El modelo de voz se descarga una vez y después el dictado funciona sin conexión. El ruso lo reconoce GigaAM; el inglés y el español, Whisper.',
+        link: 'Más sobre las notas de voz',
+      },
+      {
+        id: 'mcp',
+        title: 'Tus notas en Claude, Cursor y Codex',
+        text: 'La app para Windows trae su propio servidor MCP. Los botones «Añadir a Claude Desktop», «Añadir a Cursor» y «Añadir a Codex» de Ajustes → IA lo escriben en la configuración de esa app por ti. Tú eliges el nivel de acceso y las carpetas que puede ver, y cada cambio queda en el registro de IA, desde donde se puede deshacer. El servidor funciona en tu ordenador, sin cuenta y en el plan gratuito.',
+        link: 'Cómo conectar el servidor MCP',
+      },
+      {
+        id: 'privacy',
+        title: 'Cifrado y un modo sin servidor',
+        text: 'Para sincronizar, las notas se cifran en tu ordenador y la clave se guarda en el Administrador de credenciales de Windows y en una frase de 12 palabras. El servidor solo guarda texto cifrado. ¿Quieres que las notas no salgan nunca del ordenador? «Solo en este dispositivo» apaga todo lo que llega a nuestro servidor, y el asistente funciona con Ollama.',
+        link: 'Cómo funciona el cifrado',
+      },
+      {
+        id: 'markdown',
+        title: 'Markdown, importación y tus otros dispositivos',
+        text: 'Las notas son Markdown: títulos, listas de tareas, tablas, imágenes y archivos. Puedes traerlas de una carpeta de Markdown u Obsidian, de una copia de Bear o de una exportación de Notion, y exportarlo todo a Markdown cuando quieras. Con Pro, las mismas notas se sincronizan con tu Mac y con la versión web.',
+        link: 'Importar y exportar notas',
+      },
+    ],
+    shortcutsTitle: 'Atajos globales por defecto',
+    shortcuts: [
+      { keys: 'Ctrl+Alt+N', text: 'Nota nueva' },
+      { keys: 'Ctrl+Alt+R', text: 'Nota de voz' },
+      { keys: 'Ctrl+Alt+K', text: 'Buscar' },
+      { keys: 'Ctrl+Alt+Espacio', text: 'Mostrar u ocultar FixNote' },
+    ],
+    installTitle: 'Instalación y actualizaciones',
+    install:
+      'El instalador .exe instala FixNote en Windows 10 y 11 (64 bits) y añade WebView2 si falta. Después la app se actualiza sola. La primera vez, Windows puede mostrar SmartScreen: pulsa «Más información» y luego «Ejecutar de todas formas». Estamos preparando una versión para Microsoft Store: la firma la Store, las actualizaciones llegarán por la Store y compartirá las notas con la versión de esta web.',
+    setup: 'Cómo instalar FixNote',
+    compareTitle: 'FixNote y otras apps de notas',
+    compareText:
+      'En qué se diferencia FixNote de Notion, Obsidian, Evernote y Joplin en Windows, y qué usar en lugar de Notas de Apple si tu ordenador no es un Mac.',
+    faq: [
+      {
+        q: '¿Windows tiene una app de notas?',
+        a: 'Tiene el Bloc de notas y Notas rápidas (Sticky Notes), que bastan para un par de líneas. FixNote sirve cuando las notas se acumulan: carpetas, nota diaria, búsqueda por significado, un asistente que responde a partir de tus notas y resúmenes de llamadas.',
+      },
+      {
+        q: '¿FixNote para Windows es gratis?',
+        a: 'Sí. Todo lo que funciona en tu ordenador es gratis y sin límite de tiempo: notas, búsqueda, dictado, resúmenes de llamadas con tu propia clave u Ollama, MCP, importación y exportación. Pro, por 7 $ al mes, añade sincronización, FixNote AI, notas compartidas y el bot de Telegram.',
+      },
+      {
+        q: '¿FixNote funciona en Windows 10?',
+        a: 'Sí, en Windows 10 y 11 de 64 bits. El instalador añade WebView2, con el que funciona la ventana de la app, si falta.',
+      },
+      {
+        q: '¿Puedo usar FixNote en Windows y en Mac?',
+        a: 'Sí. Hay apps para Windows y macOS y una versión web. Con Pro, las notas se sincronizan entre ellas con cifrado de extremo a extremo.',
+      },
+      {
+        q: '¿FixNote funciona sin internet?',
+        a: 'Sí. Las notas se guardan en tu ordenador, y la búsqueda y el dictado funcionan allí mismo. Internet hace falta una vez para descargar los modelos y para lo que pasa por el servidor: la sincronización y FixNote AI.',
+      },
+    ],
   },
 
   notFound: {

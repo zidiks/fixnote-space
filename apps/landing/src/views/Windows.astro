@@ -1,0 +1,141 @@
+---
+import Article from '../components/Article.astro'
+import Demo from '../components/Demo.astro'
+import More from '../components/More.astro'
+import QA from '../components/QA.astro'
+import { APPS, RIVALS } from '../data/apps'
+import type { FeatureSlug } from '../data/features'
+import { DOWNLOADS, type Lang, localePath, t } from '../i18n'
+import Base from '../layouts/Base.astro'
+import { topicHref } from '../lib/blog'
+import { featurePath, fill, getFeatures, vsPath } from '../lib/pages'
+import { breadcrumbs, faqPage } from '../lib/schema'
+
+/**
+ * "Notes app for Windows": what FixNote does well on Windows in particular, each part linking to
+ * its feature page, the default system-wide shortcuts, installing, comparisons and questions.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const p = d.windowsPage
+/** The feature page each section leads to. */
+const pages: Record<string, FeatureSlug> = {
+  calls: 'call-summaries',
+  shortcuts: 'search',
+  voice: 'voice-notes',
+  mcp: 'mcp',
+  privacy: 'encryption',
+  markdown: 'import-export',
+}
+const features = await getFeatures(lang)
+const related = (['offline', 'daily-notes', 'ask-your-notes', 'text-in-images'] as const).map(
+  (slug) => ({ slug, title: features.find((f) => f.slug === slug)?.entry.data.card.title ?? slug }),
+)
+const guide = await topicHref(lang, 'best-ai-note-apps', '/blog/')
+const site = Astro.site ?? new URL('https://fixnote.space')
+const url = new URL(localePath(lang, '/windows/'), site).href
+const jsonLd = [
+  faqPage(p.faq),
+  breadcrumbs([
+    { name: 'FixNote', url: new URL(localePath(lang, '/'), site).href },
+    { name: d.nav.windows, url },
+  ]),
+]
+---
+
+<Base
+  lang={lang}
+  title={d.meta.windows.title}
+  description={d.meta.windows.description}
+  path="/windows/"
+  crumb={d.nav.windows}
+  jsonLd={jsonLd}
+  og={{ eyebrow: p.eyebrow, shot: `${lang}/home` }}
+>
+  <Article lang={lang} eyebrow={p.eyebrow} title={p.headline} intro={p.lead} cta={false}>
+    <p slot="meta" class="typo-caption mt-4 text-muted">{p.facts}</p>
+    <div class="mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
+      <a href={DOWNLOADS.windows} class="btn btn-primary btn-lg">{d.hero.downloadFor.windows}</a>
+      <More href={localePath(lang, '/download/')}>{d.steps.all}</More>
+    </div>
+    <div class="mt-12 mb-4">
+      <Demo lang={lang} name="home" alt={p.shotAlt} sizes="(min-width: 735px) 692px, 90vw" eager />
+    </div>
+    {
+      p.sections.map((s) => (
+        <section class="mt-14">
+          <h2 class="typo-subhead text-ink">{s.title}</h2>
+          <p class="typo-body mt-4 text-ink">{s.text}</p>
+          {s.id === 'shortcuts' && (
+            <div class="mt-6 rounded-[18px] bg-panel p-7 small:p-10">
+              <h3 class="typo-card-headline text-ink">{p.shortcutsTitle}</h3>
+              <dl class="typo-body mt-4 space-y-3 text-ink">
+                {p.shortcuts.map((x) => (
+                  <div class="flex flex-wrap gap-x-4 gap-y-1">
+                    <dt class="min-w-[11rem] font-mono text-[15px] leading-[1.6] font-semibold">{x.keys}</dt>
+                    <dd>{x.text}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+          {pages[s.id] && (
+            <More href={featurePath(lang, pages[s.id] ?? '')} class="typo-body mt-4 inline-block">
+              {s.link}
+            </More>
+          )}
+        </section>
+      ))
+    }
+    <section id="install" class="mt-14 scroll-mt-20 rounded-[18px] bg-panel p-7 small:p-10">
+      <h2 class="typo-card-headline text-ink">{p.installTitle}</h2>
+      <p class="typo-body mt-3 text-ink">{p.install}</p>
+      <div class="mt-6 flex flex-wrap items-center gap-x-7 gap-y-4">
+        <a href={DOWNLOADS.windows} class="btn btn-primary btn-lg">{d.download.windows.button}</a>
+        <More href={localePath(lang, '/setup/#windows')}>{p.setup}</More>
+      </div>
+    </section>
+    <section class="mt-14">
+      <h2 class="typo-subhead text-ink">{p.compareTitle}</h2>
+      <p class="typo-body mt-4 text-ink">{p.compareText}</p>
+      <ul class="mt-4 space-y-2.5">
+        {
+          RIVALS.map((rival) => (
+            <li>
+              <a class="link typo-body" href={vsPath(lang, rival)}>
+                {fill(d.compare.vsLink, { name: APPS[rival].name })}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a class="link typo-body" href={guide}>{d.compare.more}</a>
+        </li>
+      </ul>
+    </section>
+    <section class="mt-14">
+      <h2 class="typo-subhead text-ink">{d.featurePage.faq}</h2>
+      <QA items={p.faq} />
+    </section>
+    <nav class="mt-16 border-t border-line pt-8" aria-label={d.featurePage.related}>
+      <p class="typo-caption font-semibold text-muted">{d.featurePage.related}</p>
+      <ul class="mt-4 space-y-2.5">
+        {
+          related.map((x) => (
+            <li>
+              <a class="link typo-body" href={featurePath(lang, x.slug)}>
+                {x.title}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a class="link typo-body" href={localePath(lang, '/features/')}>{d.featurePage.all}</a>
+        </li>
+      </ul>
+    </nav>
+  </Article>
+</Base>
