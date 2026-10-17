@@ -398,7 +398,7 @@ export const en: Dict = {
   consent: {
     title: 'Cookies and analytics',
     text: 'May we count visits to this site with Google Analytics? It sets cookies. It never sees your notes or the app.',
-    more: 'Learn more',
+    more: 'How we use cookies',
     accept: 'Allow',
     decline: 'No thanks',
     settings: 'Cookies',

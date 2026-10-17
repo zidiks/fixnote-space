@@ -17,7 +17,7 @@ const websiteId = (lang: Lang) => `${new URL(localePath(lang, '/'), SITE).href}#
  * engines use them to tell this FixNote from others with the same name. No GitHub links here (the
  * site never links there, CLAUDE.md).
  */
-export const SAME_AS: readonly string[] = []
+export const SAME_AS: readonly string[] = ['https://www.saashub.com/fixnote']
 
 export const organization = () => ({
   '@context': 'https://schema.org',

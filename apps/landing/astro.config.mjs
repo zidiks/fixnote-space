@@ -1,4 +1,13 @@
-import { existsSync, renameSync, rmdirSync } from 'node:fs'
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmdirSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
+import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sitemap from '@astrojs/sitemap'
 import tailwindcss from '@tailwindcss/vite'
@@ -20,6 +29,39 @@ const localized404 = {
         renameSync(`${folder}index.html`, fileURLToPath(new URL(`${lang}/404.html`, dir)))
         rmdirSync(folder)
       }
+    },
+  },
+}
+
+/**
+ * A page asked for without its trailing slash (/ru, /features/voice-notes) gets a permanent
+ * redirect. Cloudflare's own trailing-slash handling answers 307, which search engines treat as
+ * temporary; an exact rule in _redirects runs first and does not match the URL with the slash.
+ */
+const slashRedirects = {
+  name: 'slash-redirects',
+  hooks: {
+    'astro:build:done': ({ dir }) => {
+      const root = fileURLToPath(dir)
+      const lines = []
+      const walk = (folder) => {
+        for (const name of readdirSync(folder)) {
+          const p = join(folder, name)
+          if (!statSync(p).isDirectory()) continue
+          if (existsSync(join(p, 'index.html'))) {
+            const path = `/${relative(root, p).split(sep).join('/')}`
+            lines.push(`${path} ${path}/ 301`)
+          }
+          walk(p)
+        }
+      }
+      walk(root)
+      const file = join(root, '_redirects')
+      const before = readFileSync(file, 'utf8').trimEnd()
+      writeFileSync(
+        file,
+        `${before}\n# Pages without the trailing slash (slashRedirects in astro.config.mjs).\n${lines.sort().join('\n')}\n`,
+      )
     },
   },
 }
@@ -49,6 +91,7 @@ export default defineConfig({
       },
     }),
     localized404,
+    slashRedirects,
     ogCards,
     // Last: it hashes the finished pages.
     indexNow,
