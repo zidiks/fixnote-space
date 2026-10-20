@@ -1,11 +1,13 @@
 import { AccessError, NoteTools, type ToolGate } from '../agent/notes-tools'
 import { NOTE_TOOL_SPECS, runNoteTool } from '../agent/specs'
-import type { AuditLog } from '../ai/audit'
+import { changesNotes } from '../agent/tool-specs'
+import type { AiAction, AuditLog } from '../ai/audit'
 import type { Attachments } from '../attachments'
 import {
   MCP_ACCESS_KEY,
   MCP_SCOPE_KEY,
   type McpScope,
+  mcpAllows,
   parseMcpAccess,
   parseMcpScope,
   scopeFolderIds,
@@ -25,6 +27,15 @@ export const MCP_REMOTE_KEY = 'mcp.remote'
 /** The last remote calls on this device, for Settings (JSON of RemoteCallEntry[]). */
 export const MCP_REMOTE_LOG_KEY = 'mcp.remote.log'
 const LOG_SIZE = 50
+/** When remote apps last changed notes here (JSON of ms), for `CHANGE_LIMIT`. */
+export const MCP_REMOTE_CHANGES_KEY = 'mcp.remote.changes'
+/**
+ * At most this many changes from remote apps per `CHANGE_WINDOW_MS` on a device. Nobody confirms
+ * a remote change on the device, so a note that talks an AI app into rewriting everything gets
+ * only this far before the person looks (each change can be undone in AI activity).
+ */
+export const CHANGE_LIMIT = 20
+export const CHANGE_WINDOW_MS = 10 * 60_000
 
 /** One call from a remote app, as this device answered it. No arguments, no answers. */
 export interface RemoteCallEntry {
@@ -35,8 +46,12 @@ export interface RemoteCallEntry {
 }
 
 const SETTINGS = 'FixNote → Settings → AI → Connected apps'
-const READ_ONLY =
-  'This connection can only read notes. To add or change notes, ask in FixNote itself.'
+const READ_ONLY = `FixNote allows AI apps to read only. To let them add and change notes, open ${SETTINGS} and choose "Read and write".`
+const NO_DELETE =
+  'AI apps connected through remote access cannot delete. Delete notes in FixNote itself.'
+const NOT_REMOTE =
+  'AI apps connected through remote access cannot do this. Do it in FixNote itself.'
+const TOO_MANY = `Too many changes in a short time: FixNote takes no more changes from AI apps for a few minutes. Reading still works. Each change can be undone in FixNote → Settings → AI → AI activity.`
 
 async function kv(db: SqlDriver, key: string): Promise<string | null> {
   const [row] = await db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [key])
@@ -81,8 +96,8 @@ export async function intersectScopes(
 
 /**
  * What a remote app may do, read again on every call: Remote access on, the same access level and
- * scope as local MCP apps (narrowed further by the account's remote scope from the relay), and in
- * phase 1 never more than reading.
+ * scope as local MCP apps (narrowed further by the account's remote scope from the relay), and
+ * never deleting.
  */
 export function remoteGate(db: SqlDriver, repo: NotesRepo, remote: RemoteScope = null): ToolGate {
   return {
@@ -90,10 +105,10 @@ export function remoteGate(db: SqlDriver, repo: NotesRepo, remote: RemoteScope =
       if ((await kv(db, MCP_REMOTE_KEY)) !== '1') {
         throw new AccessError('Remote access is turned off in FixNote → Settings → Integrations.')
       }
-      if (parseMcpAccess(await kv(db, MCP_ACCESS_KEY)) === 'off') {
-        throw new AccessError(`Access to notes is turned off in ${SETTINGS}.`)
-      }
-      if (level !== 'read') throw new AccessError(READ_ONLY)
+      const access = parseMcpAccess(await kv(db, MCP_ACCESS_KEY))
+      if (access === 'off') throw new AccessError(`Access to notes is turned off in ${SETTINGS}.`)
+      if (level === 'full') throw new AccessError(NO_DELETE)
+      if (!mcpAllows(access, level)) throw new AccessError(READ_ONLY)
     },
     async scope() {
       const local = parseMcpScope(await kv(db, MCP_SCOPE_KEY))
@@ -128,8 +143,9 @@ export interface RemoteActivity {
 
 /**
  * Runs what a remote app asked for, on this device: the notes are decrypted here and only the
- * answer goes back through the relay. Same `NoteTools` and settings as the local MCP server, but
- * read-only (phase 1); a change would go through `NotesRepo` and the `AuditLog` like any other.
+ * answer goes back through the relay. Same `NoteTools` and settings as the local MCP server, minus
+ * deleting and renaming folders; a change goes through `NotesRepo` and the `AuditLog` like any other, so
+ * it syncs and can be undone.
  */
 export class RemoteExecutor {
   constructor(
@@ -143,6 +159,8 @@ export class RemoteExecutor {
       onStart?: (activity: RemoteActivity) => void
       /** Each answered call (Settings refreshes its list; the indicator fades). */
       onCall?: (entry: RemoteCallEntry, activity: RemoteActivity) => void
+      /** Each change as it is logged (a note open on screen shows it; lists refresh; sync). */
+      onChange?: (action: AiAction) => void
     } = {},
   ) {}
 
@@ -152,22 +170,26 @@ export class RemoteExecutor {
     const gate = remoteGate(this.db, this.repo, call.scope)
     let text: string
     let ok = true
+    let changed = false
     try {
       if (!isRemoteTool(call.tool)) {
-        throw NOTE_TOOL_SPECS.some((t) => t.name === call.tool)
-          ? new AccessError(READ_ONLY)
-          : new Error(`There is no tool named ${call.tool}.`)
+        const spec = NOTE_TOOL_SPECS.find((t) => t.name === call.tool)
+        if (!spec) throw new Error(`There is no tool named ${call.tool}.`)
+        throw new AccessError(spec.level === 'full' ? NO_DELETE : NOT_REMOTE)
       }
-      if (call.tool === 'daily_note' && typeof call.args.append === 'string') {
-        throw new AccessError(READ_ONLY)
-      }
-      await gate.need('read')
+      const change = changesNotes(call.tool, call.args)
+      await gate.need(change ? 'write' : 'read')
+      if (change && !(await this.mayChange())) throw new AccessError(TOO_MANY)
       this.opts.onStart?.(activity)
       const tools = new NoteTools(this.db, this.repo, this.audit, {
         gate,
         provider: () => `${client} (remote MCP)`,
         kinds: 'mcp',
         attachments: this.opts.attachments ?? null,
+        onChange: (action) => {
+          changed = true
+          this.opts.onChange?.(action)
+        },
       })
       text = await runNoteTool(tools, call.tool, call.args)
     } catch (err) {
@@ -177,7 +199,8 @@ export class RemoteExecutor {
     if (text.length > MAX_RESULT_CHARS) {
       text = `${text.slice(0, MAX_RESULT_CHARS - 80)}\n\n[Cut: the answer was too long. Ask for less.]`
     }
-    const entry = { at: (this.opts.now ?? Date.now)(), client, tool: call.tool, ok }
+    const entry = { at: this.now(), client, tool: call.tool, ok }
+    if (changed) await this.counted(entry.at).catch(() => undefined)
     await this.log(entry).catch(() => undefined)
     this.opts.onCall?.(entry, activity)
     return {
@@ -186,6 +209,32 @@ export class RemoteExecutor {
       content: [{ type: 'text', text }],
       ...(ok ? {} : { isError: true }),
     }
+  }
+
+  private now() {
+    return (this.opts.now ?? Date.now)()
+  }
+
+  /** When remote apps changed notes within the last `CHANGE_WINDOW_MS`. */
+  private async recentChanges(): Promise<number[]> {
+    const since = this.now() - CHANGE_WINDOW_MS
+    try {
+      const parsed: unknown = JSON.parse((await kv(this.db, MCP_REMOTE_CHANGES_KEY)) ?? '[]')
+      return Array.isArray(parsed)
+        ? parsed.filter((t): t is number => typeof t === 'number' && t > since)
+        : []
+    } catch {
+      return []
+    }
+  }
+
+  private async mayChange() {
+    return (await this.recentChanges()).length < CHANGE_LIMIT
+  }
+
+  private async counted(at: number) {
+    const list = [...(await this.recentChanges()), at].slice(-CHANGE_LIMIT)
+    await setKv(this.db, MCP_REMOTE_CHANGES_KEY, JSON.stringify(list))
   }
 
   private async log(entry: RemoteCallEntry) {

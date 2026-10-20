@@ -9,10 +9,17 @@ import {
 } from './protocol'
 
 describe('remote MCP protocol', () => {
-  it('lists only reading tools, daily_note without append', () => {
+  it('lists reading, changing notes and new folders, never deleting, daily_note without append', () => {
     const tools = remoteToolList()
-    expect(tools.map((t) => t.name)).toEqual([...REMOTE_TOOLS])
-    for (const t of tools) expect(t.annotations.readOnlyHint).toBe(true)
+    const names = tools.map((t) => t.name)
+    expect(names).toEqual([...REMOTE_TOOLS])
+    expect(names).not.toContain('delete_note')
+    expect(names).not.toContain('delete_folder')
+    expect(names).not.toContain('rename_folder')
+    const reads = tools.filter((t) => t.annotations.readOnlyHint).map((t) => t.name)
+    expect(reads).toEqual(['search_notes', 'get_note', 'list_recent', 'list_folders', 'daily_note'])
+    const replaces = tools.filter((t) => t.annotations.destructiveHint).map((t) => t.name)
+    expect(replaces).toEqual(['edit_note', 'update_note'])
     const daily = tools.find((t) => t.name === 'daily_note')
     expect(Object.keys(daily?.inputSchema.properties ?? {})).toEqual(['date'])
   })
@@ -45,6 +52,9 @@ describe('remote MCP protocol', () => {
     expect(isReadCall('get_note', {})).toBe(true)
     expect(isReadCall('daily_note', { append: 'x' })).toBe(false)
     expect(isReadCall('create_note', {})).toBe(false)
+    expect(isReadCall('edit_note', {})).toBe(false)
+    expect(isReadCall('delete_note', {})).toBe(false)
+    expect(isReadCall('create_folder', {})).toBe(false)
   })
 
   it('answers initialize with a version both sides know', () => {
