@@ -542,7 +542,7 @@ const es: LocaleResource = {
     turnOn: 'Activar',
     turnOff: 'Desactivar',
     toggleBody:
-      'Mientras FixNote esté abierto aquí, las apps de IA que conectes pueden buscar y leer tus notas. Ven lo que permite Ajustes → IA → Apps conectadas y solo pueden leer.',
+      'Mientras FixNote esté abierto aquí, las apps de IA que conectes pueden buscar y leer tus notas, y también añadirlas y cambiarlas si Ajustes → IA → Apps conectadas permite escribir. Ven lo que permite ese ajuste y nunca borran.',
     url: 'Dirección del servidor',
     urlHint:
       'En ChatGPT o Claude, añade un conector personalizado con esta dirección y apruébalo aquí, en FixNote.',
@@ -576,22 +576,30 @@ const es: LocaleResource = {
     action_list_recent: 'mirando las notas recientes',
     action_list_folders: 'mirando las carpetas',
     action_daily_note: 'leyendo la nota del día',
+    action_create_note: 'añadiendo una nota',
+    action_append_to_note: 'añadiendo a una nota',
+    action_edit_note: 'editando una nota',
+    action_update_note: 'reescribiendo una nota',
+    action_move_note: 'moviendo una nota',
     action_other: 'trabajando',
     privacy:
       'Lo que pasa por nuestro servidor: lo que pide la app de IA y las notas que tu dispositivo devuelve como respuesta. Solo pasan por la memoria, no se guardan ni se registran. Lo que recibe la app de IA queda sujeto a sus propias reglas.',
   },
   connect: {
     pageTitle: 'Conectar con FixNote',
-    titleAny: 'Una app de IA quiere leer tus notas',
-    title: '{{client}} quiere leer tus notas',
+    titleAny: 'Una app de IA quiere usar tus notas',
+    title: '{{client}} quiere usar tus notas',
     intro: 'Apruébalo en la app de FixNote, donde ya tienes la sesión iniciada.',
     can: 'Puede',
     cannot: 'No puede',
     canRead: 'Buscar y leer tus notas',
+    canWrite:
+      'Añadir notas y cambiarlas, si Ajustes → IA → Apps conectadas permite escribir. Cada cambio se puede deshacer',
     canScope:
       'Ver solo lo que permite Ajustes → IA → Apps conectadas: todas las notas o las carpetas que elegiste',
-    cannotChange: 'Cambiar ni borrar nada',
-    cannotClosed: 'Leer nada mientras FixNote está cerrado o el acceso remoto está desactivado',
+    cannotDelete: 'Borrar notas ni cambiar carpetas',
+    cannotClosed:
+      'Usar tus notas mientras FixNote está cerrado o el acceso remoto está desactivado',
     privacy:
       'Tu dispositivo lee las notas y envía solo las respuestas. Nuestro servidor las deja pasar y no guarda nada.',
     returnTo: 'Después vuelves a {{host}}',
@@ -628,7 +636,7 @@ const es: LocaleResource = {
     localOnly:
       'FixNote está configurado para funcionar solo en este dispositivo, así que no conecta apps de IA. Usa el código por correo en la página de tu navegador.',
     againTitle: 'Una app de IA que ya permitiste se conecta otra vez',
-    againBody: 'Ya puede leer tus notas. Continúa para volver a ella en tu navegador.',
+    againBody: 'Ya puede usar tus notas. Continúa para volver a ella en tu navegador.',
     continue: 'Continuar',
     cancel: 'Cancelar',
     doneAllowed: 'Conectado. Vuelve a tu navegador.',

@@ -1,5 +1,6 @@
 import {
   CALL_TIMEOUT_MS,
+  CHANGE_UNSURE_MESSAGE,
   DEVICE_TIMEOUT_MESSAGE,
   type DeviceState,
   FIRST_TRY_MS,
@@ -67,7 +68,7 @@ export function rankDevices(sockets: DeviceSocket[]): DeviceSocket[] {
 /**
  * Routing inside one account's Durable Object. Every call goes to exactly one device: the first
  * by `rankDevices`. A read may be tried once more on the next device when the first one does not
- * answer in `FIRST_TRY_MS` or goes away; a change (phase 2) is never sent twice. Nothing is
+ * answer in `FIRST_TRY_MS` or goes away; a change is never sent twice. Nothing is
  * stored: a call waits in memory (the object stays awake while a request is open).
  */
 export class Hub {
@@ -112,6 +113,8 @@ export class Hub {
       last = await this.attempt(socket, client, tool, args, opts.scope, another)
       if ('answer' in last) return last.answer
     }
+    // A change that reached a device may have been made even without an answer.
+    if (!opts.retry) return error(CHANGE_UNSURE_MESSAGE)
     return error(last.failed === 'timeout' ? DEVICE_TIMEOUT_MESSAGE : NO_DEVICE_MESSAGE)
   }
 

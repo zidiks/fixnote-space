@@ -1,14 +1,12 @@
-import type { RemoteActivity } from '@fixnote/core'
+import { isRemoteTool, type RemoteActivity, type RemoteToolName } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { cn } from '@fixnote/ui'
 import { RadioTower } from 'lucide-react'
 import { useUi } from '../app/store'
 import { useRemoteActivity } from '../lib/remote-mcp/bridge'
 
-const ACTIONS = ['search_notes', 'get_note', 'list_recent', 'list_folders', 'daily_note'] as const
-type Action = (typeof ACTIONS)[number] | 'other'
-const action = (tool: string): Action =>
-  (ACTIONS as readonly string[]).includes(tool) ? (tool as Action) : 'other'
+type Action = RemoteToolName | 'other'
+const action = (tool: string): Action => (isRemoteTool(tool) ? tool : 'other')
 
 /** The i18n key of what a tool does ("searching notes"). */
 export const actionKey = (tool: string) => `remoteMcp.action_${action(tool)}` as const
@@ -24,7 +22,7 @@ export function useActivityText(a: RemoteActivity | null): string {
 }
 
 /**
- * A quiet pill in the title bar while a remote MCP app (ChatGPT, claude.ai) is reading notes on
+ * A quiet pill in the title bar while a remote MCP app (ChatGPT, claude.ai) is using notes on
  * this device, fading out a moment after its last call. Never takes focus; a click opens
  * Settings → Integrations. On narrow screens only the dot and the app's name.
  */

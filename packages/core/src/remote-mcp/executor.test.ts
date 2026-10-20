@@ -5,7 +5,13 @@ import { MCP_ACCESS_KEY, MCP_SCOPE_KEY } from '../mcp'
 import { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
 import { createMemoryDriver } from '../testing/memory-driver'
-import { MCP_REMOTE_KEY, RemoteExecutor, remoteLog } from './executor'
+import {
+  CHANGE_LIMIT,
+  CHANGE_WINDOW_MS,
+  MCP_REMOTE_KEY,
+  RemoteExecutor,
+  remoteLog,
+} from './executor'
 import type { RelayCall } from './protocol'
 
 let db: SqlDriver
@@ -67,23 +73,104 @@ describe('RemoteExecutor', () => {
     expect(text(r)).toContain('turned off')
   })
 
-  it('stays read-only even when local apps may write and delete', async () => {
-    await setKv(MCP_ACCESS_KEY, 'full')
+  it('only reads while the local access level is reading', async () => {
     const n = await repo.createNote({ content: '# Keep\n\nme' })
     for (const [tool, args] of [
       ['create_note', { content: '# New' }],
       ['append_to_note', { id: n.id, content: 'more' }],
+      ['edit_note', { id: n.id, find: 'me', replace: 'you' }],
       ['update_note', { id: n.id, content: '# Gone' }],
-      ['delete_note', { id: n.id }],
+      ['move_note', { id: n.id }],
       ['daily_note', { append: 'hello' }],
     ] as const) {
       const r = await exec.run(call(tool, args))
       expect(r.isError, tool).toBe(true)
-      expect(text(r)).toContain('can only read')
+      expect(text(r)).toContain('Read and write')
     }
     expect((await repo.getNote(n.id))?.content).toBe('# Keep\n\nme')
     expect((await repo.listNotes({ limit: 10 })).items).toHaveLength(1)
     expect(await audit.list()).toEqual([])
+  })
+
+  it('creates and changes notes when local apps may write, logged for undo', async () => {
+    await setKv(MCP_ACCESS_KEY, 'write')
+    const changed: string[] = []
+    const watched = new RemoteExecutor(db, repo, audit, {
+      onChange: (a) => changed.push(a.kind),
+    })
+    const created = await watched.run(call('create_note', { content: '# Groceries\n\nmilk' }))
+    expect(created.isError).toBeUndefined()
+    const id = /id: ([\w-]+)/.exec(text(created))?.[1] ?? ''
+    await watched.run(call('append_to_note', { id, content: 'bread' }))
+    await watched.run(call('edit_note', { id, find: 'milk', replace: 'oat milk' }))
+    expect((await repo.getNote(id))?.content).toBe('# Groceries\n\noat milk\n\nbread')
+    const folder = await repo.createFolder('Home', null)
+    await watched.run(call('move_note', { id, folder: 'Home' }))
+    expect((await repo.getNote(id))?.folderId).toBe(folder.id)
+    await watched.run(call('update_note', { id, content: '# Groceries\n\neggs' }))
+    expect((await repo.getNote(id))?.content).toBe('# Groceries\n\neggs')
+    expect(changed).toEqual(['mcp.create', 'mcp.append', 'mcp.update', 'mcp.move', 'mcp.update'])
+    const log = await audit.list()
+    expect(log).toHaveLength(5)
+    expect(log.every((a) => a.provider === 'Claude (remote MCP)')).toBe(true)
+    // Through NotesRepo: marked for sync like any other change.
+    const [row] = await db.query<{ dirty: number }>('SELECT dirty FROM notes WHERE id = ?', [id])
+    expect(row?.dirty).toBe(1)
+  })
+
+  it('never deletes or changes folders, even with full access', async () => {
+    await setKv(MCP_ACCESS_KEY, 'full')
+    const n = await repo.createNote({ content: '# Keep\n\nme' })
+    const f = await repo.createFolder('Work', null)
+    for (const [tool, args, message] of [
+      ['delete_note', { id: n.id }, 'cannot delete'],
+      ['delete_folder', { folder: f.id }, 'cannot delete'],
+      ['create_folder', { name: 'New' }, 'cannot do this'],
+      ['rename_folder', { folder: f.id, name: 'Play' }, 'cannot do this'],
+    ] as const) {
+      const r = await exec.run(call(tool, args))
+      expect(r.isError, tool).toBe(true)
+      expect(text(r)).toContain(message)
+    }
+    expect(await repo.getNote(n.id)).not.toBeNull()
+    expect((await repo.listFolders()).map((x) => x.name)).toEqual(['Work'])
+    expect(await audit.list()).toEqual([])
+  })
+
+  it('writes only inside the scope', async () => {
+    await setKv(MCP_ACCESS_KEY, 'write')
+    const work = await repo.createFolder('Work', null)
+    const home = await repo.createFolder('Home', null)
+    const diary = await repo.createNote({ content: '# Diary\n\nsecret', folderId: home.id })
+    const scope = { folders: [work.id], notes: [] }
+    const hidden = await exec.run(call('append_to_note', { id: diary.id, content: 'x' }, scope))
+    expect(text(hidden)).toBe(`No note with id ${diary.id}.`)
+    expect((await exec.run(call('create_note', { content: '# Loose' }, scope))).isError).toBe(true)
+    const made = await exec.run(call('create_note', { content: '# Plan', folder: 'Work' }, scope))
+    expect(made.isError).toBeUndefined()
+    const id = /id: ([\w-]+)/.exec(text(made))?.[1] ?? ''
+    expect((await exec.run(call('move_note', { id, folder: 'Home' }, scope))).isError).toBe(true)
+    expect((await repo.getNote(id))?.folderId).toBe(work.id)
+    expect((await repo.getNote(diary.id))?.content).toBe('# Diary\n\nsecret')
+  })
+
+  it('takes a limited number of changes in a short time, reads go on', async () => {
+    await setKv(MCP_ACCESS_KEY, 'write')
+    let now = 1000
+    const paced = new RemoteExecutor(db, repo, audit, { now: () => now })
+    for (let i = 0; i < CHANGE_LIMIT; i++) {
+      expect((await paced.run(call('create_note', { content: `# Note ${i}` }))).isError).toBe(
+        undefined,
+      )
+    }
+    // Refused changes do not count.
+    expect((await paced.run(call('create_note', { content: '' }))).isError).toBe(true)
+    const refused = await paced.run(call('create_note', { content: '# One more' }))
+    expect(text(refused)).toContain('Too many changes')
+    expect((await paced.run(call('list_recent'))).isError).toBeUndefined()
+    now += CHANGE_WINDOW_MS
+    expect((await paced.run(call('create_note', { content: '# Later' }))).isError).toBe(undefined)
+    expect((await repo.listNotes({ limit: 50 })).items).toHaveLength(CHANGE_LIMIT + 1)
   })
 
   it('answers unknown tools with an error, not a crash', async () => {

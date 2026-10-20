@@ -156,8 +156,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`mcp.fixnote.space`, MCP Streamable HTTP, JSON answers) with one SQLite-backed Durable Object per
   account holding the devices' hibernatable WebSockets. It stores no note content and no keys: each
   `tools/call` goes to exactly one device (desktop, then freshest sync; a read retries once on the
-  next device, a change never), which runs it with core `RemoteExecutor` (`NoteTools`, read-only in
-  phase 1, `mcp.access`, device `mcp.scope` ∩ the account's remote scope kept by the relay as ids).
+  next device, a change never), which runs it with core `RemoteExecutor` (`NoteTools`: reading, and
+  creating and changing notes when `mcp.access` allows writing; never deleting or folders; at most
+  `CHANGE_LIMIT` changes per 10 min; device `mcp.scope` ∩ the account's remote scope kept by the
+  relay as ids). A change is never sent to a second device.
   The device side is `RemoteBridge` (core) started by `lib/remote-mcp/bridge.ts` when Remote access
   is on (kv `mcp.remote`, per device), signed in, not Free, not local-only. OAuth is Supabase Auth's
   OAuth 2.1 server (`[auth.oauth_server]`). Its consent step `/oauth/consent` is `ConnectPage`, a

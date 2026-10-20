@@ -10,8 +10,10 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { create } from 'zustand'
-import { captureBackend, useAccount } from '../account/account'
+import { captureBackend, requestSync, useAccount } from '../account/account'
+import { notifyNotesChanged } from '../assistant/assistant'
 import { useLlm } from '../assistant/llm'
+import { openNote } from '../assistant/open-notes'
 import { useDb } from '../db'
 import { kvStore } from '../kv'
 import { usePlan } from '../plan'
@@ -98,7 +100,8 @@ const deviceLabel = () => {
 /**
  * Keeps this device reachable for remote MCP apps while it should be: signed in and unlocked,
  * Remote access on, not "Only on this device", and not known to be on Free (the relay checks the
- * plan itself). Calls run here through core `RemoteExecutor`; only answers leave the device.
+ * plan itself). Calls run here through core `RemoteExecutor`; only answers leave the device, and
+ * changes are written here like the assistant's.
  */
 export function useRemoteBridge() {
   const { driver, repo, audit, attachments } = useDb()
@@ -119,6 +122,18 @@ export function useRemoteBridge() {
         ended(activity)
         void qc.invalidateQueries({ queryKey: REMOTE_LOG })
         void qc.invalidateQueries({ queryKey: REMOTE_OVERVIEW })
+      },
+      // A remote app changed notes here: a note open on screen shows it at once (typed in, or
+      // into the live document of a shared note), lists and the AI log refresh, and the change
+      // reaches the other devices soon, as with the assistant's.
+      onChange: (action) => {
+        for (const c of action.changes) {
+          if (c.before && c.after && c.before.content !== c.after.content)
+            openNote(c.noteId)?.aiChanged(c.after.content)
+        }
+        void qc.invalidateQueries()
+        notifyNotesChanged()
+        requestSync()
       },
     })
     const bridge = new RemoteBridge({

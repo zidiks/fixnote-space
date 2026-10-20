@@ -1,4 +1,4 @@
-import { NO_DEVICE_MESSAGE, remoteToolList } from '@fixnote/core/remote-mcp'
+import { CHANGE_UNSURE_MESSAGE, NO_DEVICE_MESSAGE, remoteToolList } from '@fixnote/core/remote-mcp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { challenge, checkToken, resourceMetadata, TokenCache } from './auth'
 import { type DeviceInfo, type DeviceSocket, Hub, newDeviceInfo, rankDevices } from './hub'
@@ -208,7 +208,11 @@ describe('Hub', () => {
     const hub = new Hub(() => [pc, tab], { firstTryMs: 1000, timeoutMs: 5000 })
     const change = hub.call(claude, 'create_note', { content: 'x' }, write)
     await vi.advanceTimersByTimeAsync(5000)
-    expect(await change).toMatchObject({ isError: true })
+    // It may have been made: the AI app is told to look before it tries again.
+    expect(await change).toEqual({
+      content: [{ type: 'text', text: CHANGE_UNSURE_MESSAGE }],
+      isError: true,
+    })
     expect(pc.sent).toHaveLength(1)
     expect(tab.sent).toHaveLength(0)
   })
@@ -271,7 +275,7 @@ describe('MCP answers', () => {
     }
   }
 
-  it('initializes, lists the read-only tools and forwards calls', async () => {
+  it('initializes, lists the tools and forwards calls', async () => {
     const c = ctx()
     const init = await answer(
       {

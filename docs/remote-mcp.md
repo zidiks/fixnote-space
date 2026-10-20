@@ -1,4 +1,4 @@
-# Remote MCP (ChatGPT, claude.ai…) — phase 1
+# Remote MCP (ChatGPT, claude.ai…)
 
 Browser AI apps can use a person's notes from any device without breaking end-to-end encryption.
 Decision: **device bridge** ("variant 1"). The server never holds keys; the person's own device
@@ -16,8 +16,12 @@ ChatGPT / Claude ──HTTPS (MCP Streamable HTTP) + OAuth 2.1──▶ mcp.fixn
   through relay memory only, as with FixNote AI today: "goes through our server, not stored or
   logged". Its Durable Object stores only: connected client ids and names, last use (to within
   5 min), revocations, and the account's remote scope as folder/note **ids**.
-- Phase 1 is **read-only**: `search_notes`, `get_note`, `list_recent`, `list_folders`,
-  `daily_note` (without `append`), whatever `mcp.access` allows locally.
+- Tools: reading (`search_notes`, `get_note`, `list_recent`, `list_folders`, `daily_note` without
+  `append`) and changing notes (`create_note`, `append_to_note`, `edit_note`, `update_note`,
+  `move_note`), as far as the answering device's `mcp.access` allows: "Read only" (the default)
+  refuses the changes. Never deleting and no folder changes, even with "Full". Every change goes
+  through `NotesRepo` and `AuditLog` there (provider "<client> (remote MCP)"), so it syncs and can be
+  undone in Settings → AI → AI activity.
 - Pro only (it goes through our server). Off in "Only on this device" mode.
 
 ## Pieces
@@ -25,7 +29,7 @@ ChatGPT / Claude ──HTTPS (MCP Streamable HTTP) + OAuth 2.1──▶ mcp.fixn
 | Where | What |
 |---|---|
 | `packages/core/src/remote-mcp/protocol.ts` | Relay ⇄ device messages, the remote tool list, close codes, MCP versions. Imported by the relay as `@fixnote/core/remote-mcp`; depends only on `agent/tool-specs.ts`. |
-| `packages/core/src/remote-mcp/executor.ts` | `RemoteExecutor`: runs a call on the device with core `NoteTools` and `remoteGate` (Remote access on, `mcp.access` not off, read only, scope = device `mcp.scope` ∩ account scope). Logs each call (client, tool, time, ok; no arguments, no answers) in kv `mcp.remote.log`. |
+| `packages/core/src/remote-mcp/executor.ts` | `RemoteExecutor`: runs a call on the device with core `NoteTools` and `remoteGate` (Remote access on, `mcp.access` not off, changes only with "Read and write" or more, never deleting, scope = device `mcp.scope` ∩ account scope; at most `CHANGE_LIMIT` changes per `CHANGE_WINDOW_MS`). Logs each call (client, tool, time, ok; no arguments, no answers) in kv `mcp.remote.log`. |
 | `packages/core/src/remote-mcp/bridge.ts` | `RemoteBridge`: the device's WebSocket, reconnect with backoff (1 s → 60 s, jitter; 10 min when not Pro), 30 s keep-alive pings. |
 | `apps/relay` | Cloudflare Worker `fixnote-mcp-relay` + Durable Object `UserRelay` (one per account, SQLite-backed). `src/index.ts` routes, `auth.ts` token checks, `mcp.ts` JSON-RPC, `hub.ts` device routing. |
 | `apps/web/src/lib/remote-mcp/` | `api.ts` (grants from Supabase, overview from the relay), `bridge.ts` (runs the bridge when signed in + unlocked + Remote access on + not Free + not local-only; activity store), `dev.ts` (in-page relay for `?dev-backend`; `fixnoteRemote.call(tool, args)` in the console). |
@@ -101,9 +105,9 @@ AI app ──authorize (PKCE)──▶ Supabase Auth ──302──▶ app.fixn
 ```
 
 - **Before sign-in** Supabase shows nothing (`getAuthorizationDetails` needs a session), so the page
-  says "An AI app wants to read your notes" with what it can do (search and read; only what
-  Settings → AI → Connected apps allows) and cannot (change or delete; read while FixNote is
-  closed). The client's name, site, logo and redirect host appear in the app's dialog, or on the
+  says "An AI app wants to use your notes" with what it can do (search and read; add and change
+  notes if writing is allowed; only what Settings → AI → Connected apps allows) and cannot (delete
+  or change folders; use the notes while FixNote is closed). The client's name, site, logo and redirect host appear in the app's dialog, or on the
   page once signed in there. A browser with the web app's session goes straight to Allow/Deny.
 - **Fallback / phones**: "Sign in with an email code instead": an OTP session that lives only in
   that tab (`persistSession: false`), then the same card with Allow/Deny.
@@ -176,9 +180,12 @@ sees the code).
   that said `serving: true` (a socket that has not said hello is never asked); desktop before a
   browser tab; then the freshest `syncedAt`; then the most recently active.
 - A **read** that gets no answer in 8 s, or whose device drops, is tried **once** on the next
-  device (25 s). Changes (phase 2) are never retried automatically.
+  device (25 s). Changes are never retried: when the device does not confirm one, the AI app is
+  told it may have been made and to look before trying again (`CHANGE_UNSURE_MESSAGE`).
 - Devices can differ (one has not synced yet): the answer reflects the answering device's notes as
-  last synced. Writes in phase 2 go through `NotesRepo` there and reach the others by normal sync.
+  last synced. Changes go through `NotesRepo` there and reach the others by normal sync (asked for
+  at once, like the assistant's); a note open on that device shows the change as it happens
+  (`registerOpenNote`, the live document of a shared note).
 - Remote access is **per device** (kv `mcp.remote`). A device with it off has no socket, and its
   executor refuses anyway. Settings lists the account's devices answering now.
 - **Scope across devices**: `mcp.access`/`mcp.scope` are per device. The relay keeps one account
@@ -190,10 +197,12 @@ sees the code).
 ## Security notes
 
 - **Prompt injection**: note text is the user's data, but a note (or a shared note someone else
-  wrote, or a captured Telegram message) can contain instructions aimed at the AI app. Phase 1 is
-  read-only, so the worst case is the AI app being steered within what it can read; the server
-  instructions tell the client not to follow instructions inside notes. Phase 2 writes need
-  on-device confirmation for deletes and bulk changes for exactly this reason.
+  wrote, or a captured Telegram message) can contain instructions aimed at the AI app. The server
+  instructions tell the client not to follow instructions inside notes. Changes need "Read and
+  write" on the device (the default is reading), are marked as changes for the AI app (no
+  `readOnlyHint`; `edit_note`/`update_note` as `destructiveHint`, so ChatGPT and Claude ask before
+  them), never delete, stop after `CHANGE_LIMIT` (20) in 10 minutes on a device, and each one can
+  be undone in AI activity. There is no confirmation on the device yet.
 - **Scope is enforced on the device**, not by the relay: the relay never sees folder names or note
   content at rest, and the executor re-reads the settings on every call. Notes out of scope answer
   exactly like notes that do not exist.
@@ -247,13 +256,11 @@ then $0.15/M requests) when daily requests approach 100k or before launch to the
 4. Try: Claude → Settings → Connectors → Add custom connector → `https://mcp.fixnote.space/mcp`;
    ChatGPT → developer mode → add connector with the same URL.
 
-## Phase 2
+## Later
 
-- Write tools (`create_note`, `append_to_note`, `edit_note`, `update_note`, `move_note`, folders)
-  following the device's `mcp.access`, through `NotesRepo` and `AuditLog` with provider
-  "<client> (remote MCP)" (already wired: `RemoteExecutor` passes it).
-- On-device confirmation for deletes and bulk changes (a dialog on the answering device; the call
-  waits or fails with "confirm in FixNote"), never retried on another device.
+- Folders (`create_folder`, `rename_folder`) and deletes, with on-device confirmation for deletes
+  and bulk changes (a dialog on the answering device; the call waits or fails with "confirm in
+  FixNote"), never retried on another device.
 - Attachments (`get_attachment` as image/resource content), size limits through the relay.
 - Optional: `aud` = resource via a Supabase custom access token hook; per-client scope; CIMD;
   `tools/list_changed` when the access level changes; a device picker when several answer.

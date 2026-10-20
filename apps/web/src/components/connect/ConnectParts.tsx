@@ -66,8 +66,8 @@ export function ConnectMarks({
 /** What the AI app can and cannot do: the same words on the page and in the app. */
 export function ConnectScope() {
   const { t } = useTranslation()
-  const can = [t('connect.canRead'), t('connect.canScope')]
-  const cannot = [t('connect.cannotChange'), t('connect.cannotClosed')]
+  const can = [t('connect.canRead'), t('connect.canWrite'), t('connect.canScope')]
+  const cannot = [t('connect.cannotDelete'), t('connect.cannotClosed')]
   return (
     <div className="grid gap-3 rounded-2xl bg-muted/60 p-4 text-sm">
       <section>
