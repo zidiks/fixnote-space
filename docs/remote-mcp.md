@@ -247,7 +247,7 @@ then $0.15/M requests) when daily requests approach 100k or before launch to the
    `/oauth/consent`); apply `20261014090000_remote_mcp.sql` (`pnpm sb:migrate`) after testing on the
    local stack; deploy the edge functions (`_shared/auth.ts` changed).
 2. Cloudflare: `cd apps/relay && npx wrangler secret put SUPABASE_ANON_KEY`, then
-   `pnpm --filter @fixnote/relay deploy` (custom domain `mcp.fixnote.space`, created from the
+   `pnpm --filter @fixnote/relay run deploy` (with `run`: `pnpm deploy` is a pnpm command of its own) (custom domain `mcp.fixnote.space`, created from the
    route on deploy; it also applies Durable Object migration `v2`, the `ConsentHandoff` class). Check `SUPABASE_URL` / `APP_ORIGINS` vars in `wrangler.jsonc`.
 3. Web app: `VITE_MCP_URL` (defaults to `https://mcp.fixnote.space`), rebuild and deploy; the
    consent page lives at `https://app.fixnote.space/oauth/consent` (SPA fallback serves it).
