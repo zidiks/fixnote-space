@@ -537,7 +537,7 @@ const en = {
     turnOn: 'Turn on',
     turnOff: 'Turn off',
     toggleBody:
-      'While FixNote is open here, AI apps you connect can search and read your notes, and add and change them if Settings → AI → Connected apps allows writing. They see what that setting allows and never delete.',
+      'While FixNote is open here, AI apps you connect can search and read your notes, and add and change them and create folders if Settings → AI → Connected apps allows writing. They see what that setting allows and never delete.',
     url: 'Server address',
     urlHint:
       'In ChatGPT or Claude, add a custom connector with this address, then approve it here in FixNote.',
@@ -576,6 +576,7 @@ const en = {
     action_edit_note: 'editing a note',
     action_update_note: 'rewriting a note',
     action_move_note: 'moving a note',
+    action_create_folder: 'creating a folder',
     action_other: 'working',
     privacy:
       'What passes through our server: what the AI app asks and the notes your device sends back as the answer. They pass through memory only and are not stored or logged. What the AI app receives is then under its own rules.',
@@ -589,10 +590,10 @@ const en = {
     cannot: 'It cannot',
     canRead: 'Search and read your notes',
     canWrite:
-      'Add notes and change them, if Settings → AI → Connected apps allows writing. Every change can be undone',
+      'Add notes, change them and create folders, if Settings → AI → Connected apps allows writing. Every change can be undone',
     canScope:
       'See only what Settings → AI → Connected apps allows: all notes or the folders you chose',
-    cannotDelete: 'Delete notes or change folders',
+    cannotDelete: 'Delete anything or rename folders',
     cannotClosed: 'Use your notes while FixNote is closed or Remote access is off',
     privacy:
       'Your device reads the notes and sends only the answers. Our server passes them through and keeps nothing.',

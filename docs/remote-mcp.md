@@ -18,8 +18,9 @@ ChatGPT / Claude ──HTTPS (MCP Streamable HTTP) + OAuth 2.1──▶ mcp.fixn
   5 min), revocations, and the account's remote scope as folder/note **ids**.
 - Tools: reading (`search_notes`, `get_note`, `list_recent`, `list_folders`, `daily_note` without
   `append`) and changing notes (`create_note`, `append_to_note`, `edit_note`, `update_note`,
-  `move_note`), as far as the answering device's `mcp.access` allows: "Read only" (the default)
-  refuses the changes. Never deleting and no folder changes, even with "Full". Every change goes
+  `move_note`) and creating folders (`create_folder`), as far as the answering device's
+  `mcp.access` allows: "Read only" (the default) refuses the changes. A new folder goes only inside
+  a visible one when the scope is not everything. Never deleting and no renaming, even with "Full". Every change goes
   through `NotesRepo` and `AuditLog` there (provider "<client> (remote MCP)"), so it syncs and can be
   undone in Settings → AI → AI activity.
 - Pro only (it goes through our server). Off in "Only on this device" mode.
@@ -29,7 +30,7 @@ ChatGPT / Claude ──HTTPS (MCP Streamable HTTP) + OAuth 2.1──▶ mcp.fixn
 | Where | What |
 |---|---|
 | `packages/core/src/remote-mcp/protocol.ts` | Relay ⇄ device messages, the remote tool list, close codes, MCP versions. Imported by the relay as `@fixnote/core/remote-mcp`; depends only on `agent/tool-specs.ts`. |
-| `packages/core/src/remote-mcp/executor.ts` | `RemoteExecutor`: runs a call on the device with core `NoteTools` and `remoteGate` (Remote access on, `mcp.access` not off, changes only with "Read and write" or more, never deleting, scope = device `mcp.scope` ∩ account scope; at most `CHANGE_LIMIT` changes per `CHANGE_WINDOW_MS`). Logs each call (client, tool, time, ok; no arguments, no answers) in kv `mcp.remote.log`. |
+| `packages/core/src/remote-mcp/executor.ts` | `RemoteExecutor`: runs a call on the device with core `NoteTools` and `remoteGate` (Remote access on, `mcp.access` not off, changes only with "Read and write" or more, never deleting or renaming, scope = device `mcp.scope` ∩ account scope; at most `CHANGE_LIMIT` changes per `CHANGE_WINDOW_MS`). Logs each call (client, tool, time, ok; no arguments, no answers) in kv `mcp.remote.log`. |
 | `packages/core/src/remote-mcp/bridge.ts` | `RemoteBridge`: the device's WebSocket, reconnect with backoff (1 s → 60 s, jitter; 10 min when not Pro), 30 s keep-alive pings. |
 | `apps/relay` | Cloudflare Worker `fixnote-mcp-relay` + Durable Object `UserRelay` (one per account, SQLite-backed). `src/index.ts` routes, `auth.ts` token checks, `mcp.ts` JSON-RPC, `hub.ts` device routing. |
 | `apps/web/src/lib/remote-mcp/` | `api.ts` (grants from Supabase, overview from the relay), `bridge.ts` (runs the bridge when signed in + unlocked + Remote access on + not Free + not local-only; activity store), `dev.ts` (in-page relay for `?dev-backend`; `fixnoteRemote.call(tool, args)` in the console). |
@@ -106,8 +107,8 @@ AI app ──authorize (PKCE)──▶ Supabase Auth ──302──▶ app.fixn
 
 - **Before sign-in** Supabase shows nothing (`getAuthorizationDetails` needs a session), so the page
   says "An AI app wants to use your notes" with what it can do (search and read; add and change
-  notes if writing is allowed; only what Settings → AI → Connected apps allows) and cannot (delete
-  or change folders; use the notes while FixNote is closed). The client's name, site, logo and redirect host appear in the app's dialog, or on the
+  notes and create folders if writing is allowed; only what Settings → AI → Connected apps allows)
+  and cannot (delete anything or rename folders; use the notes while FixNote is closed). The client's name, site, logo and redirect host appear in the app's dialog, or on the
   page once signed in there. A browser with the web app's session goes straight to Allow/Deny.
 - **Fallback / phones**: "Sign in with an email code instead": an OTP session that lives only in
   that tab (`persistSession: false`), then the same card with Allow/Deny.
@@ -258,7 +259,7 @@ then $0.15/M requests) when daily requests approach 100k or before launch to the
 
 ## Later
 
-- Folders (`create_folder`, `rename_folder`) and deletes, with on-device confirmation for deletes
+- Renaming folders and deletes, with on-device confirmation for deletes
   and bulk changes (a dialog on the answering device; the call waits or fails with "confirm in
   FixNote"), never retried on another device.
 - Attachments (`get_attachment` as image/resource content), size limits through the relay.

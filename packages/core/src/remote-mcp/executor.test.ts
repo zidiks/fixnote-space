@@ -77,6 +77,7 @@ describe('RemoteExecutor', () => {
     const n = await repo.createNote({ content: '# Keep\n\nme' })
     for (const [tool, args] of [
       ['create_note', { content: '# New' }],
+      ['create_folder', { name: 'New' }],
       ['append_to_note', { id: n.id, content: 'more' }],
       ['edit_note', { id: n.id, find: 'me', replace: 'you' }],
       ['update_note', { id: n.id, content: '# Gone' }],
@@ -108,24 +109,34 @@ describe('RemoteExecutor', () => {
     await watched.run(call('move_note', { id, folder: 'Home' }))
     expect((await repo.getNote(id))?.folderId).toBe(folder.id)
     await watched.run(call('update_note', { id, content: '# Groceries\n\neggs' }))
+    const made = await watched.run(call('create_folder', { name: 'Shopping', parent: 'Home' }))
+    expect(made.isError).toBeUndefined()
+    const shopping = (await repo.listFolders()).find((f) => f.name === 'Shopping')
+    expect(shopping?.parentId).toBe(folder.id)
     expect((await repo.getNote(id))?.content).toBe('# Groceries\n\neggs')
-    expect(changed).toEqual(['mcp.create', 'mcp.append', 'mcp.update', 'mcp.move', 'mcp.update'])
+    expect(changed).toEqual([
+      'mcp.create',
+      'mcp.append',
+      'mcp.update',
+      'mcp.move',
+      'mcp.update',
+      'mcp.folder',
+    ])
     const log = await audit.list()
-    expect(log).toHaveLength(5)
+    expect(log).toHaveLength(6)
     expect(log.every((a) => a.provider === 'Claude (remote MCP)')).toBe(true)
     // Through NotesRepo: marked for sync like any other change.
     const [row] = await db.query<{ dirty: number }>('SELECT dirty FROM notes WHERE id = ?', [id])
     expect(row?.dirty).toBe(1)
   })
 
-  it('never deletes or changes folders, even with full access', async () => {
+  it('never deletes or renames, even with full access', async () => {
     await setKv(MCP_ACCESS_KEY, 'full')
     const n = await repo.createNote({ content: '# Keep\n\nme' })
     const f = await repo.createFolder('Work', null)
     for (const [tool, args, message] of [
       ['delete_note', { id: n.id }, 'cannot delete'],
       ['delete_folder', { folder: f.id }, 'cannot delete'],
-      ['create_folder', { name: 'New' }, 'cannot do this'],
       ['rename_folder', { folder: f.id, name: 'Play' }, 'cannot do this'],
     ] as const) {
       const r = await exec.run(call(tool, args))
@@ -151,6 +162,14 @@ describe('RemoteExecutor', () => {
     const id = /id: ([\w-]+)/.exec(text(made))?.[1] ?? ''
     expect((await exec.run(call('move_note', { id, folder: 'Home' }, scope))).isError).toBe(true)
     expect((await repo.getNote(id))?.folderId).toBe(work.id)
+    // A new folder only inside a visible one.
+    expect((await exec.run(call('create_folder', { name: 'Top' }, scope))).isError).toBe(true)
+    expect(
+      (await exec.run(call('create_folder', { name: 'Top', parent: 'Home' }, scope))).isError,
+    ).toBe(true)
+    expect(
+      (await exec.run(call('create_folder', { name: 'Q3', parent: 'Work' }, scope))).isError,
+    ).toBeUndefined()
     expect((await repo.getNote(diary.id))?.content).toBe('# Diary\n\nsecret')
   })
 

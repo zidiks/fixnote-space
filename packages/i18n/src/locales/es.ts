@@ -542,7 +542,7 @@ const es: LocaleResource = {
     turnOn: 'Activar',
     turnOff: 'Desactivar',
     toggleBody:
-      'Mientras FixNote esté abierto aquí, las apps de IA que conectes pueden buscar y leer tus notas, y también añadirlas y cambiarlas si Ajustes → IA → Apps conectadas permite escribir. Ven lo que permite ese ajuste y nunca borran.',
+      'Mientras FixNote esté abierto aquí, las apps de IA que conectes pueden buscar y leer tus notas, y también añadirlas, cambiarlas y crear carpetas si Ajustes → IA → Apps conectadas permite escribir. Ven lo que permite ese ajuste y nunca borran.',
     url: 'Dirección del servidor',
     urlHint:
       'En ChatGPT o Claude, añade un conector personalizado con esta dirección y apruébalo aquí, en FixNote.',
@@ -581,6 +581,7 @@ const es: LocaleResource = {
     action_edit_note: 'editando una nota',
     action_update_note: 'reescribiendo una nota',
     action_move_note: 'moviendo una nota',
+    action_create_folder: 'creando una carpeta',
     action_other: 'trabajando',
     privacy:
       'Lo que pasa por nuestro servidor: lo que pide la app de IA y las notas que tu dispositivo devuelve como respuesta. Solo pasan por la memoria, no se guardan ni se registran. Lo que recibe la app de IA queda sujeto a sus propias reglas.',
@@ -594,10 +595,10 @@ const es: LocaleResource = {
     cannot: 'No puede',
     canRead: 'Buscar y leer tus notas',
     canWrite:
-      'Añadir notas y cambiarlas, si Ajustes → IA → Apps conectadas permite escribir. Cada cambio se puede deshacer',
+      'Añadir notas, cambiarlas y crear carpetas, si Ajustes → IA → Apps conectadas permite escribir. Cada cambio se puede deshacer',
     canScope:
       'Ver solo lo que permite Ajustes → IA → Apps conectadas: todas las notas o las carpetas que elegiste',
-    cannotDelete: 'Borrar notas ni cambiar carpetas',
+    cannotDelete: 'Borrar nada ni renombrar carpetas',
     cannotClosed:
       'Usar tus notas mientras FixNote está cerrado o el acceso remoto está desactivado',
     privacy:

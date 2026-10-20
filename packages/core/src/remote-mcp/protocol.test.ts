@@ -9,12 +9,13 @@ import {
 } from './protocol'
 
 describe('remote MCP protocol', () => {
-  it('lists reading and changing notes, never deleting, daily_note without append', () => {
+  it('lists reading, changing notes and new folders, never deleting, daily_note without append', () => {
     const tools = remoteToolList()
     const names = tools.map((t) => t.name)
     expect(names).toEqual([...REMOTE_TOOLS])
     expect(names).not.toContain('delete_note')
     expect(names).not.toContain('delete_folder')
+    expect(names).not.toContain('rename_folder')
     const reads = tools.filter((t) => t.annotations.readOnlyHint).map((t) => t.name)
     expect(reads).toEqual(['search_notes', 'get_note', 'list_recent', 'list_folders', 'daily_note'])
     const replaces = tools.filter((t) => t.annotations.destructiveHint).map((t) => t.name)
@@ -53,6 +54,7 @@ describe('remote MCP protocol', () => {
     expect(isReadCall('create_note', {})).toBe(false)
     expect(isReadCall('edit_note', {})).toBe(false)
     expect(isReadCall('delete_note', {})).toBe(false)
+    expect(isReadCall('create_folder', {})).toBe(false)
   })
 
   it('answers initialize with a version both sides know', () => {

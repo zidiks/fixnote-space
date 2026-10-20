@@ -144,7 +144,7 @@ export interface RemoteActivity {
 /**
  * Runs what a remote app asked for, on this device: the notes are decrypted here and only the
  * answer goes back through the relay. Same `NoteTools` and settings as the local MCP server, minus
- * deleting and folders; a change goes through `NotesRepo` and the `AuditLog` like any other, so
+ * deleting and renaming folders; a change goes through `NotesRepo` and the `AuditLog` like any other, so
  * it syncs and can be undone.
  */
 export class RemoteExecutor {
