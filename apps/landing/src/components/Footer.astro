@@ -141,10 +141,28 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
         ))
       }
     </nav>
-    <p class="pb-3">
-      {f.help}
-      <a href={`mailto:${CONTACT_EMAIL}`} class="text-link hover:underline">{CONTACT_EMAIL}</a>.
-    </p>
+    <div class="flex flex-col gap-4 pb-5 small:flex-row small:items-center small:justify-between">
+      <p>
+        {f.help}
+        <a href={`mailto:${CONTACT_EMAIL}`} class="text-link hover:underline">{CONTACT_EMAIL}</a>.
+      </p>
+      <a
+        href="https://launchnest.io/p/fixnote"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="w-fit shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-link"
+      >
+        <img
+          src="https://launchnest.io/badge/fixnote.svg?variant=featured&theme=light"
+          alt="FixNote on LaunchNest"
+          width="220"
+          height="56"
+          loading="lazy"
+          decoding="async"
+          class="h-14 w-[220px]"
+        />
+      </a>
+    </div>
     <div
       class="flex flex-col gap-2 border-t border-black/[0.16] pt-2 pb-5 small:flex-row small:items-center small:justify-between"
     >
