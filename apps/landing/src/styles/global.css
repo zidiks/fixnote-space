@@ -364,7 +364,7 @@
     font-family: var(--font-sans);
     font-size: 16px;
     font-weight: 500;
-    line-height: 1;
+    line-height: 1.3125;
     letter-spacing: -0.0125em;
     white-space: nowrap;
     cursor: pointer;
@@ -424,7 +424,7 @@
     padding: 0 8px 0 10px;
     border-radius: 999px;
     pointer-events: auto;
-    transition-property: max-width, margin-top, padding;
+    transition-property: max-width, margin-top, padding, height, gap;
     transition-duration: 0.5s;
     transition-timing-function: var(--ease-soft);
   }
@@ -455,9 +455,13 @@
   .hdr-link {
     display: block;
     font-size: 16px;
+    line-height: 1.3125;
     letter-spacing: -0.2px;
     color: #000;
-    transition: opacity 0.15s ease-out;
+    transition:
+      opacity 0.15s ease-out,
+      font-size 0.5s var(--ease-soft),
+      letter-spacing 0.5s var(--ease-soft);
   }
   .hdr-link:hover {
     opacity: 0.6;
@@ -488,12 +492,19 @@
     height: 40px;
     padding: 0 18px;
     font-size: 15px;
-    transition-property: scale, background-color, height, padding;
-    transition-duration: 0.15s, 0.15s, 0.5s, 0.5s;
-    transition-timing-function: ease-out, ease-out, var(--ease-soft), var(--ease-soft);
+    transition-property: scale, background-color, height, padding, font-size, letter-spacing;
+    transition-duration: 0.15s, 0.15s, 0.5s, 0.5s, 0.5s, 0.5s;
+    transition-timing-function:
+      ease-out, ease-out, var(--ease-soft), var(--ease-soft), var(--ease-soft), var(--ease-soft);
   }
   .hdr-lang {
     margin-left: 12px;
+    transition: margin-left 0.5s var(--ease-soft);
+  }
+  .hdr-lang img {
+    transition:
+      width 0.5s var(--ease-soft),
+      height 0.5s var(--ease-soft);
   }
   .hdr-menu {
     display: flex;
@@ -509,6 +520,7 @@
   }
   @media (min-width: 1069px) {
     .hdr {
+      --u: clamp(0.8px, min(100vw / 1640, 100vh / 960), 1px);
       padding: 0 16px;
     }
     .hdr-bar {
@@ -516,20 +528,29 @@
       padding: 0 56px;
     }
     .hdr[data-float] .hdr-bar {
-      max-width: 1180px;
+      max-width: calc(1274 * var(--u));
       margin-top: 12px;
-      padding: 0 24px 0 28px;
+      padding: 0 calc(24 * var(--u)) 0 calc(28 * var(--u));
+      gap: calc(16 * var(--u));
+      height: calc(56 * var(--u));
     }
     .hdr[data-float] .hdr-links {
-      gap: 28px;
+      gap: calc(28 * var(--u));
+    }
+    .hdr[data-float] .hdr-link {
+      font-size: calc(16 * var(--u));
+      letter-spacing: calc(-0.2 * var(--u));
+    }
+    .hdr[data-float] .hdr-links-quiet {
+      margin-right: calc(28 * var(--u));
     }
     .hdr-logo {
       width: 56px;
       height: 56px;
     }
     .hdr[data-float] .hdr-logo {
-      width: 40px;
-      height: 40px;
+      width: calc(40 * var(--u));
+      height: calc(40 * var(--u));
     }
     .hdr-download {
       height: 56px;
@@ -537,8 +558,10 @@
       font-size: 16px;
     }
     .hdr[data-float] .hdr-download {
-      height: 42px;
-      padding: 0 22px;
+      height: calc(42 * var(--u));
+      padding: 0 calc(22 * var(--u));
+      font-size: calc(16 * var(--u));
+      letter-spacing: calc(-0.2 * var(--u));
     }
     .hdr-space {
       height: 112px;
@@ -548,7 +571,11 @@
       margin-left: 49px;
     }
     .hdr[data-float] .hdr-lang {
-      margin-left: 24px;
+      margin-left: calc(24 * var(--u));
+    }
+    .hdr[data-float] .hdr-lang img {
+      width: calc(24 * var(--u));
+      height: calc(24 * var(--u));
     }
   }
   @media (min-width: 1069px) and (max-width: 1439px) {

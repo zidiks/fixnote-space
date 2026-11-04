@@ -30,8 +30,8 @@
   pages and OG images, then hit the known Node 24 Windows shutdown assertion documented below.
 - Not yet manually emulated: OS reduced-motion preference. Both animated scenes retain their
   existing media-query fallback. Do not claim an exhaustive pixel-perfect / motion audit.
-- Branch remains `upd/new-landing`; preserve prior staged deletions. User has now requested commit
-  and push of the redesign. No deployment was requested.
+- Current branch is **main**: redesign merged via PR #64. The user explicitly requested subsequent
+  work directly on main. Commit/push authorization was already given; no separate deployment asked.
 - User requested replacing the black placeholder circles with our existing note logo, simplified
   and circular. `home-mark.svg` now reuses favicon paper/fold/lines on a flat `#de632c` circle,
   without gradients or shadows. Both Home header and Home footer already reference this asset.
@@ -95,6 +95,18 @@
   checked for missing Russian routes/links/alternates; final Astro check is clean. Full workspace
   tests/types, web build and cargo clippy all completed successfully before this last site-only
   language change. Commit/push authorization includes these final requests.
+- Typography audit on main: fresh `331:6445` export at `.figma/type-audit/` contains 167 text nodes.
+  Compared 25 typography groups across 178 rendered elements at 1920×1080, including decorative
+  card copies, with no remaining font-size/weight/leading/tracking mismatches. The single SF Pro
+  keyboard label is already baked into its exact Figma image. Corrected Integrations card headings
+  to 18px / -0.6px, FAQ questions tracking to -0.4px, plan list tracking to -0.2px, Experience eyebrow
+  to 1.8px tracking, percent-based leading to exact 130% / 140%, AUTO to Geist's 21px/23px lines,
+  footer platform labels to inherited 16px, email to Medium/orange, and footer text alpha to 60%.
+  Together/encryption collage text frames keep their Figma 38px frame height despite 21px leading.
+- Header/photo alignment: floating header and voice photo now share 1274×--u width; voice no longer
+  lays a 1274px image inside a 1240px padded column. Header type/gaps scale with --u when floating.
+  Browser verified identical left/right edges at 1920×1080, 1395×770 and Spanish 1280×720, with no
+  nav overlap. Mobile Spanish at 375×812 has no section overflow. Logo remains hidden in header.
 
 You are continuing work on the FixNote landing page redesign in this repo (branch `upd/new-landing`,
 nothing committed yet). Read `CLAUDE.md` first (conventions; the landing section is at the end) and

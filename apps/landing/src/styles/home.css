@@ -146,6 +146,10 @@
   border-radius: calc(32 * var(--u));
   background: #fff;
 }
+.glass:not(.glass-lg) .lp-card-title {
+  font-size: calc(18 * var(--u));
+  letter-spacing: calc(-0.6 * var(--u));
+}
 .glass-lg {
   border-radius: calc(55.64 * var(--u));
   -webkit-backdrop-filter: blur(22.5px);
@@ -340,7 +344,7 @@
   }
   .tidy-lead {
     max-width: none;
-    line-height: calc(22 * var(--u));
+    line-height: 1.4;
   }
   .tidy-list .lp-card-text {
     line-height: calc(21 * var(--u));
@@ -533,7 +537,7 @@
   letter-spacing: calc(-0.3 * var(--u));
 }
 .recall-copy .lp-card-text {
-  line-height: normal;
+  line-height: calc(21 * var(--u));
 }
 @media (min-width: 1069px) {
   .recall {
@@ -871,6 +875,8 @@
 }
 @media (min-width: 1069px) {
   .voice {
+    padding-right: 0;
+    padding-left: 0;
     padding-top: calc(200 * var(--u));
     padding-bottom: calc(200 * var(--u));
   }
@@ -1020,7 +1026,7 @@
   gap: calc(16 * var(--u));
   font-size: calc(16 * var(--u));
   line-height: 1;
-  letter-spacing: calc(-0.6 * var(--u));
+  letter-spacing: calc(-0.2 * var(--u));
   color: #000;
 }
 /* The orange plus of the design: two 2 px bars with round ends. */
@@ -1147,7 +1153,7 @@
   font-size: 18px;
   font-weight: 500;
   line-height: 1.15;
-  letter-spacing: -0.6px;
+  letter-spacing: -0.4px;
 }
 .home-faq summary::-webkit-details-marker {
   display: none;
@@ -1283,14 +1289,13 @@
   flex-direction: column;
   gap: 16px;
 }
-.home-footer-nav a,
-.home-footer-bottom span {
-  color: rgb(0 0 0 / 0.5);
+.home-footer-nav a {
+  color: rgb(0 0 0 / 0.6);
 }
 .home-footer-nav small {
   margin-left: 4px;
-  font-size: 12px;
-  opacity: 0.6;
+  font-size: inherit;
+  opacity: 1;
 }
 @media (max-width: 1068px) {
   .switch-off {
@@ -1300,6 +1305,10 @@
   }
 }
 .home-footer a:hover {
+  color: var(--color-orange);
+}
+.home-footer-bottom a {
+  font-weight: 500;
   color: var(--color-orange);
 }
 .home-footer-mark {
@@ -1321,6 +1330,10 @@
   font-size: 14px;
   line-height: 1.8;
   letter-spacing: -0.2px;
+  color: rgb(0 0 0 / 0.6);
+}
+.home-footer-bottom > p:first-child > span {
+  color: #000;
 }
 .recall-pic-keys img {
   top: 40.88%;
@@ -1359,10 +1372,11 @@
   .home-faq summary {
     font-size: calc(18 * var(--u));
     line-height: 1;
+    letter-spacing: calc(-0.4 * var(--u));
   }
   .home-faq-answer > p {
     font-size: calc(16 * var(--u));
-    line-height: calc(21 * var(--u));
+    line-height: 1.3;
   }
   .closing {
     width: calc(1568 * var(--u));
