@@ -4,7 +4,7 @@ import { AUTHOR_PAGES } from '../../../data/authors'
 import AuthorPage from '../../../views/AuthorPage.astro'
 
 export const getStaticPaths = (() =>
-  (['ru', 'es'] as const).flatMap((lang) =>
+  (['es'] as const).flatMap((lang) =>
     AUTHOR_PAGES.map(([id, author]) => ({
       params: { lang, id },
       props: { author, lang },

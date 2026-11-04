@@ -6,7 +6,7 @@ import FeaturePage from '../../../views/FeaturePage.astro'
 export const getStaticPaths = (async () =>
   (
     await Promise.all(
-      (['ru', 'es'] as const).map(async (lang) =>
+      (['es'] as const).map(async (lang) =>
         (
           await getFeatures(lang)
         ).map(({ slug, entry }) => ({ params: { lang, slug }, props: { entry, lang } })),

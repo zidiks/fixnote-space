@@ -69,6 +69,11 @@ export const en: Dict = {
     skip: 'Skip to content',
     language: 'Language',
     windows: 'FixNote for Windows',
+    tidy: 'Tidy up',
+    integrations: 'Integrations',
+    search: 'Search',
+    privacy: 'Privacy',
+    help: 'Help',
   },
 
   hero: {
@@ -80,6 +85,219 @@ export const en: Dict = {
     more: 'Learn more',
     platforms: 'Windows, macOS and the web · Free, no account needed',
     shotAlt: 'FixNote: today’s notes and an assistant answering with links to notes',
+  },
+
+  intro: {
+    line1: 'Save it your way.',
+    line2: 'Find it when it matters.',
+    lead: 'A simple notes app for ideas, plans,\nand everything worth keeping.',
+    download: 'Download',
+    tryBrowser: 'Try in browser',
+    free: 'Free to use',
+    noAccount: 'No account required',
+    shotAlt: 'FixNote: the home screen with recent notes, a voice note and the assistant',
+    offline: { title: 'Works offline', text: 'Write and search your notes without internet.' },
+    together: { title: 'Edit together', text: 'Share notes and see changes in real time.' },
+    encrypted: {
+      title: 'End-to-end encrypted',
+      text: 'Your synced notes are encrypted before\nleaving your device.',
+    },
+    refine: {
+      title: 'Refine with AI',
+      text: 'Rewrite, shorten, or improve text right in your notes.',
+    },
+    moveIn: {
+      title: 'Bring your notes over',
+      text: 'Import from Bear, Notion, Obsidian, and more.',
+    },
+    eyebrow: 'Experience',
+    title1: 'Simple notes.',
+    title2: 'More possibilities.',
+    sub: 'Everything you need for everyday notes,\nwithout the extra complexity.',
+  },
+
+  landing: {
+    faq: {
+      eyebrow: 'FAQ',
+      title1: 'Everything you',
+      title2: 'need to know',
+      title3: 'before\ngetting started.',
+      contact: 'Contact us',
+      items: [
+        {
+          q: 'Is FixNote really free?',
+          a: 'Yes. Everything that runs on your device is free, with no time limit and no account required. Pro adds encrypted sync, collaboration, and cloud features.',
+        },
+        {
+          q: 'Can I use FixNote without the internet?',
+          a: 'Yes. Write, search, and organize your notes on your device without a connection. Sync and cloud features need the internet.',
+        },
+        {
+          q: 'Who can read my notes?',
+          a: "Your synced notes are encrypted on your device, and FixNote's servers can't read them. If you use cloud AI, the information needed for your request is sent to your chosen provider.",
+        },
+        {
+          q: 'Can I import my existing notes?',
+          a: 'Yes. Import from Bear, Notion, Obsidian, or a Markdown folder. Apple Notes import is available on macOS. You can export your notes to Markdown at any time.',
+        },
+        {
+          q: 'What happens if I cancel Pro?',
+          a: 'Your notes stay on your devices. You keep Pro until the end of your paid period, then return to Free. Cloud features are paused until you renew.',
+        },
+        {
+          q: 'Which devices does FixNote support?',
+          a: 'FixNote is available for Windows, macOS, and in your browser. You can also use the web app on your phone.',
+        },
+      ],
+    },
+    closing: {
+      title: 'Turn scattered thoughts\ninto something useful.',
+    },
+    footer: {
+      question: 'A question about FixNote?',
+      write: 'Write to',
+      contact: 'Contact us',
+    },
+    tidy: {
+      eyebrow: 'Tidy up',
+      title1: 'Save now.',
+      title2: 'Sort later.',
+      lead: 'Don’t worry about organizing every note.\nFixNote helps you tidy things up when you need it.',
+      items: [
+        {
+          title: 'Smarter folders',
+          text: 'Get suggestions for where your notes belong.',
+        },
+        {
+          title: 'Duplicate cleanup',
+          text: 'Find similar notes and decide what to keep.',
+        },
+        {
+          title: 'Better titles',
+          text: 'Turn unclear titles into something meaningful.',
+        },
+      ],
+      link: 'Explore Tidy up',
+      alt: 'Tidy up in FixNote: suggested folders, titles and duplicates, each with Accept',
+    },
+    integrations: {
+      eyebrow: 'Integrations',
+      title: 'Your notes, one prompt away.',
+      lead: 'Connect FixNote to ChatGPT, Claude, Cursor, and Codex. Search, create,\nand update notes right from the tools you already use.',
+      tools: 'Supported tools',
+      mcp: {
+        title: 'Powered by MCP',
+        text: 'Connect compatible AI tools to your notes without copying information between apps.',
+        link: 'How MCP works',
+      },
+      control: {
+        title: 'You’re in control',
+        text: 'Choose which notes connected tools can access and what they’re allowed to do.',
+        link: 'How permissions work',
+      },
+      alt: 'A note in the FixNote desktop app',
+    },
+    recall: {
+      title1: 'Remember the idea.',
+      title2: 'Not the exact words.',
+      lead: 'Search by meaning, across languages, and even through text in images.\nNo exact wording required.',
+      meaning: {
+        title: 'Search by meaning',
+        text: 'Find notes without remembering the exact words.',
+        link: 'Explore semantic search',
+      },
+      languages: {
+        title: 'Across languages',
+        text: 'Search across English, Spanish, and Russian notes.',
+        link: 'Explore multilingual search',
+      },
+      images: {
+        title: 'Text in images',
+        text: 'Find notes by words in screenshots and photos.',
+        link: 'Explore image search',
+      },
+      keys: {
+        title: 'Search in a keystroke',
+        text: 'Search your notes with a quick keyboard shortcut.',
+        link: 'Explore keyboard shortcuts',
+      },
+    },
+    privacy: {
+      eyebrow: 'Privacy & control',
+      title1: 'Decide where your notes live,',
+      title2: 'what gets shared, and how AI works',
+      title3: 'with your information.',
+      toggle: {
+        title: 'Only on this device',
+        text: 'Cloud service can be enabled separately.',
+      },
+      provider: {
+        title: 'Choose your provider',
+        text: 'FixNote AI, your own key, or Ollama',
+      },
+      local: {
+        title: 'Keep it local',
+        text: 'Keep your notes on your device without cloud sync or an account.',
+        link: 'Explore local-only mode',
+      },
+      terms: {
+        title: 'AI on your terms',
+        text: 'Use FixNote AI, bring your own API key, or run AI locally with Ollama.',
+        link: 'Compare AI options',
+      },
+      synced: {
+        title: 'Private, even when synced',
+        text: 'Your notes are encrypted before syncing.\nNot even FixNote can read them.',
+        link: 'How encryption works',
+      },
+    },
+    voice: {
+      title1: 'Taking notes should feel\nas natural as having a thought.',
+      title2: 'Just write it down or say it out loud.',
+      eyebrow: 'Voice capture',
+      title: 'Just say it. Save it.',
+      text: 'Speak your thoughts. FixNote turns them into searchable notes.',
+      link: 'Explore voice notes',
+    },
+    plans: {
+      eyebrow: 'Pricing',
+      title1: 'Start free.',
+      title2: 'Upgrade when you need more.',
+      lead: 'Everything you need for everyday notes is free.\nUpgrade to Pro for encrypted sync, collaboration, and cloud-powered features.',
+      monthly: 'Monthly',
+      annually: 'Annually',
+      free: {
+        name: 'Free',
+        price: '$0',
+        note: 'Free forever',
+        noAccount: 'No account required.',
+        items: [
+          'Unlimited notes',
+          'Offline access',
+          'Smart search',
+          'Voice dictation',
+          'Import and export',
+        ],
+        button: 'Download FixNote',
+      },
+      pro: {
+        name: 'Pro',
+        month: '$7 / month',
+        year: '$60 / year',
+        perYear: '$60 yearly',
+        perMonth: '$5 a month',
+        cancel: 'Cancel anytime',
+        items: [
+          'Everything in Free',
+          'Encrypted sync',
+          'FixNote AI',
+          'Shared notes and folders',
+          'Telegram integration',
+          '20 GB encrypted storage',
+        ],
+        button: 'Upgrade to Pro',
+      },
+    },
   },
 
   tiles: [

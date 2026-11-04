@@ -1,0 +1,80 @@
+---
+import { Image } from 'astro:assets'
+import arc7 from '../../assets/landing/arc-7.svg?url'
+import arc10 from '../../assets/landing/arc-10.svg?url'
+import arc11 from '../../assets/landing/arc-11.svg?url'
+import photo from '../../assets/landing/privacy-photo.jpg'
+import switchOff from '../../assets/landing/switch-off.svg?url'
+import ArrowLink from '../../components/ArrowLink.astro'
+import GlassCard from '../../components/GlassCard.astro'
+import { type Lang, t } from '../../i18n'
+import { featurePath } from '../../lib/pages'
+
+/**
+ * Privacy & control: the headline, the "only on this device" switch, three cards around a photo
+ * and the thin orange arcs of the design (exported from Figma as they are). On wide screens
+ * everything sits where the design puts it.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).landing.privacy
+---
+
+<section id="privacy" class="lp privacy" aria-labelledby="privacy-title">
+  <div class="privacy-stage">
+    <img src={arc7} alt="" class="privacy-arc arc-7" width="67" height="289" aria-hidden="true" />
+    <img src={arc10} alt="" class="privacy-arc arc-10" width="148" height="226" aria-hidden="true" />
+    <img src={arc11} alt="" class="privacy-arc arc-11" width="1039" height="525" aria-hidden="true" />
+    <div class="privacy-head fx">
+      <p class="lp-eyebrow">{c.eyebrow}</p>
+      <h2 id="privacy-title" class="privacy-title">
+        <span class="orange">{c.title1}</span>
+        {' '}
+        <span>{c.title2}</span>
+        {' '}
+        <span>{c.title3}</span>
+      </h2>
+    </div>
+    <div class="privacy-switch fx">
+      <div class="switch-copy">
+        <p class="switch-title">{c.toggle.title}</p>
+        <p class="switch-text">{c.toggle.text}</p>
+      </div>
+      <img src={switchOff} alt="" class="switch-off" width="85" height="69" aria-hidden="true" />
+    </div>
+    <div class="privacy-provider switch-copy fx">
+      <p class="switch-title">{c.provider.title}</p>
+      <p class="switch-text">{c.provider.text}</p>
+    </div>
+    <GlassCard
+      size="lg"
+      class="privacy-local fx"
+      title={c.local.title}
+      text={c.local.text}
+      link={c.local.link}
+      href={featurePath(lang, 'offline')}
+    />
+    <GlassCard
+      size="lg"
+      class="privacy-terms fx"
+      title={c.terms.title}
+      text={c.terms.text}
+      link={c.terms.link}
+      href={featurePath(lang, 'ask-your-notes')}
+    />
+    <article class="privacy-synced fx">
+      <div class="privacy-pic">
+        <Image src={photo} alt="" widths={[496, 744, 992]} sizes="(min-width: 1069px) 496px, 100vw" />
+      </div>
+      <div class="privacy-copy">
+        <div class="glass-copy">
+          <h3 class="lp-card-title">{c.synced.title}</h3>
+          <p class="lp-card-text">{c.synced.text}</p>
+        </div>
+        <ArrowLink href={featurePath(lang, 'encryption')}>{c.synced.link}</ArrowLink>
+      </div>
+    </article>
+  </div>
+</section>

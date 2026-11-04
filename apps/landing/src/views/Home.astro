@@ -2,14 +2,17 @@
 import { type Lang, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 import { app, faqPage, ogImagePath } from '../lib/schema'
-import Blog from './home/Blog.astro'
-import Compare from './home/Compare.astro'
+import '../styles/home.css'
+import HomeFooter from '../components/HomeFooter.astro'
+import Closing from './home/Closing.astro'
 import Faq from './home/Faq.astro'
-import Features from './home/Features.astro'
-import Overview from './home/Overview.astro'
-import Pricing from './home/Pricing.astro'
-import Reasons from './home/Reasons.astro'
-import Tools from './home/Tools.astro'
+import Integrations from './home/Integrations.astro'
+import Intro from './home/Intro.astro'
+import Plans from './home/Plans.astro'
+import Privacy from './home/Privacy.astro'
+import Recall from './home/Recall.astro'
+import Tidy from './home/Tidy.astro'
+import Voice from './home/Voice.astro'
 
 interface Props {
   lang: Lang
@@ -18,7 +21,7 @@ const { lang } = Astro.props
 const d = t(lang)
 const site = Astro.site ?? new URL('https://fixnote.space')
 const image = new URL(ogImagePath(lang, '/'), site).href
-const jsonLd = [app(lang, d.meta.home.description, image), faqPage(d.faq.items)]
+const jsonLd = [app(lang, d.meta.home.description, image), faqPage(d.landing.faq.items)]
 ---
 
 <Base
@@ -28,14 +31,17 @@ const jsonLd = [app(lang, d.meta.home.description, image), faqPage(d.faq.items)]
   path="/"
   jsonLd={jsonLd}
   notes={d.notes}
+  overlay
   og={{ eyebrow: d.hero.eyebrow, title: d.hero.subtitle, shot: `${lang}/home` }}
 >
-  <Overview lang={lang} />
-  <Features lang={lang} />
-  <Reasons lang={lang} />
-  <Tools lang={lang} />
-  <Blog lang={lang} />
-  <Compare lang={lang} />
-  <Pricing lang={lang} />
+  <Intro lang={lang} />
+  <Tidy lang={lang} />
+  <Integrations lang={lang} />
+  <Recall lang={lang} />
+  <Privacy lang={lang} />
+  <Voice lang={lang} />
+  <Plans lang={lang} />
   <Faq lang={lang} />
+  <Closing lang={lang} />
+  <HomeFooter slot="footer" lang={lang} />
 </Base>

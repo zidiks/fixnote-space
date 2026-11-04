@@ -1,0 +1,122 @@
+---
+import { Image } from 'astro:assets'
+import images from '../../assets/landing/recall-images-ru.png'
+import keys from '../../assets/landing/recall-keys.png'
+import languages from '../../assets/landing/recall-languages-ru.png'
+import meaning from '../../assets/landing/recall-meaning-ru.png'
+import ArrowLink from '../../components/ArrowLink.astro'
+import { type Lang, t } from '../../i18n'
+import { featurePath } from '../../lib/pages'
+
+/**
+ * Search: the headline stays while scrolling moves the row of four cards sideways (home.css, the
+ * script below). Without it (phones, reduced motion, no script) the row scrolls by itself.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).landing.recall
+// The current design's order: meaning, languages, keyboard shortcut, text in images.
+const cards = [
+  { ...c.meaning, shot: meaning, href: featurePath(lang, 'search') },
+  { ...c.languages, shot: languages, href: featurePath(lang, 'search') },
+  { ...c.keys, shot: keys, keys: true, href: featurePath(lang, 'search') },
+  { ...c.images, shot: images, wide: true, href: featurePath(lang, 'text-in-images') },
+]
+---
+
+<section id="recall" class="lp recall" aria-labelledby="recall-title">
+  <div class="recall-stage">
+    <div class="recall-head fx">
+      <h2 id="recall-title" class="recall-title">
+        <span>{c.title1}</span>
+        <span class="dim">{c.title2}</span>
+      </h2>
+      <p class="recall-lead">{c.lead}</p>
+    </div>
+    <div class="recall-window">
+      <ul class="recall-track">
+        {
+          cards.map((card) => (
+            <li class="recall-card">
+              <div class:list={['recall-pic', 'wide' in card && card.wide && 'recall-pic-tall', 'keys' in card && 'recall-pic-keys']} aria-hidden="true">
+                {card.shot && <Image src={card.shot} alt="" widths={[547, 1094]} sizes="547px" loading="lazy" />}
+              </div>
+              <div class="recall-copy">
+                <h3 class="lp-card-title">{card.title}</h3>
+                <p class="lp-card-text">{card.text}</p>
+                <ArrowLink href={card.href}>{card.link}</ArrowLink>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  // While the block is pinned, the page's scroll moves the row; the row eases after the wheel like
+  // the intro does. The media query is the one in home.css.
+  ;(() => {
+    const sec = document.getElementById('recall')
+    const track = sec?.querySelector('.recall-track')
+    if (!sec || !track) return
+    const live = matchMedia('(min-width: 735px) and (min-height: 650px) and (prefers-reduced-motion: no-preference)')
+    let travel = 0
+    let now = -1
+    let frame = 0
+    let last = 0
+    const measure = () => {
+      // How far the row has to move for its last card to end where the headline's column ends.
+      const box = track.parentElement
+      const pad = getComputedStyle(box)
+      const room = box.clientWidth - Number.parseFloat(pad.paddingLeft) - Number.parseFloat(pad.paddingRight)
+      travel = Math.max(0, track.scrollWidth - room)
+      sec.style.setProperty('--travel', `${travel}px`)
+    }
+    const goal = () => {
+      // The row starts once the block is pinned, after the space above it has scrolled by.
+      // (Not the stage's offsetTop: a stuck sticky box reports where it is stuck.)
+      const top = sec.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(sec).paddingTop)
+      return travel ? Math.min(1, Math.max(0, -top / (travel * 1.2))) : 0
+    }
+    const tick = (time) => {
+      frame = 0
+      const g = goal()
+      const dt = last ? Math.min(64, time - last) : 16
+      last = time
+      if (now < 0) now = g
+      const gap = g - now
+      if (Math.abs(gap) < 0.0005) now = g
+      else now += gap * (1 - Math.exp(-dt / 70))
+      sec.style.setProperty('--p', now.toFixed(4))
+      if (now !== g) frame = requestAnimationFrame(tick)
+      else last = 0
+    }
+    const wake = () => {
+      if (!frame && live.matches) frame = requestAnimationFrame(tick)
+    }
+    const start = () => {
+      if (live.matches) {
+        sec.setAttribute('data-live', '')
+        measure()
+        now = -1
+        tick(performance.now())
+      } else {
+        cancelAnimationFrame(frame)
+        frame = 0
+        sec.removeAttribute('data-live')
+        sec.removeAttribute('style')
+      }
+    }
+    addEventListener('scroll', wake, { passive: true })
+    addEventListener('resize', () => {
+      if (live.matches) measure()
+      wake()
+    })
+    live.addEventListener('change', start)
+    start()
+  })()
+</script>
