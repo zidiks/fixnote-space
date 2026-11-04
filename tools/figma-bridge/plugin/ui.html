@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        --bg: var(--figma-color-bg, #fff);
+        --fg: var(--figma-color-text, #1e1e1e);
+        --muted: var(--figma-color-text-secondary, #6b6b6b);
+        --line: var(--figma-color-border, #e6e6e6);
+        --soft: var(--figma-color-bg-secondary, #f5f5f5);
+        --accent: #de632c;
+        --ok: #1fa35b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        font: 12px/1.4 Inter, system-ui, sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--soft);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #c7c7c7;
+        transition: background-color 0.2s ease-out;
+      }
+      .status[data-on] .dot {
+        background: var(--ok);
+        box-shadow: 0 0 0 3px rgb(31 163 91 / 0.18);
+      }
+      .status[data-busy] .dot {
+        background: var(--accent);
+        animation: pulse 0.9s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+      p {
+        margin: 10px 0 0;
+        color: var(--muted);
+      }
+      code {
+        padding: 1px 4px;
+        border-radius: 4px;
+        background: var(--soft);
+        font: 11px ui-monospace, Menlo, Consolas, monospace;
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        height: 36px;
+        margin-top: 14px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #fff;
+        font: 500 12px Inter, system-ui, sans-serif;
+        cursor: pointer;
+        transition:
+          scale 0.15s ease-out,
+          opacity 0.15s ease-out;
+      }
+      button:active {
+        scale: 0.97;
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+      .spinner {
+        display: none;
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgb(255 255 255 / 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      button[data-loading] .spinner {
+        display: block;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      h2 {
+        margin: 18px 0 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      ol {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--line);
+      }
+      li {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      li span:last-child {
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      li.error span:first-child {
+        color: #d93025;
+      }
+      .empty {
+        color: var(--muted);
+        padding: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Figma Bridge</h1>
+      <span class="status" id="status"><span class="dot"></span><span id="status-text">Waiting for bridge</span></span>
+    </header>
+    <p id="hint">
+      Start the bridge on this computer: <code>node bridge.mjs serve</code>. Keep this window open while you work.
+    </p>
+    <button id="push" type="button" disabled><span class="spinner"></span><span id="push-label">Send selection</span></button>
+    <h2>Activity</h2>
+    <ol id="log"><li class="empty">Nothing yet.</li></ol>
+
+    <script>
+      // Talks to the bridge on localhost (bridge.mjs): asks for jobs, hands them to the plugin code,
+      // sends back the results. Only localhost is allowed in the manifest.
+      const BRIDGE = 'http://localhost:7331'
+      const status = document.getElementById('status')
+      const statusText = document.getElementById('status-text')
+      const hint = document.getElementById('hint')
+      const push = document.getElementById('push')
+      const pushLabel = document.getElementById('push-label')
+      const log = document.getElementById('log')
+      const waiting = new Map()
+      let online = false
+      let selected = 0
+
+      const time = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      function note(text, error) {
+        if (log.firstElementChild?.classList.contains('empty')) log.innerHTML = ''
+        const li = document.createElement('li')
+        if (error) li.className = 'error'
+        li.innerHTML = '<span></span><span></span>'
+        li.firstChild.textContent = text
+        li.lastChild.textContent = time()
+        log.prepend(li)
+        while (log.children.length > 30) log.lastChild.remove()
+      }
+      function setOnline(on) {
+        if (on === online) return
+        online = on
+        status.toggleAttribute('data-on', on)
+        statusText.textContent = on ? 'Connected' : 'Waiting for bridge'
+        hint.hidden = on
+        push.disabled = !on || !selected
+      }
+      function setBusy(busy) {
+        status.toggleAttribute('data-busy', busy)
+      }
+
+      // Bytes travel as base64 inside JSON.
+      function toBase64(bytes) {
+        let s = ''
+        for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000))
+        return btoa(s)
+      }
+      function pack(result) {
+        if (!result?.files) return result
+        return {
+          ...result,
+          files: result.files.map((f) => (f.bytes ? { name: f.name, base64: toBase64(f.bytes) } : f)),
+        }
+      }
+
+      function run(job) {
+        return new Promise((resolve) => {
+          waiting.set(job.id, resolve)
+          parent.postMessage({ pluginMessage: { type: 'job', job } }, '*')
+        })
+      }
+
+      async function loop() {
+        for (;;) {
+          try {
+            const res = await fetch(`${BRIDGE}/next`, { method: 'POST' })
+            setOnline(true)
+            if (res.status === 200) {
+              const job = await res.json()
+              setBusy(true)
+              const done = await run(job)
+              await fetch(`${BRIDGE}/result/${job.id}`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(done.error ? { error: done.error } : { result: pack(done.result) }),
+              })
+              setBusy(false)
+              note(`${job.kind}${job.label ? ` ${job.label}` : ''}`, Boolean(done.error))
+            }
+          } catch {
+            setOnline(false)
+            setBusy(false)
+            await new Promise((r) => setTimeout(r, 1500))
+          }
+        }
+      }
+
+      push.addEventListener('click', () => {
+        push.disabled = true
+        push.toggleAttribute('data-loading', true)
+        pushLabel.textContent = 'Sending…'
+        parent.postMessage({ pluginMessage: { type: 'push' } }, '*')
+      })
+
+      addEventListener('message', async (event) => {
+        const msg = event.data.pluginMessage
+        if (!msg) return
+        if (msg.type === 'done') {
+          waiting.get(msg.id)?.(msg)
+          waiting.delete(msg.id)
+        }
+        if (msg.type === 'selection') {
+          selected = msg.count
+          push.disabled = !online || !selected
+          pushLabel.textContent = selected ? `Send selection (${selected})` : 'Send selection'
+        }
+        if (msg.type === 'pushed') {
+          try {
+            if (msg.error) throw new Error(msg.error)
+            const res = await fetch(`${BRIDGE}/inbox`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(pack(msg.result)),
+            })
+            if (!res.ok) throw new Error(await res.text())
+            note(`sent ${msg.result.files.length} files to the inbox`)
+          } catch (e) {
+            note(String(e.message || e), true)
+          }
+          push.toggleAttribute('data-loading', false)
+          pushLabel.textContent = selected ? `Send selection (${selected})` : 'Send selection'
+          push.disabled = !online || !selected
+        }
+      })
+
+      loop()
+    </script>
+  </body>
+</html>

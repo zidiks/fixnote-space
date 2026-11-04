@@ -1,9 +1,34 @@
+# The public site is English and Spanish; retired Russian URLs lead to English.
+/ru/blog/assistent-kotoryj-menyaet-zametki/ /blog/ai-assistant-for-notes/ 301
+/ru/blog/claude-i-cursor-chitayut-zametki/ /blog/mcp-server-for-notes/ 301
+/ru/blog/diktovka-bez-interneta/ /blog/offline-speech-to-text-dictation/ 301
+/ru/blog/fixnote-bez-interneta/ /blog/offline-notes-app/ 301
+/ru/blog/fraza-vosstanovleniya/ /blog/recovery-phrase/ 301
+/ru/blog/goryachie-klavishi/ /blog/fixnote-keyboard-shortcuts/ 301
+/ru/blog/itogi-vstrechi-na-kompyutere/ /blog/call-transcription-and-summary/ 301
+/ru/blog/kak-vesti-zametki-chtoby-nahodit/ /blog/how-to-take-notes-you-can-find/ 301
+/ru/blog/kakuyu-model-vybrat-dlya-assistenta/ /blog/which-ai-model-for-fixnote-assistant/ 301
+/ru/blog/luchshie-prilozheniya-dlya-zametok-s-ii/ /blog/best-ai-note-taking-apps/ 301
+/ru/blog/navesti-poryadok/ /blog/tidy-up-notes-with-ai/ 301
+/ru/blog/obshchie-zametki-i-papki/ /blog/shared-notes-and-folders/ 301
+/ru/blog/pereezd-iz-notion-bear-obsidian/ /blog/move-notes-from-notion-obsidian-bear/ 301
+/ru/blog/poisk-po-zametkam-na-treh-yazykah/ /blog/searching-notes-in-three-languages/ 301
+/ru/blog/skvoznoe-shifrovanie-zametok/ /blog/end-to-end-encrypted-notes/ 301
+/ru/blog/ssylka-na-zametku/ /blog/share-a-note-by-link/ 301
+/ru/blog/tekst-s-kartinok/ /blog/search-text-in-images/ 301
+/ru/blog/zametka-dnya-i-povtoryayushchiesya-zadachi/ /blog/daily-note-and-recurring-tasks/ 301
+/ru/blog/zametki-iz-telegram/ /blog/save-telegram-messages-to-notes/ 301
+/ru / 301
+/ru/ / 301
+
 # Download links on the site stay on fixnote.space; the files are published with each release.
 /download/windows   https://github.com/zidiks/fixnote-space/releases/latest/download/FixNote-Windows-x64-setup.exe   302
 /download/mac-arm   https://github.com/zidiks/fixnote-space/releases/latest/download/FixNote-macOS-arm64.dmg   302
 /download/mac-intel https://github.com/zidiks/fixnote-space/releases/latest/download/FixNote-macOS-x64.dmg   302
 # What installed desktop apps check for updates (tauri.conf.json → plugins.updater).
 /download/latest.json https://github.com/zidiks/fixnote-space/releases/latest/download/latest.json   302
-# English moved from /en/ to the root (Russian is under /ru/ now); old links keep working.
+# English moved from /en/ to the root ; old links keep working.
 /en     /       301
 /en/*   /:splat 301
+
+/ru/* /:splat 301

@@ -1,0 +1,25 @@
+---
+import { Image } from 'astro:assets'
+import glow from '../../assets/landing/closing-glow.png'
+import photo from '../../assets/landing/closing-photo.jpg'
+import { APP_URL, type Lang, localePath, t } from '../../i18n'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+---
+
+<section class="closing" aria-labelledby="closing-title">
+  <Image src={photo} alt="" class="closing-photo" widths={[800, 1568]} sizes="(min-width: 1069px) 1568px, 100vw" loading="lazy" />
+  <Image src={glow} alt="" class="closing-glow" widths={[800, 1568]} sizes="(min-width: 1069px) 1568px, 100vw" loading="lazy" />
+  <h2 id="closing-title">{d.landing.closing.title}</h2>
+  <div class="closing-actions">
+    <div class="hero-ctas">
+      <a href={localePath(lang, '/download/')} class="btn-pill btn-pill-orange">{d.intro.download}</a>
+      <a href={APP_URL} class="btn-pill btn-pill-white">{d.intro.tryBrowser}</a>
+    </div>
+    <p class="hero-chips"><span>{d.intro.free}</span><span class="hero-dot" aria-hidden="true"></span><span>{d.intro.noAccount}</span></p>
+  </div>
+</section>

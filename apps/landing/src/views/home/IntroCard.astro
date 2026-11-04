@@ -1,0 +1,125 @@
+---
+import { Image } from 'astro:assets'
+import avatar1 from '../../assets/landing/avatar1.png'
+import avatar2 from '../../assets/landing/avatar2.png'
+import avatar3 from '../../assets/landing/avatar3.png'
+import photo from '../../assets/landing/encrypted-photo.png'
+import bear from '../../assets/landing/import-bear.png'
+import notion from '../../assets/landing/import-notion.png'
+import obsidian from '../../assets/landing/import-obsidian.png'
+import refine from '../../assets/landing/refine-ru.png'
+import arc1 from '../../assets/landing/together-arc-1.png?url'
+import arc2 from '../../assets/landing/together-arc-2.png?url'
+import arc3 from '../../assets/landing/together-arc-3.png?url'
+import { type Lang, t } from '../../i18n'
+
+/**
+ * The inside of one card of the intro (intro.css). `hero` is the square with an icon that floats
+ * around the app; `grid` is the card in the Experience collage. The flying copy and the collage
+ * card render the same `grid` face, so the hand-over at the end of the flight is invisible.
+ */
+export type CardKind = 'offline' | 'together' | 'encrypted' | 'refine' | 'moveIn'
+interface Props {
+  lang: Lang
+  kind: CardKind
+  face: 'hero' | 'grid'
+  /** Kept by the callers; the card no longer needs unique ids. */
+  uid?: string
+  /** The collage card has a real heading; the flying copies are decoration. */
+  heading?: boolean
+}
+const { lang, kind, face, heading = false } = Astro.props
+const c = t(lang).intro[kind]
+const Title = heading ? 'h3' : 'p'
+// 3x PNGs preserve Figma's progressive blur (SVG flattens it to uniform blur).
+// Positions and dimensions are the actual rendered bounds, relative to the inner card.
+const arcs = [
+  { src: arc1, x: 0, w: 107, h: 208 },
+  { src: arc2, x: 127.68298, w: 160.31702, h: 155.02606 },
+  { src: arc3, x: 75.07599, w: 169.07819, h: 116.41028 },
+]
+---
+
+{
+  kind === 'together' ? (
+    <div class="card-together">
+      {arcs.map((a) => (
+        <img
+          src={a.src}
+          alt=""
+          class="arc"
+          width={a.w}
+          height={a.h}
+          style={`left:calc(${a.x} * var(--u));width:calc(${a.w} * var(--u));height:calc(${a.h} * var(--u))`}
+        />
+      ))}
+      <div class="avatars" aria-hidden="true">
+        <Image src={avatar1} alt="" width={58} height={58} densities={[2, 3]} loading="eager" />
+        <span><Image src={avatar2} alt="" width={73} height={73} densities={[2, 3]} loading="eager" /></span>
+        <span><Image src={avatar3} alt="" width={73} height={73} densities={[2, 3]} loading="eager" /></span>
+      </div>
+      <div class="card-copy">
+        <Title class="card-title">{c.title}</Title>
+        <p class="card-text">{c.text}</p>
+      </div>
+    </div>
+  ) : face === 'hero' ? (
+    <div class="card-hero">
+      {kind === 'offline' ? (
+        <svg class="card-icon" width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path opacity="0.3" d="M38.28 10a19.9 19.9 0 0 1-.12 28.13M10 38.28A19.9 19.9 0 0 1 9.87 9.84" stroke="#DE632C" stroke-opacity="0.8" stroke-width="2" stroke-linecap="round" />
+          <path opacity="0.5" d="M32.57 16.09a11 11 0 0 1-.08 15.82M15.6 32a11 11 0 0 1-.08-16" stroke="#DE632C" stroke-width="2" stroke-linecap="round" />
+          <circle cx="24" cy="24" r="4" stroke="#DE632C" stroke-width="2" />
+        </svg>
+      ) : (
+        <svg class="card-icon" width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+          <path opacity="0.3" d="M15.83 31.67c-5.97 0-8.96 0-10.81-1.86C3.17 27.96 3.17 24.97 3.17 19s0-8.96 1.85-10.81c1.85-1.86 4.84-1.86 10.81-1.86H19l4.75.01c4.93.01 7.55.17 9.23 1.85 1.85 1.85 1.85 4.84 1.85 10.81s0 8.96-1.85 10.81c-1.68 1.68-4.3 1.84-9.23 1.85l-4.75.02z" stroke="#DE632C" stroke-width="2" stroke-linecap="round" />
+          <circle cx="12.67" cy="19" r="1.58" fill="#DE632C" />
+          <circle cx="19" cy="19" r="1.58" fill="#DE632C" />
+          <path d="M23.75 3.17v31.66" stroke="#DE632C" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      )}
+      <div class="card-copy">
+        <p class="card-title">{c.title}</p>
+        <p class="card-text">{c.text}</p>
+      </div>
+    </div>
+  ) : kind === 'offline' ? (
+    <div class="card-offline">
+      <Title class="card-title">{c.title}</Title>
+      <p class="card-text">{c.text}</p>
+    </div>
+  ) : kind === 'encrypted' ? (
+    <div class="card-encrypted">
+      <div class="card-copy">
+        <Title class="card-title">{c.title}</Title>
+        <p class="card-text">{c.text}</p>
+      </div>
+      <div class="card-photo">
+        <Image src={photo} alt="" widths={[436, 668]} sizes="436px" fetchpriority="low" />
+      </div>
+    </div>
+  ) : kind === 'refine' ? (
+    <div class="card-refine">
+      <div class="card-shot">
+        <Image src={refine} alt="" widths={[436, 639]} sizes="436px" loading="lazy" />
+      </div>
+      <div class="card-copy">
+        <Title class="card-title">{c.title}</Title>
+        <p class="card-text">{c.text}</p>
+      </div>
+    </div>
+  ) : (
+    <div class="card-move">
+      <div class="card-copy">
+        <Title class="card-title">{c.title}</Title>
+        <p class="card-text">{c.text}</p>
+      </div>
+      <div class="apps" aria-hidden="true">
+        <span><Image src={obsidian} alt="" width={58} height={58} densities={[2]} loading="lazy" /></span>
+        <span class="app-bear"><Image src={bear} alt="" width={76} height={76} densities={[2]} loading="lazy" /></span>
+        <span class="app-notion"><Image src={notion} alt="" width={32} height={32} densities={[2]} loading="lazy" /></span>
+      </div>
+    </div>
+  )
+}

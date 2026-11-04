@@ -5,8 +5,9 @@ import type { Part, Tone } from './types'
 
 export type { Part, Tone }
 
-export const LANGS = ['en', 'ru', 'es'] as const
-export type Lang = (typeof LANGS)[number]
+/** Published site languages. The Russian dictionary remains an internal translation reference. */
+export const LANGS = ['en', 'es'] as const
+export type Lang = 'en' | 'ru' | 'es'
 export const DEFAULT_LANG: Lang = 'en'
 
 /** Names in their own language, for the language switcher. */
@@ -66,4 +67,4 @@ export function splitPath(pathname: string): { lang: Lang; path: string } {
 }
 
 export const isLang = (value: string | undefined): value is Lang =>
-  (LANGS as readonly string[]).includes(value ?? '')
+  value === 'en' || value === 'es' || value === 'ru'

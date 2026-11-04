@@ -1,6 +1,6 @@
 ---
-import interCyrillic from '@fontsource-variable/inter/files/inter-cyrillic-wght-normal.woff2?url'
-import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
+import geistCyrillic from '@fontsource-variable/geist/files/geist-cyrillic-wght-normal.woff2?url'
+import geistLatin from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url'
 import Consent from '../components/Consent.astro'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
@@ -31,6 +31,8 @@ interface Props {
   notes?: readonly string[]
   /** The page's name in the footer breadcrumb (none on the home page). */
   crumb?: string
+  /** The first block draws under the header (no spacer). */
+  overlay?: boolean
 }
 const {
   lang,
@@ -44,6 +46,7 @@ const {
   crumb,
   og = {},
   aboutApp = true,
+  overlay = false,
 } = Astro.props
 const site = Astro.site ?? new URL('https://fixnote.space')
 const alternates: Partial<Record<Lang, string>> =
@@ -74,7 +77,7 @@ const graph = [
       ))
     }
     {alternates.en && <link rel="alternate" hreflang="x-default" href={new URL(alternates.en, site).href} />}
-    <link rel="preload" href={lang === 'ru' ? interCyrillic : interLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={lang === 'ru' ? geistCyrillic : geistLatin} as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#f5f5f7" />
@@ -102,11 +105,11 @@ const graph = [
       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:shadow"
       >{d.nav.skip}</a
     >
-    <Header lang={lang} path={path} alternates={alternates} />
-    <main id="main" class="flex-1">
+    <Header lang={lang} path={path} alternates={alternates} overlay={overlay} />
+    <main id="main" class:list={['flex-1', path === '/' && 'bg-canvas']}>
       <slot />
     </main>
-    <Footer lang={lang} alternates={alternates} notes={notes} crumb={crumb} />
+    <slot name="footer"><Footer lang={lang} alternates={alternates} notes={notes} crumb={crumb} /></slot>
     {
       ANALYTICS && (
         <>

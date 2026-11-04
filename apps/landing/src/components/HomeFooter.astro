@@ -1,0 +1,67 @@
+---
+import mark from '../assets/landing/home-mark.svg?url'
+import wordmark from '../assets/landing/wordmark.svg?url'
+import { APPS, RIVALS } from '../data/apps'
+import { APP_URL, CONTACT_EMAIL, type Lang, localePath, t } from '../i18n'
+import { topicHref } from '../lib/blog'
+import { vsPath } from '../lib/pages'
+
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const home = localePath(lang, '/')
+const guide = await topicHref(lang, 'best-ai-note-apps', '/blog/')
+const columns = [
+  {
+    title: d.footer.explore,
+    links: [
+      { label: d.nav.overview, href: home },
+      { label: d.nav.features, href: `${home}#experience` },
+      { label: d.nav.tools, href: `${home}#integrations` },
+      { label: d.nav.compare, href: guide },
+      { label: d.nav.pricing, href: `${home}#pricing` },
+      { label: d.nav.faq, href: `${home}#faq` },
+    ],
+  },
+  {
+    title: d.footer.compare,
+    links: [
+      ...RIVALS.map((r) => ({ label: APPS[r].name, href: vsPath(lang, r) })),
+      { label: d.footer.guide, href: guide },
+    ],
+  },
+  {
+    title: d.footer.download,
+    links: [
+      { label: 'Windows', href: localePath(lang, '/download/') },
+      { label: 'macOS', note: 'Apple Silicon', href: localePath(lang, '/download/#mac') },
+      { label: 'macOS', note: 'Intel', href: localePath(lang, '/download/#mac') },
+      { label: d.download.web.name, href: APP_URL },
+    ],
+  },
+  {
+    title: d.footer.support,
+    links: [
+      { label: d.footer.privacy, href: localePath(lang, '/privacy/') },
+      { label: d.consent.settings, href: localePath(lang, '/privacy/#cookies'), cookies: true },
+      { label: d.landing.footer.contact, href: `mailto:${CONTACT_EMAIL}` },
+    ],
+  },
+]
+---
+
+<footer class="home-footer">
+  <div class="home-footer-panel">
+    <nav aria-label={d.footer.directory} class="home-footer-nav">
+      {columns.map(col=>(<div><h3>{col.title}</h3><ul>{col.links.map(link=>(<li><a href={link.href} data-consent-open={'cookies' in link ? '' : undefined}>{link.label}{'note' in link && <small>{link.note}</small>}</a></li>))}</ul></div>))}
+    </nav>
+    <a href={home} class="home-footer-mark" aria-label="FixNote"><img src={mark} alt="" width="72" height="72" /></a>
+    <img src={wordmark} class="home-footer-wordmark" alt="FixNote" width="586" height="140" />
+    <div class="home-footer-bottom">
+      <p>{d.landing.footer.question}<br /><span>{d.landing.footer.write}{' '}<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</span></p>
+      <p>Copyright © {new Date().getFullYear()} FixNote.<br /><span>{d.footer.rights}</span></p>
+    </div>
+  </div>
+</footer>

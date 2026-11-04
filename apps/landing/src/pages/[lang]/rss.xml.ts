@@ -2,10 +2,7 @@ import type { APIContext, GetStaticPaths } from 'astro'
 import { isLang } from '../../i18n'
 import { blogFeed } from '../../lib/rss'
 
-export const getStaticPaths = (() => [
-  { params: { lang: 'ru' } },
-  { params: { lang: 'es' } },
-]) satisfies GetStaticPaths
+export const getStaticPaths = (() => [{ params: { lang: 'es' } }]) satisfies GetStaticPaths
 
 export function GET(context: APIContext) {
   const { lang } = context.params

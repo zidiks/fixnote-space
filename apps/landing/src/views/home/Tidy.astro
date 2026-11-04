@@ -1,0 +1,43 @@
+---
+import { Image } from 'astro:assets'
+import tidy from '../../assets/landing/tidy-ru.png'
+import ArrowLink from '../../components/ArrowLink.astro'
+import { type Lang, t } from '../../i18n'
+import { featurePath } from '../../lib/pages'
+
+/** Tidy up: the words and three points on the left, the Tidy up screen on the right. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).landing.tidy
+---
+
+<section id="tidy" class="lp tidy" aria-labelledby="tidy-title">
+  <div class="tidy-copy">
+    <div class="fx">
+      <p class="lp-eyebrow">{c.eyebrow}</p>
+      <h2 id="tidy-title" class="tidy-title">
+        <span class="tidy-faint">{c.title1}</span>
+        <span>{c.title2}</span>
+      </h2>
+      <p class="lp-lead tidy-lead">{c.lead}</p>
+    </div>
+    <div class="tidy-points">
+      <ul class="tidy-list">
+        {
+          c.items.map((item, i) => (
+            <li class="fx" style={`transition-delay:${i * 90}ms`}>
+              <h3 class="tidy-point">{item.title}</h3>
+              <p class="lp-card-text">{item.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+      <ArrowLink href={featurePath(lang, 'tidy-up')} size="lg" class="fx">{c.link}</ArrowLink>
+    </div>
+  </div>
+  <div class="tidy-shot fx">
+    <Image src={tidy} alt={c.alt} widths={[578, 612]} sizes="(min-width: 1069px) 578px, 100vw" />
+  </div>
+</section>

@@ -1,0 +1,70 @@
+---
+import { Image } from 'astro:assets'
+import glow from '../../assets/landing/pro-glow.png'
+import { type Lang, localePath, t } from '../../i18n'
+
+/**
+ * Pricing: Free and Pro side by side, as the design draws them. The switch shows the monthly or
+ * the yearly price of Pro with no script (a checkbox and :has in home.css).
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).landing.plans
+const download = localePath(lang, '/download/')
+---
+
+<section id="pricing" class="lp plans" aria-labelledby="plans-title">
+  <div class="lp-head fx">
+    <p class="lp-eyebrow">{c.eyebrow}</p>
+    <h2 id="plans-title" class="lp-title plans-title">
+      <span class="orange">{c.title1}</span>
+      <span>{c.title2}</span>
+    </h2>
+    <p class="lp-lead plans-lead">{c.lead}</p>
+  </div>
+  <div class="plans-switch fx">
+    <span aria-hidden="true">{c.monthly}</span>
+    <label class="switch">
+      <input type="checkbox" id="plans-yearly" class="sr-only" />
+      <span class="sr-only">{c.annually}</span>
+      <span class="switch-dot" aria-hidden="true"></span>
+      <span></span>
+    </label>
+    <span aria-hidden="true">{c.annually}</span>
+  </div>
+  <div class="plans-cards">
+    <article class="plan plan-free fx">
+      <div class="plan-group">
+        <div class="plan-head">
+          <h3 class="plan-name">{c.free.name}</h3>
+          <p class="plan-price">{c.free.price}</p>
+          <p class="plan-meta">
+            <span>{c.free.note}</span>
+            <span class="plan-dot" aria-hidden="true"></span>
+            <span>{c.free.noAccount}</span>
+          </p>
+        </div>
+        <ul class="plan-list">{c.free.items.map((item) => <li>{item}</li>)}</ul>
+      </div>
+      <a href={download} class="btn-pill plan-button plan-button-soft">{c.free.button}</a>
+    </article>
+    <article class="plan plan-pro fx" style="transition-delay:90ms">
+      <Image src={glow} alt="" class="plan-glow" widths={[468, 936]} sizes="468px" loading="lazy" />
+      <div class="plan-head">
+        <h3 class="plan-name">{c.pro.name}</h3>
+        <p class="plan-price orange">
+          <span class="per-month">{c.pro.month}</span><span class="per-year">{c.pro.year}</span>
+        </p>
+        <p class="plan-meta">
+          <span class="per-month">{c.pro.perYear}</span><span class="per-year">{c.pro.perMonth}</span>
+          <span class="plan-dot" aria-hidden="true"></span>
+          <span>{c.pro.cancel}</span>
+        </p>
+      </div>
+      <ul class="plan-list">{c.pro.items.map((item) => <li>{item}</li>)}</ul>
+      <a href={download} class="btn-pill btn-pill-orange plan-button">{c.pro.button}</a>
+    </article>
+  </div>
+</section>

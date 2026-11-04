@@ -1,0 +1,14 @@
+{
+  "name": "Figma Bridge (local)",
+  "id": "figma-bridge-local-dev",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"],
+    "devAllowedDomains": ["http://localhost:7331"],
+    "reasoning": "Talks only to the bridge running on this computer."
+  }
+}

@@ -1,0 +1,230 @@
+---
+import { Picture } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+import { APP_URL, DOWNLOADS, type Lang, localePath, t } from '../../i18n'
+import '../../styles/intro.css'
+import IntroCard, { type CardKind } from './IntroCard.astro'
+
+/**
+ * The first three screens as one scene (intro.css): the hero, then the app slides up over it while
+ * the hero sinks into blur, then the Experience block slides over the app, and the three floating
+ * cards fly into their places in its collage. Scrolling drives it: the script below turns the scroll
+ * position into a few numbers (--a, --h, --f, --b, --gy) and CSS places everything from them.
+ *
+ * Without the script, with reduced motion or on smaller screens it is a plain page: the hero with
+ * the app under it, then the collage. Every word is in the HTML either way.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const c = d.intro
+const downloadPage = localePath(lang, '/download/')
+const shots = import.meta.glob<{ default: ImageMetadata }>('../../assets/shots/*/home.png', {
+  eager: true,
+})
+const shot = shots[`../../assets/shots/${lang}/home.png`]?.default
+if (!shot) throw new Error(`No screenshot ${lang}/home`)
+const flying: CardKind[] = ['offline', 'encrypted', 'together']
+---
+
+<section id="intro" class="intro" aria-labelledby="intro-title">
+  <div class="intro-stage">
+    <div class="hero">
+      <div>
+        <h1 id="intro-title" class="hero-title">
+          <span class="dim">{c.line1}</span>
+          <span>{c.line2}</span>
+        </h1>
+        <p class="hero-lead">{c.lead}</p>
+      </div>
+      <div class="hero-actions">
+        <div class="hero-ctas">
+          <a
+            href={downloadPage}
+            id="hero-download"
+            class="btn-pill btn-pill-orange"
+            data-windows-href={DOWNLOADS.windows}
+            data-mac-href={`${downloadPage}#mac`}>{c.download}</a
+          >
+          <a href={APP_URL} class="btn-pill btn-pill-white">{c.tryBrowser}</a>
+        </div>
+        <p class="hero-chips">
+          <span>{c.free}</span>
+          <span class="hero-dot" aria-hidden="true"></span>
+          <span>{c.noAccount}</span>
+        </p>
+      </div>
+    </div>
+    <div class="intro-app">
+      <Picture
+        src={shot}
+        alt={c.shotAlt}
+        formats={['avif', 'webp']}
+        widths={[800, 1240, 1860, 2480]}
+        sizes="(min-width: 1069px) 1241px, calc(100vw - 32px)"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+  </div>
+  <div class="fly-layer" aria-hidden="true">
+    {
+      flying.map((kind) => (
+        <div class:list={['fly', `fly-${kind}`]}>
+          {kind !== 'together' && (
+            <div class="fly-face fly-hero">
+              <IntroCard lang={lang} kind={kind} face="hero" uid={`fh-${kind}`} />
+            </div>
+          )}
+          <div class="fly-face fly-grid">
+            <IntroCard lang={lang} kind={kind} face="grid" uid={`fg-${kind}`} />
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<section id="experience" class="exp" aria-labelledby="exp-title">
+  <div class="exp-head">
+    <p class="exp-eyebrow">{c.eyebrow}</p>
+    <h2 id="exp-title" class="exp-title">
+      <span class="dim">{c.title1}</span>
+      <span>{c.title2}</span>
+    </h2>
+    <p class="exp-sub">{c.sub}</p>
+  </div>
+  <div class="exp-grid">
+    <article class="xc xc-refine"><IntroCard lang={lang} kind="refine" face="grid" uid="xc-refine" heading /></article>
+    <article class="xc xc-together" data-flown>
+      <IntroCard lang={lang} kind="together" face="grid" uid="xc-together" heading />
+    </article>
+    <article class="xc xc-offline" data-flown>
+      <IntroCard lang={lang} kind="offline" face="grid" uid="xc-offline" heading />
+    </article>
+    <article class="xc xc-move"><IntroCard lang={lang} kind="moveIn" face="grid" uid="xc-move" heading /></article>
+    <article class="xc xc-encrypted" data-flown>
+      <IntroCard lang={lang} kind="encrypted" face="grid" uid="xc-encrypted" heading />
+    </article>
+  </div>
+</section>
+
+<script is:inline>
+  // Point the main button at the visitor's system. Windows gets the installer; on a Mac the
+  // download page asks which chip (the browser can't tell Apple Silicon from Intel reliably).
+  ;(() => {
+    const b = document.getElementById('hero-download')
+    const ua = navigator.userAgent
+    const os = /Windows/.test(ua) ? 'windows' : /Macintosh/.test(ua) && !('ontouchend' in document) ? 'mac' : ''
+    if (!b || !os) return
+    b.href = b.dataset[`${os}Href`]
+  })()
+
+  // The scene. Reads where the intro and the collage are, eases toward that (a soft follow, so a
+  // wheel step glides), writes a handful of custom properties; CSS does the rest. Runs only while
+  // something moves. The media query is the one in intro.css.
+  ;(() => {
+    const intro = document.getElementById('intro')
+    const exp = document.getElementById('experience')
+    const layer = intro?.querySelector('.fly-layer')
+    const hero = intro?.querySelector('.hero')
+    const grid = exp?.querySelector('.exp-grid')
+    if (!intro || !exp || !layer || !hero || !grid) return
+    const live = matchMedia('(min-width: 1280px) and (min-height: 600px) and (prefers-reduced-motion: no-preference)')
+    const clamp = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
+    const inOut = (v) => (v < 0.5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 3 / 2)
+    const out = (v) => 1 - (1 - v) ** 3
+    let now = null
+    let frame = 0
+    let last = 0
+
+    const goal = () => {
+      const vh = innerHeight
+      const top = intro.getBoundingClientRect().top
+      const expTop = exp.getBoundingClientRect().top
+      const gridTop = grid.getBoundingClientRect().top
+      const layerTop = layer.getBoundingClientRect().top
+      // The collage is 1240 design px wide; it lands with its bottom 64px above the screen's.
+      const u = grid.offsetWidth / 1240
+      const lead = gridTop - expTop
+      const land = vh - 594 * u - 64
+      return {
+        p1: clamp(-top / (0.75 * vh)),
+        f: clamp((vh - expTop) / (0.75 * vh)),
+        p2: clamp((vh + lead - gridTop) / (vh + lead - land)),
+        gy: gridTop - layerTop,
+      }
+    }
+
+    const paint = (g) => {
+      const s = intro.style
+      s.setProperty('--a', inOut(now.p1).toFixed(4))
+      s.setProperty('--ap', out(now.p1).toFixed(4))
+      s.setProperty('--h', out(clamp(now.p1 / 0.6)).toFixed(4))
+      s.setProperty('--f', inOut(now.f).toFixed(4))
+      s.setProperty('--b', inOut(now.p2).toFixed(4))
+      s.setProperty('--gy', `${g.gy.toFixed(1)}px`)
+      exp.style.setProperty('--r', out(clamp((now.p2 - 0.15) / 0.65)).toFixed(4))
+      const landed = now.p2 > 0.999
+      intro.toggleAttribute('data-landed', landed)
+      exp.toggleAttribute('data-landed', landed)
+    }
+
+    const tick = (time) => {
+      frame = 0
+      const g = goal()
+      const dt = last ? Math.min(64, time - last) : 16
+      last = time
+      if (!now) now = { ...g }
+      const k = 1 - Math.exp(-dt / 70)
+      let moving = false
+      for (const key of ['p1', 'f', 'p2']) {
+        const gap = g[key] - now[key]
+        if (Math.abs(gap) < 0.0005) now[key] = g[key]
+        else {
+          now[key] += gap * k
+          moving = true
+        }
+      }
+      paint(g)
+      if (moving) frame = requestAnimationFrame(tick)
+      else last = 0
+    }
+    const wake = () => {
+      if (!frame && live.matches) frame = requestAnimationFrame(tick)
+    }
+
+    const start = () => {
+      if (live.matches) {
+        intro.setAttribute('data-live', '')
+        exp.setAttribute('data-live', '')
+        now = null
+        // The first frame lands where the page is, with no glide (a reload halfway down).
+        tick(performance.now())
+      } else {
+        cancelAnimationFrame(frame)
+        frame = 0
+        for (const el of [intro, exp]) {
+          el.removeAttribute('data-live')
+          el.removeAttribute('data-landed')
+          el.removeAttribute('style')
+        }
+      }
+    }
+    // Keep the first card clear of the complete hero, including translated text and OS buttons.
+    // offsetHeight is unaffected by the scroll scene's transforms and fading.
+    const measureHero = () => {
+      const top = Number.parseFloat(getComputedStyle(hero).top)
+      if (Number.isFinite(top)) intro.style.setProperty('--hero-bottom', `${top + hero.offsetHeight}px`)
+      wake()
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(measureHero).observe(hero)
+    addEventListener('scroll', wake, { passive: true })
+    addEventListener('resize', measureHero)
+    live.addEventListener('change', start)
+    start()
+    measureHero()
+  })()
+</script>

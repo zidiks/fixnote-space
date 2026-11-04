@@ -23,7 +23,7 @@ const localized404 = {
   name: 'localized-404',
   hooks: {
     'astro:build:done': ({ dir }) => {
-      for (const lang of ['ru', 'es']) {
+      for (const lang of ['es']) {
         const folder = fileURLToPath(new URL(`${lang}/404/`, dir))
         if (!existsSync(`${folder}index.html`)) continue
         renameSync(`${folder}index.html`, fileURLToPath(new URL(`${lang}/404.html`, dir)))
@@ -70,7 +70,7 @@ const slashRedirects = {
 
 // Static site for fixnote.space: every page is prebuilt HTML with almost no JavaScript, so it
 // renders fast (Core Web Vitals) and search engines read it as is. English is served at the
-// root, Russian under /ru/ and Spanish under /es/.
+// root and Spanish under /es/.
 export default defineConfig({
   site: 'https://fixnote.space',
   trailingSlash: 'always',
@@ -81,7 +81,7 @@ export default defineConfig({
   },
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'ru', 'es'],
+    locales: ['en', 'es'],
     routing: { prefixDefaultLocale: false },
   },
   integrations: [
@@ -89,7 +89,7 @@ export default defineConfig({
       filter: (page) => !/\/404\/?$/.test(page),
       i18n: {
         defaultLocale: 'en',
-        locales: { en: 'en-US', ru: 'ru-RU', es: 'es-ES' },
+        locales: { en: 'en-US', es: 'es-ES' },
       },
     }),
     localized404,

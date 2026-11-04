@@ -1,0 +1,49 @@
+---
+import { Image } from 'astro:assets'
+import shot from '../../assets/landing/integrations-ru.png'
+import chatgpt from '../../assets/landing/tools/tool-chatgpt.svg?url'
+import claude from '../../assets/landing/tools/tool-claude.svg?url'
+import gemini from '../../assets/landing/tools/tool-gemini.svg?url'
+import GlassCard from '../../components/GlassCard.astro'
+import { type Lang, t } from '../../i18n'
+import { featurePath } from '../../lib/pages'
+
+/** Integrations: the headline, the AI apps it works with, two cards and a note in the app. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).landing.integrations
+const mcp = featurePath(lang, 'mcp')
+---
+
+<section id="integrations" class="lp integ" aria-labelledby="integ-title">
+  <div class="lp-head fx">
+    <p class="lp-eyebrow">{c.eyebrow}</p>
+    <h2 id="integ-title" class="lp-title">{c.title}</h2>
+    <p class="lp-lead integ-lead">{c.lead}</p>
+  </div>
+  <div class="tools fx">
+    <p class="tools-label">{c.tools}</p>
+    <ul class="tools-row">
+      <li><img src={chatgpt} alt="ChatGPT" width="74" height="74" class="tool-svg" /></li>
+      <li><img src={gemini} alt="Gemini" width="74" height="74" class="tool-svg" /></li>
+      <li><img src={claude} alt="Claude" width="74" height="74" class="tool-svg" /></li>
+    </ul>
+  </div>
+  <div class="integ-grid">
+    <div class="integ-cards">
+      <GlassCard title={c.mcp.title} text={c.mcp.text} link={c.mcp.link} href={mcp} class="fx" />
+      <GlassCard
+        title={c.control.title}
+        text={c.control.text}
+        link={c.control.link}
+        href={mcp}
+        class="fx"
+      />
+    </div>
+    <div class="integ-shot fx">
+      <Image src={shot} alt={c.alt} widths={[916, 1374, 1832]} sizes="(min-width: 1069px) 916px, 100vw" />
+    </div>
+  </div>
+</section>

@@ -1,0 +1,40 @@
+---
+import ArrowLink from './ArrowLink.astro'
+
+/**
+ * A white square in a frosted rim with the lock icon, a title, a line and a link (home.css):
+ * 288 design px inside (Integrations) or 380 (Privacy).
+ */
+interface Props {
+  title: string
+  text: string
+  link: string
+  href: string
+  size?: 'sm' | 'lg'
+  class?: string
+}
+const { title, text, link, href, size = 'sm', class: className } = Astro.props
+---
+
+<div class:list={['glass', size === 'lg' && 'glass-lg', className]}>
+  <div class="glass-card">
+    <svg class="glass-icon" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+      <path
+        opacity="0.3"
+        d="M15.83 31.67c-5.97 0-8.96 0-10.81-1.86C3.17 27.96 3.17 24.97 3.17 19s0-8.96 1.85-10.81c1.85-1.86 4.84-1.86 10.81-1.86H19l4.75.01c4.93.01 7.55.17 9.23 1.85 1.85 1.85 1.85 4.84 1.85 10.81s0 8.96-1.85 10.81c-1.68 1.68-4.3 1.84-9.23 1.85l-4.75.02z"
+        stroke="#DE632C"
+        stroke-width="2"
+        stroke-linecap="round"></path>
+      <circle cx="12.67" cy="19" r="1.58" fill="#DE632C"></circle>
+      <circle cx="19" cy="19" r="1.58" fill="#DE632C"></circle>
+      <path d="M23.75 3.17v31.66" stroke="#DE632C" stroke-width="2" stroke-linecap="round"></path>
+    </svg>
+    <div class="glass-body">
+      <div class="glass-copy">
+        <h3 class="lp-card-title">{title}</h3>
+        <p class="lp-card-text">{text}</p>
+      </div>
+      <ArrowLink href={href}>{link}</ArrowLink>
+    </div>
+  </div>
+</div>

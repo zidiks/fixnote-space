@@ -1,5 +1,5 @@
 import { type CollectionEntry, getCollection } from 'astro:content'
-import { isLang, type Lang, localePath } from '../i18n'
+import { isLang, LANGS, type Lang, localePath } from '../i18n'
 
 export type Post = CollectionEntry<'blog'>
 
@@ -30,7 +30,11 @@ export async function translations(post: Post): Promise<Partial<Record<Lang, str
     'blog',
     (p) => p.data.translationKey === post.data.translationKey && !p.data.draft,
   )
-  return Object.fromEntries(all.map((p) => [postInfo(p).lang, postPath(p)]))
+  return Object.fromEntries(
+    all
+      .filter((p) => (LANGS as readonly string[]).includes(postInfo(p).lang))
+      .map((p) => [postInfo(p).lang, postPath(p)]),
+  )
 }
 
 export function readingMinutes(post: Post): number {

@@ -6,7 +6,7 @@ import VsPage from '../../../views/VsPage.astro'
 export const getStaticPaths = (async () =>
   (
     await Promise.all(
-      (['ru', 'es'] as const).map(async (lang) =>
+      (['es'] as const).map(async (lang) =>
         (
           await getComparisons(lang)
         ).map(({ rival, entry }) => ({

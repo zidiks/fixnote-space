@@ -23,3 +23,5 @@ apps/desktop/src-tauri/binaries/
 .indexnow-pending.json
 
 .idea
+# Layers pulled from Figma (tools/figma-bridge)
+.figma/

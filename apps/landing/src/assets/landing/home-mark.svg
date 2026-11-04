@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 1024 1024">
+  <title>FixNote</title>
+  <circle cx="512" cy="512" r="512" fill="#de632c"/>
+  <g transform="translate(92.16 92.16) scale(.82)">
+  <path d="M322 238h290l150 150v370a36 36 0 0 1-36 36H322a36 36 0 0 1-36-36V274a36 36 0 0 1 36-36z" fill="#fff"/>
+  <path d="M612 238l150 150H648a36 36 0 0 1-36-36z" fill="#de632c" opacity=".25"/>
+  <path d="M370 470h284M370 566h284M370 662h176" fill="none" stroke="#de632c" stroke-width="44" stroke-linecap="round"/>
+  </g>
+</svg>

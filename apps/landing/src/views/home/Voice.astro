@@ -1,0 +1,35 @@
+---
+import { Image } from 'astro:assets'
+import glow from '../../assets/landing/voice-glow.png'
+import photo from '../../assets/landing/voice-photo.jpg'
+import ArrowLink from '../../components/ArrowLink.astro'
+import { type Lang, t } from '../../i18n'
+import { featurePath } from '../../lib/pages'
+
+/** Voice capture: a two-colour headline, a wide photo with the design's warm glow and the link. */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).landing.voice
+---
+
+<section id="voice" class="lp voice" aria-labelledby="voice-title">
+  <p class="voice-intro fx">
+    <span>{c.title1}</span>
+    {' '}
+    <span class="orange">{c.title2}</span>
+  </p>
+  <div class="voice-photo">
+    <Image src={photo} alt="" widths={[800, 1274, 1672]} sizes="(min-width: 1069px) 1274px, 100vw" loading="lazy" />
+  </div>
+  <div class="voice-glow" aria-hidden="true">
+    <Image src={glow} alt="" widths={[700, 1000]} sizes="700px" loading="lazy" />
+  </div>
+  <div class="voice-copy fx">
+    <p class="lp-eyebrow">{c.eyebrow}</p>
+    <h2 id="voice-title" class="lp-title">{c.title}</h2>
+    <p class="lp-lead">{c.text}</p>
+    <ArrowLink href={featurePath(lang, 'voice-notes')} class="voice-button">{c.link}</ArrowLink>
+  </div>
+</section>
