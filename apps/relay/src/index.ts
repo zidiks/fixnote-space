@@ -3,11 +3,12 @@ import {
   RELAY_AUTH_PREFIX,
   RELAY_CLOSE,
   RELAY_PROTOCOL,
+  remoteToolList,
 } from '@fixnote/core/remote-mcp'
 import { type AuthEnv, challenge, checkToken, issuer, resourceMetadata, TokenCache } from './auth'
 import { consentPoll, consentPost } from './consent'
 import type { HandoffEnv } from './handoff'
-import { answerBody } from './mcp'
+import { answerBody, SERVER_VERSION } from './mcp'
 import type { RelayEnv } from './relay'
 
 export { ConsentHandoff } from './handoff'
@@ -202,7 +203,7 @@ export default {
     if (pathname === '/.well-known/oauth-authorization-server') return authorizationServer(env)
     if (pathname === '/') {
       return new Response(
-        `FixNote remote MCP server. Add ${env.PUBLIC_URL}/mcp to your AI app as a connector.\n`,
+        `FixNote remote MCP server ${SERVER_VERSION} (${remoteToolList().length} tools). Add ${env.PUBLIC_URL}/mcp to your AI app as a connector.\n`,
         { headers: { 'Content-Type': 'text/plain; charset=utf-8' } },
       )
     }
