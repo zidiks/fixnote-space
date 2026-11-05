@@ -966,6 +966,20 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
+  transform-origin: 100% 100%;
+  transition:
+    opacity 1.6s var(--ease-soft) 0.35s,
+    transform 1.8s var(--ease-soft) 0.35s;
+}
+/* The glow wells up from its corner once the card has arrived. */
+.js .lp .plan-pro:not(.in) .plan-glow {
+  opacity: 0;
+  transform: scale(0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .lp .plan-pro:not(.in) .plan-glow {
+    transform: none;
+  }
 }
 .plan-pro > :not(.plan-glow) {
   position: relative;
@@ -1052,14 +1066,160 @@
 .plan-button-soft:hover {
   background: rgb(222 99 44 / 0.16);
 }
-.per-year {
-  display: none;
+/*
+ * Monthly / yearly: both prices share one cell (so nothing beside them moves) and the hidden one is
+ * invisible. Each price is a sharp layer and a pixelated copy (`.px`, the SVG filters #px-N in
+ * Plans.astro). After the first click (`data-swapped`, set by Base) the old price fades from sharp
+ * into its pixels, which grow and go; the new one does exactly that backwards: coarse pixels that
+ * shrink and fade into the sharp text. A filter can't be tweened, so the sizes step, but every step
+ * from or to the sharp text is a crossfade with a light blur (which does tween) on the sharp text,
+ * so the pixels melt into the letters instead of vanishing before them.
+ */
+.swap,
+.swap > span {
+  display: inline-grid;
+}
+.swap > span,
+.swap > span > span {
+  grid-area: 1 / 1;
+}
+.swap .px {
+  opacity: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.per-year,
+.plans:has(#plans-yearly:checked) .per-month {
+  visibility: hidden;
 }
 .plans:has(#plans-yearly:checked) .per-year {
-  display: inline;
+  visibility: visible;
 }
-.plans:has(#plans-yearly:checked) .per-month {
-  display: none;
+@media (prefers-reduced-motion: no-preference) {
+  /* Coarse to fine. */
+  .plans[data-swapped] .swap .px {
+    --px1: url(#px-10);
+    --px2: url(#px-8);
+    --px3: url(#px-6);
+    --px4: url(#px-4);
+    --px5: url(#px-3);
+  }
+  .plans[data-swapped] .swap .sharp {
+    --soft: calc(3 * var(--u));
+  }
+  .plans[data-swapped] .swap-small .sharp {
+    --soft: calc(1.5 * var(--u));
+  }
+  .plans[data-swapped] .swap-small .px {
+    --px1: url(#px-4);
+    --px2: url(#px-4);
+    --px3: url(#px-3);
+    --px4: url(#px-3);
+    --px5: url(#px-3);
+  }
+  /* Arriving: the leaving animation played backwards, so it settles exactly as the other went. */
+  .plans[data-swapped]:not(:has(#plans-yearly:checked)) .per-month .px,
+  .plans[data-swapped]:has(#plans-yearly:checked) .per-year .px {
+    animation: px-dots-back 0.45s linear 0.2s reverse both;
+  }
+  .plans[data-swapped]:not(:has(#plans-yearly:checked)) .per-month .sharp,
+  .plans[data-swapped]:has(#plans-yearly:checked) .per-year .sharp {
+    animation: px-sharp-back 0.45s linear 0.2s reverse both;
+  }
+  /* Leaving. */
+  .plans[data-swapped]:not(:has(#plans-yearly:checked)) .per-year,
+  .plans[data-swapped]:has(#plans-yearly:checked) .per-month {
+    animation: px-hold 0.45s linear both;
+  }
+  .plans[data-swapped]:not(:has(#plans-yearly:checked)) .per-year .px,
+  .plans[data-swapped]:has(#plans-yearly:checked) .per-month .px {
+    animation: px-dots-out 0.45s linear both;
+  }
+  .plans[data-swapped]:not(:has(#plans-yearly:checked)) .per-year .sharp,
+  .plans[data-swapped]:has(#plans-yearly:checked) .per-month .sharp {
+    animation: px-sharp-out 0.45s linear both;
+  }
+}
+@keyframes px-dots-out {
+  0% {
+    opacity: 0;
+    filter: var(--px5);
+  }
+  22% {
+    opacity: 1;
+  }
+  34% {
+    filter: var(--px4);
+  }
+  54% {
+    filter: var(--px3);
+  }
+  74% {
+    filter: var(--px2);
+  }
+  90% {
+    filter: var(--px1);
+  }
+  100% {
+    opacity: 0;
+    filter: var(--px1);
+  }
+}
+@keyframes px-sharp-out {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  50%,
+  100% {
+    opacity: 0;
+    filter: blur(var(--soft));
+  }
+}
+/* The same two again under other names: a CSS animation restarts only when its name changes. */
+@keyframes px-dots-back {
+  0% {
+    opacity: 0;
+    filter: var(--px5);
+  }
+  22% {
+    opacity: 1;
+  }
+  34% {
+    filter: var(--px4);
+  }
+  54% {
+    filter: var(--px3);
+  }
+  74% {
+    filter: var(--px2);
+  }
+  90% {
+    filter: var(--px1);
+  }
+  100% {
+    opacity: 0;
+    filter: var(--px1);
+  }
+}
+@keyframes px-sharp-back {
+  0% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  50%,
+  100% {
+    opacity: 0;
+    filter: blur(var(--soft));
+  }
+}
+@keyframes px-hold {
+  0% {
+    visibility: visible;
+  }
+  100% {
+    visibility: hidden;
+  }
 }
 @media (min-width: 1069px) {
   .plans {
@@ -1150,6 +1310,10 @@
   padding-right: 32px;
   list-style: none;
   cursor: pointer;
+  /* Quick repeated clicks open and close it; they must not select the question. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
   font-size: 18px;
   font-weight: 500;
   line-height: 1.15;
@@ -1192,7 +1356,7 @@
   transform: scaleY(0);
 }
 .home-faq-answer > p {
-  margin-top: 8px;
+  margin-top: 12px;
   padding-right: 32px;
   font-size: 16px;
   line-height: 1.3;
@@ -1375,6 +1539,7 @@
     letter-spacing: calc(-0.4 * var(--u));
   }
   .home-faq-answer > p {
+    margin-top: calc(12 * var(--u));
     font-size: calc(16 * var(--u));
     line-height: 1.3;
   }

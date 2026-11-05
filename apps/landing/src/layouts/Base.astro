@@ -215,6 +215,12 @@ const graph = [
         )
         document.querySelectorAll('.fx').forEach((el) => io.observe(el))
       })()
+      // Pricing: the price swap animates from the first click on, never on load (home.css).
+      document.getElementById('plans-yearly')?.addEventListener(
+        'change',
+        (e) => e.target.closest('.plans')?.setAttribute('data-swapped', ''),
+        { once: true },
+      )
       // Galleries: the round arrows scroll by one card and grey out at either end.
       ;(() => {
         for (const g of document.querySelectorAll('[data-gallery]')) {

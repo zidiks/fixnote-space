@@ -247,6 +247,18 @@
   .fly-hero .card-icon {
     opacity: clamp(0, 1 - max(var(--a), var(--b)) * 3.3333, 1);
   }
+  /* Works offline: the icon leaves the top as the copy rises, then comes back under it at the
+     bottom (moved while invisible), and goes with the rest of the face on the way to the collage. */
+  .fly-offline .fly-hero .card-icon {
+    --back: clamp(0, (var(--a) - 0.7) * 3.3333, 1);
+    --low: clamp(0, (var(--a) - 0.5) * 1000, 1);
+    opacity: clamp(0, max(1 - var(--a) * 3.3333, min(var(--back), 1 - var(--b) * 3.3333)), 1);
+    transform: translateY(calc(var(--low) * (176 + (1 - var(--back)) * 16) * var(--u)));
+  }
+  /* End-to-end encrypted keeps its icon until the whole face turns into the collage card. */
+  .fly-encrypted .fly-hero .card-icon {
+    opacity: 1;
+  }
   .fly-offline .card-hero .card-copy {
     --lift: clamp(0, (var(--a) - 0.35) * 1.53846, 1);
     /* The copy's own height keeps every language aligned 32px from the top at the end. */
@@ -294,9 +306,10 @@
 /* The scene: the stage and the cards stay on screen while the page scrolls under them. */
 @media (min-width: 1280px) and (min-height: 600px) and (prefers-reduced-motion: no-preference) {
   .intro[data-live] {
-    /* 100vh stage + 75vh entry + 80vh Experience overlap. Its entrance starts exactly
-       when the first transition ends, without a dead stretch between the two. */
-    height: 255vh;
+    /* 100vh stage + 82.5vh entry + 88vh Experience overlap (the design's 75 + 80, times LONG = 1.1
+       in Intro.astro). Its entrance starts exactly when the first transition ends, without a dead
+       stretch between the two. */
+    height: 270.5vh;
   }
   .intro[data-live] .intro-stage {
     position: sticky;
@@ -332,7 +345,7 @@
   }
   .exp[data-live] {
     z-index: 2;
-    margin-top: -80vh;
+    margin-top: -88vh;
     padding-top: calc(40 * var(--u));
     /* A soft edge instead of a line where the block slides over the app. */
     background: linear-gradient(rgb(246 246 246 / 0), var(--color-canvas) 36vh);

@@ -985,6 +985,9 @@
 .faq-item summary {
   list-style: none;
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .faq-item summary::-webkit-details-marker {
   display: none;

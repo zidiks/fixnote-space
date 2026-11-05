@@ -100,7 +100,7 @@ export const es: Dict = {
     together: { title: 'Editad juntos', text: 'Comparte notas y ve los cambios al instante.' },
     encrypted: {
       title: 'Cifrado de extremo a extremo',
-      text: 'Tus notas se cifran antes de salir de tu dispositivo.',
+      text: 'Tus notas se cifran antes\nde salir de tu dispositivo.',
     },
     refine: {
       title: 'Mejora con IA',
@@ -289,7 +289,7 @@ export const es: Dict = {
           'Sincronización cifrada',
           'FixNote AI',
           'Notas y carpetas compartidas',
-          'Integración con Telegram',
+          'Integraciones',
           '20 GB de almacenamiento cifrado',
         ],
         button: 'Obtener todas las funciones',

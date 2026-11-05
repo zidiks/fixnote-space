@@ -140,20 +140,24 @@ const flying: CardKind[] = ['offline', 'encrypted', 'together']
     let frame = 0
     let last = 0
 
+    // How much scroll each step takes, over the design's: 1.1 = 10% more. The first two steps are
+    // 0.75 screens each at 1; intro.css sizes the pinned stretch to match (.intro height, .exp margin).
+    const LONG = 1.1
     const goal = () => {
       const vh = innerHeight
       const top = intro.getBoundingClientRect().top
       const expTop = exp.getBoundingClientRect().top
       const gridTop = grid.getBoundingClientRect().top
       const layerTop = layer.getBoundingClientRect().top
-      // The collage is 1240 design px wide; it lands with its bottom 64px above the screen's.
+      // The collage is 1240 design px wide; at LONG = 1 it lands with its bottom 64px above the
+      // screen's (a longer flight ends a little higher; the cards follow the collage either way).
       const u = grid.offsetWidth / 1240
       const lead = gridTop - expTop
       const land = vh - 594 * u - 64
       return {
-        p1: clamp(-top / (0.75 * vh)),
-        f: clamp((vh - expTop) / (0.75 * vh)),
-        p2: clamp((vh + lead - gridTop) / (vh + lead - land)),
+        p1: clamp(-top / (0.75 * LONG * vh)),
+        f: clamp((vh - expTop) / (0.75 * LONG * vh)),
+        p2: clamp((vh + lead - gridTop) / (LONG * (vh + lead - land))),
         gy: gridTop - layerTop,
       }
     }
@@ -178,7 +182,8 @@ const flying: CardKind[] = ['offline', 'encrypted', 'together']
       const dt = last ? Math.min(64, time - last) : 16
       last = time
       if (!now) now = { ...g }
-      const k = 1 - Math.exp(-dt / 70)
+      // The follow's time constant: larger feels heavier (the scene trails the wheel a little).
+      const k = 1 - Math.exp(-dt / 120)
       let moving = false
       for (const key of ['p1', 'f', 'p2']) {
         const gap = g[key] - now[key]

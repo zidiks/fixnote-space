@@ -5,7 +5,8 @@ import { type Lang, localePath, t } from '../../i18n'
 
 /**
  * Pricing: Free and Pro side by side, as the design draws them. The switch shows the monthly or
- * the yearly price of Pro with no script (a checkbox and :has in home.css).
+ * the yearly price of Pro with no script (a checkbox and :has in home.css). Each price is a sharp
+ * layer and a pixelated copy (`.px`) that the swap animation crossfades.
  */
 interface Props {
   lang: Lang
@@ -55,10 +56,14 @@ const download = localePath(lang, '/download/')
       <div class="plan-head">
         <h3 class="plan-name">{c.pro.name}</h3>
         <p class="plan-price orange">
-          <span class="per-month">{c.pro.month}</span><span class="per-year">{c.pro.year}</span>
+          <span class="swap"
+            ><span class="per-month"><span class="sharp">{c.pro.month}</span><span class="px" aria-hidden="true">{c.pro.month}</span></span><span class="per-year"><span class="sharp">{c.pro.year}</span><span class="px" aria-hidden="true">{c.pro.year}</span></span></span
+          >
         </p>
         <p class="plan-meta">
-          <span class="per-month">{c.pro.perYear}</span><span class="per-year">{c.pro.perMonth}</span>
+          <span class="swap swap-small"
+            ><span class="per-month"><span class="sharp">{c.pro.perYear}</span><span class="px" aria-hidden="true">{c.pro.perYear}</span></span><span class="per-year"><span class="sharp">{c.pro.perMonth}</span><span class="px" aria-hidden="true">{c.pro.perMonth}</span></span></span
+          >
           <span class="plan-dot" aria-hidden="true"></span>
           <span>{c.pro.cancel}</span>
         </p>
@@ -67,4 +72,23 @@ const download = localePath(lang, '/download/')
       <a href={download} class="btn-pill btn-pill-orange plan-button">{c.pro.button}</a>
     </article>
   </div>
+  <!-- Pixelate filters for the price swap (home.css): sample the middle of each N×N tile and grow
+       that dot to fill exactly the tile (no overlap, so the pixels keep the letters' weight). -->
+  <svg class="sr-only" width="0" height="0" aria-hidden="true" focusable="false">
+    {
+      [3, 4, 6, 8, 10].map((n) => {
+        const dot = n % 2 ? 1 : 2
+        const r = (n - dot) / 2
+        return (
+          <filter id={`px-${n}`} x="0" y="0" color-interpolation-filters="sRGB">
+            <feFlood x={r} y={r} width={dot} height={dot} />
+            <feComposite width={n} height={n} />
+            <feTile result="grid" />
+            <feComposite in="SourceGraphic" in2="grid" operator="in" />
+            <feMorphology operator="dilate" radius={r} />
+          </filter>
+        )
+      })
+    }
+  </svg>
 </section>

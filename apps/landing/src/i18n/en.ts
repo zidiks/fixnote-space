@@ -292,7 +292,7 @@ export const en: Dict = {
           'Encrypted sync',
           'FixNote AI',
           'Shared notes and folders',
-          'Telegram integration',
+          'Integrations',
           '20 GB encrypted storage',
         ],
         button: 'Upgrade to Pro',
