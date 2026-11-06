@@ -147,7 +147,8 @@ const json = (body: unknown) =>
   new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json' } })
 const reply = (content: string) => json({ type: 4, data: { content, flags: EPHEMERAL } })
 
-function hexBytes(hex: string): Uint8Array {
+/** A plain ArrayBuffer underneath, as Web Crypto's BufferSource requires. */
+function hexBytes(hex: string): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(hex.length / 2)
   for (let i = 0; i < out.length; i++) out[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16)
   return out
