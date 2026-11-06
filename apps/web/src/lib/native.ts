@@ -7,14 +7,20 @@ interface NativeActions {
   search: () => void
 }
 
-/** Browser shortcuts that make no sense in a desktop app (reload, print, find, view source…). */
+/**
+ * Browser shortcuts that make no sense in a desktop app (reload, print, find, view source…).
+ * On a Mac ⌘H (hide) and ⌘W (close the window) belong to the app menu: a key the page swallows
+ * never reaches the menu in WKWebView, so they pass.
+ */
 function isBrowserShortcut(e: KeyboardEvent, apple: boolean): boolean {
   const mod = apple ? e.metaKey : e.ctrlKey
   // Physical key first, so the same shortcuts are caught on any layout.
   const key = e.code.startsWith('Key') ? e.code.slice(3).toLowerCase() : e.key.toLowerCase()
   if (['f3', 'f5', 'f7'].includes(key)) return true
-  if (mod && ['r', 'p', 'g', 'u', 's', 'h', 'o', 'l', 't', 'w'].includes(key) && !e.altKey)
-    return true
+  const keys = apple
+    ? ['r', 'p', 'g', 'u', 's', 'o', 'l', 't']
+    : ['r', 'p', 'g', 'u', 's', 'h', 'o', 'l', 't', 'w']
+  if (mod && keys.includes(key) && !e.altKey) return true
   if (mod && e.shiftKey && ['r', 'p', 'g'].includes(key)) return true
   // Zoom stays available on the web only.
   if (mod && ['+', '=', '-', '0'].includes(key)) return true
@@ -23,7 +29,8 @@ function isBrowserShortcut(e: KeyboardEvent, apple: boolean): boolean {
 
 /**
  * Makes the app behave like an app, not a page.
- * Everywhere: mouse back/forward buttons and Alt+←/→ drive in-app history; dropped files never
+ * Everywhere: mouse back/forward buttons and Alt+←/→ (not on a Mac, where ⌥←/→ moves by a word
+ * and ⌘[ / ⌘] go back and forward) drive in-app history; dropped files never
  * replace the page. Desktop only: no browser context menu (our own menus still open), no browser
  * shortcuts, Ctrl/⌘+F opens search. Dev tools stay reachable in development builds.
  */
@@ -43,6 +50,7 @@ export function useNativeFeel(platform: Platform, apple: boolean, actions: Nativ
     }
     const onKey = (e: KeyboardEvent) => {
       if (
+        !apple &&
         e.altKey &&
         !e.ctrlKey &&
         !e.metaKey &&

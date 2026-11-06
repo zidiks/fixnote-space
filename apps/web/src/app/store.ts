@@ -16,12 +16,14 @@ export type Route =
   | { kind: 'today' }
   /** The big-card Home screen with the greeting, in the notes layout (where Home is a list). */
   | { kind: 'overview' }
+  /** Saved links from every folder; `folder`: only that topic (and its subfolders). */
+  | { kind: 'links'; folder?: string }
 
 /** Routes that are a list of notes: in the notes layout they fill the middle column. */
-export type ListRoute = Extract<Route, { kind: 'home' | 'folder' | 'today' }>
+export type ListRoute = Extract<Route, { kind: 'home' | 'folder' | 'today' | 'links' }>
 
 export const isListRoute = (r: Route): r is ListRoute =>
-  r.kind === 'home' || r.kind === 'folder' || r.kind === 'today'
+  r.kind === 'home' || r.kind === 'folder' || r.kind === 'today' || r.kind === 'links'
 
 /**
  * The list shown beside an open note in the notes layout: the route itself when it is a list,

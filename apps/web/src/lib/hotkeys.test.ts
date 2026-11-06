@@ -7,6 +7,7 @@ import {
   bindingProblem,
   defaultBindings,
   GLOBAL_ACTIONS,
+  isDeleteKey,
   matchesBinding,
   parseBinding,
   serializeBinding,
@@ -27,6 +28,25 @@ const ev = (
 })
 
 const modJ: Binding = { code: 'KeyJ', mod: true }
+
+describe('isDeleteKey', () => {
+  const key = (code: string, m: Parameters<typeof ev>[1] = {}) => ev(code, m, code)
+
+  it('takes Delete alone on Windows and Linux', () => {
+    expect(isDeleteKey(key('Delete'), false)).toBe(true)
+    expect(isDeleteKey(key('Backspace'), false)).toBe(false)
+    expect(isDeleteKey(key('Delete', { ctrlKey: true }), false)).toBe(false)
+    expect(isDeleteKey(key('Delete', { shiftKey: true }), false)).toBe(false)
+  })
+
+  it('takes ⌫, ⌘⌫ and ⌦ on a Mac', () => {
+    expect(isDeleteKey(key('Backspace'), true)).toBe(true)
+    expect(isDeleteKey(key('Backspace', { metaKey: true }), true)).toBe(true)
+    expect(isDeleteKey(key('Delete'), true)).toBe(true)
+    expect(isDeleteKey(key('Backspace', { altKey: true }), true)).toBe(false)
+    expect(isDeleteKey(key('KeyD', { metaKey: true }), true)).toBe(false)
+  })
+})
 
 describe('matchesBinding', () => {
   it('uses Ctrl as the modifier on Windows/Linux', () => {

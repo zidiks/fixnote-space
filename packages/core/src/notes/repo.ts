@@ -1,4 +1,5 @@
 import { ImageTexts } from '../attachments/image-text'
+import { LINK_SQL, linkUrlOf } from '../links/note'
 import type { SqlDriver, SqlRow, SqlValue } from '../platform'
 import { merge3, unionLines } from '../sync/merge'
 import { addTasks } from './daily'
@@ -72,7 +73,9 @@ const SUMMARY_COLUMNS = `
 
 function toSummary(row: NoteRow): NoteSummary {
   const body = row.body ?? ''
+  const url = linkUrlOf(body)
   return {
+    ...(url ? { url } : {}),
     id: row.id,
     folderId: row.folder_id,
     type: row.type as NoteType,
@@ -112,6 +115,7 @@ function filterSql(filter: NoteFilter): { where: string[]; params: SqlValue[] } 
     where.push('n.type = ?')
     params.push(filter.type)
   }
+  if (filter.links) where.push(LINK_SQL)
   if (filter.pinned !== undefined) {
     where.push(filter.pinned ? 'n.pinned_at IS NOT NULL' : 'n.pinned_at IS NULL')
   }
@@ -482,17 +486,34 @@ export class NotesRepo {
   }
 
   async counts(): Promise<Counts> {
-    const [row] = await this.db.query<{ all: number; inbox: number; daily: number }>(
+    const [row] = await this.db.query<{
+      all: number
+      inbox: number
+      daily: number
+      links: number
+    }>(
       `SELECT count(*) AS "all",
-              coalesce(sum(folder_id IS NULL), 0) AS inbox,
-              coalesce(sum(type = 'daily'), 0) AS daily
-         FROM notes WHERE deleted_at IS NULL`,
+              coalesce(sum(n.folder_id IS NULL), 0) AS inbox,
+              coalesce(sum(n.type = 'daily'), 0) AS daily,
+              coalesce(sum(${LINK_SQL}), 0) AS links
+         FROM notes n WHERE n.deleted_at IS NULL`,
     )
     return {
       all: Number(row?.all ?? 0),
       inbox: Number(row?.inbox ?? 0),
       daily: Number(row?.daily ?? 0),
+      links: Number(row?.links ?? 0),
     }
+  }
+
+  /** Folders that hold saved links, with how many (the topics of the Links list). */
+  async linkFolders(): Promise<{ folderId: string | null; count: number }[]> {
+    const rows = await this.db.query<{ folder_id: string | null; cnt: number }>(
+      `SELECT n.folder_id, count(*) AS cnt FROM notes n
+        WHERE n.deleted_at IS NULL AND ${LINK_SQL}
+        GROUP BY n.folder_id ORDER BY cnt DESC`,
+    )
+    return rows.map((r) => ({ folderId: r.folder_id, count: Number(r.cnt) }))
   }
 
   // ── Folders ────────────────────────────────────────────────────────────────

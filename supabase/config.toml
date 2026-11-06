@@ -120,6 +120,17 @@ verify_jwt = false
 # Payments (Suby). billing opens a checkout for the signed-in account; suby-webhook takes Suby's
 # signed events (no user JWT; checked with the endpoint secret). Secrets: `pnpm sb secrets set
 # SUBY_API_KEY=... SUBY_WEBHOOK_SECRET=... SUBY_PRODUCT_MONTH=pro_... SUBY_PRODUCT_YEAR=pro_...`.
+# Discord interactions are checked with the app's Ed25519 signature, the OAuth return with the
+# one-time code: no Supabase JWT on either.
+[functions.discord-bot]
+enabled = true
+verify_jwt = false
+
+# The browser extension authenticates with its own token (capture_links, SHA-256 only).
+[functions.capture-extension]
+enabled = true
+verify_jwt = false
+
 [functions.billing]
 enabled = true
 verify_jwt = true

@@ -65,6 +65,12 @@ export function useCounts() {
   return useQuery({ queryKey: keys.counts, queryFn: () => repo.counts() })
 }
 
+/** Folders that hold saved links, most first: the topics of the Links list. */
+export function useLinkFolders() {
+  const repo = useRepo()
+  return useQuery({ queryKey: [...keys.notes, 'link-folders'], queryFn: () => repo.linkFolders() })
+}
+
 export function useFolders() {
   const repo = useRepo()
   return useQuery({ queryKey: keys.folders, queryFn: () => repo.listFolders() })

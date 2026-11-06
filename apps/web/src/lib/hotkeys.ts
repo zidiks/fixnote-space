@@ -219,6 +219,18 @@ export function matchesBinding(e: KeyEvent, b: Binding | null, apple: boolean): 
   )
 }
 
+/**
+ * The key that deletes the note or folder picked in a list (`delete-key.ts`): Delete. A Mac has
+ * no Delete key, only ⌫ (Backspace; Fn+⌫ is Delete), so there ⌫ and ⌘⌫ (Finder's "Move to
+ * Trash") count too.
+ */
+export function isDeleteKey(e: KeyEvent, apple: boolean): boolean {
+  if (e.altKey || e.shiftKey || e.ctrlKey) return false
+  const del = e.code === 'Delete' || e.key === 'Delete'
+  if (!apple) return del && !e.metaKey
+  return del || e.code === 'Backspace' || e.key === 'Backspace'
+}
+
 /** What the global-shortcut plugin reads (tauri-plugin-global-shortcut): "Control+Alt+KeyN". */
 export function accelerator(b: Binding, apple: boolean): string {
   return [

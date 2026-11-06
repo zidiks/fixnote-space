@@ -55,5 +55,7 @@ export function listFilter(list: ListRoute, midnight: number): NoteFilter {
       return { folderId: list.id }
     case 'today':
       return { updatedSince: midnight }
+    case 'links':
+      return list.folder ? { links: true, folderId: list.folder } : { links: true }
   }
 }

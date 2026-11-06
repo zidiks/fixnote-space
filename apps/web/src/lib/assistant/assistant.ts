@@ -159,6 +159,19 @@ export async function enableSemantic() {
   }
 }
 
+/**
+ * On-device semantic search while it is on and loaded (Settings → AI): what a saved link is
+ * compared with to pick its folder (`link-save.ts`). Null otherwise.
+ */
+export function semanticSearch(): {
+  embed: (text: string) => Promise<Float32Array>
+  vectors: () => Promise<Map<string, { vector: Float32Array }[]>>
+} | null {
+  const ix = indexer
+  if (!ix || useAssistant.getState().semantic !== 'ready') return null
+  return { embed: (text) => ix.embedQuery(text), vectors: () => ix.all() }
+}
+
 function runIndexing(): Promise<void> {
   const ix = indexer
   if (!ix) return Promise.resolve()

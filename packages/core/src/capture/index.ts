@@ -1,15 +1,18 @@
 import type { Attachments } from '../attachments'
 import { attachmentUrl } from '../attachments'
 import { type AccountKeys, DecryptionError, openSealedBox } from '../crypto'
+import { standaloneUrl } from '../links/preview'
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
 
 /**
- * What a capture channel (the Telegram bot) seals for the user. JSON, then crypto_box_seal to the
- * account's public key, base64url. Keep in sync with supabase/functions/telegram-bot.
+ * What a capture channel (the Telegram and Discord bots, the browser extension) seals for the
+ * user. JSON, then crypto_box_seal to the account's public key, base64url. Keep in sync with
+ * supabase/functions/telegram-bot, supabase/functions/discord-bot and apps/extension.
  */
 export type CapturePayload =
   | { v: 1; kind: 'text'; text: string; receivedAt: number }
+  | ({ v: 1; kind: 'link'; receivedAt: number } & CapturedLink)
   | {
       v: 1
       kind: 'voice'
@@ -22,6 +25,22 @@ export type CapturePayload =
     }
   | { v: 1; kind: 'photo'; image: string; mime: string; caption?: string; receivedAt: number }
 
+/** A page saved from the browser extension, or a link sent to a bot. */
+export interface CapturedLink {
+  url: string
+  title?: string
+  description?: string
+  site?: string
+  /** The page's readable text, as the browser showed it. */
+  text?: string
+  selection?: string
+  /** Where it was saved from when that was a social network's own Save / Bookmark: `x`, `reddit`… */
+  source?: string
+}
+
+const str = (v: unknown, max: number) =>
+  typeof v === 'string' && v.trim() ? { ok: true as const, v: v.slice(0, max) } : null
+
 export function parseCapturePayload(json: string): CapturePayload | null {
   let p: Record<string, unknown>
   try {
@@ -33,6 +52,27 @@ export function parseCapturePayload(json: string): CapturePayload | null {
   const caption = typeof p.caption === 'string' && p.caption.trim() ? { caption: p.caption } : {}
   if (p.kind === 'text' && typeof p.text === 'string') {
     return { v: 1, kind: 'text', text: p.text, receivedAt: p.receivedAt }
+  }
+  if (p.kind === 'link' && typeof p.url === 'string' && /^https?:\/\//i.test(p.url)) {
+    const link: Extract<CapturePayload, { kind: 'link' }> = {
+      v: 1,
+      kind: 'link',
+      url: p.url,
+      receivedAt: p.receivedAt,
+    }
+    const fields = [
+      ['title', 300],
+      ['description', 1000],
+      ['site', 100],
+      ['text', 200_000],
+      ['selection', 10_000],
+      ['source', 40],
+    ] as const
+    for (const [key, max] of fields) {
+      const value = str(p[key], max)
+      if (value) link[key] = value.v
+    }
+    return link
   }
   if (p.kind === 'voice' && typeof p.audio === 'string' && typeof p.mime === 'string') {
     return {
@@ -87,9 +127,16 @@ export async function importInbox(opts: {
   transcribe?: (audio: Blob) => Promise<string>
   /**
    * Where a message goes; a new note without a folder by default. `receivedAt`: when the message
-   * was sent, the note's time (not when this device took it in).
+   * was sent, the note's time (not when this device took it in). `channel`: which bot or app.
    */
-  save?: (content: string, receivedAt: number) => Promise<void>
+  save?: (content: string, receivedAt: number, channel: string) => Promise<void>
+  /**
+   * A link (from the extension, or a message that is only a URL): a link note placed by itself
+   * (`links/place.ts`). Without it a link becomes a plain note.
+   */
+  saveLink?: (link: CapturedLink, receivedAt: number, channel: string) => Promise<void>
+  /** Opens a sealed item (tests); `openSealedBox` with the account's keys by default. */
+  open?: (keys: AccountKeys, sealed: string) => string
 }): Promise<{ imported: number; failed: number }> {
   const { db, keys, remote, repo, attachments } = opts
   let imported = 0
@@ -105,7 +152,7 @@ export async function importInbox(opts: {
     }
     let payload: CapturePayload | null
     try {
-      payload = parseCapturePayload(openSealedBox(keys, item.sealed))
+      payload = parseCapturePayload((opts.open ?? openSealedBox)(keys, item.sealed))
     } catch (err) {
       if (!(err instanceof DecryptionError)) throw err
       payload = null
@@ -117,8 +164,23 @@ export async function importInbox(opts: {
       continue
     }
 
+    // A message that is only a URL is a link to keep, like one saved from the browser.
+    const bare = payload.kind === 'text' ? standaloneUrl(payload.text) : null
+    let link: CapturedLink | null = bare ? { url: bare } : null
+    if (payload.kind === 'link') {
+      const { v: _v, kind: _k, receivedAt: _r, ...rest } = payload
+      link = rest
+    }
+
     let content: string
-    if (payload.kind === 'text') content = payload.text.trim()
+    if (link && opts.saveLink) {
+      await opts.saveLink(link, payload.receivedAt, item.channel)
+      content = ''
+    } else if (payload.kind === 'link') {
+      content = [payload.title ? `# ${payload.title}` : '', payload.url, payload.selection ?? '']
+        .filter(Boolean)
+        .join('\n\n')
+    } else if (payload.kind === 'text') content = payload.text.trim()
     else if (payload.kind === 'photo') {
       const blob = new Blob([bytes(payload.image) as BlobPart], { type: payload.mime })
       const a = await attachments.add(blob, payload.mime)
@@ -134,7 +196,7 @@ export async function importInbox(opts: {
         .join('\n\n')
     }
     if (content) {
-      if (opts.save) await opts.save(content, payload.receivedAt)
+      if (opts.save) await opts.save(content, payload.receivedAt, item.channel)
       else await repo.createNote({ content, createdAt: payload.receivedAt })
     }
     await db.execute(

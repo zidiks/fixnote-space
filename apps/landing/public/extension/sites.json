@@ -1,0 +1,43 @@
+{
+  "v": 1,
+  "sites": [
+    {
+      "id": "x",
+      "name": "X",
+      "hosts": ["x.com", "twitter.com"],
+      "button": "[data-testid=\"bookmark\"]",
+      "item": "article[data-testid=\"tweet\"]",
+      "link": "a[href*=\"/status/\"]:has(time)",
+      "text": "[data-testid=\"tweetText\"]"
+    },
+    {
+      "id": "reddit",
+      "name": "Reddit",
+      "hosts": ["reddit.com", "www.reddit.com", "old.reddit.com"],
+      "button": ".save-button a, [data-testid=\"save-button\"]",
+      "labels": ["Save", "Сохранить", "Guardar"],
+      "item": "shreddit-post, .thing.link, [data-testid=\"post-container\"]",
+      "link": "a[slot=\"full-post-link\"], a.comments, a[data-click-id=\"body\"]",
+      "text": "[slot=\"title\"], a.title, h1, h3"
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "hosts": ["youtube.com", "www.youtube.com", "m.youtube.com"],
+      "button": "button[aria-label^=\"Save\"], button[aria-label^=\"Сохранить\"], button[aria-label^=\"Guardar\"]",
+      "labels": ["Save", "Сохранить", "Guardar", "Watch later", "Смотреть позже", "Ver más tarde"],
+      "item": "ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer",
+      "link": "a#thumbnail, a#video-title, a#video-title-link",
+      "text": "#video-title, h1.ytd-watch-metadata"
+    },
+    {
+      "id": "instagram",
+      "name": "Instagram",
+      "hosts": ["instagram.com", "www.instagram.com"],
+      "button": "svg[aria-label=\"Save\"], svg[aria-label=\"Сохранить\"], svg[aria-label=\"Guardar\"]",
+      "item": "article",
+      "link": "a[href*=\"/p/\"], a[href*=\"/reel/\"]",
+      "text": "h1, span[dir=\"auto\"]"
+    }
+  ]
+}

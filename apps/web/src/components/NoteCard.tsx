@@ -1,5 +1,5 @@
 import type { NoteSummary } from '@fixnote/core'
-import { attachmentIdFromUrl, folderTree } from '@fixnote/core'
+import { attachmentIdFromUrl, folderTree, linkHost } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -21,6 +21,7 @@ import {
   Folder,
   FolderInput,
   Inbox,
+  Link2,
   Pin,
   PinOff,
   SquareArrowOutUpRight,
@@ -174,6 +175,12 @@ function useMarks(note: NoteSummary, inFolder: string | undefined) {
       ) : null}
       {note.sharedId ? (
         <Users className="size-3.5 shrink-0 text-brand" aria-label={t('people.badge')} />
+      ) : null}
+      {note.url ? (
+        <span className="flex min-w-0 items-center gap-1" title={note.url}>
+          <Link2 className="size-3.5 shrink-0" aria-label={t('links.badge')} />
+          <span className="truncate">{linkHost(note.url)}</span>
+        </span>
       ) : null}
       {subfolder ? (
         <span className="flex min-w-0 items-center gap-1">

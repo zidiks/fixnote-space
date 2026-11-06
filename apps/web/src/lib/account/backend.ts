@@ -100,6 +100,10 @@ export interface AccountBackend {
   createCaptureCode(): Promise<string>
   captureLinks(): Promise<CaptureLink[]>
   unlinkCapture(link: CaptureLink): Promise<void>
+  /** A browser extension asking to connect: its label and code; null when gone or answered. */
+  extensionRequest(id: string): Promise<{ label: string; code: string } | null>
+  /** Connect or Deny it; false when it was gone, expired or answered meanwhile. */
+  answerExtensionRequest(id: string, allow: boolean): Promise<boolean>
   /** New device: ask to be let in. */
   createPairing(ephemeralKey: string, deviceLabel: string): Promise<string>
   /** New device: the request, with the sealed secret once approved; null when gone. */
@@ -318,6 +322,20 @@ export function supabaseBackend(
         .eq('channel', link.channel)
         .eq('external_id', link.externalId)
       if (error) throw toError(error)
+    },
+    async extensionRequest(id) {
+      const { data, error } = await client.rpc('extension_request', { p_id: id })
+      if (error) throw toError(error)
+      const row = (data as { label: string; code: string }[] | null)?.[0]
+      return row ? { label: row.label ?? '', code: row.code } : null
+    },
+    async answerExtensionRequest(id, allow) {
+      const { data, error } = await client.rpc('answer_extension_request', {
+        p_id: id,
+        p_allow: allow,
+      })
+      if (error) throw toError(error)
+      return data === true
     },
     async createPairing(ephemeralKey, deviceLabel) {
       const { data, error } = await client

@@ -20,6 +20,8 @@ export interface NoteSummary {
   readOnly: boolean
   createdAt: number
   updatedAt: number
+  /** A saved link (`links/note.ts`): its address. */
+  url?: string
 }
 
 export interface Note extends NoteSummary {
@@ -36,6 +38,8 @@ export interface NoteFilter {
   updatedSince?: number
   /** true: only pinned notes; false: only notes that are not pinned. */
   pinned?: boolean
+  /** Only saved links (`links/note.ts`). */
+  links?: boolean
 }
 
 /** How a list of notes is ordered: last edited or created first, or by title (A to Z). */
@@ -78,6 +82,7 @@ export interface Counts {
   all: number
   inbox: number
   daily: number
+  links: number
 }
 
 /** Snippet highlight markers: private-use characters, safe to split on without HTML parsing. */

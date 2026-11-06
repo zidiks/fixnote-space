@@ -3,6 +3,7 @@ import {
   CALL_MARKER,
   EDIT_MARKER,
   EXPANSION_MARKER,
+  LINK_MARKER,
   SUMMARY_MARKER,
   TIDY_MARKER,
 } from '@fixnote/ai'
@@ -74,6 +75,8 @@ interface CaptureState {
   codes: Record<string, string>
   links: (CaptureLink & { userId: string })[]
   inbox: (InboxItem & { userId: string })[]
+  /** Browser extensions asking to connect (`__devCapture.extensionRequest()`). */
+  requests?: Record<string, { label: string; code: string; status: string; userId?: string }>
 }
 const loadCapture = (): CaptureState =>
   JSON.parse(localStorage.getItem(CAPTURE) ?? '{"codes":{},"links":[],"inbox":[]}')
@@ -109,42 +112,58 @@ const signedIn = () => {
 /** BroadcastChannel skips the tab that posts, so the fake bot also wakes this tab directly. */
 const localListeners = new Set<() => void>()
 
-const devTelegram = {
-  /** Without a code: the one the app just created, as if the user pressed Start. */
-  start(code?: string, label = '@dev_user') {
+/**
+ * Any capture channel: `channel` is 'telegram' (default), 'discord' or 'extension'.
+ * `__devCapture.send({ kind: 'link', url, title, text }, 'extension')` is a page from the browser.
+ */
+const devCapture = {
+  /** Without a code: the one the app just created, as if the user pressed Start / Connect. */
+  start(code?: string, label = '@dev_user', channel = 'telegram') {
     const c = loadCapture()
     const pending = code ?? Object.keys(c.codes)[0] ?? ''
     const userId = c.codes[pending]
     if (!userId) return 'bad code'
     delete c.codes[pending]
-    c.links = c.links.filter((l) => l.externalId !== 'dev-chat')
-    c.links.push({
-      channel: 'telegram',
-      externalId: 'dev-chat',
-      label,
-      createdAt: new Date().toISOString(),
-      userId,
-    })
+    const externalId = channel === 'telegram' ? 'dev-chat' : `dev-${channel}`
+    c.links = c.links.filter((l) => l.externalId !== externalId)
+    c.links.push({ channel, externalId, label, createdAt: new Date().toISOString(), userId })
     saveCapture(c)
     return 'linked'
   },
-  send(payload: Record<string, unknown>) {
+  send(payload: Record<string, unknown>, channel = 'telegram') {
     if (!devIsPro()) return 'needs pro'
     const c = loadCapture()
-    const link = c.links.find((l) => l.externalId === 'dev-chat')
+    const link = c.links.find((l) => l.channel === channel)
     const key = link && load().keys[link.userId]
     if (!link || !key) return 'not linked'
     const sealed = sealToPublicKey(
       key.publicKey,
       JSON.stringify({ v: 1, receivedAt: Date.now(), ...payload }),
     )
-    c.inbox.push({ id: crypto.randomUUID(), channel: 'telegram', sealed, userId: link.userId })
+    c.inbox.push({ id: crypto.randomUUID(), channel, sealed, userId: link.userId })
     saveCapture(c)
     for (const l of localListeners) l()
     return 'queued'
   },
+  /**
+   * The extension's "Connect": a request, as capture-extension /request makes it. Open
+   * `?dev-backend&extension=<id>` (or this tab gets it now) to see the app's dialog; once it is
+   * approved, the browser is linked like after /poll.
+   */
+  extensionRequest(label = 'Chrome · Windows', open = true) {
+    const c = loadCapture()
+    const id = crypto.randomUUID()
+    c.requests = { ...c.requests, [id]: { label, code: 'K7QM', status: 'pending' } }
+    saveCapture(c)
+    if (open) void import('../extension-connect').then((m) => m.askExtension(id))
+    return id
+  },
 }
-;(window as unknown as { __devTelegram: typeof devTelegram }).__devTelegram = devTelegram
+const devTelegram = {
+  start: (code?: string, label?: string) => devCapture.start(code, label),
+  send: (payload: Record<string, unknown>) => devCapture.send(payload),
+}
+Object.assign(window, { __devTelegram: devTelegram, __devCapture: devCapture })
 
 function write<T extends { version: number; seq: number }>(
   table: 'notes' | 'folders',
@@ -332,6 +351,20 @@ const DEV_CALL = JSON.stringify({
   tasks: ['Я: купить молоко и хлеб', 'Я: позвонить маме в пятницу'],
 })
 
+/**
+ * Link placement: a folder whose name the page mentions, else a new topic from the site
+ * ("youtube.com" → "Youtube").
+ */
+function devLinkPlace(prompt: string): string {
+  const page = prompt.split('\nPage:\n')[1]?.toLocaleLowerCase() ?? ''
+  for (const m of prompt.matchAll(/^\[(\d+)\] (.+)$/gm)) {
+    const name = (m[2] ?? '').split(' / ').at(-1)?.toLocaleLowerCase() ?? ''
+    if (name && page.includes(name)) return JSON.stringify({ folder: Number(m[1]) })
+  }
+  const site = page.match(/\(([^)]+)\)/)?.[1]?.split('.')[0] ?? 'reading'
+  return JSON.stringify({ newFolder: site.charAt(0).toUpperCase() + site.slice(1) })
+}
+
 const devLlm: typeof fetch = async (_url, init) => {
   const refusal = devAiRefusal()
   if (refusal) return refusal
@@ -343,6 +376,7 @@ const devLlm: typeof fetch = async (_url, init) => {
   const tidy = system.includes(TIDY_MARKER)
   const summary = system.includes(SUMMARY_MARKER)
   const call = system.includes(CALL_MARKER)
+  const link = system.includes(LINK_MARKER)
   const agent = system.includes(AGENT_MARKER) ? devAgent(body.messages) : null
   const calls = agent && 'calls' in agent && body.tools?.length ? agent.calls : []
   const first = prompt.match(/\[1\] "([^"]*)"[^\n]*\n([^\n]+)/)
@@ -350,20 +384,23 @@ const devLlm: typeof fetch = async (_url, init) => {
     ? ''
     : agent && 'text' in agent
       ? agent.text
-      : call
-        ? DEV_CALL
-        : summary
-          ? devSummary(prompt)
-          : tidy
-            ? devTidy(prompt)
-            : expansion
-              ? devKeywords(prompt)
-              : edit
-                ? devEdit(prompt)
-                : first
-                  ? `From your note "${first[1]}": ${first[2]} [1]`
-                  : "I couldn't find this in your notes. Try other words."
-  const words = expansion || tidy || call ? [answer] : answer.split(/(?<= )/).filter(Boolean)
+      : link
+        ? devLinkPlace(prompt)
+        : call
+          ? DEV_CALL
+          : summary
+            ? devSummary(prompt)
+            : tidy
+              ? devTidy(prompt)
+              : expansion
+                ? devKeywords(prompt)
+                : edit
+                  ? devEdit(prompt)
+                  : first
+                    ? `From your note "${first[1]}": ${first[2]} [1]`
+                    : "I couldn't find this in your notes. Try other words."
+  const words =
+    expansion || tidy || call || link ? [answer] : answer.split(/(?<= )/).filter(Boolean)
   // What llm-proxy charges: about 3 characters per token, question and answer.
   devAiRecord(
     Math.ceil((String(init?.body).length + answer.length) / 3),
@@ -507,6 +544,30 @@ export const devBackend: AccountBackend = {
     const c = loadCapture()
     c.links = c.links.filter((l) => l.externalId !== link.externalId)
     saveCapture(c)
+  },
+  extensionRequest: async (id) => {
+    const r = loadCapture().requests?.[id]
+    return r && r.status === 'pending' ? { label: r.label, code: r.code } : null
+  },
+  answerExtensionRequest: async (id, allow) => {
+    const userId = load().session?.userId
+    if (!userId) throw new Error('not authenticated')
+    const c = loadCapture()
+    const r = c.requests?.[id]
+    if (r?.status !== 'pending') return false
+    r.status = allow ? 'approved' : 'denied'
+    if (allow) {
+      // What /poll does next: the browser's link.
+      c.links.push({
+        channel: 'extension',
+        externalId: `dev-extension-${id.slice(0, 8)}`,
+        label: r.label,
+        createdAt: new Date().toISOString(),
+        userId,
+      })
+    }
+    saveCapture(c)
+    return true
   },
   createPairing: async (ephemeralKey, deviceLabel) => {
     const userId = load().session?.userId

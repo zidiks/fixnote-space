@@ -25,13 +25,24 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync, sharedContext, useAccount } from '../lib/account/account'
+import { useRepo } from '../lib/db'
+import { useDeleteKeyHandler } from '../lib/delete-key'
 import { errorMessage } from '../lib/errors'
 import { useListRoute } from '../lib/layout'
+import { draggedNoteIds, isNoteDrag, moveNotes } from '../lib/note-drag'
 import { useFolderMutations, useFolders, useInvalidateNotes } from '../lib/queries'
+import { endSelection } from '../lib/selection'
+
+/** Holding dragged notes over a folded folder this long unfolds it. */
+const UNFOLD_MS = 700
+
+/** Whether the folder can be deleted (or left) from here. */
+const deletable = (f: Folder) => !(f.access === 'view' && !f.shared)
+
 import { FolderShareDialog } from './FolderShareDialog'
 
 function NameInput({
@@ -105,6 +116,87 @@ export function SidebarFolders() {
   const invalidate = useInvalidateNotes()
   // Someone else's folder: deleting it means leaving it.
   const leaving = confirm?.shared === 'edit' || confirm?.shared === 'view'
+  const repo = useRepo()
+
+  // Delete on the folder last clicked here.
+  useDeleteKeyHandler('folder', (id) => {
+    const f = folders.find((x) => x.id === id)
+    if (f && deletable(f)) setConfirm(f)
+  })
+
+  // Notes dragged from a list: the folder under them lights up; a folded one unfolds after a
+  // moment, as in Finder.
+  const [dropOn, setDropOn] = useState<string | null>(null)
+  const unfold = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | null>(null)
+  const stopUnfold = () => {
+    if (unfold.current) clearTimeout(unfold.current.timer)
+    unfold.current = null
+  }
+  useEffect(() => {
+    const end = () => {
+      setDropOn(null)
+      if (unfold.current) clearTimeout(unfold.current.timer)
+      unfold.current = null
+    }
+    document.addEventListener('dragend', end)
+    document.addEventListener('drop', end)
+    return () => {
+      document.removeEventListener('dragend', end)
+      document.removeEventListener('drop', end)
+    }
+  }, [])
+
+  const dropTarget = (f: Folder, kids: number, open: boolean) =>
+    f.access === 'view'
+      ? {}
+      : {
+          onDragOver: (e: React.DragEvent) => {
+            if (!isNoteDrag(e.dataTransfer)) return
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'move'
+            setDropOn(f.id)
+            if (kids && !open && unfold.current?.id !== f.id) {
+              stopUnfold()
+              unfold.current = { id: f.id, timer: setTimeout(() => toggle(f.id), UNFOLD_MS) }
+            }
+          },
+          onDragLeave: (e: React.DragEvent) => {
+            if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+            setDropOn((id) => (id === f.id ? null : id))
+            if (unfold.current?.id === f.id) stopUnfold()
+          },
+          onDrop: (e: React.DragEvent) => {
+            if (!isNoteDrag(e.dataTransfer)) return
+            e.preventDefault()
+            setDropOn(null)
+            stopUnfold()
+            void dropNotes(draggedNoteIds(e.dataTransfer), f)
+          },
+        }
+
+  const dropNotes = async (ids: string[], folder: Folder) => {
+    const { moved, error } = await moveNotes(repo, ids, folder.id)
+    if (error) toast.error(errorMessage(error))
+    if (!moved.length) return
+    await invalidate()
+    endSelection()
+    // Undo goes through the repo directly: the toast outlives anything on screen.
+    toast(
+      moved.length === 1
+        ? t('drop.moved', { folder: folder.name })
+        : t('drop.movedMany', { folder: folder.name, count: moved.length }),
+      {
+        action: {
+          label: t('common.undo'),
+          onClick: () =>
+            void (async () => {
+              for (const m of moved) await repo.moveNote(m.id, m.from)
+              await invalidate()
+            })(),
+        },
+      },
+    )
+  }
 
   // A folder counts the notes of its subfolders too, as its list shows them.
   const totals = useMemo(() => subtreeCounts(folders), [folders])
@@ -139,9 +231,13 @@ export function SidebarFolders() {
               <ContextMenu>
                 <ContextMenuTrigger asChild>
                   <div
+                    data-folder-id={f.id}
+                    {...dropTarget(f, kids, open)}
                     className={cn(
                       'group mb-0.5 flex h-8 items-center rounded-md pr-1 text-[13.5px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
                       active && 'bg-sidebar-accent font-medium text-foreground',
+                      dropOn === f.id &&
+                        'bg-brand/10 text-foreground ring-2 ring-brand/40 ring-inset',
                     )}
                     // Same left edge as Inbox and tags; subfolders step in. The expand arrow
                     // sits on the right, so a folder without subfolders has no gap before it.
@@ -323,6 +419,7 @@ export function SidebarFolders() {
         confirmLabel={leaving ? t('people.leaveFolder') : t('common.delete')}
         cancelLabel={t('common.cancel')}
         destructive
+        focusConfirm
         onConfirm={async () => {
           const folder = confirm
           if (!folder) return

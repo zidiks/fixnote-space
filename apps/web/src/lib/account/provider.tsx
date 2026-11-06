@@ -7,13 +7,14 @@ import { notifyNotesChanged } from '../assistant/assistant'
 import { appendToToday, captureToDaily } from '../daily'
 import { useDb } from '../db'
 import { currentListRoute } from '../layout'
+import { saveLinkWithToast } from '../link-save'
 import { platform } from '../platform'
 import { initAccount, onSharedSync } from './account'
 import { pickBackend } from './pick'
 
 /** Starts the account (session, keys, sync) once the local database is open. */
 export function AccountProvider({ children }: { children: ReactNode }) {
-  const { driver, attachments, repo } = useDb()
+  const { driver, attachments, repo, links } = useDb()
   const qc = useQueryClient()
 
   // Someone's shared folder went away while it was open here (removed, or no longer shared).
@@ -41,8 +42,24 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         attachments,
         repo,
         saveCaptured: async (content, receivedAt) => {
+          // Messengers (Telegram, Discord) share the "into today's note" setting.
           if (await captureToDaily(driver, 'telegram')) await appendToToday(repo, content)
           else await repo.createNote({ content, createdAt: receivedAt })
+        },
+        saveLink: async (link, receivedAt) => {
+          await saveLinkWithToast(
+            {
+              db: driver,
+              repo,
+              previews: links,
+              refresh: () => {
+                notifyNotesChanged()
+                return qc.invalidateQueries()
+              },
+            },
+            link,
+            { createdAt: receivedAt },
+          )
         },
         transcribe: async (audio) =>
           (
@@ -73,7 +90,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [driver, attachments, repo, qc])
+  }, [driver, attachments, repo, links, qc])
 
   return <>{children}</>
 }

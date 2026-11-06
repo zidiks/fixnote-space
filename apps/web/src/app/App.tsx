@@ -8,10 +8,13 @@ import { CallBar } from '../components/CallBar'
 import { CardPaymentDialog } from '../components/CardPaymentDialog'
 import { ChatPanel } from '../components/ChatPanel'
 import { ConnectDialog } from '../components/connect/ConnectDialog'
+import { ExtensionConnectDialog } from '../components/connect/ExtensionConnectDialog'
+import { DeleteKey } from '../components/DeleteKey'
 import { DesktopTray } from '../components/DesktopTray'
 import { DropLayer } from '../components/DropLayer'
 import { Home } from '../components/Home'
 import { LayoutOnboarding } from '../components/LayoutOnboarding'
+import { LinkMoveDialog } from '../components/LinksBar'
 import { ListView } from '../components/ListView'
 import { NoNoteOpen, NoteColumn } from '../components/NoteColumn'
 import { PairingRequestDialog } from '../components/PairingRequestDialog'
@@ -30,6 +33,7 @@ import { usesDevBackend } from '../lib/account/pick'
 import { AccountProvider } from '../lib/account/provider'
 import { AssistantProvider } from '../lib/assistant/provider'
 import { DbProvider, useDb } from '../lib/db'
+import { askExtension, parseExtensionLink, takeExtensionParam } from '../lib/extension-connect'
 import { useExternalChanges } from '../lib/external-changes'
 import { kvStore } from '../lib/kv'
 import { currentListRoute, useDocking, useLayout } from '../lib/layout'
@@ -151,6 +155,11 @@ function AppShell() {
     history.replaceState(history.state, '', url)
     if (billing === 'success' || billing === 'cancel') paymentReturned(billing)
   }, [])
+  // The browser extension's "Connect" opened the web app: ask to confirm.
+  useEffect(() => {
+    const id = takeExtensionParam()
+    if (id) askExtension(id)
+  }, [])
   // The desktop app: the page after paying hands back with fixnote://billing/…, the connect page
   // asks with fixnote://connect?authorization_id=… (`?dev-backend`: from another tab).
   useEffect(() => {
@@ -165,6 +174,8 @@ function AppShell() {
           if (result) paymentReturned(result)
           const connect = parseConnectLink(link)
           if (connect) askToConnect(connect)
+          const extension = parseExtensionLink(link)
+          if (extension) askExtension(extension)
         }),
       )
       .then((unlisten) => {
@@ -317,8 +328,11 @@ function AppShell() {
       <DesktopTray />
       <RemoteMcpBridge />
       <DropLayer />
+      <DeleteKey />
+      <LinkMoveDialog />
       <PairingRequestDialog />
       <ConnectDialog />
+      <ExtensionConnectDialog />
       <LayoutOnboarding />
       <Toaster
         theme={theme}

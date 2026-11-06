@@ -3,6 +3,8 @@ import type React from 'react'
 import { useRef } from 'react'
 import { create } from 'zustand'
 import { useUi } from '../app/store'
+import { startNoteDrag } from './note-drag'
+import { isTouch } from './touch'
 
 /**
  * Picking several notes in a list, as in the iPhone's Photos: a long press on a note starts it
@@ -57,8 +59,21 @@ export function useNotePress(note: NoteSummary) {
     start.current = null
   }
 
+  // Dragged onto a folder in the sidebar (with the other picked notes, if it is one of them).
+  // Not on touch: there a long press picks notes, and iOS would start a drag instead.
+  const draggable = !note.readOnly && !isTouch()
+
   const props = {
     'data-selected': selected ? '' : undefined,
+    // What the Delete key removes (`delete-key.ts`).
+    'data-note-id': note.id,
+    draggable: draggable || undefined,
+    onDragStart: (e: React.DragEvent) => {
+      if (!draggable) return
+      cancel()
+      const s = useSelection.getState()
+      startNoteDrag(e.dataTransfer, s.active && s.ids.includes(note.id) ? s.ids : [note.id])
+    },
     onPointerDown: (e: React.PointerEvent) => {
       if (e.button !== 0) return
       pressed.current = false

@@ -1,0 +1,125 @@
+{
+  "extName": {
+    "message": "FixNote — сохранять страницы и ссылки"
+  },
+  "extDescription": {
+    "message": "Сохраняйте открытую страницу в FixNote в один клик. Она сама ляжет в нужную папку, зашифрованная вашим ключом."
+  },
+  "actionTitle": {
+    "message": "Сохранить страницу в FixNote (Alt+Shift+S)"
+  },
+  "commandSave": {
+    "message": "Сохранить страницу в FixNote"
+  },
+  "menuPage": {
+    "message": "Сохранить страницу в FixNote"
+  },
+  "menuLink": {
+    "message": "Сохранить ссылку в FixNote"
+  },
+  "menuSelection": {
+    "message": "Сохранить выделенное в FixNote"
+  },
+  "errorPro": {
+    "message": "Сохранение из браузера входит в FixNote Pro. Откройте FixNote → Настройки → Тариф."
+  },
+  "errorNotPaired": {
+    "message": "Этот браузер больше не подключён к FixNote. Подключите его снова в настройках расширения."
+  },
+  "errorTooMany": {
+    "message": "Слишком много сохранений за минуту. Попробуйте чуть позже."
+  },
+  "errorFailed": {
+    "message": "Не получилось сохранить в FixNote. Проверьте соединение и попробуйте ещё раз."
+  },
+  "errorPage": {
+    "message": "Эту страницу сохранить нельзя (страницы браузера и файлы)."
+  },
+  "socialHeading": {
+    "message": "Закладки в соцсетях"
+  },
+  "socialHow": {
+    "message": "Когда вы нажимаете на сайте его собственную кнопку «Сохранить» или «В закладки», пост попадает и в FixNote. Только на сайтах, которые вы включите здесь."
+  },
+  "forBrowser": {
+    "message": "для браузера"
+  },
+  "startTitle": {
+    "message": "Сохраняйте страницы в FixNote"
+  },
+  "startBody": {
+    "message": "Подключите расширение к своему аккаунту FixNote. Это займёт несколько секунд."
+  },
+  "feature1": {
+    "message": "Один клик или Alt+Shift+S — и открытая страница сохранена."
+  },
+  "feature2": {
+    "message": "FixNote сам положит её в нужную папку."
+  },
+  "feature3": {
+    "message": "Шифруется прямо в браузере вашим ключом: наш сервер её не прочитает."
+  },
+  "connectButton": {
+    "message": "Подключить к FixNote"
+  },
+  "connectNote": {
+    "message": "Откроется FixNote — там нужно подтвердить."
+  },
+  "errorConnect": {
+    "message": "Не получилось связаться с FixNote. Проверьте соединение и попробуйте ещё раз."
+  },
+  "waitTitle": {
+    "message": "Подтвердите в FixNote"
+  },
+  "waitBody": {
+    "message": "В FixNote появился запрос. Подключайте, только если там этот код:"
+  },
+  "waiting": {
+    "message": "Ждём подтверждения в FixNote…"
+  },
+  "openWeb": {
+    "message": "Открыть FixNote в браузере"
+  },
+  "openDesktop": {
+    "message": "Открыть приложение FixNote на компьютере"
+  },
+  "cancel": {
+    "message": "Отмена"
+  },
+  "deniedTitle": {
+    "message": "Не подключено"
+  },
+  "deniedBody": {
+    "message": "Запрос отклонили в FixNote."
+  },
+  "expiredTitle": {
+    "message": "FixNote не ответил"
+  },
+  "expiredBody": {
+    "message": "Запрос устарел. Нажмите «Попробовать снова» и подтвердите в FixNote в течение нескольких минут."
+  },
+  "tryAgain": {
+    "message": "Попробовать снова"
+  },
+  "connectedTitle": {
+    "message": "Подключено к FixNote"
+  },
+  "howButton": {
+    "message": "Сохранить страницу"
+  },
+  "howButtonWhere": {
+    "message": "Кнопка FixNote на панели"
+  },
+  "howShortcut": {
+    "message": "То же с клавиатуры"
+  },
+  "howMenu": {
+    "message": "Ссылку или выделенный текст"
+  },
+  "howMenuWhere": {
+    "message": "Правый клик"
+  },
+  "disconnect": {
+    "message": "Отключить"
+  }
+}

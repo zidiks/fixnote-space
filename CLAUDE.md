@@ -42,7 +42,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   pages refetched after a sync can overlap.
 - Picking notes in a list (`lib/selection.ts`, `SelectionBar`): a long press or Ctrl/⌘+click
   starts it, clicks then check and uncheck; bulk pin, move, tidy up, delete (Undo; shared notes
-  are left out). Back and Escape stop it.
+  are left out). Back and Escape stop it. A note card (or the picked notes) drags onto a folder
+  in the sidebar (`lib/note-drag.ts`, not on touch; Undo). Delete (⌫/⌘⌫ on a Mac) removes the
+  card or sidebar folder last clicked or focused (`data-note-id`/`data-folder-id`,
+  `lib/delete-key.ts`), or the picked notes; it asks first and Enter confirms (`focusConfirm`).
+  Alt+←/→ is back/forward except on a Mac (word jumps there); ⌘H/⌘W go to the macOS app menu.
 - Two layouts, chosen per device (`useUi().layout`, kept with the theme in `fixnote.ui`):
   `assistant` (Home with large cards, a note opens in place) and `notes` (like Bear: sidebar, a
   column of compact cards `NoteColumn`, the open note; phones show one at a time). The column
@@ -112,6 +116,29 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `DropLayer` (`lib/drop.ts`): into the open note, else a new note.
 - Capture (Telegram): the bot only seals and queues (`supabase/functions/telegram-bot`); notes are
   made on the device (`packages/core/src/capture`). The payload format lives in both places.
+  Discord (`functions/discord-bot`): a user-installed app, since plain messages need the Gateway;
+  "Save to FixNote" on a message, `/save`, `/disconnect` as signed HTTP interactions (deferred
+  answer, `EdgeRuntime.waitUntil`); Connect is Discord's OAuth with `state` = the capture code,
+  back to `…/discord-bot/oauth`; commands are registered with `register.ts`. The browser
+  extension (`apps/extension`, MV3, `pnpm --filter @fixnote/extension build` → dist) seals in
+  the browser and posts to `functions/capture-extension`. It connects like an AI app: its options
+  page asks (`/request`: id, secret, short code), opens `app.fixnote.space/?extension=<id>` (or
+  `fixnote://extension?id=`), the app confirms in `ExtensionConnectDialog` (code shown on both
+  sides, `*_extension_requests.sql`), and `/poll` with the secret then gives the token, whose
+  SHA-256 is the `capture_links` row (not OAuth: such a token would also open the remote MCP).
+  `__devCapture.extensionRequest()` opens the dialog with `?dev-backend`. Social networks' own Save buttons are matched by rules
+  in `apps/landing/public/extension/sites.json` (same as `DEFAULT_SITES`, a test checks), per site
+  opt-in. Channels: `*_capture_channels.sql`; `__devCapture.send(payload, channel)` with
+  `?dev-backend`.
+- Links are notes (`packages/core/src/links/note.ts`): `# Title`, the URL alone on the next line,
+  the quote, the description, the page text folded in `<details>`; `linkUrlOf`/`LINK_SQL` tell a
+  link from the text (no column, no sync change), `NoteSummary.url`, filter `links`, the Links
+  route with topics = folders holding links (`LinksBar`). A captured link (payload `link`, or a
+  message that is only a URL) goes through `lib/link-save.ts`: same page (`normalizeUrl`) → no
+  copy; else `placeLink` (two moves of a site's links to one folder win; embeddings when semantic
+  search is on, else word overlap; else one model call names a topic under "Links", never on Free
+  or local-only; else Links/Misc; shared folders never). The toast's Change (`LinkMoveDialog`)
+  moves it, records a lesson (kv `links.lessons`) and drops a topic folder made for it if empty.
 - Speech and embeddings run in the webview on both platforms (transformers.js workers in
   `platform-web`); the Rust side only fetches pages, streams HTTP for the user's own LLM key,
   stores files, holds keys and edits MCP client configs. Every on-device model is listed in

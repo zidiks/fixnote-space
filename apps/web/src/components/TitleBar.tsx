@@ -70,6 +70,8 @@ function useRouteLabel(route: Route): string {
       return t('sidebar.daily')
     case 'overview':
       return t('layout.overview')
+    case 'links':
+      return t('links.nav')
   }
 }
 

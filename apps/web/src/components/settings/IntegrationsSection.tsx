@@ -1,8 +1,8 @@
 import { useTranslation } from '@fixnote/i18n'
 import { Button, Spinner } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link2Off, Send } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
+import { Globe, Link2Off, MessageCircle, Send } from 'lucide-react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../../app/store'
 import { captureBackend, useAccount } from '../../lib/account/account'
@@ -22,7 +22,9 @@ import { RemoteMcpCard } from './RemoteMcpCard'
 export function IntegrationsSection() {
   return (
     <div className="space-y-3">
+      <ExtensionCard />
       <TelegramCard />
+      <DiscordCard />
       <RemoteMcpCard card={IntegrationCard} />
     </div>
   )
@@ -60,40 +62,67 @@ function IntegrationCard({
 
 const LINKS = ['capture-links'] as const
 
-/** The Telegram capture bot: a one-time code in a t.me deep link, then wait for Start. */
-function TelegramCard() {
+type Channel = 'telegram' | 'discord' | 'extension'
+
+/**
+ * A capture channel's card: Connect makes a one-time code and opens where the channel takes it
+ * (`open(code)`), then waits until the server lists the new link; Disconnect removes this
+ * channel's links. Without `open` the channel connects from its own side (the extension asks,
+ * `ExtensionConnectDialog` confirms) and the card only lists and disconnects.
+ */
+function CaptureCard({
+  channel,
+  icon,
+  name,
+  body,
+  waitingText,
+  open,
+  settings,
+  extra,
+}: {
+  channel: Channel
+  icon: ReactNode
+  name: string
+  body: string
+  waitingText?: string
+  open?: (code: string) => Promise<void>
+  settings?: ReactNode
+  /** More buttons beside Connect (Install). */
+  extra?: ReactNode
+}) {
   const { t } = useTranslation()
-  const platform = usePlatform()
   const qc = useQueryClient()
-  const [waiting, setWaiting] = useState(false)
+  const [code, setCode] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const phase = useAccount((s) => s.phase)
   const backend = captureBackend()
-  const links = useQuery({
+  const all = useQuery({
     queryKey: LINKS,
     queryFn: () => backend?.captureLinks() ?? [],
     enabled: Boolean(backend),
-    // While the user is in Telegram, look for the new link every few seconds.
-    refetchInterval: (q) => (waiting && !q.state.data?.length ? 3000 : false),
-  })
-  const bot = env.telegramBot ?? (import.meta.env.DEV ? 'fixnote_dev_bot' : undefined)
-  const localOnly = useLlm((s) => s.localOnly)
-  const { driver } = useDb()
-  const toDaily = useQuery({
-    queryKey: ['kv', CAPTURE_TO_DAILY],
-    queryFn: () => captureToDaily(driver, 'telegram'),
+    // While the person finishes in the other app, look for the new link every few seconds.
+    refetchInterval: code ? 3000 : false,
   }).data
-  if (!bot || phase === 'disabled') return null
-  const list = links.data ?? []
+  const list = (all ?? []).filter((l) => l.channel === channel)
+  const localOnly = useLlm((s) => s.localOnly)
+  const known = useRef<number | null>(null)
+  // A new link arrived while waiting: done.
+  useEffect(() => {
+    if (!code) {
+      known.current = list.length
+      return
+    }
+    if (known.current !== null && list.length > known.current) setCode(null)
+  }, [code, list.length])
 
   const connect = async () => {
-    if (!backend) return
+    if (!backend || !open) return
     setBusy(true)
     try {
-      const code = await backend.createCaptureCode()
-      setWaiting(true)
-      await platform.openExternal(`https://t.me/${bot}?start=${encodeURIComponent(code)}`)
-      setTimeout(() => setWaiting(false), 5 * 60_000)
+      const next = await backend.createCaptureCode()
+      known.current = list.length
+      setCode(next)
+      await open(next)
+      setTimeout(() => setCode((c) => (c === next ? null : c)), 15 * 60_000)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err))
     } finally {
@@ -125,30 +154,134 @@ function TelegramCard() {
       <Link2Off />
       {t('capture.unlink')}
     </Button>
-  ) : waiting ? (
+  ) : code ? (
     <span className="flex items-center gap-2 text-sm text-muted-foreground">
       <Spinner />
-      {t('capture.waiting')}
+      {waitingText}
     </span>
+  ) : !open ? (
+    extra
   ) : (
-    <Button
-      variant="outline"
-      size="sm"
-      loading={busy}
-      onClick={() => withPro('integrations', () => void connect())}
-    >
-      {t('capture.connect')}
-    </Button>
+    <>
+      {extra}
+      <Button
+        variant="outline"
+        size="sm"
+        loading={busy}
+        onClick={() => withPro('integrations', () => void connect())}
+      >
+        {t('capture.connect')}
+      </Button>
+    </>
   )
 
   return (
     <IntegrationCard
-      icon={<Send className="size-4" />}
-      name={t('capture.title')}
+      icon={icon}
+      name={name}
       body={
         list.length
-          ? t('capture.linked', { label: list.map((l) => l.label || 'Telegram').join(', ') })
-          : t('capture.body')
+          ? t('capture.linked', { label: list.map((l) => l.label || name).join(', ') })
+          : body
+      }
+      settings={list.length ? settings : undefined}
+    >
+      {action}
+    </IntegrationCard>
+  )
+}
+
+/** The Discord app: Discord's own authorize page (install + who you are), `state` = the code. */
+function DiscordCard() {
+  const { t } = useTranslation()
+  const platform = usePlatform()
+  const phase = useAccount((s) => s.phase)
+  if (!env.discordAppId || !env.supabaseUrl || phase === 'disabled') return null
+  const appId = env.discordAppId
+  const redirect = `${env.supabaseUrl}/functions/v1/discord-bot/oauth`
+  return (
+    <CaptureCard
+      channel="discord"
+      icon={<MessageCircle className="size-4" />}
+      name={t('discord.title')}
+      body={t('discord.body')}
+      waitingText={t('discord.waiting')}
+      open={(code) =>
+        platform.openExternal(
+          `https://discord.com/oauth2/authorize?${new URLSearchParams({
+            client_id: appId,
+            response_type: 'code',
+            redirect_uri: redirect,
+            scope: 'identify applications.commands',
+            integration_type: '1',
+            state: code,
+          })}`,
+        )
+      }
+    />
+  )
+}
+
+/**
+ * The browser extension: it asks to connect itself (its "Connect" opens this app, which confirms
+ * in `ExtensionConnectDialog`), so the card only says how, offers Install and disconnects.
+ */
+function ExtensionCard() {
+  const { t } = useTranslation()
+  const platform = usePlatform()
+  const phase = useAccount((s) => s.phase)
+  if (phase === 'disabled') return null
+  return (
+    <CaptureCard
+      channel="extension"
+      icon={<Globe className="size-4" />}
+      name={t('extension.title')}
+      body={`${t('extension.body')} ${t('extension.howTo')}`}
+      extra={
+        env.extensionUrl ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void platform.openExternal(env.extensionUrl as string)}
+          >
+            {t('extension.install')}
+          </Button>
+        ) : null
+      }
+    />
+  )
+}
+
+/** The Telegram capture bot: a one-time code in a t.me deep link, then wait for Start. */
+function TelegramCard() {
+  const { t } = useTranslation()
+  const platform = usePlatform()
+  const qc = useQueryClient()
+  const phase = useAccount((s) => s.phase)
+  const backend = captureBackend()
+  const links = useQuery({
+    queryKey: LINKS,
+    queryFn: () => backend?.captureLinks() ?? [],
+    enabled: Boolean(backend),
+  })
+  const bot = env.telegramBot ?? (import.meta.env.DEV ? 'fixnote_dev_bot' : undefined)
+  const { driver } = useDb()
+  const toDaily = useQuery({
+    queryKey: ['kv', CAPTURE_TO_DAILY],
+    queryFn: () => captureToDaily(driver, 'telegram'),
+  }).data
+  if (!bot || phase === 'disabled') return null
+  const list = (links.data ?? []).filter((l) => l.channel === 'telegram')
+
+  return (
+    <CaptureCard
+      channel="telegram"
+      icon={<Send className="size-4" />}
+      name={t('capture.title')}
+      body={t('capture.body')}
+      waitingText={t('capture.waiting')}
+      open={(code) =>
+        platform.openExternal(`https://t.me/${bot}?start=${encodeURIComponent(code)}`)
       }
       settings={
         list.length ? (
@@ -172,8 +305,6 @@ function TelegramCard() {
           </label>
         ) : undefined
       }
-    >
-      {action}
-    </IntegrationCard>
+    />
   )
 }

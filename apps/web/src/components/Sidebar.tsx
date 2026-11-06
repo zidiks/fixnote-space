@@ -10,6 +10,7 @@ import {
   HardDrive,
   House,
   LayoutDashboard,
+  Link2,
   RefreshCw,
   Search,
   Settings,
@@ -104,6 +105,13 @@ export function Sidebar() {
           label={t('sidebar.daily')}
           active={layout === 'notes' && list?.kind === 'today' && !whole}
           onClick={today}
+        />
+        <NavItem
+          icon={Link2}
+          label={t('links.nav')}
+          count={counts?.links}
+          active={layout === 'notes' ? list?.kind === 'links' && !whole : route.kind === 'links'}
+          onClick={() => navigate({ kind: 'links' })}
         />
         {layout === 'notes' ? (
           <NavItem

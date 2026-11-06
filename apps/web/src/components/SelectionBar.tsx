@@ -2,6 +2,7 @@ import { folderTree, type NoteSummary } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
+  ConfirmDialog,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -30,6 +31,7 @@ import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { findSuggestions, refreshTidyCount } from '../lib/assistant/tidy'
 import { useDb, useRepo } from '../lib/db'
+import { useDeleteKeyHandler } from '../lib/delete-key'
 import { useBackLayer } from '../lib/nav-history'
 import { useFolders, useInvalidateNotes } from '../lib/queries'
 import { endSelection, selectAll, useSelection } from '../lib/selection'
@@ -88,17 +90,25 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
   useEffect(() => {
     if (!active) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') endSelection()
+      // Escape in the delete question closes only the question.
+      if (e.key === 'Escape' && !document.querySelector('[role="alertdialog"]')) endSelection()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [active])
   useEffect(() => () => endSelection(), [])
 
-  if (!active) return null
   const picked = notes.filter((n) => ids.includes(n.id))
   const writable = picked.filter((n) => !n.readOnly)
   const allPinned = picked.length > 0 && picked.every((n) => n.pinnedAt !== null)
+  const canDelete = writable.some((n) => !n.sharedId)
+  // Delete asks first; Enter confirms.
+  const [asking, setAsking] = useState(false)
+  useDeleteKeyHandler('selection', () => {
+    if (canDelete && busy === null) setAsking(true)
+  })
+
+  if (!active) return null
 
   const run = async (key: string, fn: () => Promise<void>) => {
     setBusy(key)
@@ -253,7 +263,7 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
         size="sm"
         variant="ghost"
         className="rounded-full text-destructive hover:text-destructive"
-        disabled={busy !== null || !writable.some((n) => !n.sharedId)}
+        disabled={busy !== null || !canDelete}
         loading={busy === 'delete'}
         onClick={() => void remove()}
         title={t('select.delete')}
@@ -261,6 +271,20 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
         <Trash2 />
         <span className={label}>{t('select.delete')}</span>
       </Button>
+      <ConfirmDialog
+        open={asking}
+        onOpenChange={setAsking}
+        title={t('select.deleteTitle', { count: writable.filter((n) => !n.sharedId).length })}
+        description={t('note.deleteBody')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        focusConfirm
+        onConfirm={() => {
+          setAsking(false)
+          void remove()
+        }}
+      />
     </div>
   )
 }

@@ -1,0 +1,125 @@
+{
+  "extName": {
+    "message": "FixNote — guarda páginas y enlaces"
+  },
+  "extDescription": {
+    "message": "Guarda en FixNote la página que estás leyendo con un clic. Va sola a la carpeta adecuada, cifrada con tu clave."
+  },
+  "actionTitle": {
+    "message": "Guardar esta página en FixNote (Alt+Shift+S)"
+  },
+  "commandSave": {
+    "message": "Guardar esta página en FixNote"
+  },
+  "menuPage": {
+    "message": "Guardar página en FixNote"
+  },
+  "menuLink": {
+    "message": "Guardar enlace en FixNote"
+  },
+  "menuSelection": {
+    "message": "Guardar selección en FixNote"
+  },
+  "errorPro": {
+    "message": "Guardar desde el navegador es parte de FixNote Pro. Abre FixNote → Ajustes → Plan."
+  },
+  "errorNotPaired": {
+    "message": "Este navegador ya no está conectado a FixNote. Vuelve a conectarlo en las opciones de la extensión."
+  },
+  "errorTooMany": {
+    "message": "Demasiados guardados en un minuto. Inténtalo en un momento."
+  },
+  "errorFailed": {
+    "message": "No se pudo guardar en FixNote. Revisa la conexión e inténtalo de nuevo."
+  },
+  "errorPage": {
+    "message": "Esta página no se puede guardar (páginas del navegador y archivos)."
+  },
+  "socialHeading": {
+    "message": "Guardados en redes sociales"
+  },
+  "socialHow": {
+    "message": "Cuando pulsas el botón Guardar del propio sitio, la publicación llega también a FixNote. Solo en los sitios que actives aquí."
+  },
+  "forBrowser": {
+    "message": "para el navegador"
+  },
+  "startTitle": {
+    "message": "Guarda páginas en FixNote"
+  },
+  "startBody": {
+    "message": "Conecta la extensión a tu cuenta de FixNote. Tarda unos segundos."
+  },
+  "feature1": {
+    "message": "Un clic o Alt+Shift+S guarda la página que estás leyendo."
+  },
+  "feature2": {
+    "message": "FixNote la pone sola en la carpeta adecuada."
+  },
+  "feature3": {
+    "message": "Se cifra aquí en el navegador con tu clave: nuestro servidor no puede leerla."
+  },
+  "connectButton": {
+    "message": "Conectar con FixNote"
+  },
+  "connectNote": {
+    "message": "Se abre FixNote y te pide confirmar."
+  },
+  "errorConnect": {
+    "message": "No se pudo contactar con FixNote. Revisa la conexión e inténtalo de nuevo."
+  },
+  "waitTitle": {
+    "message": "Confirma en FixNote"
+  },
+  "waitBody": {
+    "message": "FixNote muestra una solicitud. Conecta solo si muestra este código:"
+  },
+  "waiting": {
+    "message": "Esperando a FixNote…"
+  },
+  "openWeb": {
+    "message": "Abrir FixNote en el navegador"
+  },
+  "openDesktop": {
+    "message": "Abrir la app de FixNote para ordenador"
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "deniedTitle": {
+    "message": "No conectado"
+  },
+  "deniedBody": {
+    "message": "La solicitud se rechazó en FixNote."
+  },
+  "expiredTitle": {
+    "message": "FixNote no respondió"
+  },
+  "expiredBody": {
+    "message": "La solicitud caducó. Pulsa Intentar de nuevo y confirma en FixNote en unos minutos."
+  },
+  "tryAgain": {
+    "message": "Intentar de nuevo"
+  },
+  "connectedTitle": {
+    "message": "Conectado a FixNote"
+  },
+  "howButton": {
+    "message": "Guardar esta página"
+  },
+  "howButtonWhere": {
+    "message": "Botón de FixNote en la barra"
+  },
+  "howShortcut": {
+    "message": "Lo mismo con el teclado"
+  },
+  "howMenu": {
+    "message": "Un enlace o texto seleccionado"
+  },
+  "howMenuWhere": {
+    "message": "Clic derecho"
+  },
+  "disconnect": {
+    "message": "Desconectar"
+  }
+}

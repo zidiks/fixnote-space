@@ -1,13 +1,14 @@
 import { type NoteFilter, type NoteSummary, subtreeCounts } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button, cn, Tooltip, TooltipContent, TooltipTrigger } from '@fixnote/ui'
-import { CalendarDays, Folder, House, Pin, Search, SquarePen, X } from 'lucide-react'
+import { CalendarDays, Folder, House, Link2, Pin, Search, SquarePen, X } from 'lucide-react'
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
 import { LIST_WIDTH, type ListRoute, useUi } from '../app/store'
 import { listFilter } from '../lib/layout'
 import { useNoteList } from '../lib/note-list'
 import { useCounts, useCreateNote, useFolders, useSearch } from '../lib/queries'
 import { startOfDay } from '../lib/time'
+import { LinksBar } from './LinksBar'
 import { NoteSnippet } from './NoteCard'
 import { useGroupLabel, ViewMenu } from './NoteGrid'
 import { SelectionBar } from './SelectionBar'
@@ -48,8 +49,17 @@ export function NoteColumn({
       ? (folder?.name ?? '')
       : list.kind === 'today'
         ? t('sidebar.daily')
-        : t('nav.home')
-  const Icon = list.kind === 'folder' ? Folder : list.kind === 'today' ? CalendarDays : House
+        : list.kind === 'links'
+          ? t('links.nav')
+          : t('nav.home')
+  const Icon =
+    list.kind === 'folder'
+      ? Folder
+      : list.kind === 'today'
+        ? CalendarDays
+        : list.kind === 'links'
+          ? Link2
+          : House
   const count =
     list.kind === 'folder'
       ? folder && folders
@@ -59,9 +69,11 @@ export function NoteColumn({
         ? list.filter === 'inbox'
           ? counts?.inbox
           : counts?.all
-        : undefined
-  // View only: nothing is added to someone else's folder from here.
-  const canAdd = folder?.access !== 'view'
+        : list.kind === 'links'
+          ? counts?.links
+          : undefined
+  // View only: nothing is added to someone else's folder from here. Links come from the bar.
+  const canAdd = folder?.access !== 'view' && list.kind !== 'links'
   const newNote = () =>
     createNote.mutate(
       { content: '', folderId: list.kind === 'folder' ? list.id : null },
@@ -130,6 +142,7 @@ export function NoteColumn({
             </button>
           ) : null}
         </label>
+        {list.kind === 'links' ? <LinksBar list={list} /> : null}
         {list.kind === 'home' ? (
           <div className="flex gap-1">
             {(['all', 'inbox'] as const).map((s) => {
@@ -175,11 +188,13 @@ export function NoteColumn({
             empty={
               list.kind === 'folder'
                 ? t('list.emptyFolder')
-                : list.kind === 'today'
-                  ? t('layout.emptyToday')
-                  : list.filter === 'inbox'
-                    ? t('home.emptyFiltered')
-                    : t('home.empty.title')
+                : list.kind === 'links'
+                  ? t('links.empty')
+                  : list.kind === 'today'
+                    ? t('layout.emptyToday')
+                    : list.filter === 'inbox'
+                      ? t('home.emptyFiltered')
+                      : t('home.empty.title')
             }
           />
         )}

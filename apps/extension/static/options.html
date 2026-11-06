@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FixNote</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        /* The app's tokens (packages/ui/src/styles.css). */
+        --bg: oklch(0.975 0.004 80);
+        --card: oklch(1 0 0);
+        --fg: oklch(0.24 0.006 60);
+        --muted: oklch(0.965 0.004 80);
+        --muted-fg: oklch(0.54 0.008 60);
+        --border: oklch(0.915 0.005 80);
+        --brand: oklch(0.66 0.19 45);
+        --brand-soft: oklch(0.66 0.19 45 / 0.1);
+        --success: oklch(0.52 0.13 150);
+        --success-soft: oklch(0.52 0.13 150 / 0.12);
+        --danger: oklch(0.58 0.2 27);
+        --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+        font: 14px/1.5 "Inter Variable", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+          sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: oklch(0.17 0.004 60);
+          --card: oklch(0.215 0.004 60);
+          --fg: oklch(0.93 0.004 80);
+          --muted: oklch(0.25 0.004 60);
+          --muted-fg: oklch(0.68 0.006 70);
+          --border: oklch(0.3 0.004 60);
+          --brand: oklch(0.72 0.17 50);
+          --brand-soft: oklch(0.72 0.17 50 / 0.14);
+          --success: oklch(0.74 0.14 150);
+          --success-soft: oklch(0.74 0.14 150 / 0.14);
+          --danger: oklch(0.7 0.17 27);
+          --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      main {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 48px 16px 32px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      header img {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+      }
+      header span {
+        color: var(--muted-fg);
+        font-weight: 400;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 28px 24px 24px;
+        margin-bottom: 12px;
+      }
+      h1 {
+        font-size: 20px;
+        line-height: 1.3;
+        font-weight: 600;
+        margin: 0 0 6px;
+        text-wrap: balance;
+      }
+      h2 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      p {
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted-fg);
+      }
+      .small {
+        font-size: 13px;
+      }
+      .center {
+        text-align: center;
+      }
+      .badge {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 16px;
+        border-radius: 14px;
+        background: var(--brand-soft);
+        color: var(--brand);
+      }
+      .badge.ok {
+        background: var(--success-soft);
+        color: var(--success);
+      }
+      .badge svg {
+        width: 24px;
+        height: 24px;
+      }
+      ul.features {
+        list-style: none;
+        padding: 0;
+        margin: 20px 0 24px;
+        display: grid;
+        gap: 12px;
+      }
+      ul.features li {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      ul.features svg {
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        color: var(--brand);
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        border-radius: 10px;
+        height: 40px;
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.15s, opacity 0.15s;
+      }
+      button:hover {
+        background: var(--muted);
+      }
+      button.primary {
+        width: 100%;
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+        font-weight: 500;
+      }
+      button.primary:hover {
+        opacity: 0.92;
+      }
+      button.ghost {
+        border-color: transparent;
+        background: transparent;
+        color: var(--muted-fg);
+      }
+      button.ghost:hover {
+        background: var(--muted);
+        color: var(--fg);
+      }
+      button.danger {
+        color: var(--danger);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .stack {
+        display: grid;
+        gap: 8px;
+      }
+      .code {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin: 20px 0 8px;
+      }
+      .code span {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 54px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--muted);
+        font: 600 26px/1 ui-monospace, "SF Mono", Consolas, monospace;
+      }
+      .status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin: 16px 0 20px;
+        color: var(--muted-fg);
+      }
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        border-top-color: var(--brand);
+        animation: spin 0.8s linear infinite;
+      }
+      button .spinner {
+        border-color: rgb(255 255 255 / 0.4);
+        border-top-color: #fff;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .error {
+        color: var(--danger);
+        font-size: 13px;
+        margin-top: 10px;
+      }
+      .note {
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: var(--brand-soft);
+        font-size: 13px;
+        margin-top: 16px;
+      }
+      .how {
+        display: grid;
+        gap: 10px;
+        margin: 20px 0 0;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: var(--muted);
+      }
+      .how div {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+      kbd {
+        flex: none;
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        border-radius: 6px;
+        padding: 1px 6px;
+        background: var(--card);
+        font: 12px ui-monospace, Consolas, monospace;
+      }
+      .sites {
+        display: grid;
+        margin-top: 12px;
+      }
+      .site {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-top: 1px solid var(--border);
+        cursor: pointer;
+      }
+      .switch {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        flex: none;
+      }
+      .switch input {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .switch span {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: var(--border);
+        transition: background 0.15s;
+        pointer-events: none;
+      }
+      .switch span::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+        transition: transform 0.15s;
+      }
+      .switch input:checked + span {
+        background: var(--brand);
+      }
+      .switch input:checked + span::after {
+        transform: translateX(16px);
+      }
+      .switch input:focus-visible + span {
+        outline: 2px solid var(--brand);
+        outline-offset: 2px;
+      }
+      .row-end {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icons/icon.svg" alt="" />
+        FixNote <span data-msg="forBrowser">for the browser</span>
+      </header>
+
+      <!-- Not connected yet. -->
+      <section id="view-start" class="card" hidden>
+        <div class="badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <h1 class="center" data-msg="startTitle">Save pages to FixNote</h1>
+        <p class="center muted" data-msg="startBody">Connect the extension to your FixNote account.</p>
+        <ul class="features">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h.01"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></svg>
+            <span data-msg="feature1">One click or Alt+Shift+S saves the page you are reading.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+            <span data-msg="feature2">FixNote puts it into the right folder by itself.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span data-msg="feature3">Encrypted here in the browser with your key.</span>
+          </li>
+        </ul>
+        <button id="connect" class="primary" type="button">
+          <span data-msg="connectButton">Connect to FixNote</span>
+        </button>
+        <p class="center muted small" style="margin-top: 10px" data-msg="connectNote">
+          FixNote opens and asks you to confirm.
+        </p>
+        <p id="start-error" class="error center" hidden></p>
+      </section>
+
+      <!-- Waiting for the confirmation in the app. -->
+      <section id="view-wait" class="card" hidden>
+        <h1 class="center" data-msg="waitTitle">Confirm in FixNote</h1>
+        <p class="center muted" data-msg="waitBody">FixNote shows a request. Check that the code matches:</p>
+        <div id="code" class="code" aria-live="polite"></div>
+        <div class="status"><span class="spinner"></span><span data-msg="waiting">Waiting for FixNote…</span></div>
+        <div class="stack">
+          <button id="open-web" type="button" data-msg="openWeb">Open FixNote in the browser</button>
+          <button id="open-desktop" type="button" data-msg="openDesktop">Open the desktop app</button>
+          <button id="cancel" class="ghost" type="button" data-msg="cancel">Cancel</button>
+        </div>
+      </section>
+
+      <!-- Denied or expired. -->
+      <section id="view-failed" class="card center" hidden>
+        <h1 id="failed-title">Not connected</h1>
+        <p id="failed-body" class="muted"></p>
+        <div class="stack" style="margin-top: 20px">
+          <button id="retry" class="primary" type="button" data-msg="tryAgain">Try again</button>
+        </div>
+      </section>
+
+      <!-- Connected. -->
+      <section id="view-connected" hidden>
+        <div class="card">
+          <div class="badge ok">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <h1 class="center" data-msg="connectedTitle">Connected to FixNote</h1>
+          <p id="connected-label" class="center muted"></p>
+          <div class="how">
+            <div><span data-msg="howButton">Save this page</span><span class="muted small" data-msg="howButtonWhere">FixNote button on the toolbar</span></div>
+            <div><span data-msg="howShortcut">Same, from the keyboard</span><kbd>Alt+Shift+S</kbd></div>
+            <div><span data-msg="howMenu">A link or selected text</span><span class="muted small" data-msg="howMenuWhere">Right-click</span></div>
+          </div>
+          <p id="not-pro" class="note" data-msg="errorPro" hidden>Saving from the browser is part of FixNote Pro.</p>
+        </div>
+
+        <div class="card">
+          <h2 data-msg="socialHeading">Bookmarks on social networks</h2>
+          <p class="muted small" data-msg="socialHow">When you press the site's own Save, the post goes to FixNote too.</p>
+          <div id="sites" class="sites"></div>
+        </div>
+
+        <div class="row-end">
+          <button id="unpair" class="ghost danger" type="button" data-msg="disconnect">Disconnect</button>
+        </div>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

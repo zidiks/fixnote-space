@@ -1,0 +1,125 @@
+{
+  "extName": {
+    "message": "FixNote — save pages and links"
+  },
+  "extDescription": {
+    "message": "Save the page you are reading to FixNote in one click. It goes into the right folder by itself, encrypted with your key."
+  },
+  "actionTitle": {
+    "message": "Save this page to FixNote (Alt+Shift+S)"
+  },
+  "commandSave": {
+    "message": "Save this page to FixNote"
+  },
+  "menuPage": {
+    "message": "Save page to FixNote"
+  },
+  "menuLink": {
+    "message": "Save link to FixNote"
+  },
+  "menuSelection": {
+    "message": "Save selection to FixNote"
+  },
+  "errorPro": {
+    "message": "Saving from the browser is part of FixNote Pro. Open FixNote → Settings → Plan."
+  },
+  "errorNotPaired": {
+    "message": "This browser is no longer connected to FixNote. Connect it again in the extension's options."
+  },
+  "errorTooMany": {
+    "message": "Too many saves in a minute. Try again shortly."
+  },
+  "errorFailed": {
+    "message": "Could not save to FixNote. Check the connection and try again."
+  },
+  "errorPage": {
+    "message": "This page cannot be saved (browser pages and files)."
+  },
+  "socialHeading": {
+    "message": "Bookmarks on social networks"
+  },
+  "socialHow": {
+    "message": "When you press the site's own Save or Bookmark, the post goes to FixNote too. Only on the sites you turn on here."
+  },
+  "forBrowser": {
+    "message": "for the browser"
+  },
+  "startTitle": {
+    "message": "Save pages to FixNote"
+  },
+  "startBody": {
+    "message": "Connect the extension to your FixNote account. It takes a few seconds."
+  },
+  "feature1": {
+    "message": "One click or Alt+Shift+S saves the page you are reading."
+  },
+  "feature2": {
+    "message": "FixNote puts it into the right folder by itself."
+  },
+  "feature3": {
+    "message": "Encrypted here in the browser with your key: our server cannot read it."
+  },
+  "connectButton": {
+    "message": "Connect to FixNote"
+  },
+  "connectNote": {
+    "message": "FixNote opens and asks you to confirm."
+  },
+  "errorConnect": {
+    "message": "Could not reach FixNote. Check the connection and try again."
+  },
+  "waitTitle": {
+    "message": "Confirm in FixNote"
+  },
+  "waitBody": {
+    "message": "FixNote shows a request. Connect only if it shows this code:"
+  },
+  "waiting": {
+    "message": "Waiting for FixNote…"
+  },
+  "openWeb": {
+    "message": "Open FixNote in the browser"
+  },
+  "openDesktop": {
+    "message": "Open the FixNote desktop app"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "deniedTitle": {
+    "message": "Not connected"
+  },
+  "deniedBody": {
+    "message": "The request was denied in FixNote."
+  },
+  "expiredTitle": {
+    "message": "FixNote did not answer"
+  },
+  "expiredBody": {
+    "message": "The request has expired. Press Try again and confirm in FixNote within a few minutes."
+  },
+  "tryAgain": {
+    "message": "Try again"
+  },
+  "connectedTitle": {
+    "message": "Connected to FixNote"
+  },
+  "howButton": {
+    "message": "Save this page"
+  },
+  "howButtonWhere": {
+    "message": "FixNote button on the toolbar"
+  },
+  "howShortcut": {
+    "message": "The same from the keyboard"
+  },
+  "howMenu": {
+    "message": "A link or selected text"
+  },
+  "howMenuWhere": {
+    "message": "Right-click menu"
+  },
+  "disconnect": {
+    "message": "Disconnect"
+  }
+}

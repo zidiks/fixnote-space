@@ -27,6 +27,8 @@ jobs:
           URL: ${{ vars.VITE_SUPABASE_URL }}
           KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           BOT: ${{ vars.VITE_TELEGRAM_BOT }}
+          DISCORD: ${{ vars.VITE_DISCORD_APP_ID }}
+          EXTENSION: ${{ vars.VITE_EXTENSION_URL }}
           WEB: ${{ vars.VITE_WEB_URL }}
         # .env.example has the public defaults; each repository variable that is set replaces its
         # line (before, the bot name was dropped whenever the Supabase pair was not set).
@@ -44,6 +46,8 @@ jobs:
             put VITE_SUPABASE_ANON_KEY "$KEY"
           fi
           put VITE_TELEGRAM_BOT "$BOT"
+          put VITE_DISCORD_APP_ID "$DISCORD"
+          put VITE_EXTENSION_URL "$EXTENSION"
           put VITE_WEB_URL "$WEB"
           grep -o '^VITE_[A-Z_]*=' .env | tr '\n' ' '
       - run: pnpm lint

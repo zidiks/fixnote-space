@@ -7,6 +7,7 @@ import {
   anySource,
   attachmentIds,
   type BlobStore,
+  type CapturedLink,
   cryptoReady,
   deriveKeys,
   forgetLocalNotes,
@@ -97,7 +98,9 @@ interface Deps {
   /** Speech to text for voice messages from capture channels; may fail (model unavailable). */
   transcribe: (audio: Blob) => Promise<string>
   /** Where a captured message goes (a new note, or today's note). */
-  saveCaptured?: (content: string, receivedAt: number) => Promise<void>
+  saveCaptured?: (content: string, receivedAt: number, channel: string) => Promise<void>
+  /** A captured link (browser extension, or a bare URL sent to a bot): a placed link note. */
+  saveLink?: (link: CapturedLink, receivedAt: number, channel: string) => Promise<void>
   /** Messages from Telegram became notes. */
   onCaptured: (count: number) => void
   /** Refresh UI queries after remote changes arrived. */
@@ -648,6 +651,7 @@ export async function runSync() {
         attachments: d.attachments,
         transcribe: d.transcribe,
         ...(d.saveCaptured ? { save: d.saveCaptured } : {}),
+        ...(d.saveLink ? { saveLink: d.saveLink } : {}),
       })
       if (captured.imported) {
         d.onCaptured(captured.imported)
