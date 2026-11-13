@@ -2,9 +2,10 @@
 import { type Lang, localePath, t } from '../i18n'
 import { featurePath } from '../lib/pages'
 import LangMenu from './LangMenu.astro'
+import LogoMark from './LogoMark.astro'
 
 /**
- * One bar: product links on the left, an empty centre, the rest and Download on the right.
+ * One bar: the mark (it is the way home) and product links on the left, an empty centre, the rest and Download on the right.
  * It lies flat over the top of the page and, once the page scrolls, gathers into a floating pill
  * (`data-float`, set by the observer below; no scroll handler). Phones get a full-screen menu
  * (a checkbox, no script). Pages that draw under it (`overlay`) get no spacer.
@@ -17,8 +18,8 @@ interface Props {
 }
 const { lang, path, alternates, overlay = false } = Astro.props
 const d = t(lang)
+const home = { label: d.nav.home, href: localePath(lang, '/'), page: '/' }
 const left = [
-  { label: d.nav.home, href: localePath(lang, '/'), page: '/' },
   { label: d.nav.features, href: localePath(lang, '/features/'), page: '/features/' },
   { label: d.nav.tidy, href: featurePath(lang, 'tidy-up') },
   { label: d.nav.integrations, href: featurePath(lang, 'mcp') },
@@ -50,6 +51,11 @@ const current = (page?: string) =>
         </svg>
       </label>
       <ul class="hdr-links hidden medium:flex">
+        <li>
+          <a href={home.href} aria-current={current(home.page) ? 'page' : undefined} aria-label={home.label} class="hdr-link hdr-brand">
+            <LogoMark />
+          </a>
+        </li>
         {
           left.map((item) => (
             <li>
@@ -83,7 +89,7 @@ const current = (page?: string) =>
   <div class="gnav-menu pointer-events-auto fixed inset-x-0 top-0 bottom-0 hidden overflow-y-auto bg-canvas px-8 pt-24 pb-16 medium:hidden">
     <ul class="space-y-3">
       {
-        [...left, ...right].map((item) => (
+        [home, ...left, ...right].map((item) => (
           <li>
             <a href={item.href} class="block text-[28px] leading-tight font-medium tracking-[-0.03em] text-ink">
               {item.label}

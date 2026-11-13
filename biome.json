@@ -14,7 +14,8 @@
       "!**/src-tauri/gen",
       "!**/*.gen.ts",
       "!supabase/templates",
-      "!packages/ui/src/bloub/engine"
+      "!packages/ui/src/bloub/engine",
+      "!brand/*.html"
     ]
   },
   "formatter": {

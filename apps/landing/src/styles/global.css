@@ -1,6 +1,7 @@
 /* The landing's only stylesheet (inlined into every page by Astro). */
 @import "tailwindcss";
 @import "@fontsource-variable/geist/wght.css";
+@import "../../../../packages/ui/src/logo/logo.css";
 
 /*
  * A light grey panel, white and black tiles, Geist on every system, one type scale with breakpoints
@@ -465,6 +466,11 @@
   }
   .hdr-link:hover {
     opacity: 0.6;
+  }
+  /* The mark stands for Home; it follows the links' size when the bar floats. */
+  .hdr-brand svg {
+    height: 1.375em;
+    width: auto;
   }
   .hdr-links-quiet .hdr-link {
     opacity: 0.5;

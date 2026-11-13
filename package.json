@@ -24,7 +24,9 @@
     "sb:migrate": "supabase db push",
     "sb:functions": "supabase functions deploy llm-proxy && supabase functions deploy unfurl && supabase functions deploy telegram-bot && supabase functions deploy discord-bot && supabase functions deploy capture-extension &&supabase functions deploy billing && supabase functions deploy suby-webhook && supabase functions deploy listopays-webhook && supabase functions deploy storage-cleanup",
     "tg:webhook": "node scripts/telegram-webhook.mjs",
-    "figma": "node tools/figma-bridge/bridge.mjs"
+    "figma": "node tools/figma-bridge/bridge.mjs",
+    "logo": "node brand/build.mjs",
+    "icons": "pnpm logo && pnpm --filter @fixnote/desktop icons"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

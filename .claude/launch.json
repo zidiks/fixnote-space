@@ -33,6 +33,12 @@
         "--strictPort"
       ],
       "port": 5180
+    },
+    {
+      "name": "brand",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4330", "--directory", "brand"],
+      "port": 4330
     }
   ]
 }

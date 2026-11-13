@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FixNote · logo motion</title>
+<style>
+  :root { --bg: #f8f5f0; --ink: #000; --muted: #8a857c; --line: #e4dfd6; --fx-k: 1; }
+  :root[data-theme="dark"] { --bg: #141312; --ink: #f8f5f0; --muted: #8a857c; --line: #2a2826; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  .stage { display: grid; place-items: center; height: 360px; border: 1px solid var(--line); border-radius: 16px; }
+  .stage .fx-logo { width: min(80%, 620px); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 32px; }
+  button { font: inherit; color: inherit; background: none; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+  button:hover { border-color: var(--ink); }
+  h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 32px 0 12px; }
+  .row { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+  .row img { display: block; }
+  :root[data-theme="dark"] .row img { filter: invert(1); }
+  .inline { display: inline-flex; overflow: hidden; height: 28px; width: 36.089px; transition: width calc(var(--fx-k) * .9s) cubic-bezier(.6, 0, .2, 1); cursor: pointer; }
+  .inline.open { width: 107.059px; }
+  .inline .fx-logo { height: 28px; width: __WORD_W__px; flex: none; }
+
+  .stage .fx-logo { --fx-shift: 240.327px; }
+</style>
+<style>
+/*
+ * FixNote logo motion (brand/README.md). The shapes are never redrawn: each stroke of the pen is a
+ * mask that opens the ink under it. `data-phase` on the svg says what is on screen:
+ *   none → draw → mark     the mark writes itself
+ *   mark → expand → word   its tail goes back into the f and the word is written
+ *   word → collapse → mark the word is unwritten from its end and the tail grows again
+ * --fx-k stretches time (2 = half speed), --fx-shift moves the mark to the middle of the word's
+ * box while only the mark shows (centered use).
+ */
+.fx-logo-box {
+  display: inline-block;
+  flex: none;
+  overflow: hidden;
+  vertical-align: middle;
+  transition: width calc(var(--fx-k, 1) * 0.9s) cubic-bezier(0.6, 0, 0.2, 1);
+}
+
+.fx-logo {
+  display: block;
+  overflow: visible;
+  fill: currentColor;
+}
+
+/* --o is where a stroke starts on its line, so the pieces of one line move as one. */
+.fx-logo [data-m] {
+  --on: calc(var(--o, 0) * 1px);
+  --off: calc(1px + var(--o, 0) * 1px);
+  fill: none;
+  stroke: #fff;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: var(--on);
+}
+.fx-logo :is([data-m="ta"], [data-m="tb"]) {
+  stroke-dashoffset: var(--off);
+}
+.fx-logo [data-s="dot"] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.fx-logo:is([data-phase="none"], [data-phase="draw"], [data-phase="mark"]) [data-s="dot"] {
+  opacity: 0;
+}
+.fx-logo:is([data-phase="none"], [data-phase="draw"], [data-phase="mark"]) [data-m^="w-"] {
+  stroke-dashoffset: var(--off);
+}
+.fx-logo:is([data-phase="none"], [data-phase="draw"], [data-phase="mark"]) [data-s="lockup"] {
+  transform: translateX(var(--fx-shift, 0px));
+}
+.fx-logo:is([data-phase="draw"], [data-phase="mark"]) :is([data-m="ta"], [data-m="tb"]) {
+  stroke-dashoffset: var(--on);
+}
+.fx-logo[data-phase="none"] :is([data-m="mk-f"], [data-m="t0"]) {
+  stroke-dashoffset: var(--off);
+}
+
+/* 1. The mark writes itself. */
+.fx-logo[data-phase="draw"] [data-m="mk-f"] {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.42s) cubic-bezier(0.5, 0, 0.3, 1) both;
+}
+.fx-logo[data-phase="draw"] :is([data-m="t0"], [data-m="ta"], [data-m="tb"]) {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.95s) cubic-bezier(0.55, 0, 0.2, 1)
+    calc(var(--fx-k, 1) * 0.28s) both;
+}
+
+/* 2. The tail goes back into the f and the word is written; the f never moves. */
+.fx-logo[data-phase="expand"] [data-s="lockup"] {
+  animation: fx-logo-shift calc(var(--fx-k, 1) * 1.3s) cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+.fx-logo[data-phase="expand"] :is([data-m="ta"], [data-m="tb"]) {
+  animation: fx-logo-retract calc(var(--fx-k, 1) * 0.5s) cubic-bezier(0.6, 0, 0.4, 1) both;
+}
+.fx-logo[data-phase="expand"] [data-m="w-i"] {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.36s) cubic-bezier(0.5, 0, 0.3, 1)
+    calc(var(--fx-k, 1) * 0.3s) both;
+}
+.fx-logo[data-phase="expand"] [data-s="dot"] {
+  animation: fx-logo-pop calc(var(--fx-k, 1) * 0.3s) cubic-bezier(0.3, 0, 0.3, 1)
+    calc(var(--fx-k, 1) * 0.5s) both;
+}
+.fx-logo[data-phase="expand"] :is([data-m="w-x1"], [data-m="w-x2"]) {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.62s) cubic-bezier(0.45, 0, 0.3, 1)
+    calc(var(--fx-k, 1) * 0.5s) both;
+}
+.fx-logo[data-phase="expand"] [data-m="w-t1"] {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.2s) cubic-bezier(0.4, 0, 0.4, 1)
+    calc(var(--fx-k, 1) * 1s) both;
+}
+.fx-logo[data-phase="expand"] [data-m="w-t2"] {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.3s) cubic-bezier(0.4, 0, 0.3, 1)
+    calc(var(--fx-k, 1) * 1.08s) both;
+}
+.fx-logo[data-phase="expand"] :is([data-m="w-e1"], [data-m="w-e2"]) {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.42s) cubic-bezier(0.4, 0, 0.2, 1)
+    calc(var(--fx-k, 1) * 1.22s) both;
+}
+
+/* 3. The word is unwritten from its end, then the tail grows again. */
+.fx-logo[data-phase="collapse"] :is([data-m="w-e1"], [data-m="w-e2"]) {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.18s) cubic-bezier(0.4, 0, 0.5, 1) reverse both;
+}
+.fx-logo[data-phase="collapse"] [data-m="w-t2"] {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.14s) linear calc(var(--fx-k, 1) * 0.1s) reverse
+    both;
+}
+.fx-logo[data-phase="collapse"] [data-m="w-t1"] {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.1s) linear calc(var(--fx-k, 1) * 0.2s) reverse
+    both;
+}
+.fx-logo[data-phase="collapse"] :is([data-m="w-x1"], [data-m="w-x2"]) {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.3s) cubic-bezier(0.4, 0, 0.6, 1)
+    calc(var(--fx-k, 1) * 0.24s) reverse both;
+}
+.fx-logo[data-phase="collapse"] [data-s="dot"] {
+  animation: fx-logo-out calc(var(--fx-k, 1) * 0.12s) linear calc(var(--fx-k, 1) * 0.4s) both;
+}
+.fx-logo[data-phase="collapse"] [data-m="w-i"] {
+  animation: fx-logo-draw calc(var(--fx-k, 1) * 0.2s) cubic-bezier(0.4, 0, 0.6, 1)
+    calc(var(--fx-k, 1) * 0.44s) reverse both;
+}
+.fx-logo[data-phase="collapse"] :is([data-m="ta"], [data-m="tb"]) {
+  animation: fx-logo-retract calc(var(--fx-k, 1) * 0.6s) cubic-bezier(0.2, 0, 0.45, 1)
+    calc(var(--fx-k, 1) * 0.5s) reverse both;
+}
+.fx-logo[data-phase="collapse"] [data-s="lockup"] {
+  animation: fx-logo-shift calc(var(--fx-k, 1) * 0.95s) cubic-bezier(0.6, 0, 0.2, 1)
+    calc(var(--fx-k, 1) * 0.2s) reverse both;
+}
+
+@keyframes fx-logo-draw {
+  from {
+    stroke-dashoffset: var(--off);
+  }
+  to {
+    stroke-dashoffset: var(--on);
+  }
+}
+/* --stop: how far the tail goes back, to where it leaves the f. */
+@keyframes fx-logo-retract {
+  from {
+    stroke-dashoffset: var(--on);
+  }
+  to {
+    stroke-dashoffset: calc((var(--o, 0) + var(--stop)) * 1px);
+  }
+}
+@keyframes fx-logo-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes fx-logo-shift {
+  from {
+    transform: translateX(var(--fx-shift, 0px));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes fx-logo-pop {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* No motion: everything lands at once. */
+@media (prefers-reduced-motion: reduce) {
+  .fx-logo-box,
+  .fx-logo {
+    --fx-k: 0.001;
+  }
+}
+
+</style>
+</head>
+<body>
+<main>
+  <div class="stage"><svg class="fx-logo" id="stage" data-phase="word" viewBox="0 0 715 187" role="img" aria-label="FixNote" style="--stop:0.84311">
+  <defs>
+    <path id="stage-f" d="M190.999 198.549L107.601 199.48L108.504 333.05C108.533 337.456 108.57 341.858 108.609 346.26L108.625 348.038C108.763 364.182 108.902 380.321 108.742 396.503C108.941 418.751 91.107 418.368 74.411 418.009L73.641 417.993C48.201 417.452 48.621 400.357 49.072 381.907C49.129 379.558 49.187 377.184 49.191 374.821L49.203 336.068L48.792 200.011C46.783 199.97 43.758 200.066 40.19 200.186L39.507 200.209C26.675 200.639 7.445 201.283 2.553 197.22C0.548 195.555 0.298 191.952 0.179 189.537C0.064 187.195 0.167 184.84 0.268 182.484C0.339 180.823 0.41 179.159 0.406 177.502C0.401 175.637 0.302 173.735 0.204 171.826C0.007 167.99 -0.192 164.118 0.351 160.399C0.648 158.359 1.093 156.331 2.61 154.851C6.95 150.612 28.971 151.088 41.835 151.368C44.647 151.43 47.021 151.48 48.678 151.471C48.433 109.205 51.593 75.809 81.696 41.723C106.803 13.293 140.765 1.982 177.773 0.17C192.186 -0.761 222.752 2.136 235.852 8.648C239.134 11.705 238.847 21.373 238.676 27.195C238.634 28.595 238.6 29.771 238.623 30.582C239.347 56.04 234.258 54.899 216.581 50.94C214.766 50.534 212.821 50.099 210.736 49.659C201.858 47.773 192.807 46.822 183.728 46.826C142.617 46.806 115.917 69.099 108.976 109.851C106.696 123.233 106.737 134.824 106.785 148.057C106.79 149.081 106.792 150.117 106.797 151.166L190.999 150.749C200.999 150.699 208 152.5 211.501 158C215.999 165.5 215.999 184.001 211.501 191.299C208 196.801 200.999 198.499 190.999 198.549Z"/>
+    <path id="stage-mark" fill-rule="evenodd" d="M484.164 416.298L483.85 416.257L483.827 416.254L483.373 416.196C469.253 414.388 470.077 391.765 470.601 377.366C470.69 374.92 470.77 372.712 470.767 370.883L470.602 302.677C470.594 300.096 470.6 297.522 470.606 294.954L470.609 293.883C470.651 278.198 470.693 262.729 468.228 247.055C464.846 223.741 452.281 199.65 427.72 193.449C398.929 186.179 368.467 201.431 344.198 215.58C360.695 242.758 369.282 270.401 367.85 302.557C367.823 303.774 367.77 304.991 367.684 306.205C365.251 340.947 352.108 373.257 325.777 396.815C291.423 427.56 236.053 428.369 203.901 394.043C188.326 377.414 181.093 353.863 183.564 331.419C189.115 280.986 230.006 240.742 266.856 210.199C246.227 197.239 221.142 197.827 197.226 198.387C193.457 198.475 189.717 198.562 186.028 198.596L107.6 199.479L108.504 333.05C108.534 337.457 108.571 341.858 108.608 346.26L108.624 348.038C108.763 364.183 108.902 380.32 108.741 396.503C108.942 418.751 91.1069 418.368 74.4116 418.009L73.6419 417.993C48.2023 417.451 48.6203 400.357 49.0713 381.907C49.1288 379.557 49.1868 377.184 49.1919 374.822L49.2026 336.067L48.7921 200.012C46.7821 199.971 43.7576 200.066 40.19 200.186L39.5076 200.209C26.6758 200.639 7.44405 201.284 2.55314 197.22C0.547968 195.554 0.29735 191.952 0.179321 189.536C0.0646991 187.196 0.16614 184.84 0.267519 182.485C0.33915 180.822 0.41075 179.159 0.406083 177.503C0.400575 175.636 0.302876 173.736 0.2047 171.827C0.00743851 167.991 -0.191753 164.118 0.351042 160.398C0.648768 158.359 1.0937 156.332 2.60952 154.851C6.95035 150.611 28.9708 151.089 41.8357 151.368C44.6461 151.429 47.0216 151.481 48.6781 151.472C48.4321 109.205 51.5917 75.8091 81.6951 41.724C106.804 13.2934 140.766 1.98188 177.773 0.169781C192.185 -0.759805 222.753 2.1364 235.852 8.64815C239.134 11.7045 238.848 21.3731 238.676 27.1962C238.635 28.5949 238.6 29.771 238.623 30.581C239.348 56.0404 234.257 54.9001 216.58 50.9406C214.767 50.5344 212.821 50.0986 210.736 49.6587C201.858 47.7717 192.806 46.8215 183.729 46.8255C142.617 46.8063 115.916 69.0998 108.975 109.851C106.696 123.234 106.738 134.824 106.786 148.056C106.79 149.082 106.793 150.118 106.796 151.166L184.016 150.784C188.038 150.765 191.967 150.727 195.814 150.69C238.898 150.272 271.715 149.954 310.148 177.536C316.607 173.093 323.231 168.886 329.994 164.924C368.897 142.452 409.319 129.59 454.601 141.311C481.96 148.395 504.346 167.099 518.205 191.62C525.956 205.551 531.155 220.752 533.568 236.508C534.523 242.957 535.127 249.452 535.378 255.966C535.838 267.419 535.775 279.718 535.712 291.856V291.868V291.881C535.676 298.814 535.641 305.694 535.703 312.333C535.929 331.286 536.062 350.236 536.095 369.193C536.102 371.146 536.126 373.182 536.152 375.271C536.271 385.12 536.404 396.151 534.768 405.209C532.04 420.32 506.846 418.974 491.121 417.168C488.876 416.911 486.82 416.643 485.054 416.413L485.033 416.411L485.003 416.407C484.717 416.369 484.434 416.333 484.164 416.298ZM300.918 250.386C300.242 248.893 300.116 248.688 298.929 247.689C287.729 256.888 278.751 265.002 269.09 275.853C252.213 294.808 222.945 340.237 254.767 358.716C280.634 367.734 296.131 345.727 303.763 323.893C312.011 300.311 311.129 273.232 300.918 250.386Z"/>
+    <path id="stage-xnot" fill-rule="evenodd" d="M523.245 19.705C527.797 19.512 543.7 18.3927 545.233 20.9694C548.252 26.0572 546.951 58.6092 546.91 64.6875C558.61 64.5971 572.424 63.6634 583.712 65.5733C588.484 66.3811 587.628 86.1084 585.253 87.1037C576.299 90.8572 556.83 89.2581 546.924 89.2286C546.965 105.779 543.563 140 552.654 154.027C561.067 167.027 580.023 152.569 585.376 153.22C588.498 155.869 588.101 157.642 590.065 159.983C601.908 174.092 591.948 178.528 577.25 182.8C563.032 186.935 544.891 183.765 533.691 172.387C519.453 157.923 520.849 138.166 520.904 119.306L520.924 89.3389C510.492 89.3402 507.37 89.8495 498.649 95.5308C500.62 100.261 502.092 105.183 503.044 110.222C512.655 161.749 465.356 206.055 418.943 173.627C418.215 174.113 417.481 174.592 416.743 175.064C399.694 185.921 376.642 188.975 361.74 172.114C347.148 155.602 354.171 129.924 351.742 109.318C349.588 91.0475 332.571 81.8188 316.364 91.4911C299.598 103.273 308.976 134.099 305.073 152.925C300.043 177.2 280.894 187.516 256.851 183.58C235.382 179.959 224.473 158.498 213.202 141.691C197.153 162.742 182.488 184.47 152.684 184.237C136.605 184.114 123.398 176.201 117.486 160.948C114.451 153.117 114.631 146.456 114.56 138.234C114.622 128.534 113.701 71.143 115.617 66.9349C119.225 63.2636 135.036 63.9255 139.215 67.2457C143.8 76.6681 137.432 131.046 140.468 143.697C150.834 186.894 188.762 132.785 197.842 120.785C192.263 112.18 160.34 71.9453 161.752 66.4064C165.145 64.1384 187.154 63.8133 189.157 65.7321C196.917 73.1672 208.077 91.153 214.249 100.131C222.546 89.1362 230.073 77.1104 239.198 66.8781C241.983 63.7565 250.956 64.7525 254.911 64.7183C259.361 64.6792 265.281 63.4888 268.281 67.2389C268.702 71.056 234.176 114.665 229.436 120.86C235.438 129.41 250.595 154.897 259.212 157.827C285.629 167.5 279.688 127.623 280.019 110.68C280.938 63.7031 337.027 45.1389 367.253 79.4988C378.539 92.3284 379.126 114.076 378.263 131.224C377.362 149.105 380.142 167.801 403.744 155.068C375.452 97.8035 431.982 32.3662 485.074 75.8939C496.985 67.4655 506.644 64.7806 520.945 64.6546C521.15 55.773 518.693 25.5773 523.245 19.705ZM447.35 87.5339C484.951 84.0138 489.79 151.741 453.188 159.196C415.537 160.045 410.714 95.8185 447.35 87.5339Z"/>
+    <path id="stage-e" fill-rule="evenodd" d="M651.423 60.9785C686.623 58.4476 712.883 84.8385 714.362 119.06C714.608 124.886 714.519 131.02 707.235 131.43C697.665 131.978 688.061 131.773 678.484 131.766L622.828 131.738C627.764 160.463 658.2 172.128 681.016 153.22C682.427 152.056 685.179 148.497 686.438 146.997C690.504 146.696 695.468 146.744 699.609 146.676C713.889 146.34 714.272 151.372 706.421 162.079C687.978 188.729 644.201 194.869 619.296 173.62C577.593 138.057 593.844 66.8096 651.423 60.9785ZM653.517 84.2165C670.974 82.9836 683.31 94.1942 687.15 110.64L658.665 110.735L623.034 110.653C628.401 94.3537 636.218 86.3873 653.517 84.2165Z"/>
+    <mask id="stage-mk-f"><path data-m="mk-f" pathLength="1" style="--o:0" d="M248 32C225 25 203 22 181 23C135 25 100 55 85 100C79 120 78 135 78 152L78 426" stroke-width="84"/><path fill="#000" d="M0 140H48.6V212H0ZM106.9 140V151L107.7 199.5L108 212H135V140Z"/></mask>
+    <mask id="stage-t0"><path data-m="t0" pathLength="0.1821" style="--o:0" d="M-8 175L216 175" stroke-width="64"/></mask>
+    <mask id="stage-ta"><path data-m="ta" pathLength="0.2954" style="--o:0.15689" d="M185 175L190 175C240 175 275 185 305 212C325 232 339 265 339 300C339 330 330 355 312 372C295 388 275 392 258 388" stroke-width="84"/><path fill="#000" d="M266.9 210.2L298.9 247.7L262 290L215 245ZM310.1 177.5L344.2 215.6L400 190L350 140Z"/></mask>
+    <mask id="stage-tb"><path data-m="tb" pathLength="0.55142" style="--o:0.44858" d="M262.5 388.8L258 388C228 381 208 355 212 325C216 292 250 255 283 229C300 216 320 200 337 190C370 172 410 162 445 167C485 173 503 210 503 250L503 426" stroke-width="84"/></mask>
+    <mask id="stage-w-i"><path data-m="w-i" pathLength="1" style="--o:0" d="M127 60L127 140C127 165 140 173 155 172C175 171 195 145 213.7 121L263 51" stroke-width="38"/><path fill="#000" d="M197.8 120.8L214.2 100.1L206 72L172 104ZM213.2 141.7L229.4 120.9L252 138L224 170Z"/></mask>
+    <mask id="stage-w-x1"><path data-m="w-x1" pathLength="0.61735" style="--o:0" d="M166 51L213.7 121C225 137 238 160 255 169C275 178 293 160 293 130L293 108C293 85 308 74 327 74C348 74 365 88 365 112L365 135C365 160 375 174 392 172C402 170 410 162 414 150" stroke-width="38"/><path fill="#000" d="M400 146L427.5 180V195H520V50H400Z"/></mask>
+    <mask id="stage-w-x2"><path data-m="w-x2" pathLength="0.44273" style="--o:0.55727" d="M380 171.5C384 172.5 388 172.5 392 172C402 170 410 162 414 150A41.5 49 0 0 1 484 98A41.5 49 0 0 1 414 150" stroke-width="38"/><path fill="#000" d="M480 50V68.5L485.1 75.9L498.6 95.5L503 102H530V50Z"/></mask>
+    <mask id="stage-w-t1"><path data-m="w-t1" pathLength="1" style="--o:0" d="M478 92C495 82 508 77 522 77L590 77" stroke-width="38"/><path fill="#000" d="M505 40H547V64.6H505ZM520.9 89.4H547V110H520.9Z"/></mask>
+    <mask id="stage-w-t2"><path data-m="w-t2" pathLength="1" style="--o:0" d="M534 14L534 125C534 152 540 170 560 171C572 171 582 166 594 158" stroke-width="38"/></mask>
+    <mask id="stage-w-e1"><path data-m="w-e1" pathLength="0.27067" style="--o:0" d="M592 121L701 121" stroke-width="38"/><path fill="#000" d="M585 60H725V110.5H585ZM585 131.9H725V195H585Z"/></mask>
+    <mask id="stage-w-e2"><path data-m="w-e2" pathLength="0.73926" style="--o:0.26074" d="M697 121L701 121C701 95 680 72.5 652 72.5C625 72.5 609.5 95 609.5 123C609.5 153 630 176 656 176C678 176 694 168 709 145" stroke-width="38"/></mask>
+  </defs>
+  <g data-s="lockup">
+    <g transform="scale(0.4364)"><use href="#stage-f" mask="url(#stage-mk-f)"/><use href="#stage-f" mask="url(#stage-t0)"/><use href="#stage-mark" mask="url(#stage-ta)"/><use href="#stage-mark" mask="url(#stage-tb)"/></g>
+    <path data-s="dot" d="M124.221 15.1007C133.539 13.1339 142.699 19.0547 144.733 28.3587C146.767 37.6627 140.912 46.8647 131.623 48.965C122.239 51.0871 112.922 45.1601 110.867 35.7603C108.813 26.3611 114.807 17.0873 124.221 15.1007Z"/>
+    <use href="#stage-xnot" mask="url(#stage-w-i)"/><use href="#stage-xnot" mask="url(#stage-w-x1)"/><use href="#stage-xnot" mask="url(#stage-w-x2)"/><use href="#stage-xnot" mask="url(#stage-w-t1)"/><use href="#stage-xnot" mask="url(#stage-w-t2)"/><use href="#stage-e" mask="url(#stage-w-e1)"/><use href="#stage-e" mask="url(#stage-w-e2)"/>
+  </g>
+</svg></div>
+  <div class="bar">
+    <button data-play="draw">1 · Появление шорт-лого</button>
+    <button data-play="expand">2 · Шорт → биг</button>
+    <button data-play="collapse">Биг → шорт</button>
+    <button data-play="intro">Всё вместе</button>
+    <button id="speed">Скорость: 1×</button>
+    <button id="theme">Тема</button>
+  </div>
+
+  <h2>В шапке / сайдбаре: клик разворачивает и сворачивает</h2>
+  <div class="row"><span class="inline" id="inline"><svg class="fx-logo" id="small" data-phase="word" viewBox="0 0 715 187" role="img" aria-label="FixNote" style="--stop:0.84311">
+  <defs>
+    <path id="small-f" d="M190.999 198.549L107.601 199.48L108.504 333.05C108.533 337.456 108.57 341.858 108.609 346.26L108.625 348.038C108.763 364.182 108.902 380.321 108.742 396.503C108.941 418.751 91.107 418.368 74.411 418.009L73.641 417.993C48.201 417.452 48.621 400.357 49.072 381.907C49.129 379.558 49.187 377.184 49.191 374.821L49.203 336.068L48.792 200.011C46.783 199.97 43.758 200.066 40.19 200.186L39.507 200.209C26.675 200.639 7.445 201.283 2.553 197.22C0.548 195.555 0.298 191.952 0.179 189.537C0.064 187.195 0.167 184.84 0.268 182.484C0.339 180.823 0.41 179.159 0.406 177.502C0.401 175.637 0.302 173.735 0.204 171.826C0.007 167.99 -0.192 164.118 0.351 160.399C0.648 158.359 1.093 156.331 2.61 154.851C6.95 150.612 28.971 151.088 41.835 151.368C44.647 151.43 47.021 151.48 48.678 151.471C48.433 109.205 51.593 75.809 81.696 41.723C106.803 13.293 140.765 1.982 177.773 0.17C192.186 -0.761 222.752 2.136 235.852 8.648C239.134 11.705 238.847 21.373 238.676 27.195C238.634 28.595 238.6 29.771 238.623 30.582C239.347 56.04 234.258 54.899 216.581 50.94C214.766 50.534 212.821 50.099 210.736 49.659C201.858 47.773 192.807 46.822 183.728 46.826C142.617 46.806 115.917 69.099 108.976 109.851C106.696 123.233 106.737 134.824 106.785 148.057C106.79 149.081 106.792 150.117 106.797 151.166L190.999 150.749C200.999 150.699 208 152.5 211.501 158C215.999 165.5 215.999 184.001 211.501 191.299C208 196.801 200.999 198.499 190.999 198.549Z"/>
+    <path id="small-mark" fill-rule="evenodd" d="M484.164 416.298L483.85 416.257L483.827 416.254L483.373 416.196C469.253 414.388 470.077 391.765 470.601 377.366C470.69 374.92 470.77 372.712 470.767 370.883L470.602 302.677C470.594 300.096 470.6 297.522 470.606 294.954L470.609 293.883C470.651 278.198 470.693 262.729 468.228 247.055C464.846 223.741 452.281 199.65 427.72 193.449C398.929 186.179 368.467 201.431 344.198 215.58C360.695 242.758 369.282 270.401 367.85 302.557C367.823 303.774 367.77 304.991 367.684 306.205C365.251 340.947 352.108 373.257 325.777 396.815C291.423 427.56 236.053 428.369 203.901 394.043C188.326 377.414 181.093 353.863 183.564 331.419C189.115 280.986 230.006 240.742 266.856 210.199C246.227 197.239 221.142 197.827 197.226 198.387C193.457 198.475 189.717 198.562 186.028 198.596L107.6 199.479L108.504 333.05C108.534 337.457 108.571 341.858 108.608 346.26L108.624 348.038C108.763 364.183 108.902 380.32 108.741 396.503C108.942 418.751 91.1069 418.368 74.4116 418.009L73.6419 417.993C48.2023 417.451 48.6203 400.357 49.0713 381.907C49.1288 379.557 49.1868 377.184 49.1919 374.822L49.2026 336.067L48.7921 200.012C46.7821 199.971 43.7576 200.066 40.19 200.186L39.5076 200.209C26.6758 200.639 7.44405 201.284 2.55314 197.22C0.547968 195.554 0.29735 191.952 0.179321 189.536C0.0646991 187.196 0.16614 184.84 0.267519 182.485C0.33915 180.822 0.41075 179.159 0.406083 177.503C0.400575 175.636 0.302876 173.736 0.2047 171.827C0.00743851 167.991 -0.191753 164.118 0.351042 160.398C0.648768 158.359 1.0937 156.332 2.60952 154.851C6.95035 150.611 28.9708 151.089 41.8357 151.368C44.6461 151.429 47.0216 151.481 48.6781 151.472C48.4321 109.205 51.5917 75.8091 81.6951 41.724C106.804 13.2934 140.766 1.98188 177.773 0.169781C192.185 -0.759805 222.753 2.1364 235.852 8.64815C239.134 11.7045 238.848 21.3731 238.676 27.1962C238.635 28.5949 238.6 29.771 238.623 30.581C239.348 56.0404 234.257 54.9001 216.58 50.9406C214.767 50.5344 212.821 50.0986 210.736 49.6587C201.858 47.7717 192.806 46.8215 183.729 46.8255C142.617 46.8063 115.916 69.0998 108.975 109.851C106.696 123.234 106.738 134.824 106.786 148.056C106.79 149.082 106.793 150.118 106.796 151.166L184.016 150.784C188.038 150.765 191.967 150.727 195.814 150.69C238.898 150.272 271.715 149.954 310.148 177.536C316.607 173.093 323.231 168.886 329.994 164.924C368.897 142.452 409.319 129.59 454.601 141.311C481.96 148.395 504.346 167.099 518.205 191.62C525.956 205.551 531.155 220.752 533.568 236.508C534.523 242.957 535.127 249.452 535.378 255.966C535.838 267.419 535.775 279.718 535.712 291.856V291.868V291.881C535.676 298.814 535.641 305.694 535.703 312.333C535.929 331.286 536.062 350.236 536.095 369.193C536.102 371.146 536.126 373.182 536.152 375.271C536.271 385.12 536.404 396.151 534.768 405.209C532.04 420.32 506.846 418.974 491.121 417.168C488.876 416.911 486.82 416.643 485.054 416.413L485.033 416.411L485.003 416.407C484.717 416.369 484.434 416.333 484.164 416.298ZM300.918 250.386C300.242 248.893 300.116 248.688 298.929 247.689C287.729 256.888 278.751 265.002 269.09 275.853C252.213 294.808 222.945 340.237 254.767 358.716C280.634 367.734 296.131 345.727 303.763 323.893C312.011 300.311 311.129 273.232 300.918 250.386Z"/>
+    <path id="small-xnot" fill-rule="evenodd" d="M523.245 19.705C527.797 19.512 543.7 18.3927 545.233 20.9694C548.252 26.0572 546.951 58.6092 546.91 64.6875C558.61 64.5971 572.424 63.6634 583.712 65.5733C588.484 66.3811 587.628 86.1084 585.253 87.1037C576.299 90.8572 556.83 89.2581 546.924 89.2286C546.965 105.779 543.563 140 552.654 154.027C561.067 167.027 580.023 152.569 585.376 153.22C588.498 155.869 588.101 157.642 590.065 159.983C601.908 174.092 591.948 178.528 577.25 182.8C563.032 186.935 544.891 183.765 533.691 172.387C519.453 157.923 520.849 138.166 520.904 119.306L520.924 89.3389C510.492 89.3402 507.37 89.8495 498.649 95.5308C500.62 100.261 502.092 105.183 503.044 110.222C512.655 161.749 465.356 206.055 418.943 173.627C418.215 174.113 417.481 174.592 416.743 175.064C399.694 185.921 376.642 188.975 361.74 172.114C347.148 155.602 354.171 129.924 351.742 109.318C349.588 91.0475 332.571 81.8188 316.364 91.4911C299.598 103.273 308.976 134.099 305.073 152.925C300.043 177.2 280.894 187.516 256.851 183.58C235.382 179.959 224.473 158.498 213.202 141.691C197.153 162.742 182.488 184.47 152.684 184.237C136.605 184.114 123.398 176.201 117.486 160.948C114.451 153.117 114.631 146.456 114.56 138.234C114.622 128.534 113.701 71.143 115.617 66.9349C119.225 63.2636 135.036 63.9255 139.215 67.2457C143.8 76.6681 137.432 131.046 140.468 143.697C150.834 186.894 188.762 132.785 197.842 120.785C192.263 112.18 160.34 71.9453 161.752 66.4064C165.145 64.1384 187.154 63.8133 189.157 65.7321C196.917 73.1672 208.077 91.153 214.249 100.131C222.546 89.1362 230.073 77.1104 239.198 66.8781C241.983 63.7565 250.956 64.7525 254.911 64.7183C259.361 64.6792 265.281 63.4888 268.281 67.2389C268.702 71.056 234.176 114.665 229.436 120.86C235.438 129.41 250.595 154.897 259.212 157.827C285.629 167.5 279.688 127.623 280.019 110.68C280.938 63.7031 337.027 45.1389 367.253 79.4988C378.539 92.3284 379.126 114.076 378.263 131.224C377.362 149.105 380.142 167.801 403.744 155.068C375.452 97.8035 431.982 32.3662 485.074 75.8939C496.985 67.4655 506.644 64.7806 520.945 64.6546C521.15 55.773 518.693 25.5773 523.245 19.705ZM447.35 87.5339C484.951 84.0138 489.79 151.741 453.188 159.196C415.537 160.045 410.714 95.8185 447.35 87.5339Z"/>
+    <path id="small-e" fill-rule="evenodd" d="M651.423 60.9785C686.623 58.4476 712.883 84.8385 714.362 119.06C714.608 124.886 714.519 131.02 707.235 131.43C697.665 131.978 688.061 131.773 678.484 131.766L622.828 131.738C627.764 160.463 658.2 172.128 681.016 153.22C682.427 152.056 685.179 148.497 686.438 146.997C690.504 146.696 695.468 146.744 699.609 146.676C713.889 146.34 714.272 151.372 706.421 162.079C687.978 188.729 644.201 194.869 619.296 173.62C577.593 138.057 593.844 66.8096 651.423 60.9785ZM653.517 84.2165C670.974 82.9836 683.31 94.1942 687.15 110.64L658.665 110.735L623.034 110.653C628.401 94.3537 636.218 86.3873 653.517 84.2165Z"/>
+    <mask id="small-mk-f"><path data-m="mk-f" pathLength="1" style="--o:0" d="M248 32C225 25 203 22 181 23C135 25 100 55 85 100C79 120 78 135 78 152L78 426" stroke-width="84"/><path fill="#000" d="M0 140H48.6V212H0ZM106.9 140V151L107.7 199.5L108 212H135V140Z"/></mask>
+    <mask id="small-t0"><path data-m="t0" pathLength="0.1821" style="--o:0" d="M-8 175L216 175" stroke-width="64"/></mask>
+    <mask id="small-ta"><path data-m="ta" pathLength="0.2954" style="--o:0.15689" d="M185 175L190 175C240 175 275 185 305 212C325 232 339 265 339 300C339 330 330 355 312 372C295 388 275 392 258 388" stroke-width="84"/><path fill="#000" d="M266.9 210.2L298.9 247.7L262 290L215 245ZM310.1 177.5L344.2 215.6L400 190L350 140Z"/></mask>
+    <mask id="small-tb"><path data-m="tb" pathLength="0.55142" style="--o:0.44858" d="M262.5 388.8L258 388C228 381 208 355 212 325C216 292 250 255 283 229C300 216 320 200 337 190C370 172 410 162 445 167C485 173 503 210 503 250L503 426" stroke-width="84"/></mask>
+    <mask id="small-w-i"><path data-m="w-i" pathLength="1" style="--o:0" d="M127 60L127 140C127 165 140 173 155 172C175 171 195 145 213.7 121L263 51" stroke-width="38"/><path fill="#000" d="M197.8 120.8L214.2 100.1L206 72L172 104ZM213.2 141.7L229.4 120.9L252 138L224 170Z"/></mask>
+    <mask id="small-w-x1"><path data-m="w-x1" pathLength="0.61735" style="--o:0" d="M166 51L213.7 121C225 137 238 160 255 169C275 178 293 160 293 130L293 108C293 85 308 74 327 74C348 74 365 88 365 112L365 135C365 160 375 174 392 172C402 170 410 162 414 150" stroke-width="38"/><path fill="#000" d="M400 146L427.5 180V195H520V50H400Z"/></mask>
+    <mask id="small-w-x2"><path data-m="w-x2" pathLength="0.44273" style="--o:0.55727" d="M380 171.5C384 172.5 388 172.5 392 172C402 170 410 162 414 150A41.5 49 0 0 1 484 98A41.5 49 0 0 1 414 150" stroke-width="38"/><path fill="#000" d="M480 50V68.5L485.1 75.9L498.6 95.5L503 102H530V50Z"/></mask>
+    <mask id="small-w-t1"><path data-m="w-t1" pathLength="1" style="--o:0" d="M478 92C495 82 508 77 522 77L590 77" stroke-width="38"/><path fill="#000" d="M505 40H547V64.6H505ZM520.9 89.4H547V110H520.9Z"/></mask>
+    <mask id="small-w-t2"><path data-m="w-t2" pathLength="1" style="--o:0" d="M534 14L534 125C534 152 540 170 560 171C572 171 582 166 594 158" stroke-width="38"/></mask>
+    <mask id="small-w-e1"><path data-m="w-e1" pathLength="0.27067" style="--o:0" d="M592 121L701 121" stroke-width="38"/><path fill="#000" d="M585 60H725V110.5H585ZM585 131.9H725V195H585Z"/></mask>
+    <mask id="small-w-e2"><path data-m="w-e2" pathLength="0.73926" style="--o:0.26074" d="M697 121L701 121C701 95 680 72.5 652 72.5C625 72.5 609.5 95 609.5 123C609.5 153 630 176 656 176C678 176 694 168 709 145" stroke-width="38"/></mask>
+  </defs>
+  <g data-s="lockup">
+    <g transform="scale(0.4364)"><use href="#small-f" mask="url(#small-mk-f)"/><use href="#small-f" mask="url(#small-t0)"/><use href="#small-mark" mask="url(#small-ta)"/><use href="#small-mark" mask="url(#small-tb)"/></g>
+    <path data-s="dot" d="M124.221 15.1007C133.539 13.1339 142.699 19.0547 144.733 28.3587C146.767 37.6627 140.912 46.8647 131.623 48.965C122.239 51.0871 112.922 45.1601 110.867 35.7603C108.813 26.3611 114.807 17.0873 124.221 15.1007Z"/>
+    <use href="#small-xnot" mask="url(#small-w-i)"/><use href="#small-xnot" mask="url(#small-w-x1)"/><use href="#small-xnot" mask="url(#small-w-x2)"/><use href="#small-xnot" mask="url(#small-w-t1)"/><use href="#small-xnot" mask="url(#small-w-t2)"/><use href="#small-e" mask="url(#small-w-e1)"/><use href="#small-e" mask="url(#small-w-e2)"/>
+  </g>
+</svg></span></div>
+
+  <h2>Статика: шорт-лого с вырезанной каплей</h2>
+  <div class="row">
+    <img src="fixnote-mark.svg" height="16" alt=""><img src="fixnote-mark.svg" height="24" alt="">
+    <img src="fixnote-mark.svg" height="40" alt=""><img src="fixnote-mark.svg" height="96" alt="">
+  </div>
+  <h2>Статика: биг лого</h2>
+  <div class="row">
+    <img src="fixnote-wordmark.svg" height="16" alt=""><img src="fixnote-wordmark.svg" height="28" alt="">
+    <img src="fixnote-wordmark.svg" height="56" alt="">
+  </div>
+</main>
+<script>
+  const root = document.documentElement
+  const stage = document.getElementById('stage')
+  const k = () => Number(getComputedStyle(root).getPropertyValue('--fx-k'))
+  let timer
+  function phase(el, name) {
+    el.dataset.phase = name === 'draw' || name === 'expand' || name === 'collapse' ? 'none' : name
+    if (el.dataset.phase === name) return
+    el.getBoundingClientRect()
+    el.dataset.phase = name
+  }
+  function play(name) {
+    clearTimeout(timer)
+    if (name !== 'intro') return phase(stage, name)
+    phase(stage, 'draw')
+    timer = setTimeout(() => phase(stage, 'expand'), k() * 1250 + 350)
+  }
+  for (const b of document.querySelectorAll('[data-play]')) b.onclick = () => play(b.dataset.play)
+  document.getElementById('theme').onclick = () => {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'
+  }
+  const speeds = [1, 0.5, 4]
+  document.getElementById('speed').onclick = (e) => {
+    const next = speeds[(speeds.indexOf(1 / k()) + 1) % speeds.length]
+    root.style.setProperty('--fx-k', String(1 / next))
+    e.currentTarget.textContent = `Скорость: ${next}×`
+  }
+  const inline = document.getElementById('inline')
+  const small = inline.querySelector('.fx-logo')
+  small.dataset.phase = 'mark'
+  inline.onclick = () => phase(small, inline.classList.toggle('open') ? 'expand' : 'collapse')
+  play('intro')
+</script>
+</body>
+</html>
