@@ -47,6 +47,51 @@ MCP-клиент (Claude Code…) ─► bridge.mjs mcp ─┐
    MCP мост запускается двойным кликом: `start-bridge.cmd` (Windows) или `start-bridge.command`
    (macOS).
 
+## Поделиться с другими (Windows и macOS)
+
+```bash
+pnpm figma:pack        # = node tools/figma-bridge/pack.mjs
+```
+
+В `tools/figma-bridge/dist/` появятся:
+
+- **`figma-bridge-<версия>.zip`** — его и отправляйте. Внутри папка `Figma Bridge`:
+  - `Figma Bridge.mcpb` — расширение Claude Desktop: двойной клик → Install. Node не нужен, Claude
+    Desktop запускает сервер своим Node;
+  - `Install.cmd` (Windows) / `Install.command` (macOS) — копирует мост и плагин в `~/Figma Bridge`,
+    прописывает сервер в Claude Code (user scope, через `claude mcp add`) и Cursor
+    (`~/.cursor/mcp.json`) с полным путём к `node`, печатает JSON для других клиентов и открывает
+    папку плагина. Нужен Node 18+;
+  - `plugin/` — для **Import plugin from manifest…** в Figma; `figma-bridge.mjs` — мост одним файлом;
+  - `README.md` / `README.en.md` — инструкция для получателя (исходники в `share/`).
+- **`Figma Bridge.mcpb`** — то же расширение отдельно.
+
+В пакете нет `figma_push_kit` и команды `push-kit`: кит читает исходники этого репозитория, и мост
+без них его просто не показывает. Версия — `VERSION` в `bridge.mjs`: поднимайте её при изменениях,
+Claude Desktop показывает её в списке расширений. Файлы (рендеры, JSON) у получателя идут в
+`~/Figma Bridge/files`. Плагин им обновлять не нужно: мост сам пересылает новый `code.js`; заново
+импортировать надо только при изменении `ui.html` или `manifest.json`.
+
+**Дизайн FixNote для чужого файла Figma (кит и экраны).**
+
+```bash
+node tools/figma-bridge/bridge.mjs export-page Screens tools/figma-bridge/.figma/fixnote-screens.json
+pnpm figma:kit
+```
+
+Первая команда выгружает страницу Screens из открытого файла (плагин запущен): каждый фрейм
+обратно в спеки — auto layout, переменные и стили по имени, компоненты кита по ключу, векторы как
+SVG, картинки внутри. Вторая (`pack.mjs kit`) собирает `dist/fixnote-figma.zip`: один бандл
+`fixnote-figma.json` (кит из кода через `export-kit`, потом экраны), README и промпт для ИИ
+получателя (`share/kit/`) и этот мост в `bridge/`. Без выгруженных экранов в архив идёт только кит.
+У получателя всё заливается командой `node bridge/figma-bridge.mjs apply fixnote-figma.json` (или
+MCP `figma_apply`); повторная заливка обновляет те же слои по ключам, на тарифе с одним режимом Dark
+ложится отдельной коллекцией. Любую другую страницу так же: `export-page <страница>` → `apply`.
+
+Плагин распространяется как плагин в разработке (import из manifest): так он работает на любом
+тарифе и ходит на `localhost` через `devAllowedDomains`. Для публикации в Figma Community нужен
+`localhost:7331` в `allowedDomains` и модерация Figma.
+
 ## Каждый раз
 
 Откройте нужный файл в Figma и запустите **Plugins → Development → Figma Bridge (local)**.
@@ -125,6 +170,43 @@ node tools/figma-bridge/bridge.mjs push-kit
 Размеры и раскладку компонентов он берёт из спеков в `kit.mjs`: они переписаны с классов Tailwind
 (`h-9 px-4` → `h: 36, pad: [0, '$space/16']`). Поменяли классы компонента — поправьте его спек
 рядом и запустите push снова.
+
+## Экраны FixNote в Figma
+
+Страница **Screens** — все экраны приложения во всех состояниях, снятые с работающего приложения:
+по ряду на группу (первый запуск, главная, заметка, папки и ссылки, поиск, ассистент, диалоги,
+диктовка и звонок, настройки, аккаунт и Pro, вид «Заметки», тёмная тема, телефон). Это не
+картинки: фреймы с auto layout там, где ряды и колонки ровные; цвета привязаны к переменным кита
+(тёмные экраны — к **FixNote Theme (Dark)**), текст — к его стилям, иконки lucide — инстансы `icon/*`.
+
+Перезалить после изменений в UI:
+
+1. `pnpm dev`, открыть `http://localhost:5173/?dev-backend` в окне 1280×820, плагин в Figma запущен.
+2. Один раз наполнить приложение демо-данными, в консоли страницы:
+   `await (await import('/@fs/<репо>/tools/figma-bridge/fixnote/seed.js')).seed()` и перезагрузить.
+3. Снять: `const s = await import('/@fs/<репо>/tools/figma-bridge/fixnote/screens.js'); s.start()`,
+   ход — `s.status()`. Только часть: `s.start({ only: ['note', 'settings'] })` (группы или ключи).
+   Телефон — отдельно, с окном 390×844: `s.start({ only: ['phone'] })`.
+
+Те же ключи обновляют те же фреймы. Состояния (`STATES` в `screens.js`) выставляются через сторы
+приложения (маршрут, диалоги, тариф, запись голоса…) или кликом; новое состояние — новая запись
+там. Группа «Аккаунт и Pro» идёт по порядку (вход на фейковом сервере, пробный период, Pro), её
+снимайте целиком. Перед прогоном сценарий сам загружает в плагин свежий `plugin/code.js`. Пока идёт
+прогон, не правьте файлы, которые он подгрузил: Vite перезагрузит страницу. Окно браузера должно
+быть видно, иначе вкладка фоновая и всё идёт в разы медленнее.
+
+### Снять любую страницу
+
+Движок (`web/capture.js`) не знает про FixNote: мост отдаёт его любой странице на этом компьютере.
+
+```js
+const cap = await import('http://127.0.0.1:7331/web/capture.js')
+await cap.push({ key: 'screen/pricing', name: 'Pricing', page: 'Screens', x: 0, y: 0 })
+```
+
+Цвета привязываются к переменным файла, если у страницы есть CSS-переменная `--<имя>` того же
+цвета. Не переносится: `::before`/`::after` сложнее плашки, SVG-маски или текста, CSS-трансформации
+(размеры берутся уже после них), видео (серый прямоугольник).
 
 ## MCP-инструменты
 

@@ -4,8 +4,8 @@
 // plugin window (ui.html does the networking; this side has no network access).
 
 // A small strip by default; the window grows only when its details are opened (ui.html asks).
-// `reload` runs this file again inside the running plugin to take in a newer version: then only
-// the jobs are replaced, the window and its handlers stay.
+// `reload` runs this file again inside the running plugin to take in a newer version: the window
+// stays, the newer code's message handler and jobs take over.
 const RELOADING = typeof __fxReloading !== 'undefined'
 if (!RELOADING) figma.showUI(__html__, { width: 260, height: 36, themeColors: true })
 
@@ -322,7 +322,9 @@ async function context() {
     made: 0,
     updated: 0,
     variable(name) {
-      const v = vars.get(String(name).replace(/^\$/, ''))
+      const full = String(name).replace(/^\$/, '')
+      // "Collection:name"; a file without that collection (a Dark one) falls back to the name.
+      const v = vars.get(full) ?? vars.get(full.slice(full.indexOf(':') + 1))
       if (!v) throw new Error(`No variable ${name} in this file (push the variables first)`)
       return v
     },
@@ -348,6 +350,18 @@ async function font(ctx, f) {
   ctx.fonts.add(k)
 }
 
+/** The font if this computer has it, else Inter in the same style, else Inter Regular. */
+async function usableFont(ctx, f) {
+  for (const c of [f, { family: 'Inter', style: f.style }, { family: 'Inter', style: 'Regular' }])
+    try {
+      await font(ctx, c)
+      return c
+    } catch {
+      // Not installed (or no such style): try the next one.
+    }
+  throw new Error(`No font ${f.family} ${f.style}`)
+}
+
 /** #rgb, #rrggbb, #rrggbbaa or {r,g,b,a} (0..1). */
 function parseColor(s) {
   if (s && typeof s === 'object') return { r: s.r, g: s.g, b: s.b, a: s.a ?? 1 }
@@ -359,9 +373,21 @@ function parseColor(s) {
   return { r: n(0), g: n(2), b: n(4), a: h.length === 8 ? n(6) : 1 }
 }
 
-/** '$primary', '#fff', {var, opacity}, {color, opacity}, or a raw Figma Paint (has `type`). */
+/**
+ * '$primary', '#fff', {var, opacity}, {color, opacity}, {image: base64, scale: FILL|FIT|CROP|TILE},
+ * or a raw Figma Paint (has `type`).
+ */
 function toPaint(ctx, spec) {
   if (spec && typeof spec === 'object' && spec.type) return spec
+  if (spec && typeof spec === 'object' && spec.image) {
+    const image = figma.createImage(figma.base64Decode(spec.image))
+    return {
+      type: 'IMAGE',
+      imageHash: image.hash,
+      scaleMode: String(spec.scale ?? 'fill').toUpperCase(),
+      opacity: spec.opacity ?? 1,
+    }
+  }
   const s =
     typeof spec === 'string' ? (spec.startsWith('$') ? { var: spec } : { color: spec }) : spec
   const opacity = s.opacity ?? 1
@@ -374,6 +400,16 @@ function toPaint(ctx, spec) {
   const c = parseColor(s.color)
   return { type: 'SOLID', color: { r: c.r, g: c.g, b: c.b }, opacity: c.a * opacity }
 }
+/**
+ * Paints onto a layer. Figma resets a variable-bound paint's opacity to 1 when it is assigned; a
+ * second assignment of the now-bound paints keeps it, so `bg-brand/10` stays 10 %.
+ */
+function setPaints(node, field, paints) {
+  node[field] = paints
+  if (paints.some((p) => (p.opacity ?? 1) !== 1 && p.boundVariables?.color))
+    node[field] = node[field].map((p, i) => ({ ...p, opacity: paints[i]?.opacity ?? 1 }))
+}
+
 const toPaints = (ctx, v) =>
   v == null || v === false ? [] : (Array.isArray(v) ? v : [v]).map((p) => toPaint(ctx, p))
 
@@ -489,7 +525,7 @@ function setRadius(ctx, node, r) {
 
 function setStroke(ctx, node, s) {
   if (!('strokes' in node)) return
-  node.strokes = toPaints(ctx, s.stroke)
+  setPaints(node, 'strokes', toPaints(ctx, s.stroke))
   if (!s.stroke) return
   node.strokeAlign = String(s.strokeAlign ?? 'inside').toUpperCase()
   const w = s.strokeWidth ?? 1
@@ -573,7 +609,9 @@ async function applyText(ctx, node, s) {
   // On a styled layer Figma writes a decoration into the style itself (every text using it would be
   // underlined), so underlined text copies the style's values instead of using it.
   const style = s.underline ? null : named
-  const f = named ? named.fontName : { family: s.family ?? 'Inter', style: s.weight ?? 'Regular' }
+  const f = named
+    ? named.fontName
+    : await usableFont(ctx, { family: s.family ?? 'Inter', style: s.weight ?? 'Regular' })
   await font(ctx, f)
   node.characters = String(s.text ?? '')
   if (style) await node.setTextStyleIdAsync(style.id)
@@ -587,15 +625,63 @@ async function applyText(ctx, node, s) {
   }
   node.textAlignHorizontal = String(s.textAlign ?? 'left').toUpperCase()
   if (!style) node.textDecoration = s.underline ? 'UNDERLINE' : 'NONE'
-  if (s.w !== undefined && s.w !== 'hug') node.textAutoResize = 'HEIGHT'
+  if (node.fillStyleId) await node.setFillStyleIdAsync('')
+  setPaints(node, 'fills', toPaints(ctx, s.fill ?? '#000000'))
+  await applyRuns(ctx, node, s.runs, f)
+}
+
+/**
+ * Parts of one text that look different (bold, a link, code): runs [{start, end, weight, family,
+ * size, fill, underline, strike}], offsets into `text`; what a run leaves out stays as the base.
+ */
+async function applyRuns(ctx, node, runs, base) {
+  const length = node.characters.length
+  for (const r of runs ?? []) {
+    const start = Math.max(0, r.start)
+    const end = Math.min(length, r.end)
+    if (end <= start) continue
+    if (r.weight || r.family) {
+      const f = await usableFont(ctx, {
+        family: r.family ?? base.family,
+        style: r.weight ?? base.style,
+      })
+      node.setRangeFontName(start, end, f)
+    }
+    if (r.size) node.setRangeFontSize(start, end, r.size)
+    if (r.fill) {
+      const paints = toPaints(ctx, r.fill)
+      node.setRangeFills(start, end, paints)
+      // Same as setPaints: a bound colour comes back opaque the first time.
+      if (paints.some((p) => (p.opacity ?? 1) !== 1 && p.boundVariables?.color))
+        node.setRangeFills(
+          start,
+          end,
+          node
+            .getRangeFills(start, end)
+            .map((p, i) => ({ ...p, opacity: paints[i]?.opacity ?? 1 })),
+        )
+    }
+    if (r.underline || r.strike)
+      node.setRangeTextDecoration(start, end, r.strike ? 'STRIKETHROUGH' : 'UNDERLINE')
+  }
+}
+
+/**
+ * After the size: a text that hugs grows sideways (a layer pushed before with a fixed width keeps
+ * that mode otherwise), a fixed width wraps downwards; the cut and the line clamp come last, since
+ * Figma resets them when the resize mode changes.
+ */
+function textSizing(node, s) {
+  const hug = s.w === undefined || s.w === 'hug'
+  if (hug && !s.maxLines) {
+    if (node.layoutSizingHorizontal !== 'FILL') node.textAutoResize = 'WIDTH_AND_HEIGHT'
+  } else if (typeof s.h !== 'number') node.textAutoResize = 'HEIGHT'
   node.textTruncation = s.truncate || s.maxLines ? 'ENDING' : 'DISABLED'
   try {
     node.maxLines = s.maxLines ?? null
   } catch {
     // Older Figma versions have no line clamp.
   }
-  if (node.fillStyleId) await node.setFillStyleIdAsync('')
-  node.fills = toPaints(ctx, s.fill ?? '#000000')
 }
 
 /** Strokes and fills of every vector inside (icons drawn from SVG, or an instance of one). */
@@ -603,8 +689,8 @@ function paintVectors(node, p) {
   const walk = (n) => {
     if ('strokes' in n && n.type !== 'FRAME' && n.type !== 'INSTANCE' && n.type !== 'COMPONENT') {
       // Each vector keeps its own opacity (a spinner's faint ring).
-      if (n.strokes.length) n.strokes = [{ ...p, opacity: n.strokes[0].opacity ?? 1 }]
-      if (n.fills.length) n.fills = [{ ...p, opacity: n.fills[0].opacity ?? 1 }]
+      if (n.strokes.length) setPaints(n, 'strokes', [{ ...p, opacity: n.strokes[0].opacity ?? 1 }])
+      if (n.fills.length) setPaints(n, 'fills', [{ ...p, opacity: n.fills[0].opacity ?? 1 }])
     }
     if ('children' in n) n.children.forEach(walk)
   }
@@ -771,7 +857,7 @@ async function upsertSet(ctx, s, key, set, parent, index) {
   await children(ctx, set, variants, set)
   ctx.props.set(set.id, await ensureProps(ctx, set, s.props))
   setLayout(ctx, set, { layout: 'row', wrap: true, gap: 16, pad: 24, ...s })
-  set.fills = toPaints(ctx, s.fill)
+  setPaints(set, 'fills', toPaints(ctx, s.fill))
   setStroke(ctx, set, s.stroke ? s : { stroke: '#9747ff', strokeWidth: 1 })
   if (!s.stroke) set.dashPattern = [10, 5]
   setRadius(ctx, set, s.radius ?? 5)
@@ -814,7 +900,7 @@ async function apply(ctx, node, s, parent, owner) {
   if (node.type === 'TEXT') await applyText(ctx, node, s)
   else if ('fills' in node && (own || s.fill !== undefined)) {
     if (node.fillStyleId) await node.setFillStyleIdAsync('')
-    node.fills = toPaints(ctx, s.fill)
+    setPaints(node, 'fills', toPaints(ctx, s.fill))
   }
   if (own || s.stroke !== undefined) setStroke(ctx, node, s)
   if (own || s.radius !== undefined) setRadius(ctx, node, s.radius)
@@ -840,6 +926,7 @@ async function apply(ctx, node, s, parent, owner) {
   if (s.center) ctx.centers.push(node)
 
   setSize(node, s, parent)
+  if (node.type === 'TEXT') textSizing(node, s)
 
   if (node.type === 'INSTANCE') {
     const setProps = async (target, props, what) => {
@@ -912,6 +999,296 @@ async function variableValue(ctx, local, d, val) {
   if (d.type === 'FLOAT') return Number(val)
   if (d.type === 'BOOLEAN') return Boolean(val)
   return String(val)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Export: layers back into build specs, so a page can be rebuilt in another file (`apply`).
+// Variables, text and effect styles go by name; instances of keyed components (the kit) by key;
+// vectors as SVG; images as their bytes. What has no spec form becomes the closest thing to it.
+
+const hex6 = (c) =>
+  `#${[c.r, c.g, c.b]
+    .map((x) =>
+      Math.round(x * 255)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`
+const hex8 = (c) =>
+  `${hex6(c)}${Math.round((c.a ?? 1) * 255)
+    .toString(16)
+    .padStart(2, '0')}`
+const r3 = (n) => Math.round(n * 1000) / 1000
+const VECTORISH = ['VECTOR', 'BOOLEAN_OPERATION', 'STAR', 'LINE', 'POLYGON', 'GROUP']
+
+async function exportContext() {
+  const cols = new Map(
+    (await figma.variables.getLocalVariableCollectionsAsync()).map((c) => [c.id, c.name]),
+  )
+  const vars = new Map()
+  for (const v of await figma.variables.getLocalVariablesAsync())
+    vars.set(v.id, `$${cols.get(v.variableCollectionId)}:${v.name}`)
+  const text = new Map((await figma.getLocalTextStylesAsync()).map((s) => [s.id, s.name]))
+  const effect = new Map((await figma.getLocalEffectStylesAsync()).map((s) => [s.id, s.name]))
+  const images = new Map()
+  return {
+    varRef: (alias) => (alias?.id ? vars.get(alias.id) : undefined),
+    text,
+    effect,
+    async image(hash) {
+      if (!hash) return null
+      if (!images.has(hash)) {
+        const bytes = await figma.getImageByHash(hash)?.getBytesAsync()
+        images.set(hash, bytes ? figma.base64Encode(bytes) : null)
+      }
+      return images.get(hash)
+    },
+  }
+}
+
+async function paintOut(ec, p) {
+  if (!p || p.visible === false) return null
+  const opacity = r3(p.opacity ?? 1)
+  if (p.type === 'SOLID') {
+    const ref = ec.varRef(p.boundVariables?.color)
+    if (ref) return opacity === 1 ? ref : { var: ref, opacity }
+    return opacity === 1 ? hex6(p.color) : { color: hex6(p.color), opacity }
+  }
+  if (p.type === 'IMAGE') {
+    const data = await ec.image(p.imageHash)
+    return data ? { image: data, scale: p.scaleMode, opacity } : null
+  }
+  if (p.type.startsWith('GRADIENT'))
+    return {
+      type: p.type,
+      gradientTransform: p.gradientTransform,
+      gradientStops: p.gradientStops.map((s) => ({ position: s.position, color: s.color })),
+      opacity,
+    }
+  return null
+}
+
+async function paintsOut(ec, list) {
+  if (!Array.isArray(list)) return null
+  const out = []
+  for (const p of list) {
+    const x = await paintOut(ec, p)
+    if (x) out.push(x)
+  }
+  return out.length ? (out.length === 1 ? out[0] : out) : null
+}
+
+const numOut = (ec, node, field) => ec.varRef(node.boundVariables?.[field]) ?? node[field]
+
+function effectsOut(ec, node) {
+  if (!('effects' in node)) return undefined
+  if (typeof node.effectStyleId === 'string' && ec.effect.has(node.effectStyleId))
+    return ec.effect.get(node.effectStyleId)
+  const list = node.effects.filter((e) => e.visible !== false)
+  if (!list.length) return undefined
+  return list.map((e) =>
+    e.type.endsWith('BLUR')
+      ? { type: e.type, blur: e.radius }
+      : {
+          type: e.type,
+          x: e.offset.x,
+          y: e.offset.y,
+          blur: e.radius,
+          spread: e.spread ?? 0,
+          color: ec.varRef(e.boundVariables?.color) ?? hex8(e.color),
+        },
+  )
+}
+
+const SIZE = { FILL: 'fill', HUG: 'hug' }
+const ALIGN_OUT = {
+  MIN: 'start',
+  CENTER: 'center',
+  MAX: 'end',
+  SPACE_BETWEEN: 'between',
+  BASELINE: 'baseline',
+}
+
+/** Size and place: numbers outside auto layout, fill/hug/fixed inside it. */
+function placeOut(node, spec, parentAuto) {
+  const auto = parentAuto && node.layoutPositioning !== 'ABSOLUTE'
+  if (!auto) {
+    spec.x = r3(node.x)
+    spec.y = r3(node.y)
+    if (parentAuto) spec.absolute = true
+  }
+  const h = node.layoutSizingHorizontal
+  const v = node.layoutSizingVertical
+  spec.w = auto && SIZE[h] ? SIZE[h] : r3(node.width)
+  spec.h = auto && SIZE[v] ? SIZE[v] : r3(node.height)
+  if (node.type === 'TEXT') {
+    if (node.textAutoResize === 'WIDTH_AND_HEIGHT' && spec.w !== 'fill') spec.w = 'hug'
+    if (node.textAutoResize !== 'NONE' && spec.h !== 'fill') delete spec.h
+  }
+  for (const [field, key] of [
+    ['minWidth', 'minW'],
+    ['maxWidth', 'maxW'],
+    ['minHeight', 'minH'],
+    ['maxHeight', 'maxH'],
+  ])
+    if (typeof node[field] === 'number') spec[key] = node[field]
+}
+
+async function textOut(ec, node, spec) {
+  spec.text = node.characters
+  const segs = node.getStyledTextSegments(['fontName', 'fontSize', 'fills', 'textDecoration'])
+  const first = segs[0]
+  const styled = typeof node.textStyleId === 'string' && ec.text.get(node.textStyleId)
+  const font = node.fontName === figma.mixed ? first?.fontName : node.fontName
+  const size = node.fontSize === figma.mixed ? first?.fontSize : node.fontSize
+  if (styled) spec.textStyle = styled
+  else {
+    spec.family = font?.family
+    spec.weight = font?.style
+    spec.size = size
+    const lh = node.lineHeight === figma.mixed ? { unit: 'AUTO' } : node.lineHeight
+    if (lh.unit === 'PIXELS') spec.lineHeight = lh.value
+    else if (lh.unit === 'PERCENT') spec.lineHeight = `${lh.value}%`
+    const ls = node.letterSpacing === figma.mixed ? { value: 0 } : node.letterSpacing
+    if (ls.value) spec.letterSpacing = ls.unit === 'PIXELS' ? ls.value : `${ls.value}%`
+    if (node.textCase === 'UPPER') spec.upper = true
+  }
+  spec.fill = await paintsOut(ec, node.fills === figma.mixed ? first?.fills : node.fills)
+  const align = node.textAlignHorizontal
+  if (align === 'CENTER' || align === 'RIGHT') spec.textAlign = align.toLowerCase()
+  if (node.textTruncation === 'ENDING') spec.truncate = true
+  if (node.maxLines) spec.maxLines = node.maxLines
+  // Parts that differ from the first one: weight, family, size, colour, line.
+  const runs = []
+  for (const seg of segs) {
+    const r = { start: seg.start, end: seg.end }
+    if (seg.fontName.style !== font?.style) r.weight = seg.fontName.style
+    if (seg.fontName.family !== font?.family) r.family = seg.fontName.family
+    if (seg.fontSize !== size) r.size = seg.fontSize
+    const fill = await paintsOut(ec, seg.fills)
+    if (JSON.stringify(fill) !== JSON.stringify(spec.fill)) r.fill = fill
+    if (seg.textDecoration === 'UNDERLINE') r.underline = true
+    if (seg.textDecoration === 'STRIKETHROUGH') r.strike = true
+    if (Object.keys(r).length > 2) runs.push(r)
+  }
+  if (runs.length) spec.runs = runs
+  if (segs.length === 1 && first.textDecoration === 'UNDERLINE' && !styled) {
+    spec.underline = true
+    delete spec.runs
+  }
+}
+
+/** The kit key of a component (or of its set, with the variant). */
+function componentKey(main) {
+  if (!main) return null
+  const set = main.parent?.type === 'COMPONENT_SET' ? main.parent : null
+  if (set?.getPluginData(KEY)) return { of: set.getPluginData(KEY), set: true }
+  if (main.getPluginData(KEY)) return { of: main.getPluginData(KEY) }
+  return null
+}
+
+async function exportOut(ec, node, parentAuto) {
+  if (['SLICE', 'CONNECTOR', 'STICKY', 'WIDGET', 'EMBED', 'LINK_UNFURL'].includes(node.type))
+    return null
+  const spec = { name: node.name }
+  if (!node.visible) spec.hidden = true
+  if ('opacity' in node && node.opacity < 1) spec.opacity = r3(node.opacity)
+
+  // Vectors (an icon from SVG, a group of shapes): as SVG markup.
+  if (node.getPluginData(KIND) === 'SVG' || VECTORISH.includes(node.type)) {
+    // Nothing visible inside (an empty or hidden drawing): Figma will not export it; keep its box.
+    const svg = await node.exportAsync({ format: 'SVG_STRING' }).catch(() => null)
+    Object.assign(spec, svg ? { type: 'SVG', svg } : { type: 'FRAME', fill: null })
+    placeOut(node, spec, parentAuto)
+    return spec
+  }
+
+  if (node.type === 'INSTANCE') {
+    const main = await node.getMainComponentAsync()
+    const at = componentKey(main)
+    if (at) {
+      spec.type = 'INSTANCE'
+      spec.of = at.of
+      if (at.set) spec.variant = { ...node.variantProperties }
+      const props = {}
+      for (const [k, v] of Object.entries(node.componentProperties)) {
+        if (v.type === 'TEXT' || v.type === 'BOOLEAN') props[k.split('#')[0]] = v.value
+        else if (v.type === 'INSTANCE_SWAP') {
+          const swap = await figma.getNodeByIdAsync(v.value)
+          const key = swap?.getPluginData(KEY)
+          if (key) props[k.split('#')[0]] = { swap: key }
+        }
+      }
+      if (Object.keys(props).length) spec.props = props
+      // An icon painted another colour: the colour of its first vector.
+      if (at.of.startsWith('icon/')) {
+        const v = node.findOne(
+          (n) => 'strokes' in n && n.type !== 'FRAME' && (n.strokes.length || n.fills.length),
+        )
+        const p = v && (v.strokes[0] ?? v.fills[0])
+        if (p) spec.color = await paintOut(ec, { ...p, opacity: 1 })
+      }
+      placeOut(node, spec, parentAuto)
+      return spec
+    }
+    // A component the other file will not have: its layers as a frame.
+  }
+
+  if (node.type === 'TEXT') {
+    spec.type = 'TEXT'
+    await textOut(ec, node, spec)
+    placeOut(node, spec, parentAuto)
+    return spec
+  }
+
+  spec.type =
+    node.type === 'RECTANGLE' ? 'RECTANGLE' : node.type === 'ELLIPSE' ? 'ELLIPSE' : 'FRAME'
+  if ('fills' in node) spec.fill = (await paintsOut(ec, node.fills)) ?? null
+  if ('strokes' in node && node.strokes.length) {
+    spec.stroke = await paintsOut(ec, node.strokes)
+    spec.strokeAlign = String(node.strokeAlign).toLowerCase()
+    spec.strokeWidth =
+      node.strokeWeight === figma.mixed
+        ? [
+            node.strokeTopWeight,
+            node.strokeRightWeight,
+            node.strokeBottomWeight,
+            node.strokeLeftWeight,
+          ]
+        : numOut(ec, node, 'strokeWeight')
+  }
+  if ('topLeftRadius' in node) {
+    const r = ['topLeftRadius', 'topRightRadius', 'bottomRightRadius', 'bottomLeftRadius'].map(
+      (f) => numOut(ec, node, f),
+    )
+    if (r.some((x) => x)) spec.radius = r.every((x) => x === r[0]) ? r[0] : r
+  }
+  const fx = effectsOut(ec, node)
+  if (fx) spec.effects = fx
+  if ('clipsContent' in node && node.clipsContent) spec.clip = true
+  const auto = 'layoutMode' in node && node.layoutMode !== 'NONE'
+  if (auto) {
+    spec.layout = node.layoutMode === 'HORIZONTAL' ? 'row' : 'col'
+    spec.gap = numOut(ec, node, 'itemSpacing')
+    if (node.layoutWrap === 'WRAP') {
+      spec.wrap = true
+      spec.rowGap = numOut(ec, node, 'counterAxisSpacing')
+    }
+    spec.pad = ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft'].map((f) =>
+      numOut(ec, node, f),
+    )
+    spec.justify = ALIGN_OUT[node.primaryAxisAlignItems] ?? 'start'
+    spec.align = ALIGN_OUT[node.counterAxisAlignItems] ?? 'start'
+  }
+  placeOut(node, spec, parentAuto)
+  if ('children' in node) {
+    spec.children = []
+    for (const c of node.children) {
+      const x = await exportOut(ec, c, auto)
+      if (x) spec.children.push(x)
+    }
+  }
+  return spec
 }
 
 Object.assign(jobs, {
@@ -1052,6 +1429,32 @@ Object.assign(jobs, {
   },
 
   /** Layers this bridge made, by key. */
+  /**
+   * Layers as build specs (see exportOut): without `ids`, the list of a page's top-level layers to
+   * ask for one by one (a page can be too big for one answer).
+   */
+  async export({ page, ids }) {
+    const target = page ? figma.root.children.find((p) => p.name === page) : figma.currentPage
+    if (!target) throw new Error(`No page ${page}`)
+    await target.loadAsync()
+    if (!ids?.length)
+      return {
+        page: target.name,
+        top: target.children.map((n) => ({ id: n.id, name: n.name, type: n.type })),
+      }
+    const ec = await exportContext()
+    const nodes = []
+    for (const id of ids) {
+      const n = await figma.getNodeByIdAsync(id)
+      if (!n) continue
+      const spec = await exportOut(ec, n, false)
+      if (!spec) continue
+      spec.key = n.getPluginData(KEY) || `export/${n.id}`
+      nodes.push(spec)
+    }
+    return { nodes }
+  },
+
   async keys() {
     const index = readIndex()
     const rows = []
@@ -1130,36 +1533,38 @@ Object.assign(jobs, {
   },
 })
 
-if (!RELOADING)
-  figma.ui.onmessage = async (msg) => {
-    if (msg.type === 'job') {
-      const { id, kind, params } = msg.job
-      try {
-        const run = jobs[kind]
-        if (!run) throw new Error(`Unknown job ${kind}`)
-        figma.ui.postMessage({ type: 'done', id, result: await run(params || {}) })
-      } catch (e) {
-        figma.ui.postMessage({ type: 'done', id, error: String(e?.message ? e.message : e) })
-      }
+// Every load, the first or a `reload`, answers with its own jobs: a reloaded file takes the window
+// over (assigning into the jobs of the first load reaches only that load's object, so a second
+// reload would otherwise run against the first reload's code).
+figma.ui.onmessage = async (msg) => {
+  if (msg.type === 'job') {
+    const { id, kind, params } = msg.job
+    try {
+      const run = jobs[kind]
+      if (!run) throw new Error(`Unknown job ${kind}`)
+      figma.ui.postMessage({ type: 'done', id, result: await run(params || {}) })
+    } catch (e) {
+      figma.ui.postMessage({ type: 'done', id, error: String(e?.message ? e.message : e) })
     }
-    if (msg.type === 'push') {
-      // "Send selection": the selected layers as JSON plus a 2x picture of each, into the inbox.
-      try {
-        const ids = figma.currentPage.selection.map((n) => n.id)
-        if (!ids.length) throw new Error('Select one or more layers first')
-        const a = await jobs.nodes({ ids })
-        const b = await jobs.render({ ids, format: 'PNG', scale: 2 })
-        figma.ui.postMessage({ type: 'pushed', result: { files: [...a.files, ...b.files] } })
-      } catch (e) {
-        figma.ui.postMessage({ type: 'pushed', error: String(e?.message ? e.message : e) })
-      }
-    }
-    if (msg.type === 'resize') figma.ui.resize(msg.width, msg.height)
-    if (msg.type === 'storage-get') {
-      figma.ui.postMessage({ type: 'storage', value: await figma.clientStorage.getAsync(msg.key) })
-    }
-    if (msg.type === 'storage-set') await figma.clientStorage.setAsync(msg.key, msg.value)
   }
+  if (msg.type === 'push') {
+    // "Send selection": the selected layers as JSON plus a 2x picture of each, into the inbox.
+    try {
+      const ids = figma.currentPage.selection.map((n) => n.id)
+      if (!ids.length) throw new Error('Select one or more layers first')
+      const a = await jobs.nodes({ ids })
+      const b = await jobs.render({ ids, format: 'PNG', scale: 2 })
+      figma.ui.postMessage({ type: 'pushed', result: { files: [...a.files, ...b.files] } })
+    } catch (e) {
+      figma.ui.postMessage({ type: 'pushed', error: String(e?.message ? e.message : e) })
+    }
+  }
+  if (msg.type === 'resize') figma.ui.resize(msg.width, msg.height)
+  if (msg.type === 'storage-get') {
+    figma.ui.postMessage({ type: 'storage', value: await figma.clientStorage.getAsync(msg.key) })
+  }
+  if (msg.type === 'storage-set') await figma.clientStorage.setAsync(msg.key, msg.value)
+}
 
 if (!RELOADING)
   figma.on('selectionchange', () => {

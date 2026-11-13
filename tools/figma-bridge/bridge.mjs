@@ -18,13 +18,23 @@
  * Ids: 279:51, 279-51 or a whole Figma link with ?node-id=…; none means the current selection.
  * Files go to --out (default ./.figma). The plugin's "Send selection" button drops files into
  * <out>/inbox/ of the running bridge. No dependencies: Node 18 or newer.
+ *
+ * `node pack.mjs` packs this file with the plugin for other people (no kit there: kit.mjs needs the
+ * repository); `install` copies them to ~/Figma Bridge and adds the MCP server to Claude Code/Cursor.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawn, spawnSync } from 'node:child_process'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
+import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { KIT_PARTS, pushKit } from './kit.mjs'
 
+const VERSION = '2.2.0' // pack.mjs reads it for the archive and the .mcpb manifest
+const HERE = dirname(fileURLToPath(import.meta.url))
+/** The FixNote UI kit: only inside the repository (kit.mjs reads its sources), none when packed. */
+const kit = existsSync(join(HERE, 'kit.mjs'))
+  ? await import('./kit.mjs').then((m) => (m.KIT_READY ? m : null))
+  : null
 const PORT = 7331 // plugin/manifest.json allows exactly this one
 const URL_BASE = `http://127.0.0.1:${PORT}`
 const JOB_TIMEOUT = 180_000
@@ -156,6 +166,18 @@ function serve(out) {
 
       if (path === '/status') return send(res, 200, { plugin: online(), out })
 
+      // web/capture.js for pages: `await import('http://127.0.0.1:7331/web/capture.js')`.
+      if (path.startsWith('/web/') && req.method === 'GET') {
+        const name = path.slice('/web/'.length)
+        if (!/^[\w-]+\.js$/.test(name)) return send(res, 404, { error: 'Not found' })
+        try {
+          const code = readFileSync(join(HERE, 'web', name), 'utf8')
+          return send(res, 200, code, 'text/javascript; charset=utf-8')
+        } catch {
+          return send(res, 404, { error: 'Not found' })
+        }
+      }
+
       // A command queues a job and waits for the plugin's answer.
       if (path === '/job' && req.method === 'POST') {
         if (!online())
@@ -206,7 +228,7 @@ function serve(out) {
 // ---------------------------------------------------------------------------------------------
 // Commands.
 
-const PLUGIN_CODE = join(dirname(fileURLToPath(import.meta.url)), 'plugin', 'code.js')
+const PLUGIN_CODE = join(HERE, 'plugin', 'code.js')
 let sentCode = null
 
 /**
@@ -257,6 +279,66 @@ const readJson = (file) => {
     return JSON.parse(readFileSync(file, 'utf8'))
   } catch (e) {
     fail(`Cannot read ${file}: ${e.message}`)
+  }
+}
+
+/**
+ * Runs a bundle: `{format: 'figma-bridge/bundle@1', name, page, steps: [{kind, params, label,
+ * id?, unless?: {step, mode}}]}` (kit.mjs makes one of the FixNote kit). `page` moves every build
+ * step to another page. A step with `unless` is skipped when the step `id` it names created that
+ * mode (the Dark collection for plans with one mode). Returns one line per step.
+ */
+async function applyBundle(bundle, { page, log = () => {} } = {}) {
+  if (bundle?.format !== 'figma-bridge/bundle@1' || !Array.isArray(bundle.steps))
+    fail('Not a Figma Bridge bundle (format figma-bridge/bundle@1).')
+  const done = new Map()
+  const lines = []
+  const say = (line) => {
+    lines.push(line)
+    log(line)
+  }
+  for (const step of bundle.steps) {
+    const before = step.unless && done.get(step.unless.step)
+    if (before?.modes?.includes(step.unless.mode)) continue
+    const params = page && 'page' in step.params ? { ...step.params, page } : step.params
+    const r = await job(step.kind, params, step.label ?? step.kind)
+    if (step.id) done.set(step.id, r)
+    if (step.kind === 'variables') {
+      say(
+        `variables ${r.collection}: ${r.made} new, ${r.updated} updated; modes ${r.modes.join(', ')}`,
+      )
+      for (const n of r.notes ?? []) say(`  ${n}`)
+    } else if (step.kind === 'styles') say(`styles: ${r.text} text, ${r.effect} effect`)
+    else if (step.kind === 'build' && step.label !== 'kit')
+      say(`${step.label ?? 'build'}: ${r.made} layers new, ${r.updated} updated`)
+  }
+  return lines
+}
+
+/**
+ * A page of the open file as a bundle: each top-level layer exported by the plugin (`export` job,
+ * one per layer so big pages fit) and rebuilt by a build step. Components it uses by key (a kit)
+ * must be applied before it in the other file.
+ */
+async function exportPage(page, log = () => {}) {
+  const list = await job('export', { page }, page)
+  const steps = []
+  for (const t of list.top) {
+    const r = await job('export', { page, ids: [t.id] }, t.name)
+    for (const n of r.nodes)
+      steps.push({
+        kind: 'build',
+        label: n.name,
+        params: { page: list.page, nodes: [n], show: false },
+      })
+    log(`  ${t.name}`)
+  }
+  return {
+    format: 'figma-bridge/bundle@1',
+    name: `Page ${list.page}`,
+    page: list.page,
+    made: new Date().toISOString(),
+    steps,
   }
 }
 
@@ -447,18 +529,46 @@ const TOOLS = [
       JSON.stringify((await job('script', { code: a.code }, 'script')).value, null, 2),
   },
   {
-    name: 'figma_push_kit',
+    name: 'figma_export',
     description:
-      'Push the FixNote UI kit from the repository: tokens from packages/ui/src/styles.css as variables (Light/Dark), ' +
-      'text and shadow styles, lucide icons, and components bound to them (Button, Input, Badge, Kbd, Dialog, note row, title bar, Spotlight, two app screens, ' +
-      'note card, note snippet, sidebar). Re-running updates the same components. parts: any of ' +
-      `${KIT_PARTS.join(', ')} (default all, in that order; later parts need the earlier ones in the file).`,
-    input: {
-      parts: { type: 'array', items: { type: 'string', enum: KIT_PARTS } },
-      page: { type: 'string' },
+      'Save a whole page of the open Figma file as a bundle file (every top-level layer as build specs: auto layout, ' +
+      'variables and styles by name, kit components by key, vectors as SVG, images inline), to rebuild it in another file with figma_apply.',
+    input: { page: { type: 'string' }, file: { type: 'string' } },
+    required: ['page', 'file'],
+    run: async (a) => {
+      const bundle = await exportPage(a.page)
+      writeFileSync(a.file, JSON.stringify(bundle))
+      return `${resolve(a.file)}: ${bundle.steps.length} layers of page ${bundle.page}`
     },
-    run: async (a) => (await pushKit(job, { parts: a.parts, page: a.page })).join('\n'),
   },
+  {
+    name: 'figma_apply',
+    description:
+      'Build what a bundle file holds in the open Figma file: a UI kit someone exported with export-kit ' +
+      '(variables, text and effect styles, icons, components, sample screens), step by step. Pass the full path ' +
+      'of the .json file; page puts it on another page. Applying again updates the same layers.',
+    input: { file: { type: 'string' }, page: { type: 'string' } },
+    required: ['file'],
+    run: async (a) => (await applyBundle(readJson(a.file), { page: a.page })).join('\n'),
+  },
+  ...(kit
+    ? [
+        {
+          name: 'figma_push_kit',
+          description:
+            'Push the FixNote UI kit from the repository: tokens from packages/ui/src/styles.css as variables (Light/Dark), ' +
+            'text and shadow styles, lucide icons, and components bound to them (Button, Input, Badge, Kbd, Dialog, note row, title bar, Spotlight, two app screens, ' +
+            'note card, note snippet, sidebar). Re-running updates the same components. parts: any of ' +
+            `${kit.KIT_PARTS.join(', ')} (default all, in that order; later parts need the earlier ones in the file).`,
+          input: {
+            parts: { type: 'array', items: { type: 'string', enum: kit.KIT_PARTS } },
+            page: { type: 'string' },
+          },
+          run: async (a) =>
+            (await applyBundle(await kit.kitBundle({ parts: a.parts, page: a.page }))).join('\n'),
+        },
+      ]
+    : []),
 ]
 
 // ---------------------------------------------------------------------------------------------
@@ -490,11 +600,11 @@ async function mcp(out) {
       return reply(id, {
         protocolVersion: params?.protocolVersion ?? '2025-06-18',
         capabilities: { tools: {} },
-        serverInfo: { name: 'figma-bridge', version: '2.0.0' },
+        serverInfo: { name: 'figma-bridge', version: VERSION },
         instructions:
           'Reads and writes the Figma file open in Figma desktop through the Figma Bridge plugin. ' +
           'Writes are idempotent by key: push the same specs again to update. Order: figma_variables, ' +
-          'figma_styles, components, then layers that use them; figma_push_kit does all of it for FixNote.',
+          `figma_styles, components, then layers that use them${kit ? '; figma_push_kit does all of it for FixNote' : ''}.`,
       })
     if (method === 'ping') return reply(id, {})
     if (method === 'tools/list')
@@ -545,7 +655,95 @@ async function mcp(out) {
   process.stdin.on('end', () => process.exit(0))
 }
 
-const HELP = `Figma Bridge: read and write the Figma file open on this computer.
+// ---------------------------------------------------------------------------------------------
+// install: a packed bridge (pack.mjs) puts itself where it can stay and tells the MCP clients.
+
+/** Visible on purpose: Figma's "Import plugin from manifest" dialog does not show hidden folders. */
+const HOME_DIR = join(homedir(), 'Figma Bridge')
+const PLUGIN_FILES = ['manifest.json', 'code.js', 'ui.html']
+
+/** `~/x` → the home folder (MCP configs such as the .mcpb one cannot expand it themselves). */
+const expandHome = (p) => p.replace(/^~(?=$|[\\/])/, homedir())
+
+function install() {
+  const win = process.platform === 'win32'
+  const script = join(HOME_DIR, 'figma-bridge.mjs')
+  const plugin = join(HOME_DIR, 'plugin')
+  const files = join(HOME_DIR, 'files')
+  mkdirSync(plugin, { recursive: true })
+  mkdirSync(files, { recursive: true })
+  if (resolve(HERE) !== resolve(HOME_DIR)) {
+    copyFileSync(fileURLToPath(import.meta.url), script)
+    for (const f of PLUGIN_FILES) copyFileSync(join(HERE, 'plugin', f), join(plugin, f))
+    if (existsSync(join(HERE, 'web', 'capture.js'))) {
+      mkdirSync(join(HOME_DIR, 'web'), { recursive: true })
+      copyFileSync(join(HERE, 'web', 'capture.js'), join(HOME_DIR, 'web', 'capture.js'))
+    }
+  }
+  // The full path of this Node: apps started from the Dock or Start menu often lack the shell's PATH.
+  const server = { command: process.execPath, args: [script, 'mcp', '--out', files] }
+  console.log(`Figma Bridge ${VERSION} → ${HOME_DIR}\n`)
+
+  // Claude Code: its own CLI keeps ~/.claude.json consistent. On Windows it may be a .cmd, which
+  // only a shell runs, so the arguments are quoted for cmd.exe there.
+  const claude = (args) =>
+    win
+      ? spawnSync(
+          'claude',
+          args.map((a) => (/[\s&()^]/.test(a) ? `"${a}"` : a)),
+          {
+            shell: true,
+            encoding: 'utf8',
+          },
+        )
+      : spawnSync('claude', args, { encoding: 'utf8' })
+  if (claude(['--version']).status === 0) {
+    claude(['mcp', 'remove', '--scope', 'user', 'figma-bridge'])
+    const r = claude([
+      'mcp',
+      'add',
+      '--scope',
+      'user',
+      'figma-bridge',
+      '--',
+      server.command,
+      ...server.args,
+    ])
+    console.log(
+      r.status === 0
+        ? '✓ Claude Code: added for every project (user scope)'
+        : `✗ Claude Code: ${(r.stderr || r.stdout).trim()}`,
+    )
+  } else console.log('· Claude Code: not found (no `claude` command), skipped')
+
+  const cursorDir = join(homedir(), '.cursor')
+  if (existsSync(cursorDir)) {
+    const path = join(cursorDir, 'mcp.json')
+    try {
+      const config = existsSync(path) ? JSON.parse(readFileSync(path, 'utf8') || '{}') : {}
+      config.mcpServers = { ...config.mcpServers, 'figma-bridge': server }
+      writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`)
+      console.log(`✓ Cursor: ${path}`)
+    } catch (e) {
+      console.log(`✗ Cursor: cannot update ${path}: ${e.message}`)
+    }
+  } else console.log('· Cursor: not found, skipped')
+
+  console.log(`· Claude Desktop: double-click "Figma Bridge.mcpb" from the archive instead.
+
+Any other MCP client (stdio):
+${JSON.stringify({ mcpServers: { 'figma-bridge': server } }, null, 2)}
+
+In Figma desktop, once: open any file → Plugins → Development → Import plugin from manifest…
+  → ${join(plugin, 'manifest.json')}
+Then each time: Plugins → Development → Figma Bridge (local), and keep its small window open.`)
+  // Show the folder, so the manifest is one click away in Figma's dialog.
+  try {
+    spawn(win ? 'explorer' : 'open', [plugin], { detached: true, stdio: 'ignore' }).unref()
+  } catch {}
+}
+
+const HELP = `Figma Bridge ${VERSION}: read and write the Figma file open on this computer.
 
   serve                                  start the bridge (keep it running)
   mcp                                    MCP server on stdio (starts the bridge if needed)
@@ -557,8 +755,15 @@ const HELP = `Figma Bridge: read and write the Figma file open on this computer.
   originals [ids]                        photos as uploaded (image fills)
   find <text>                            layers on the current page by name or text
 
-  push-kit [parts] [--page "FixNote UI"] the FixNote UI kit as variables, styles, components
-                                         parts: ${KIT_PARTS.join(' ')}
+${
+  kit
+    ? `  push-kit [parts] [--page "FixNote UI"] the FixNote UI kit as variables, styles, components
+                                         parts: ${kit.KIT_PARTS.join(' ')}
+  export-kit [file.json] [parts]         the same as one bundle file, for other Figma files
+`
+    : ''
+}  export-page <page> [file.json]         a whole page as a bundle, to rebuild elsewhere
+  apply <bundle.json> [--page name]      build a bundle (export-kit, export-page) in the open file
   variables <file.json>                  upsert a variable collection (figma_variables shape)
   styles <file.json>                     upsert text/effect styles
   build <file.json> [--page name]        upsert layers: {page?, nodes: [specs]} or [specs]
@@ -566,12 +771,14 @@ const HELP = `Figma Bridge: read and write the Figma file open on this computer.
   remove <keys…>                         delete pushed layers
   script <file.js>                       run Plugin API code in the file
 
+  install                                copy to ~/Figma Bridge, add to Claude Code and Cursor
+
 Ids: 279:51, 279-51 or a Figma link; none = the current selection. --out <dir> (default ./.figma).`
 
 const [command, ...argv] = process.argv.slice(2)
 const { flags, rest } = parse(argv)
 // biome-ignore lint/suspicious/noUndeclaredEnvVars: a standalone tool, not a Turborepo task
-const out = resolve(flags.out ?? process.env.FIGMA_BRIDGE_OUT ?? '.figma')
+const out = resolve(expandHome(flags.out ?? process.env.FIGMA_BRIDGE_OUT ?? '.figma'))
 const ids = () => rest.map(toId)
 const label = () => (rest.length ? rest.map(toId).join(' ') : '(selection)')
 
@@ -627,11 +834,35 @@ try {
       break
     }
     case 'push-kit':
-      await pushKit(job, {
-        parts: rest.length ? rest : undefined,
+      if (!kit) fail('push-kit needs the FixNote repository (tools/figma-bridge/bridge.mjs there).')
+      await applyBundle(
+        await kit.kitBundle({ parts: rest.length ? rest : undefined, page: flags.page }),
+        { log: (l) => console.log(l) },
+      )
+      break
+    case 'export-kit': {
+      if (!kit)
+        fail('export-kit needs the FixNote repository (tools/figma-bridge/bridge.mjs there).')
+      const [file = 'fixnote-ui-kit.json', ...parts] = rest
+      const bundle = await kit.kitBundle({
+        parts: parts.length ? parts : undefined,
         page: flags.page,
-        log: (l) => console.log(l),
       })
+      writeFileSync(file, JSON.stringify(bundle))
+      console.log(`${resolve(file)}: ${bundle.steps.length} steps (${bundle.parts.join(', ')})`)
+      break
+    }
+    case 'export-page': {
+      const [page, file = `${page}.json`] = rest
+      if (!page) fail('Which page? e.g. export-page Screens screens.json')
+      const bundle = await exportPage(page, (l) => console.log(l))
+      writeFileSync(file, JSON.stringify(bundle))
+      console.log(`${resolve(file)}: ${bundle.steps.length} layers of page ${bundle.page}`)
+      break
+    }
+    case 'apply':
+      if (!rest[0]) fail('Which file? e.g. apply fixnote-ui-kit.json')
+      await applyBundle(readJson(rest[0]), { page: flags.page, log: (l) => console.log(l) })
       break
     case 'variables':
     case 'styles': {
@@ -660,6 +891,23 @@ try {
       console.log(JSON.stringify(r.value, null, 2))
       break
     }
+    case 'install':
+      install()
+      break
+    case 'version':
+      console.log(VERSION)
+      break
+    // For pack.mjs: the tools as the .mcpb manifest lists them (first sentence of each).
+    case 'tools':
+      console.log(
+        JSON.stringify(
+          TOOLS.map((t) => ({
+            name: t.name,
+            description: t.description.split(/(?<=\.) (?=[A-Z])/)[0],
+          })),
+        ),
+      )
+      break
     default:
       console.log(HELP)
       if (command && command !== 'help') process.exitCode = 1

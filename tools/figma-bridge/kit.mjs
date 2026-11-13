@@ -26,6 +26,8 @@ const REPO = (() => {
   return resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 })()
 const STYLES = join(REPO, 'packages/ui/src/styles.css')
+/** False outside the FixNote repository (the packed bridge): there is no kit to push. */
+export const KIT_READY = existsSync(STYLES)
 const COLORS = 'FixNote Theme'
 const SIZES = 'FixNote Size'
 const ROOT = 'kit'
@@ -1897,19 +1899,15 @@ function screensBoard() {
 // Pushing.
 
 /**
- * Push the kit (or some parts of it) through `job(kind, params, label)`; returns what happened, one
- * line per step. Parts run in KIT_PARTS order: later ones use the variables and components of
- * earlier ones, which must already be in the file.
+ * The kit (or some parts of it) as a bundle: the jobs that build it, in order, as plain JSON. The
+ * bridge applies it (`applyBundle` in bridge.mjs; `push-kit` here, `apply <file>` anywhere), so the
+ * same file rebuilds the kit in another Figma file without this repository. Parts come in
+ * KIT_PARTS order: later ones use the variables and components of earlier ones.
  */
-export async function pushKit(job, { parts, page = 'FixNote UI', log = () => {} } = {}) {
+export async function kitBundle({ parts, page = 'FixNote UI' } = {}) {
   const want = parts?.length ? parts : KIT_PARTS
   for (const p of want)
     if (!KIT_PARTS.includes(p)) throw new Error(`No kit part ${p}: ${KIT_PARTS.join(', ')}`)
-  const lines = []
-  const say = (line) => {
-    lines.push(line)
-    log(line)
-  }
   const tokens = readTokens()
   const s = await strings()
   const root = {
@@ -1921,46 +1919,39 @@ export async function pushKit(job, { parts, page = 'FixNote UI', log = () => {} 
     pad: 0,
     keep: true,
   }
+  const boards = {
+    tokens: () => tokensBoard(tokens),
+    icons: () => iconsBoard(lucideDir()),
+    button: () => buttonBoard(),
+    controls: () => controlsBoard(s),
+    dialog: () => dialogBoard(s),
+    notes: () => notesBoard(),
+    sidebar: () => sidebarBoard(s),
+    screens: () => screensBoard(),
+  }
+  const steps = []
   for (const part of KIT_PARTS.filter((p) => want.includes(p))) {
     if (part === 'tokens') {
       const [colors, ...rest] = tokenJobs(tokens, false)
-      const r = await job(colors.kind, colors.params, colors.label)
-      say(
-        `variables ${r.collection}: ${r.made} new, ${r.updated} updated; modes ${r.modes.join(', ')}`,
-      )
-      for (const n of r.notes ?? []) say(`  ${n}`)
-      const darkMissing = !r.modes.includes('Dark')
-      if (darkMissing) {
-        // A plan with one mode per collection: Dark goes to a collection of its own.
-        const dark = tokenJobs(tokens, true)[1]
-        const d = await job(dark.kind, dark.params, dark.label)
-        say(
-          `variables ${d.collection}: ${d.made} new, ${d.updated} updated (this plan allows one mode per collection)`,
-        )
-      }
-      for (const j of rest) {
-        const x = await job(j.kind, j.params, j.label)
-        say(
-          j.kind === 'styles'
-            ? `styles: ${x.text} text, ${x.effect} effect`
-            : `variables ${x.collection}: ${x.made} new, ${x.updated} updated`,
-        )
-      }
+      steps.push({ ...colors, id: 'colors' })
+      // A plan with one mode per collection: Dark goes to a collection of its own.
+      steps.push({ ...tokenJobs(tokens, true)[1], unless: { step: 'colors', mode: 'Dark' } })
+      steps.push(...rest)
     }
-    const boards = {
-      tokens: () => tokensBoard(tokens),
-      icons: () => iconsBoard(lucideDir()),
-      button: () => buttonBoard(),
-      controls: () => controlsBoard(s),
-      dialog: () => dialogBoard(s),
-      notes: () => notesBoard(),
-      sidebar: () => sidebarBoard(s),
-      screens: () => screensBoard(),
-    }
-    await job('build', { page, nodes: [root], show: false }, 'kit')
-    const r = await job('build', { page, parent: ROOT, nodes: [boards[part]()], show: false }, part)
-    say(`${part}: ${r.made} layers new, ${r.updated} updated`)
+    steps.push({ kind: 'build', label: 'kit', params: { page, nodes: [root], show: false } })
+    steps.push({
+      kind: 'build',
+      label: part,
+      params: { page, parent: ROOT, nodes: [boards[part]()], show: false },
+    })
   }
-  await job('show', { keys: [ROOT] }, 'kit')
-  return lines
+  steps.push({ kind: 'show', label: 'kit', params: { keys: [ROOT] } })
+  return {
+    format: 'figma-bridge/bundle@1',
+    name: 'FixNote UI kit',
+    page,
+    parts: KIT_PARTS.filter((p) => want.includes(p)),
+    made: new Date().toISOString(),
+    steps,
+  }
 }

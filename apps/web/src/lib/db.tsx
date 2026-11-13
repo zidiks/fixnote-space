@@ -28,7 +28,8 @@ const DbContext = createContext<DbContextValue | null>(null)
 
 let opening: Promise<DbContextValue> | null = null
 
-function openDb(): Promise<DbContextValue> {
+/** The database the app uses (opened once); also what dev tools such as the Figma capture seed. */
+export function openDb(): Promise<DbContextValue> {
   opening ??= (async () => {
     const driver = await platform.sql()
     await prepareDatabase(driver)
