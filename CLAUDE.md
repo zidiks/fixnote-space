@@ -102,6 +102,12 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   A change to a note open on screen goes through `registerOpenNote` (`lib/assistant/open-notes.ts`):
   solo it is one editor step that types in (`editor/ai-typing.ts`); in a shared note it is written
   into the live Yjs document, and the awareness field `ai` shows "FixNote AI · asked by …" in LiveBar.
+- Logo (brand/README.md): the designer's two SVGs and `brand/strokes.json` are the source;
+  `pnpm logo` makes `packages/ui/src/logo/data.gen.ts`, the icon SVGs and `brand/logo-motion.html`
+  and checks that the strokes open the whole logo (`pnpm icons` then makes every PNG). `<Logo>`
+  (`@fixnote/ui`) shows the `fn` mark or the word and plays the motion of `logo/logo.css` between
+  them; each pen stroke is a mask, and a stroke that crosses another line carries a `block`, so no
+  square shows at crossings. The word's `f` is the mark's `f`: never let them differ.
 - `packages/ui/src/bloub/engine` is vendored (MIT) and excluded from Biome; do not edit or round
   its numbers, update by copying from upstream (see its README).
 - AI never changes a note without an explicit accept unless the user picked "Accept edits" or "Auto"

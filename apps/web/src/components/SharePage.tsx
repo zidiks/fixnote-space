@@ -1,6 +1,6 @@
 import { type SharedNote, sharedFileBytes } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button } from '@fixnote/ui'
+import { Button, Logo } from '@fixnote/ui'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { Markdown } from '@tiptap/markdown'
 import { EditorContent, useEditor } from '@tiptap/react'
@@ -56,8 +56,8 @@ export function SharePage({ id, linkKey }: { id: string; linkKey: string }) {
     <div data-selectable className="min-h-full cursor-auto bg-background text-foreground">
       <main className="mx-auto w-full max-w-3xl px-6 pt-8 pb-24 sm:px-10">
         <header className="mb-8 flex items-center justify-between text-[13px] text-muted-foreground">
-          <a href="/" className="font-semibold text-foreground">
-            FixNote
+          <a href="/" aria-label="FixNote" className="flex items-center text-foreground">
+            <Logo height={18} />
           </a>
           {note ? (
             <span>

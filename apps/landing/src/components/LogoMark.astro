@@ -1,0 +1,30 @@
+---
+import { logo } from '../../../../packages/ui/src/logo/data.gen'
+
+/**
+ * The `fn` mark in the text colour, writing itself once when the page loads (no script: the
+ * motion is packages/ui/src/logo/logo.css, the strokes come from brand/, `pnpm logo`).
+ * One per page: the ids are fixed.
+ */
+const strokes = logo.strokes.filter((s) => s.space === 'mark')
+const width = logo.mark.width * logo.scale
+const height = logo.mark.height * logo.scale
+---
+
+<svg class="fx-logo" data-phase="draw" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+  <defs>
+    <path id="fxm-f" d={logo.shapes.f}></path>
+    <path id="fxm-mark" fill-rule="evenodd" d={logo.shapes.mark}></path>
+    {
+      strokes.map((s) => (
+        <mask id={`fxm-${s.id}`}>
+          <path data-m={s.id} d={s.d} stroke-width={s.width} pathLength={s.length} style={`--o:${s.offset}`} />
+          {s.block && <path fill="#000" d={s.block} />}
+        </mask>
+      ))
+    }
+  </defs>
+  <g transform={`scale(${logo.scale})`}>
+    {strokes.map((s) => <use href={`#fxm-${s.shape}`} mask={`url(#fxm-${s.id})`} />)}
+  </g>
+</svg>

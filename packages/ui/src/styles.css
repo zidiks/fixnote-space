@@ -3,6 +3,7 @@
  * Consumers import this file once, after `@import "tailwindcss"`.
  */
 @import "tw-animate-css";
+@import "./logo/logo.css";
 
 @source "./";
 

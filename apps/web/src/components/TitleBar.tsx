@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Kbd,
+  Logo,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -25,7 +26,7 @@ import {
   PanelLeftOpen,
   SquarePen,
 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { type Route, useUi } from '../app/store'
 import { useDocking } from '../lib/layout'
 import { navBack, navForward } from '../lib/nav-history'
@@ -115,6 +116,20 @@ function PlaceMenu() {
   )
 }
 
+let greeted = false
+
+/**
+ * The word beside an open sidebar, the mark alone when it is closed (it unfolds and folds between
+ * them). It writes itself once, when the app opens.
+ */
+function Brand({ word }: { word: boolean }) {
+  const [first] = useState(!greeted)
+  useEffect(() => {
+    greeted = true
+  }, [])
+  return <Logo height={17} variant={word ? 'word' : 'mark'} intro={first} />
+}
+
 /**
  * One bar across the whole window: it is the window's title bar on desktop (drag to move,
  * double-click to maximize) and the app header on the web.
@@ -146,15 +161,19 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
           platform.chrome === 'mac-overlay' && 'pl-[78px]',
         )}
       >
-        {docked ? (
+        {sidebarDrawer ? null : (
           <button
             type="button"
             onClick={() => ui.navigate({ kind: 'home' })}
-            className="mr-auto rounded-md px-1 text-sm font-semibold tracking-tight hover:text-brand"
+            aria-label={t('app.name')}
+            className={cn(
+              'flex items-center rounded-md px-1 py-1 transition-colors hover:text-brand',
+              docked ? 'mr-auto' : 'mr-1',
+            )}
           >
-            {t('app.name')}
+            <Brand word={docked} />
           </button>
-        ) : null}
+        )}
         <Tip label={t('sidebar.newNote')} hint={keys.newNote}>
           <Button
             variant="ghost"

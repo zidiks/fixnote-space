@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FixNote · logo motion</title>
+<style>
+  :root { --bg: #f8f5f0; --ink: #000; --muted: #8a857c; --line: #e4dfd6; --fx-k: 1; }
+  :root[data-theme="dark"] { --bg: #141312; --ink: #f8f5f0; --muted: #8a857c; --line: #2a2826; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  .stage { display: grid; place-items: center; height: 360px; border: 1px solid var(--line); border-radius: 16px; }
+  .stage .fx-logo { width: min(80%, 620px); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 32px; }
+  button { font: inherit; color: inherit; background: none; border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+  button:hover { border-color: var(--ink); }
+  h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 32px 0 12px; }
+  .row { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+  .row img { display: block; }
+  :root[data-theme="dark"] .row img { filter: invert(1); }
+  .inline { display: inline-flex; overflow: hidden; height: 28px; width: __MARK_W__px; transition: width calc(var(--fx-k) * .9s) cubic-bezier(.6, 0, .2, 1); cursor: pointer; }
+  .inline.open { width: __WORD_W__px; }
+  .inline .fx-logo { height: 28px; width: __WORD_W__px; flex: none; }
+
+  .stage .fx-logo { --fx-shift: __SHIFT__px; }
+</style>
+<style>
+__CSS__
+</style>
+</head>
+<body>
+<main>
+  <div class="stage">__STAGE__</div>
+  <div class="bar">
+    <button data-play="draw">1 · Появление шорт-лого</button>
+    <button data-play="expand">2 · Шорт → биг</button>
+    <button data-play="collapse">Биг → шорт</button>
+    <button data-play="intro">Всё вместе</button>
+    <button id="speed">Скорость: 1×</button>
+    <button id="theme">Тема</button>
+  </div>
+
+  <h2>В шапке / сайдбаре: клик разворачивает и сворачивает</h2>
+  <div class="row"><span class="inline" id="inline">__INLINE__</span></div>
+
+  <h2>Статика: шорт-лого с вырезанной каплей</h2>
+  <div class="row">
+    <img src="fixnote-mark.svg" height="16" alt=""><img src="fixnote-mark.svg" height="24" alt="">
+    <img src="fixnote-mark.svg" height="40" alt=""><img src="fixnote-mark.svg" height="96" alt="">
+  </div>
+  <h2>Статика: биг лого</h2>
+  <div class="row">
+    <img src="fixnote-wordmark.svg" height="16" alt=""><img src="fixnote-wordmark.svg" height="28" alt="">
+    <img src="fixnote-wordmark.svg" height="56" alt="">
+  </div>
+</main>
+<script>
+  const root = document.documentElement
+  const stage = document.getElementById('stage')
+  const k = () => Number(getComputedStyle(root).getPropertyValue('--fx-k'))
+  let timer
+  function phase(el, name) {
+    el.dataset.phase = name === 'draw' || name === 'expand' || name === 'collapse' ? 'none' : name
+    if (el.dataset.phase === name) return
+    el.getBoundingClientRect()
+    el.dataset.phase = name
+  }
+  function play(name) {
+    clearTimeout(timer)
+    if (name !== 'intro') return phase(stage, name)
+    phase(stage, 'draw')
+    timer = setTimeout(() => phase(stage, 'expand'), k() * 1250 + 350)
+  }
+  for (const b of document.querySelectorAll('[data-play]')) b.onclick = () => play(b.dataset.play)
+  document.getElementById('theme').onclick = () => {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'
+  }
+  const speeds = [1, 0.5, 4]
+  document.getElementById('speed').onclick = (e) => {
+    const next = speeds[(speeds.indexOf(1 / k()) + 1) % speeds.length]
+    root.style.setProperty('--fx-k', String(1 / next))
+    e.currentTarget.textContent = `Скорость: ${next}×`
+  }
+  const inline = document.getElementById('inline')
+  const small = inline.querySelector('.fx-logo')
+  small.dataset.phase = 'mark'
+  inline.onclick = () => phase(small, inline.classList.toggle('open') ? 'expand' : 'collapse')
+  play('intro')
+</script>
+</body>
+</html>
