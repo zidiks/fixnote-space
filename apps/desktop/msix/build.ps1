@@ -37,7 +37,14 @@ $layout = Join-Path $Out 'layout'
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
 New-Item -ItemType Directory -Force $layout | Out-Null
 Copy-Item "$Release/fixnote-desktop.exe" "$layout/FixNote.exe"
-Copy-Item "$Release/fixnote-mcp.exe" "$layout/fixnote-mcp.exe"
+# tauri-build copies the sidecar next to the app only when its build script runs; with the build
+# cached it may not have, so fall back to the sidecar itself (src-tauri/binaries).
+$mcp = "$Release/fixnote-mcp.exe"
+if (-not (Test-Path $mcp)) {
+  $mcp = "$PSScriptRoot/../src-tauri/binaries/fixnote-mcp-x86_64-pc-windows-msvc.exe"
+  Write-Host "::notice::no fixnote-mcp.exe in $Release, taking $mcp"
+}
+Copy-Item $mcp "$layout/fixnote-mcp.exe"
 if ((Get-Item "$layout/fixnote-mcp.exe").Length -lt 1MB) { throw 'fixnote-mcp.exe is the placeholder: build the MCP server first' }
 Copy-Item "$PSScriptRoot/Assets" "$layout/Assets" -Recurse
 
