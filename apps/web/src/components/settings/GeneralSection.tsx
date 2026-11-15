@@ -9,7 +9,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { type Theme, useUi } from '../../app/store'
+import { FONT_MODES, type FontMode, type Theme, useUi } from '../../app/store'
 import { captureToDaily, VOICE_TO_DAILY } from '../../lib/daily'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
@@ -20,6 +20,8 @@ export function GeneralSection() {
   const { t } = useTranslation()
   const theme = useUi((s) => s.theme)
   const setTheme = useUi((s) => s.setTheme)
+  const fontMode = useUi((s) => s.fontMode)
+  const setFontMode = useUi((s) => s.setFontMode)
   const layout = useUi((s) => s.layout ?? 'assistant')
   const setLayout = useUi((s) => s.setLayout)
   const [lang, setLang] = useState<Language>(currentLanguage())
@@ -69,6 +71,24 @@ export function GeneralSection() {
             ))}
           </SelectContent>
         </Select>
+        <label htmlFor="settings-font" className="text-sm text-muted-foreground">
+          {t('settings.font')}
+        </label>
+        <div className="min-w-0 space-y-1.5">
+          <Select value={fontMode} onValueChange={(v) => setFontMode(v as FontMode)}>
+            <SelectTrigger id="settings-font" className="max-w-60">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FONT_MODES.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {t(`settings.fonts.${m}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{t(`settings.fontHints.${fontMode}`)}</p>
+        </div>
       </div>
       <div className="max-w-lg space-y-2 pt-1">
         <p className="text-sm text-muted-foreground">{t('layout.setting')}</p>

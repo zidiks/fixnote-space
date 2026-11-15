@@ -940,6 +940,17 @@ const en = {
       light: 'Light',
       dark: 'Dark',
     },
+    font: 'Font',
+    fonts: {
+      classic: 'Classic',
+      geist: 'Modern',
+      reading: 'Reading',
+    },
+    fontHints: {
+      classic: 'Inter everywhere, as before.',
+      geist: 'Geist, lighter headings.',
+      reading: 'Golos Text in the interface, the book face Literata and larger text in notes.',
+    },
     integrations: 'Integrations',
     plan: 'Billing',
     advanced: 'Advanced',

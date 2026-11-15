@@ -16,11 +16,13 @@
     <!-- The app stays out of search results; fixnote.space is the site to find (also _headers). -->
     <meta name="robots" content="noindex, nofollow" />
     <script>
-      // Apply the theme before first paint to avoid a flash.
+      // Apply the theme and the type preset before first paint to avoid a flash.
       try {
         const t = localStorage.getItem('fixnote.theme') || 'system'
         const dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
         if (dark) document.documentElement.classList.add('dark')
+        const f = localStorage.getItem('fixnote.font')
+        if (f) document.documentElement.dataset.font = f
       } catch {}
     </script>
   </head>

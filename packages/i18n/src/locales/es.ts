@@ -949,6 +949,18 @@ const es: LocaleResource = {
       light: 'Claro',
       dark: 'Oscuro',
     },
+    font: 'Fuente',
+    fonts: {
+      classic: 'Clásica',
+      geist: 'Moderna',
+      reading: 'Lectura',
+    },
+    fontHints: {
+      classic: 'Inter en todo, como antes.',
+      geist: 'Geist, títulos más ligeros.',
+      reading:
+        'Golos Text en la interfaz; en las notas, la tipografía de libro Literata y texto más grande.',
+    },
     integrations: 'Integraciones',
     plan: 'Facturación',
     advanced: 'Avanzado',
