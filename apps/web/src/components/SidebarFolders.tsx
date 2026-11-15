@@ -63,7 +63,7 @@ function NameInput({
     onDone(name?.trim() ? name.trim() : null)
   }
   return (
-    <div className="flex h-8 items-center gap-2.5 pr-2" style={{ paddingLeft: 10 + depth * 14 }}>
+    <div className="flex h-9.5 items-center gap-2.5 pr-2" style={{ paddingLeft: 10 + depth * 14 }}>
       <FolderIcon className="size-4 shrink-0 opacity-70" />
       <input
         // biome-ignore lint/a11y/noAutofocus: the input appears in response to an explicit action
@@ -234,7 +234,7 @@ export function SidebarFolders() {
                     data-folder-id={f.id}
                     {...dropTarget(f, kids, open)}
                     className={cn(
-                      'group mb-0.5 flex h-8 items-center rounded-md pr-1 text-[13.5px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
+                      'group flex h-9.5 items-center rounded-sm pr-1 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
                       active && 'bg-sidebar-accent font-medium text-foreground',
                       dropOn === f.id &&
                         'bg-brand/10 text-foreground ring-2 ring-brand/40 ring-inset',
@@ -372,7 +372,7 @@ export function SidebarFolders() {
 
   return (
     <div className="mt-5">
-      <div className="group flex items-center justify-between pr-1 pb-1 pl-2.5">
+      <div className="group flex h-8 items-center justify-between pr-1 pl-2.5">
         <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
           {t('sidebar.folders')}
         </span>

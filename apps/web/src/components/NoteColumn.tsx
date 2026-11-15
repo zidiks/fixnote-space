@@ -1,8 +1,8 @@
 import { type NoteFilter, type NoteSummary, subtreeCounts } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Button, cn, Tooltip, TooltipContent, TooltipTrigger } from '@fixnote/ui'
+import { Button, chipVariants, cn, Tooltip, TooltipContent, TooltipTrigger } from '@fixnote/ui'
 import { CalendarDays, Folder, House, Link2, Pin, Search, SquarePen, X } from 'lucide-react'
-import { useDeferredValue, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { LIST_WIDTH, type ListRoute, useUi } from '../app/store'
 import { listFilter } from '../lib/layout'
 import { useNoteList } from '../lib/note-list'
@@ -24,10 +24,13 @@ export function NoteColumn({
   list,
   activeId,
   wide = false,
+  onFirst,
 }: {
   list: ListRoute
   /** The note open beside the list. */
   activeId?: string | undefined
+  /** Told the list's first note (pinned ones first), or null when it has none. */
+  onFirst?: (id: string | null) => void
   /** The whole width (a phone): no resize handle. */
   wide?: boolean
 }) {
@@ -157,12 +160,7 @@ export function NoteColumn({
                       replace: true,
                     })
                   }
-                  className={cn(
-                    'h-7 rounded-full border px-3 text-xs font-medium transition-colors pointer-coarse:h-8',
-                    on
-                      ? 'border-foreground/15 bg-card shadow-xs'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
-                  )}
+                  className={chipVariants({ selected: on })}
                 >
                   {t(`home.filters.${s}`)}
                 </button>
@@ -185,6 +183,7 @@ export function NoteColumn({
             pinnedFirst={list.kind !== 'today'}
             inFolder={folderId(list)}
             activeId={activeId}
+            onFirst={onFirst}
             empty={
               list.kind === 'folder'
                 ? t('list.emptyFolder')
@@ -212,16 +211,22 @@ function Notes({
   inFolder,
   activeId,
   empty,
+  onFirst,
 }: {
   filter: NoteFilter
   pinnedFirst: boolean
   inFolder: string | undefined
   activeId: string | undefined
   empty: string
+  onFirst: ((id: string | null) => void) | undefined
 }) {
   const { t } = useTranslation()
   const label = useGroupLabel()
   const list = useNoteList(filter, pinnedFirst)
+  const first = list.pending ? undefined : (list.pickable[0]?.id ?? null)
+  useEffect(() => {
+    if (first !== undefined) onFirst?.(first)
+  }, [first, onFirst])
 
   if (list.pending) return <Hint>{t('common.loading')}</Hint>
   if (list.empty) return <Hint>{empty}</Hint>

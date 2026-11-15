@@ -2,7 +2,7 @@ import { parseConnectLink } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, useEffect, useMemo, useRef } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Toaster } from 'sonner'
 import { CallBar } from '../components/CallBar'
 import { CardPaymentDialog } from '../components/CardPaymentDialog'
@@ -36,7 +36,7 @@ import { DbProvider, useDb } from '../lib/db'
 import { askExtension, parseExtensionLink, takeExtensionParam } from '../lib/extension-connect'
 import { useExternalChanges } from '../lib/external-changes'
 import { kvStore } from '../lib/kv'
-import { currentListRoute, useDocking, useLayout } from '../lib/layout'
+import { currentListRoute, listKey, useDocking, useLayout, useOpenNoteId } from '../lib/layout'
 import { useNativeFeel } from '../lib/native'
 import { navBack, navForward, useBackLayer, useNavHistory } from '../lib/nav-history'
 import { billingLink } from '../lib/payment'
@@ -56,8 +56,17 @@ const NoteView = lazy(() => import('../components/NoteView').then((m) => ({ defa
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    // Local SQLite is the source of truth: no network, so no background refetching.
-    queries: { staleTime: Number.POSITIVE_INFINITY, retry: false, refetchOnWindowFocus: false },
+    // Local SQLite is the source of truth: no network, so no background refetching. And none to
+    // wait for: by default TanStack Query pauses queries and changes while the browser is offline,
+    // which left notes blank and edits unsaved without internet. The few that reach the server
+    // fail then like any other error.
+    queries: {
+      staleTime: Number.POSITIVE_INFINITY,
+      retry: false,
+      refetchOnWindowFocus: false,
+      networkMode: 'always',
+    },
+    mutations: { networkMode: 'always' },
   },
 })
 
@@ -99,6 +108,14 @@ function NotesContent({ onNewNote }: { onNewNote: () => void }) {
   // Everything right of the sidebar: the bar for picked notes is centred over it.
   const area = useRef<HTMLDivElement>(null)
   const list = listOf(route, back)
+  // With no note picked, the list's first note is open beside it (not on a phone).
+  const openId = useOpenNoteId()
+  const setShownNote = useUi((s) => s.setShownNote)
+  const key = listKey(list)
+  const onFirst = useCallback(
+    (id: string | null) => setShownNote(id ? { list: key, id } : null),
+    [key, setShownNote],
+  )
   const whole = (node: React.ReactNode) => (
     <main className="relative flex min-w-0 flex-1 flex-col">
       <div className="flex-1 overflow-y-auto">{node}</div>
@@ -120,14 +137,8 @@ function NotesContent({ onNewNote }: { onNewNote: () => void }) {
           whole(<TidyView />)
         ) : (
           <>
-            <NoteColumn
-              key={JSON.stringify(list)}
-              list={list}
-              activeId={route.kind === 'note' ? route.id : undefined}
-            />
-            {whole(
-              route.kind === 'note' ? <OpenNote id={route.id} /> : <NoNoteOpen onNew={onNewNote} />,
-            )}
+            <NoteColumn key={key} list={list} activeId={openId ?? undefined} onFirst={onFirst} />
+            {whole(openId ? <OpenNote id={openId} /> : <NoNoteOpen onNew={onNewNote} />)}
           </>
         )}
       </div>
@@ -281,7 +292,7 @@ function AppShell() {
               <button
                 type="button"
                 aria-label={t('sidebar.collapse')}
-                className="absolute inset-0 z-30 bg-black/30"
+                className="absolute inset-0 z-30 bg-scrim"
                 onClick={ui.toggleSidebar}
               />
               <div className="absolute inset-y-0 left-0 z-40 shadow-xl">
@@ -306,7 +317,7 @@ function AppShell() {
           <button
             type="button"
             aria-label={t('chat.close')}
-            className="absolute inset-0 z-30 bg-black/30"
+            className="absolute inset-0 z-30 bg-scrim"
             onClick={() => ui.setChatOpen(false)}
           />
           <div className="absolute inset-y-0 right-0 z-40 flex max-w-full max-sm:left-0">

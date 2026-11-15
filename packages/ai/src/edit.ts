@@ -1,3 +1,4 @@
+import { WRITING_STYLE } from '@fixnote/core'
 import type { ChatMessage } from './client'
 
 /** Quick actions in the selection popover; `custom` carries the user's own instruction. */
@@ -27,7 +28,9 @@ Rules:
 - Keep facts, names, numbers, links and #tags. Do not add information that is not in the text.
 - Markdown allowed: **bold**, *italic*, ~~strike~~, \`code\`, links, lists, "- [ ]" checklists,
   "#", "##", "###" headings, "> " quotes, code blocks. Nothing else (no tables, no HTML).
-- The surrounding text is context only; never repeat or change it.`
+- The surrounding text is context only; never repeat or change it.
+
+${WRITING_STYLE}`
 
 const TASKS: Record<Exclude<EditAction, 'custom'>, string> = {
   rewrite: 'Rewrite the fragment so it reads clearly and naturally. Same meaning, similar length.',

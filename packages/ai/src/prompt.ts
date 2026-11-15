@@ -1,4 +1,4 @@
-import type { ChatScope, Fragment } from '@fixnote/core'
+import { type ChatScope, type Fragment, WRITING_STYLE } from '@fixnote/core'
 import type { ChatMessage } from './client'
 
 export interface PromptInput {
@@ -18,7 +18,9 @@ Rules:
 - If the fragments do not contain the answer, say so in one short sentence and suggest what to search for. Do not guess.
 - In fragments, a line starting with [x] is a finished task and [ ] an open one.
 - Answer in the language of the question. Be brief and concrete; use short lists when it helps.
-- Never claim you changed a note; you can only read them.`
+- Never claim you changed a note; you can only read them.
+
+${WRITING_STYLE}`
 
 function scopeLine(scope: ChatScope): string {
   if (scope.kind === 'note') return `Context: the single note "${scope.title}".`

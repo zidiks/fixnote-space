@@ -6,7 +6,7 @@ import type {
   SharedRemote,
   SyncRemote,
 } from '@fixnote/core'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { isAuthRetryableFetchError, type SupabaseClient } from '@supabase/supabase-js'
 import {
   type BillingApi,
   type BillingOverview,
@@ -16,6 +16,7 @@ import {
 import { realtimeTransport } from '../collab/transport'
 import { toError } from '../errors'
 import { type RemoteMcpApi, supabaseRemoteMcp } from '../remote-mcp/api'
+import { requireSession } from '../supabase'
 import { supabaseSharedRemote } from '../sync/shared-remote'
 import { supabaseRemote } from '../sync/supabase-remote'
 
@@ -70,7 +71,13 @@ export interface UserKeysRow {
 
 /** Everything account and sync need from the server. Supabase in production. */
 export interface AccountBackend {
+  /**
+   * The stored session; null when there is none (signed out, or it ended). Throws when that
+   * cannot be told now (the token needs a refresh and the server cannot be reached).
+   */
   getSession(): Promise<Session | null>
+  /** Signed in or not: while signed in, no request may go out without the account's token. */
+  requireSession?(on: boolean): void
   sendCode(email: string, lang: string): Promise<void>
   verifyCode(email: string, code: string): Promise<Session>
   /** A code to the signed-in account's email, to prove it is its owner (before showing the phrase). */
@@ -148,9 +155,12 @@ export function supabaseBackend(
 
   return {
     async getSession() {
-      const { data } = await client.auth.getSession()
+      const { data, error } = await client.auth.getSession()
+      // Offline with a token to refresh: supabase-js keeps the session but answers null.
+      if (!data.session && error && isAuthRetryableFetchError(error)) throw toError(error)
       return session(data.session)
     },
+    requireSession,
     async sendCode(email, lang) {
       const { error } = await client.auth.signInWithOtp({
         email,

@@ -41,6 +41,7 @@ import {
   replaceWithMarkdown,
   setAiRange,
 } from './ai-range'
+import { FormatBar } from './FormatBar'
 
 type Target = 'selection' | 'note'
 
@@ -578,17 +579,21 @@ export function AiEditLayer({ editor, ai }: { editor: Editor; ai: AiEdit }) {
         }
         options={{ placement: 'top-start', offset: 8 }}
       >
-        <button
-          type="button"
-          // Keep the editor selection: a mousedown here would otherwise blur it.
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => ai.open('selection')}
-          title={`${t('ai.shortcut')} (${mod}+Shift+E)`}
-          className="flex items-center gap-1.5 rounded-full border bg-popover px-3 py-1 text-[13px] font-medium text-foreground shadow-float hover:bg-accent [&_svg]:size-3.5 [&_svg]:text-brand"
-        >
-          <Sparkles />
-          {t('ai.button')}
-        </button>
+        <div className="flex items-center gap-0.5 rounded-full border bg-popover p-0.5 shadow-float">
+          <button
+            type="button"
+            // Keep the editor selection: a mousedown here would otherwise blur it.
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => ai.open('selection')}
+            title={`${t('ai.shortcut')} (${mod}+Shift+E)`}
+            className="flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium text-foreground hover:bg-accent pointer-coarse:h-9 [&_svg]:size-3.5 [&_svg]:text-brand"
+          >
+            <Sparkles />
+            {t('ai.button')}
+          </button>
+          <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
+          <FormatBar editor={editor} />
+        </div>
       </BubbleMenu>
 
       {s?.target === 'selection' ? (

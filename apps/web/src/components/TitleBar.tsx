@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
 import { type Route, useUi } from '../app/store'
-import { useDocking } from '../lib/layout'
+import { useDocking, useOpenNoteId } from '../lib/layout'
 import { navBack, navForward } from '../lib/nav-history'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote, useRecents } from '../lib/queries'
@@ -57,7 +57,10 @@ function Tip({ label, hint, children }: { label: string; hint?: string; children
 function useRouteLabel(route: Route): string {
   const { t } = useTranslation()
   const folders = useFolders().data
-  const note = useNote(route.kind === 'note' ? route.id : '', { enabled: route.kind === 'note' })
+  // The open note, or the one shown beside a list in the notes layout.
+  const openId = useOpenNoteId()
+  const note = useNote(openId ?? '', { enabled: Boolean(openId) })
+  if (openId) return note.data?.title || t('common.untitled')
   switch (route.kind) {
     case 'home':
       return t('nav.home')
@@ -118,16 +121,13 @@ function PlaceMenu() {
 
 let greeted = false
 
-/**
- * The word beside an open sidebar, the mark alone when it is closed (it unfolds and folds between
- * them). It writes itself once, when the app opens.
- */
-function Brand({ word }: { word: boolean }) {
+/** The `fn` mark, always the short one (decided), first in the bar. Written once, when the app opens. */
+function Brand() {
   const [first] = useState(!greeted)
   useEffect(() => {
     greeted = true
   }, [])
-  return <Logo height={17} variant={word ? 'word' : 'mark'} intro={first} />
+  return <Logo height={17} variant="mark" intro={first} />
 }
 
 /**
@@ -157,23 +157,21 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         {...drag}
         className={cn(
           'flex shrink-0 items-center gap-0.5 pr-2 pl-3',
-          docked && 'w-64 border-r border-sidebar-border bg-sidebar',
+          docked && 'w-[300px] border-r border-sidebar-border bg-sidebar',
           platform.chrome === 'mac-overlay' && 'pl-[78px]',
         )}
       >
-        {sidebarDrawer ? null : (
-          <button
-            type="button"
-            onClick={() => ui.navigate({ kind: 'home' })}
-            aria-label={t('app.name')}
-            className={cn(
-              'flex items-center rounded-md px-1 py-1 transition-colors hover:text-brand',
-              docked ? 'mr-auto' : 'mr-1',
-            )}
-          >
-            <Brand word={docked} />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => ui.navigate({ kind: 'home' })}
+          aria-label={t('app.name')}
+          className={cn(
+            '-ml-1 flex items-center rounded-md px-1 py-1 transition-colors hover:text-brand',
+            docked ? 'mr-auto' : 'mr-1',
+          )}
+        >
+          <Brand />
+        </button>
         <Tip label={t('sidebar.newNote')} hint={keys.newNote}>
           <Button
             variant="ghost"

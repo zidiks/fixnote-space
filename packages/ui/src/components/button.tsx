@@ -10,8 +10,9 @@ export const buttonVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         brand: 'bg-brand text-brand-foreground hover:bg-brand/90',
-        outline: 'border bg-card shadow-xs hover:bg-accent',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        destructive: 'bg-destructive text-brand-foreground hover:bg-destructive/90',
+        outline: 'border bg-card hover:bg-accent hover:shadow-xs',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-subtle-hover',
         ghost:
           'text-muted-foreground hover:bg-accent hover:text-foreground aria-pressed:text-foreground',
         link: 'text-brand underline-offset-4 hover:underline',
@@ -19,15 +20,31 @@ export const buttonVariants = cva(
       size: {
         default: 'h-9 px-4',
         sm: 'h-8 gap-1.5 px-3 text-[13px]',
+        xs: 'h-7 gap-1 px-2 text-[13px]',
         lg: 'h-10 px-6',
         icon: 'size-9',
         'icon-sm': 'size-8',
-        'icon-xs': 'size-7 rounded-md',
+        'icon-xs': 'size-7',
+      },
+      /** `pill`: fully rounded, for floating and toolbar buttons. */
+      shape: {
+        default: '',
+        pill: 'rounded-full',
       },
     },
+    // Small quiet icon buttons (toolbars, headers) have the kit's 8px corners.
+    compoundVariants: [
+      {
+        variant: ['outline', 'secondary', 'ghost', 'link'],
+        size: 'icon-xs',
+        shape: 'default',
+        className: 'rounded-sm',
+      },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
+      shape: 'default',
     },
   },
 )
@@ -74,6 +91,7 @@ export function Button({
   className,
   variant,
   size,
+  shape,
   asChild = false,
   loading = false,
   disabled,
@@ -84,7 +102,7 @@ export function Button({
     return (
       <Slot.Root
         data-slot="button"
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(buttonVariants({ variant, size, shape, className }))}
         {...props}
       >
         {children}
@@ -96,7 +114,7 @@ export function Button({
       aria-busy={loading || undefined}
       disabled={disabled || loading}
       className={cn(
-        buttonVariants({ variant, size, className }),
+        buttonVariants({ variant, size, shape, className }),
         loading && 'relative cursor-progress disabled:opacity-100',
       )}
       {...props}

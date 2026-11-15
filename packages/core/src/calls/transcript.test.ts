@@ -5,8 +5,10 @@ const labels = {
   me: 'Я',
   them: 'Собеседники',
   summary: 'Кратко',
+  topics: 'Обсуждали',
   decisions: 'Решения',
   tasks: 'Задачи',
+  questions: 'Открытые вопросы',
   transcript: 'Расшифровка',
 }
 
@@ -71,6 +73,39 @@ describe('call transcript', () => {
       ].join('\n\n') + '\n',
     )
     expect(md).not.toContain('Решения')
+  })
+
+  it('writes topics with their points and open questions', () => {
+    const md = callNoteMarkdown({
+      title: 'Созвон',
+      summary: {
+        summary: 'Первый абзац.\n\nВторой абзац.',
+        topics: [
+          { title: 'Бюджет', points: ['300 тыс. на Q1', '# не заголовок'] },
+          { title: '', points: [] },
+        ],
+        decisions: ['Берём вариант Б'],
+        tasks: [],
+        questions: ['Кто ведёт проект?'],
+      },
+      turns: [{ speaker: 'me', startMs: 0, text: 'Начнём' }],
+      labels,
+    })
+    expect(md).toBe(
+      [
+        '# Созвон',
+        '## Кратко',
+        'Первый абзац.\n\nВторой абзац.',
+        '## Обсуждали',
+        '### Бюджет',
+        '- 300 тыс. на Q1\n- \\# не заголовок',
+        '## Решения',
+        '- Берём вариант Б',
+        '## Открытые вопросы',
+        '- Кто ведёт проект?',
+        '<details>\n<summary>Расшифровка</summary>\n\n**Я, 0:00.** Начнём\n\n</details>',
+      ].join('\n\n') + '\n',
+    )
   })
 
   it('shows the transcript open when there is no summary', () => {

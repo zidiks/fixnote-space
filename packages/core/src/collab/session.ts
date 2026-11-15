@@ -12,8 +12,15 @@ import { openRoomMessage, sealRoomMessage } from '../crypto'
  * app, an in-memory relay in tests). It sees ciphertext only and delivers to everyone but the sender.
  */
 export interface CollabTransport {
+  /** Delivers to the others, or drops the message while not connected. */
   send(message: Uint8Array): void
   onMessage(handler: (message: Uint8Array) => void): () => void
+  /**
+   * Connected or not (the network dropped, the channel is joined again). A transport without it is
+   * always connected. Messages sent while not connected are lost: on reconnecting the session
+   * asks the others for what it missed and gives them what they miss.
+   */
+  onStatus?(handler: (connected: boolean) => void): () => void
   close(): void
 }
 
@@ -61,6 +68,9 @@ export class CollabSession {
   /** Smoothed round trip to the other devices, in ms; null until someone answered. */
   rtt: number | null = null
   onRtt?: (ms: number) => void
+  /** Whether the room can be reached now (always, for a transport that does not say). */
+  connected: boolean
+  onConnection?: (connected: boolean) => void
 
   private readonly key: Uint8Array
   private readonly roomId: string
@@ -74,6 +84,7 @@ export class CollabSession {
   private pingTimer: ReturnType<typeof setInterval> | undefined
   private awarenessChanged = new Set<number>()
   private stopListening: (() => void) | null = null
+  private stopStatus: (() => void) | null = null
   private destroyed = false
   private answered = false
   private onAnswered: (() => void)[] = []
@@ -103,6 +114,8 @@ export class CollabSession {
     this.doc.on('update', this.onDocUpdate)
     this.awareness.on('update', this.onAwarenessUpdate)
     this.stopListening = this.transport.onMessage((m) => this.receive(m))
+    this.connected = !this.transport.onStatus
+    this.stopStatus = this.transport.onStatus?.((on) => this.setConnected(on)) ?? null
     this.send(HELLO, Y.encodeStateVector(this.doc))
     const pingMs = opts.pingMs ?? 3000
     if (pingMs > 0 && !this.listenOnly) this.pingTimer = setInterval(() => this.ping(), pingMs)
@@ -154,7 +167,33 @@ export class CollabSession {
     this.awareness.off('update', this.onAwarenessUpdate)
     this.awareness.destroy()
     this.stopListening?.()
+    this.stopStatus?.()
     this.transport.close()
+  }
+
+  /**
+   * Back in the room (or in it for the first time): what was typed on either side meanwhile went
+   * nowhere, so ask again (the others answer with what this device misses and say what they
+   * have, which this device then sends) and show this device's caret again. Out of it: the
+   * others' carets go, they come back with the answers.
+   */
+  private setConnected(on: boolean) {
+    if (this.destroyed) return
+    const changed = on !== this.connected
+    this.connected = on
+    if (on) {
+      this.flush()
+      this.send(HELLO, Y.encodeStateVector(this.doc))
+      if (this.awareness.getLocalState())
+        this.send(AWARENESS, encodeAwarenessUpdate(this.awareness, [this.doc.clientID]))
+    } else {
+      const others = [...this.awareness.getStates().keys()].filter((id) => id !== this.doc.clientID)
+      if (others.length) removeAwarenessStates(this.awareness, others, REMOTE)
+      // Forget their clocks too: their next state (same clock, they never left) must be taken in.
+      for (const id of others) this.awareness.meta.delete(id)
+      this.rtt = null
+    }
+    if (changed) this.onConnection?.(on)
   }
 
   private onDocUpdate = (update: Uint8Array, origin: unknown) => {

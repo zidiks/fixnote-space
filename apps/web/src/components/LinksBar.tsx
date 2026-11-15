@@ -2,6 +2,7 @@ import { folderPath, folderTree, standaloneUrl } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
+  chipVariants,
   cn,
   Dialog,
   DialogContent,
@@ -48,13 +49,7 @@ export function LinksBar({ list }: { list: Extract<ListRoute, { kind: 'links' }>
   const folders = useFolders().data ?? []
   const topics = useLinkFolders().data ?? []
   const total = useCounts().data?.links
-  const chip = (on: boolean) =>
-    cn(
-      'h-7 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors pointer-coarse:h-8',
-      on
-        ? 'border-foreground/15 bg-card shadow-xs'
-        : 'border-transparent text-muted-foreground hover:text-foreground',
-    )
+  const chip = (on: boolean) => chipVariants({ selected: on })
   return (
     <div className="space-y-2">
       <AddLink />

@@ -236,7 +236,7 @@ export function NoteCard({ note, inFolder, date = 'edited' }: ItemProps) {
       <button
         type="button"
         {...press.props}
-        className="group relative flex h-full min-h-32 w-full flex-col overflow-hidden rounded-xl border bg-card p-4 text-left shadow-xs transition-shadow outline-none [-webkit-touch-callout:none] hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[selected]:border-brand data-[selected]:ring-2 data-[selected]:ring-brand/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
+        className="group relative flex h-full min-h-32 w-full flex-col overflow-hidden rounded-lg border bg-card p-5 text-left shadow-xs transition-shadow outline-none [-webkit-touch-callout:none] hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[selected]:border-brand data-[selected]:ring-2 data-[selected]:ring-brand/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
       >
         {press.selecting ? (
           <SelectMark selected={press.selected} className="absolute top-3 right-3 z-10" />
@@ -259,14 +259,14 @@ export function NoteCard({ note, inFolder, date = 'edited' }: ItemProps) {
         </div>
         <p
           className={cn(
-            'mt-2 line-clamp-2 font-medium leading-snug [overflow-wrap:anywhere]',
+            'mt-2 line-clamp-2 font-medium leading-[22px] [overflow-wrap:anywhere]',
             !note.title && 'text-muted-foreground',
           )}
         >
           {note.title || t('common.untitled')}
         </p>
         {note.excerpt ? (
-          <p className="mt-1.5 line-clamp-7 text-[13px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+          <p className="mt-1.5 line-clamp-7 text-[13px] leading-[22px] text-muted-foreground [overflow-wrap:anywhere]">
             {note.excerpt}
           </p>
         ) : null}
@@ -286,17 +286,20 @@ export function NoteRow({ note, inFolder, date = 'edited' }: ItemProps) {
       <button
         type="button"
         {...press.props}
-        className={cn('flex w-full gap-4 px-4 py-3 text-left hover:bg-accent/40', itemClass)}
+        className={cn('flex w-full gap-4 px-4 py-3 text-left hover:bg-accent', itemClass)}
       >
         {press.selecting ? <SelectMark selected={press.selected} className="self-center" /> : null}
         <span className="min-w-0 flex-1">
           <span
-            className={cn('block truncate font-medium', !note.title && 'text-muted-foreground')}
+            className={cn(
+              'block truncate font-medium leading-[22px]',
+              !note.title && 'text-muted-foreground',
+            )}
           >
             {note.title || t('common.untitled')}
           </span>
           {note.excerpt ? (
-            <span className="mt-0.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
+            <span className="mt-0.5 line-clamp-2 text-[13px] leading-[22px] text-muted-foreground [overflow-wrap:anywhere]">
               {note.excerpt}
             </span>
           ) : null}
@@ -331,7 +334,7 @@ export function NoteLine({ note, inFolder, date = 'edited' }: ItemProps) {
         type="button"
         {...press.props}
         className={cn(
-          'flex h-10 w-full items-center gap-2.5 px-3 text-left text-sm hover:bg-accent/40',
+          'flex h-10 w-full items-center gap-2.5 px-3 text-left text-sm hover:bg-accent',
           itemClass,
         )}
       >
@@ -388,7 +391,7 @@ export function NoteSnippet({
         {...press.props}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex w-full gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50 aria-[current=page]:bg-accent data-[selected]:bg-brand/10',
+          'flex w-full gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-accent aria-[current=page]:bg-accent data-[selected]:bg-brand/10',
           itemClass,
         )}
       >

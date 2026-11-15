@@ -10,6 +10,24 @@ import {
   useUi,
 } from '../app/store'
 
+/** Identifies a list (for the note shown beside it). */
+export const listKey = (list: ListRoute) => JSON.stringify(list)
+
+/**
+ * The note on screen: the open one, or in the notes layout beside a list with none picked, the
+ * list's first note (`shownNote`; not on a phone, where the list is the whole screen). The title
+ * bar and the assistant's scope follow it like an open note.
+ */
+export function useOpenNoteId(): string | null {
+  const layout = useLayout()
+  const route = useUi((s) => s.route)
+  const narrow = useUi((s) => s.narrow)
+  const shown = useUi((s) => s.shownNote)
+  if (route.kind === 'note') return route.id
+  if (layout !== 'notes' || narrow || !isListRoute(route)) return null
+  return shown && shown.list === listKey(route) ? shown.id : null
+}
+
 /** The layout in use: the assistant layout until one is chosen on this device. */
 export function useLayout(): Layout {
   return useUi((s) => s.layout ?? 'assistant')

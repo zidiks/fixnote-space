@@ -1,6 +1,6 @@
 import { MARK_END, MARK_START, toPlainText } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
-import { Dialog, DialogContent, DialogTitle, Kbd } from '@fixnote/ui'
+import { cn, Dialog, DialogContent, DialogTitle, Kbd } from '@fixnote/ui'
 import { Command } from 'cmdk'
 import { CalendarDays, FileText, Search, Sparkles, SquarePen } from 'lucide-react'
 import { type ReactNode, useDeferredValue, useState } from 'react'
@@ -37,9 +37,9 @@ export function Snippet({ text }: { text: string }) {
 }
 
 const itemClass =
-  'flex cursor-default items-center gap-3 rounded-lg px-3 py-2 text-sm outline-none data-[selected=true]:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground'
+  'flex min-h-9.5 cursor-default items-center gap-3 rounded-sm px-3 py-2.25 text-sm outline-none data-[selected=true]:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground'
 const groupClass =
-  '[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground'
+  '[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-2.5 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground'
 
 export function Spotlight() {
   const { t, i18n } = useTranslation()
@@ -94,7 +94,7 @@ export function Spotlight() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-      <DialogContent data-back-layer aria-describedby={undefined} className="p-0">
+      <DialogContent data-back-layer aria-describedby={undefined} className="rounded-xl p-0">
         <DialogTitle className="sr-only">{t('sidebar.search')}</DialogTitle>
         <Command shouldFilter={false} loop className="flex max-h-[min(70vh,520px)] flex-col">
           <div className="flex items-center gap-3 border-b px-4">
@@ -103,11 +103,11 @@ export function Spotlight() {
               value={q}
               onValueChange={setQ}
               placeholder={t('spotlight.placeholder')}
-              className="h-12 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+              className="h-11 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground pointer-coarse:text-base"
             />
             <Kbd>Esc</Kbd>
           </div>
-          <Command.List className="overflow-y-auto p-1.5">
+          <Command.List className="overflow-y-auto p-3">
             {q.trim() &&
             !hits.length &&
             !related.length &&
@@ -126,14 +126,14 @@ export function Spotlight() {
                       key={note.id}
                       value={`note-${note.id}`}
                       onSelect={() => openNote(note)}
-                      className={`${itemClass} items-start`}
+                      className={cn(itemClass, 'items-start p-3.5')}
                     >
                       <FileText className="mt-0.5" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">
                           {note.title || t('common.untitled')}
                         </div>
-                        <div className="line-clamp-2 text-[13px] text-muted-foreground">
+                        <div className="mt-px line-clamp-2 text-[13px] leading-[18px] text-muted-foreground">
                           <Snippet text={snippet} />
                         </div>
                       </div>
@@ -167,12 +167,12 @@ export function Spotlight() {
                     key={r.noteId}
                     value={`similar-${r.noteId}`}
                     onSelect={() => openNote({ id: r.noteId })}
-                    className={`${itemClass} items-start`}
+                    className={cn(itemClass, 'items-start p-3.5')}
                   >
                     <Sparkles className="mt-0.5" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{r.title || t('common.untitled')}</div>
-                      <div className="line-clamp-2 text-[13px] text-muted-foreground">
+                      <div className="mt-px line-clamp-2 text-[13px] leading-[18px] text-muted-foreground">
                         {toPlainText(r.text)}
                       </div>
                     </div>

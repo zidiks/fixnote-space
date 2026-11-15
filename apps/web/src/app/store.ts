@@ -134,6 +134,11 @@ interface UiState {
   noteSort: NoteSort
   chatDraft: string
   aiRequest: AiRequest | null
+  /**
+   * Notes layout: the note shown beside a list while none is picked (its first note), with the
+   * list it belongs to (`listKey`). Not a route: Back never comes back to it. Not kept.
+   */
+  shownNote: { list: string; id: string } | null
   route: Route
   back: Route[]
   forward: Route[]
@@ -150,6 +155,7 @@ interface UiState {
   setNoteSort: (noteSort: NoteSort) => void
   setChatDraft: (text: string) => void
   requestAi: (request: AiRequest | null) => void
+  setShownNote: (shown: { list: string; id: string } | null) => void
   navigate: (route: Route, opts?: { replace?: boolean }) => void
   goBack: () => void
   goForward: () => void
@@ -184,6 +190,7 @@ export const useUi = create<UiState>()(
       noteSort: 'edited',
       chatDraft: '',
       aiRequest: null,
+      shownNote: null,
       route: { kind: 'home' },
       back: [],
       forward: [],
@@ -208,6 +215,12 @@ export const useUi = create<UiState>()(
       setNoteSort: (noteSort) => set({ noteSort }),
       setChatDraft: (chatDraft) => set({ chatDraft }),
       requestAi: (aiRequest) => set({ aiRequest }),
+      setShownNote: (shownNote) =>
+        set((s) =>
+          s.shownNote?.list === shownNote?.list && s.shownNote?.id === shownNote?.id
+            ? {}
+            : { shownNote },
+        ),
       navigate: (route, opts) =>
         set((s) => {
           if (sameRoute(route, s.route)) return { drawerOpen: false }

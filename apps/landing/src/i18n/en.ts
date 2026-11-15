@@ -95,7 +95,8 @@ export const en: Dict = {
     tryBrowser: 'Try in browser',
     free: 'Free to use',
     noAccount: 'No account required',
-    shotAlt: 'FixNote: the home screen with recent notes, a voice note and the assistant',
+    shotAlt:
+      'FixNote: a shared trip note edited by several people, and the assistant finding related notes',
     offline: { title: 'Works offline', text: 'Write and search your notes without internet.' },
     together: { title: 'Edit together', text: 'Share notes and see changes in real time.' },
     encrypted: {

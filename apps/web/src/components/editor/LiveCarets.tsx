@@ -3,7 +3,7 @@ import { relativePositionToAbsolutePosition, ySyncPluginKey } from '@tiptap/y-ti
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import type { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
-import type { LiveUser } from '../../lib/collab/people'
+import { type LiveUser, onColor } from '../../lib/collab/people'
 
 interface Caret {
   id: number
@@ -89,6 +89,7 @@ export function LiveCarets({ editor, awareness }: { editor: Editor; awareness: A
               transform: `translate(${c.x}px, ${c.y}px)`,
               height: c.height,
               '--caret': c.color,
+              '--caret-text': onColor(c.color),
             } as CSSProperties
           }
         >

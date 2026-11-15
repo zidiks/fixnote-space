@@ -10,7 +10,7 @@ export const ContextMenuSub = Primitive.Sub
 const panel =
   'z-50 min-w-48 overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-95'
 const item =
-  'relative flex cursor-default select-none items-center gap-2 rounded-md px-2 py-1.5 text-[13px] outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:opacity-70'
+  'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:opacity-70'
 
 export function ContextMenuContent({
   className,

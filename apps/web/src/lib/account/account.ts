@@ -190,8 +190,50 @@ export async function initAccount(d: Deps) {
     if (s) await resolveSession(s)
     else set({ phase: 'signed-out', ownerEmail: await boundEmail() })
   } catch {
+    // Offline with a token that needs a refresh: the session is still stored, it just cannot be
+    // checked now. The device's own account goes on (its key is on the device); sync waits for the
+    // network, and a session that turns out to have ended signs out then (`checkSession`).
+    if (await resumeOffline().catch(() => false)) return
     set({ phase: 'signed-out', ownerEmail: await boundEmail().catch(() => '') })
   }
+}
+
+/** Starts as the account this device is bound to, without the server. False when it cannot. */
+async function resumeOffline(): Promise<boolean> {
+  const owner = await kvGet(OWNER)
+  if (!owner || !(await need().keyStore.load())) return false
+  await resolveSession({ userId: owner, email: (await kvGet(OWNER_EMAIL)) ?? '' })
+  return useAccount.getState().phase === 'ready'
+}
+
+/**
+ * A request failed as if offline while the browser says it is online: perhaps the session ended
+ * (its refresh token was refused) and supabase-js has no token to send. Then this device is signed
+ * out, keeping its notes and key, as on a start without a session.
+ */
+async function checkSession() {
+  if (!navigator.onLine || !session) return
+  let s: Session | null
+  try {
+    s = await backend().getSession()
+  } catch {
+    return
+  }
+  if (s) return
+  stopWatching?.()
+  stopWatching = null
+  clearTimeout(debounce)
+  engine = null
+  shared = null
+  keys = null
+  session = null
+  backend().requireSession?.(false)
+  set({
+    phase: 'signed-out',
+    email: '',
+    sync: { status: 'idle', lastSyncedAt: null, error: null, pending: 0 },
+    ownerEmail: await boundEmail(),
+  })
 }
 
 /** The email of the account this device is bound to, or ''. */
@@ -250,6 +292,7 @@ async function becomeReady(k: AccountKeys) {
         userId: session.userId,
       })
     : null
+  backend().requireSession?.(Boolean(session))
   set({ phase: 'ready', pendingSecret: null })
   startWatching()
   // The plan first, so a Free account does not try to push.
@@ -482,6 +525,7 @@ export async function signOut() {
   shared = null
   keys = null
   session = null
+  backend().requireSession?.(false)
   await need()
     .keyStore.clear()
     .catch(() => undefined)
@@ -685,11 +729,13 @@ export async function runSync() {
       setSync({ status: 'free', error: null, pending: await e.pendingCount().catch(() => 0) })
       return
     }
+    const offline = isOffline(err)
     setSync({
-      status: isOffline(err) ? 'offline' : 'error',
+      status: offline ? 'offline' : 'error',
       error: err instanceof Error ? err.message : String(err),
       pending: await e.pendingCount().catch(() => 0),
     })
+    if (offline) await checkSession()
   }
 }
 

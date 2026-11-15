@@ -1,4 +1,5 @@
-import '@fontsource-variable/inter'
+import '@fontsource-variable/geist'
+import '@fontsource-variable/geist-mono'
 import './styles.css'
 import { parseShareLocation } from '@fixnote/core'
 import { initI18n } from '@fixnote/i18n'
