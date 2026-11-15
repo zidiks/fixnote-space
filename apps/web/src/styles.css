@@ -126,35 +126,49 @@
   }
 }
 
-/* Note editor: Bear-like reading rhythm; sizes are the UI Kit's content styles. */
+/* Note editor: Bear-like reading rhythm; face and sizes come from the type preset
+   (`--content-*` in packages/ui/src/styles.css). */
 .fixnote-editor {
   outline: none;
-  font-size: 16px;
-  line-height: 1.75;
+  font-family: var(--content-font);
+  font-feature-settings: var(--content-features);
+  font-size: var(--content-size);
+  line-height: var(--content-leading);
+  font-weight: var(--content-weight);
+  letter-spacing: 0;
   color: var(--color-foreground);
   caret-color: var(--color-brand);
   /* Long links and words without spaces wrap instead of running past the edge. */
   overflow-wrap: break-word;
 }
+.fixnote-editor strong {
+  font-weight: var(--content-strong);
+}
+/* Not the note's text: cards and name tags inside the editor keep the interface face. */
+.fixnote-link-card,
+.live-caret__label {
+  font-family: var(--font-sans);
+  font-feature-settings: var(--ui-features);
+}
 .fixnote-editor > * + * {
   margin-top: 0.6em;
 }
 .fixnote-editor h1 {
-  font-size: 30px;
-  line-height: 38px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-size: var(--content-h1-size);
+  line-height: var(--content-h1-leading);
+  font-weight: var(--content-heading-weight);
+  letter-spacing: var(--content-h1-tracking);
   margin-top: 0.2em;
 }
 .fixnote-editor h2 {
-  font-size: 22px;
-  line-height: 28px;
-  font-weight: 500;
+  font-size: var(--content-h2-size);
+  line-height: var(--content-h2-leading);
+  font-weight: var(--content-heading-weight);
   margin-top: 1.4em;
 }
 .fixnote-editor h3 {
-  font-size: 1.12em;
-  font-weight: 600;
+  font-size: var(--content-h3-size);
+  font-weight: var(--content-heading-weight);
   margin-top: 1.2em;
 }
 .fixnote-editor ul,

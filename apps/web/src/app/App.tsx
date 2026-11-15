@@ -49,7 +49,7 @@ import { appShown } from '../lib/shown'
 import { useAutoUpdateCheck } from '../lib/updates'
 import { useVisualViewport } from '../lib/viewport'
 import { toggleVoice } from '../lib/voice/voice'
-import { applyTheme, listOf, useUi } from './store'
+import { applyFontMode, applyTheme, listOf, useUi } from './store'
 
 // The editor (Tiptap/ProseMirror) is the heaviest part of the bundle; load it on first open.
 const NoteView = lazy(() => import('../components/NoteView').then((m) => ({ default: m.NoteView })))
@@ -153,7 +153,7 @@ function AppShell() {
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const { driver } = useDb()
-  const { sidebarOpen, chatOpen, theme, drawerOpen } = ui
+  const { sidebarOpen, chatOpen, theme, fontMode, drawerOpen } = ui
   // Beside the content, or over it when it would squeeze the content too much.
   const { sidebarDrawer, chatOverlay } = useDocking()
   const layout = useLayout()
@@ -266,6 +266,8 @@ function AppShell() {
 
   // The app is on screen: the desktop window may appear (it waits hidden until now).
   useEffect(() => appShown(), [])
+
+  useEffect(() => applyFontMode(fontMode), [fontMode])
 
   useEffect(() => {
     applyTheme(theme)

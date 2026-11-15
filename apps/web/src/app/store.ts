@@ -4,6 +4,10 @@ import { persist } from 'zustand/middleware'
 
 export type Theme = 'system' | 'light' | 'dark'
 
+/** The type preset (`data-font`, tokens in packages/ui/src/styles.css): faces, sizes, weights. */
+export const FONT_MODES = ['classic', 'geist', 'reading'] as const
+export type FontMode = (typeof FONT_MODES)[number]
+
 /** What the content column shows. Kept in memory; the desktop app has no URL bar. */
 export type Route =
   /** Home: the greeting and every note; `filter: 'inbox'` shows notes without a folder. */
@@ -124,6 +128,7 @@ interface UiState {
   spotlightOpen: boolean
   settings: SettingsSection | null
   theme: Theme
+  fontMode: FontMode
   /** Chosen once (`LayoutOnboarding`) and in Settings → General; kept on this device. */
   layout: Layout | null
   listWidth: number
@@ -148,6 +153,7 @@ interface UiState {
   setSpotlightOpen: (open: boolean) => void
   openSettings: (section: SettingsSection | null) => void
   setTheme: (theme: Theme) => void
+  setFontMode: (fontMode: FontMode) => void
   /** Folders folded in the sidebar (ids), kept on this device. */
   collapsedFolders: string[]
   toggleFolder: (id: string) => void
@@ -181,6 +187,7 @@ export const useUi = create<UiState>()(
       spotlightOpen: false,
       settings: null,
       theme: 'system',
+      fontMode: 'classic',
       layout: null,
       listWidth: LIST_WIDTH.initial,
       setLayout: (layout) => set({ layout }),
@@ -205,6 +212,7 @@ export const useUi = create<UiState>()(
       setSpotlightOpen: (spotlightOpen) => set({ spotlightOpen }),
       openSettings: (settings) => set({ settings }),
       setTheme: (theme) => set({ theme }),
+      setFontMode: (fontMode) => set({ fontMode }),
       toggleFolder: (id) =>
         set((s) => ({
           collapsedFolders: s.collapsedFolders.includes(id)
@@ -250,6 +258,7 @@ export const useUi = create<UiState>()(
       partialize: ({
         sidebarOpen,
         theme,
+        fontMode,
         noteView,
         noteSort,
         collapsedFolders,
@@ -258,6 +267,7 @@ export const useUi = create<UiState>()(
       }) => ({
         sidebarOpen,
         theme,
+        fontMode,
         noteView,
         noteSort,
         collapsedFolders,
@@ -272,7 +282,14 @@ export const useUi = create<UiState>()(
 type Persisted = Partial<
   Pick<
     UiState,
-    'sidebarOpen' | 'theme' | 'noteView' | 'noteSort' | 'collapsedFolders' | 'layout' | 'listWidth'
+    | 'sidebarOpen'
+    | 'theme'
+    | 'fontMode'
+    | 'noteView'
+    | 'noteSort'
+    | 'collapsedFolders'
+    | 'layout'
+    | 'listWidth'
   >
 >
 
@@ -284,8 +301,19 @@ export function readPersisted(value: unknown): Persisted {
   if (typeof value !== 'object' || value === null) return {}
   const out = { ...(value as Persisted) }
   if (out.layout !== 'assistant' && out.layout !== 'notes') out.layout = null
+  if (out.fontMode !== undefined && !FONT_MODES.includes(out.fontMode)) delete out.fontMode
   if (out.listWidth !== undefined) out.listWidth = clampListWidth(Number(out.listWidth))
   return out
+}
+
+/** Puts the type preset on <html> (and where index.html reads it before the first paint). */
+export function applyFontMode(mode: FontMode) {
+  document.documentElement.dataset.font = mode
+  try {
+    localStorage.setItem('fixnote.font', mode)
+  } catch {
+    // As with the theme: it still applies for this session.
+  }
 }
 
 /** Keeps the `dark` class on <html> in sync with the chosen theme and the OS setting. */

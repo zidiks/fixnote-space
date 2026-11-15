@@ -1,5 +1,10 @@
+// The three type presets (Settings → General); a browser fetches only the faces a page uses.
+import '@fontsource-variable/inter'
 import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
+import '@fontsource-variable/golos-text'
+import '@fontsource-variable/literata'
+import '@fontsource-variable/literata/wght-italic.css'
 import './styles.css'
 import { parseShareLocation } from '@fixnote/core'
 import { initI18n } from '@fixnote/i18n'

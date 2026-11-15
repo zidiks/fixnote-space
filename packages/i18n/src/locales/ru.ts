@@ -947,6 +947,17 @@ const ru: LocaleResource = {
       light: 'Светлая',
       dark: 'Тёмная',
     },
+    font: 'Шрифт',
+    fonts: {
+      classic: 'Классический',
+      geist: 'Современный',
+      reading: 'Для чтения',
+    },
+    fontHints: {
+      classic: 'Inter везде, как раньше.',
+      geist: 'Geist, заголовки легче.',
+      reading: 'Golos Text в интерфейсе; в заметках книжный шрифт Literata и текст крупнее.',
+    },
     integrations: 'Интеграции',
     plan: 'Подписка и оплата',
     advanced: 'Расширенные',

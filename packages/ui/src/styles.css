@@ -1,6 +1,6 @@
 /*
  * FixNote design tokens, matching the Figma UI Kit: warm paper neutrals, one orange accent,
- * yellow highlight, Geist.
+ * yellow highlight. Type comes in three presets (`data-font` on <html>, see "Type presets").
  * Consumers import this file once, after `@import "tailwindcss"`.
  */
 @import "tw-animate-css";
@@ -91,9 +91,80 @@
   --shadow-float: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -8px rgb(0 0 0 / 0.5);
 }
 
+/*
+ * Type presets. Each is a whole set, not one font: the interface face and its weights, the mono
+ * face, and the note's own text (face, size, line height, weights, headings). The person picks
+ * one in Settings → General (`useUi().fontMode`, kept per device); `classic` is what a page
+ * without the setting gets (the share and consent pages).
+ *
+ * classic: Inter, as the app looked before the UI Kit.
+ * geist:   the Figma UI Kit's styles (Geist, content 16/28, headings Medium).
+ * reading: for long reading. No face is fastest for everyone (Wallace et al., TOCHI 2022: about
+ *          35% between a reader's best and worst), so this is a different kind of face, not a
+ *          "best" one: Golos Text for the interface (drawn Cyrillic-first for screens, large
+ *          x-height, open shapes) and Literata, a book face made for long reading on screens,
+ *          for the note, a step larger with regular weight and calm headings.
+ */
+:root {
+  --ui-font: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ui-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --ui-features: "cv11", "ss01";
+  --ui-tracking: 0;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --content-font: var(--ui-font);
+  --content-features: var(--ui-features);
+  --content-size: 16px;
+  --content-leading: 1.75;
+  --content-weight: 400;
+  --content-strong: 600;
+  --content-h1-size: 1.9em;
+  --content-h1-leading: 1.25;
+  --content-h1-tracking: -0.02em;
+  --content-h2-size: 1.35em;
+  --content-h2-leading: 1.3;
+  --content-h3-size: 1.12em;
+  --content-heading-weight: 650;
+}
+
+:root[data-font="geist"] {
+  --ui-font: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ui-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  --ui-features: normal;
+
+  --content-size: 16px;
+  --content-leading: 1.75;
+  --content-h1-size: 30px;
+  --content-h1-leading: 38px;
+  --content-h2-size: 22px;
+  --content-h2-leading: 28px;
+  --content-heading-weight: 500;
+}
+
+:root[data-font="reading"] {
+  --ui-font: "Golos Text Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ui-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  --ui-features: normal;
+  --ui-tracking: -0.005em;
+
+  --content-font: "Literata Variable", Georgia, "Times New Roman", serif;
+  --content-features: normal;
+  --content-size: 17px;
+  --content-leading: 1.7;
+  --content-strong: 650;
+  --content-h1-size: 1.75em;
+  --content-h1-leading: 1.25;
+  --content-h1-tracking: -0.01em;
+  --content-h2-size: 1.3em;
+  --content-h2-leading: 1.3;
+  --content-h3-size: 1.1em;
+  --content-heading-weight: 600;
+}
+
 @theme inline {
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: var(--ui-font);
+  --font-mono: var(--ui-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -148,6 +219,8 @@
     background: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-feature-settings: var(--ui-features);
+    letter-spacing: var(--ui-tracking);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
