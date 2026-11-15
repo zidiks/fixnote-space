@@ -14,6 +14,12 @@
       "port": 5173
     },
     {
+      "name": "web-5174",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@fixnote/web", "exec", "vite", "--port", "5174", "--strictPort"],
+      "port": 5174
+    },
+    {
       "name": "landing-preview",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@fixnote/landing", "preview", "--port", "4322"],

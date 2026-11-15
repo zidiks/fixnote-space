@@ -6,7 +6,6 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-  isApple,
   MenuShortcut,
 } from '@fixnote/ui'
 import { Extension, getMarkRange } from '@tiptap/core'
@@ -65,6 +64,7 @@ export interface NoteEditorHandle {
 
 import { AiRangeExtension } from './ai-range'
 import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
+import { combo } from './combo'
 import { ImageTextDialog } from './ImageTextDialog'
 import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
@@ -97,12 +97,6 @@ function looksLikeDump(text: string) {
 const MD_TABLE = /^\s*\|.*\|\s*\r?\n\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/m
 
 const SAVE_DELAY = 400
-
-/** `Ctrl+Shift+S` on Windows, `⇧⌘S` on macOS. */
-function combo(key: string, opts: { shift?: boolean; alt?: boolean } = {}) {
-  if (isApple) return `${opts.alt ? '⌥' : ''}${opts.shift ? '⇧' : ''}⌘${key}`
-  return ['Ctrl', opts.alt && 'Alt', opts.shift && 'Shift', key].filter(Boolean).join('+')
-}
 
 function selectedText(editor: Editor) {
   const { from, to } = editor.state.selection

@@ -13,21 +13,27 @@ export interface LiveUser {
 }
 
 /**
- * Clearly different hues, readable on light and dark backgrounds with white letters on top
- * (6-digit hex for the carets). The first ones differ the most.
+ * The UI Kit's collaborator colours (collab/*), then spares for a crowded note (6-digit hex for
+ * the carets). A person's own colour is always one of the kit's; the spares are taken only when
+ * all of those are in use.
  */
-const COLORS = [
-  '#1c7ed6', // blue
-  '#e8590c', // orange
-  '#2f9e44', // green
-  '#ae3ec9', // purple
-  '#e03131', // red
-  '#0c8599', // teal
-  '#d6336c', // pink
-  '#6741d9', // indigo
-  '#f08c00', // amber
-  '#495057', // slate
+const KIT = [
+  '#22a355', // green
+  '#ec4870', // rose
+  '#f5b414', // amber
+  '#14beaf', // teal
+  '#7c5cf6', // violet
 ]
+const SPARE = ['#1c7ed6', '#e03131', '#6741d9', '#e8590c', '#495057']
+const COLORS = [...KIT, ...SPARE]
+
+/** Light colours carry dark letters (the kit's on-solid), the rest white. */
+const DARK_TEXT = new Set(['#f5b414', '#14beaf'])
+
+/** The colour of a name or initials drawn on `color`. */
+export function onColor(color: string): string {
+  return DARK_TEXT.has(color.toLowerCase()) ? '#1a1816' : '#ffffff'
+}
 
 const hash = (id: string) => {
   let h = 0
@@ -37,7 +43,7 @@ const hash = (id: string) => {
 
 /** The colour a person gets when nobody else in the note has it. */
 export function colorFor(userId: string): string {
-  return COLORS[hash(userId) % COLORS.length] as string
+  return KIT[hash(userId) % KIT.length] as string
 }
 
 /**
@@ -49,9 +55,11 @@ export function assignColors(ids: Iterable<string>): Map<string, string> {
   const out = new Map<string, string>()
   const taken = new Set<number>()
   for (const id of [...new Set(ids)].sort()) {
-    let at = hash(id) % COLORS.length
-    for (let tries = 0; taken.has(at) && tries < COLORS.length; tries++)
-      at = (at + 1) % COLORS.length
+    // The next free kit colour after their own, then the next free spare.
+    let at = hash(id) % KIT.length
+    for (let tries = 0; taken.has(at) && tries < KIT.length; tries++) at = (at + 1) % KIT.length
+    if (taken.has(at)) at = COLORS.findIndex((_, i) => !taken.has(i))
+    if (at < 0) at = hash(id) % COLORS.length
     taken.add(at)
     out.set(id, COLORS[at] as string)
   }

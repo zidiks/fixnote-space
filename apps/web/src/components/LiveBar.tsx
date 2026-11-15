@@ -1,11 +1,11 @@
 import { useTranslation } from '@fixnote/i18n'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@fixnote/ui'
-import { Bot, Users } from 'lucide-react'
+import { Bot, CloudOff, Users } from 'lucide-react'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { onSharedSync, useAccount } from '../lib/account/account'
 import { type LiveEditing, openShared } from '../lib/collab/live'
-import { aiIn, initials, type LiveUser, othersIn } from '../lib/collab/people'
+import { aiIn, initials, type LiveUser, onColor, othersIn } from '../lib/collab/people'
 
 /**
  * A shared note's live editing while it is open: the room is joined when the note opens (and the
@@ -82,8 +82,14 @@ export function LiveBar({ live }: { live: LiveEditing }) {
   const [, refresh] = useReducer((n: number) => n + 1, 0)
   useEffect(() => {
     live.session.awareness.on('change', refresh)
-    return () => live.session.awareness.off('change', refresh)
+    live.session.onConnection = refresh
+    return () => {
+      live.session.awareness.off('change', refresh)
+      live.session.onConnection = undefined
+    }
   }, [live])
+  // Out of the room (no network): edits stay on this device and go out when it is back.
+  const offline = !live.session.connected
 
   // Everyone in the note now, this person last (as the others see them).
   const people: (LiveUser & { clientId: number; self?: boolean })[] = [
@@ -94,6 +100,7 @@ export function LiveBar({ live }: { live: LiveEditing }) {
   const ai = aiIn(live.session.awareness)
   const shown = people.slice(-MAX_FACES)
   const rest = people.slice(0, -MAX_FACES)
+  const offlineHint = t(live.readOnly ? 'people.offlineView' : 'people.offline')
   const who = (u: LiveUser & { self?: boolean }) =>
     `${u.email || u.name}${u.self ? ` · ${t('people.you')}` : ''}`
   const roleLabel = (u: LiveUser) =>
@@ -104,19 +111,24 @@ export function LiveBar({ live }: { live: LiveEditing }) {
         : t('people.roleEdit')
 
   return (
-    <div className="mt-3 flex min-h-11 items-center gap-2.5 rounded-lg border bg-card px-3 py-1.5 text-sm">
-      <Users className="size-4 shrink-0 text-brand" />
-      <span className="min-w-0 flex-1 truncate">
+    <div className="mt-3 flex min-h-11 items-center gap-2 rounded-md border border-sidebar-border bg-card py-2 pr-2.5 pl-3.5 text-sm">
+      {offline ? (
+        <CloudOff className="size-4 shrink-0 text-muted-foreground" />
+      ) : (
+        <Users className="size-4 shrink-0 text-brand" />
+      )}
+      <span className="min-w-0 flex-1 truncate" title={offline ? offlineHint : undefined}>
         {t('people.shared')}
         {live.readOnly ? (
           <span className="text-muted-foreground"> · {t('people.readOnly')}</span>
         ) : null}
+        {offline ? <span className="text-muted-foreground"> · {offlineHint}</span> : null}
       </span>
       <div className="flex shrink-0 items-center -space-x-1.5">
         {rest.length ? (
           <HoverCard>
             <HoverCardTrigger asChild>
-              <span className="flex size-7 cursor-default items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground ring-2 ring-card">
+              <span className="flex size-6 cursor-default items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground ring-2 ring-card">
                 +{rest.length}
               </span>
             </HoverCardTrigger>
@@ -136,7 +148,7 @@ export function LiveBar({ live }: { live: LiveEditing }) {
               <span
                 role="img"
                 aria-label={t('people.ai')}
-                className="flex size-7 cursor-default items-center justify-center rounded-full bg-foreground text-background ring-2 ring-card"
+                className="flex size-6 cursor-default items-center justify-center rounded-full bg-foreground text-background ring-2 ring-card"
               >
                 <Bot className="size-4 animate-pulse" />
               </span>
@@ -153,8 +165,8 @@ export function LiveBar({ live }: { live: LiveEditing }) {
           <HoverCard key={u.clientId}>
             <HoverCardTrigger asChild>
               <span
-                className="flex size-7 cursor-default items-center justify-center rounded-full text-[11px] font-semibold text-white ring-2 ring-card"
-                style={{ backgroundColor: u.color }}
+                className="flex size-6 cursor-default items-center justify-center rounded-full text-[10px] font-medium ring-2 ring-card"
+                style={{ backgroundColor: u.color, color: onColor(u.color) }}
               >
                 {initials(u.email || u.name)}
               </span>

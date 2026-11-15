@@ -1,8 +1,11 @@
 import {
   buildCallMergeMessages,
   buildCallMessages,
+  CALL_MAX_TOKENS,
+  type CallInfo,
   type CallWriteUp,
   type ChatMessage,
+  callDepth,
   parseCallReply,
   splitTranscript,
   streamChat,
@@ -250,7 +253,7 @@ export async function stopCall() {
       return
     }
     set({ status: 'summarizing' })
-    const summary = await writeUp(transcriptText(turns, { me: 'Me', them: 'Them' }))
+    const summary = await writeUp(transcriptText(turns, { me: 'Me', them: 'Them' }), durationMs)
     const markdown = callNoteMarkdown({
       title: i18n.t('call.title', {
         date: new Intl.DateTimeFormat(i18n.language, {
@@ -267,8 +270,10 @@ export async function stopCall() {
         me: i18n.t('call.me'),
         them: i18n.t('call.them'),
         summary: i18n.t('call.summary'),
+        topics: i18n.t('call.topics'),
         decisions: i18n.t('call.decisions'),
         tasks: i18n.t('call.tasks'),
+        questions: i18n.t('call.questions'),
         transcript: i18n.t('call.transcript'),
       },
     })
@@ -290,8 +295,11 @@ export function duration(ms: number): string {
   return h ? i18n.t('call.hours', { h, m }) : i18n.t('call.minutes', { m })
 }
 
-/** The model's summary; null (and a note saying why) when there is no model or it failed. */
-async function writeUp(transcript: string): Promise<CallWriteUp | null> {
+/**
+ * The model's write-up, as detailed as the call was long and dense (`callDepth`); null (and a
+ * note saying why) when there is no model or it failed.
+ */
+async function writeUp(transcript: string, durationMs: number): Promise<CallWriteUp | null> {
   const reach = await llm()
   if (!reach.ok) {
     toast(
@@ -300,13 +308,15 @@ async function writeUp(transcript: string): Promise<CallWriteUp | null> {
     )
     return null
   }
+  const minutes = durationMs / 60_000
+  const call: CallInfo = { minutes, depth: callDepth(minutes, transcript.length) }
   const ask = async (messages: ChatMessage[]) => {
     let reply = ''
     for await (const delta of streamChat({
       ...reach.route,
       messages,
       temperature: 0.2,
-      maxTokens: 2000,
+      maxTokens: CALL_MAX_TOKENS[call.depth],
     })) {
       reply += delta
     }
@@ -314,13 +324,13 @@ async function writeUp(transcript: string): Promise<CallWriteUp | null> {
   }
   try {
     const chunks = splitTranscript(transcript)
-    if (chunks.length === 1) return await ask(buildCallMessages(transcript))
+    if (chunks.length === 1) return await ask(buildCallMessages(transcript, call))
     const parts: CallWriteUp[] = []
-    for (const chunk of chunks) {
-      const part = await ask(buildCallMessages(chunk))
+    for (const [index, chunk] of chunks.entries()) {
+      const part = await ask(buildCallMessages(chunk, call, { index, count: chunks.length }))
       if (part) parts.push(part)
     }
-    return parts.length ? await ask(buildCallMergeMessages(parts)) : null
+    return parts.length ? await ask(buildCallMergeMessages(parts, call)) : null
   } catch (err) {
     toast.error(
       i18n.t('call.summaryFailed', {

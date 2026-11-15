@@ -35,6 +35,36 @@ function relay(opts: { minMs: number; maxMs: number; rand?: () => number }) {
   return { connect, seen }
 }
 
+/**
+ * A transport that can lose the network, like Realtime: while down nothing goes out or comes in,
+ * and it says when it is connected again.
+ */
+function droppable(inner: CollabTransport) {
+  let up = true
+  const status = new Set<(on: boolean) => void>()
+  const transport: CollabTransport = {
+    send: (m) => {
+      if (up) inner.send(m)
+    },
+    onMessage: (h) =>
+      inner.onMessage((m) => {
+        if (up) h(m)
+      }),
+    onStatus: (h) => {
+      status.add(h)
+      // Joined a moment later, as a channel is.
+      queueMicrotask(() => h(up))
+      return () => status.delete(h)
+    },
+    close: () => inner.close(),
+  }
+  const set = (on: boolean) => {
+    up = on
+    for (const h of status) h(on)
+  }
+  return { transport, drop: () => set(false), restore: () => set(true) }
+}
+
 /** Deterministic randomness, so a failure can be replayed. */
 function seeded(seed: number) {
   let s = seed
@@ -173,6 +203,46 @@ describe('CollabSession', () => {
     await vi.advanceTimersByTimeAsync(30)
     expect(text(b)).toBe('hi')
     expect(b.awareness.getStates().get(a.doc.clientID)).toMatchObject({ cursor: { at: 2 } })
+    a.destroy()
+    b.destroy()
+  })
+
+  it('catches up both ways after the network drops and comes back', async () => {
+    vi.useFakeTimers()
+    const { id, key } = room()
+    const net = relay({ minMs: 20, maxMs: 50 })
+    const a = new CollabSession({ key, roomId: id, transport: net.connect(), pingMs: 0 })
+    const link = droppable(net.connect())
+    const b = new CollabSession({ key, roomId: id, transport: link.transport, pingMs: 0 })
+    a.awareness.setLocalStateField('user', { name: 'A' })
+    b.awareness.setLocalStateField('user', { name: 'B' })
+    a.doc.getText('t').insert(0, 'start. ')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(text(b)).toBe('start. ')
+    expect(b.connected).toBe(true)
+    expect(b.awareness.getStates().has(a.doc.clientID)).toBe(true)
+
+    const seen: boolean[] = []
+    b.onConnection = (on) => seen.push(on)
+    link.drop()
+    expect(b.connected).toBe(false)
+    // Out of the room, the others' carets go.
+    expect(b.awareness.getStates().has(a.doc.clientID)).toBe(false)
+    // Both keep typing; nothing gets through.
+    a.doc.getText('t').insert(7, 'A while B was away. ')
+    b.doc.getText('t').insert(0, 'B offline. ')
+    await vi.advanceTimersByTimeAsync(500)
+    expect(text(a)).not.toContain('B offline.')
+    expect(text(b)).not.toContain('A while B was away.')
+
+    link.restore()
+    await vi.advanceTimersByTimeAsync(500)
+    expect(seen).toEqual([false, true])
+    expect(text(a)).toBe(text(b))
+    expect(text(a)).toContain('A while B was away.')
+    expect(text(a)).toContain('B offline.')
+    expect(b.awareness.getStates().has(a.doc.clientID)).toBe(true)
+    expect(a.awareness.getStates().has(b.doc.clientID)).toBe(true)
     a.destroy()
     b.destroy()
   })

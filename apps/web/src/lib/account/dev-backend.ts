@@ -347,8 +347,13 @@ function devAgent(messages: DevMessage[]): { text: string } | { calls: DevCall[]
 /** A call write-up with no decisions: the note should have no empty "Decisions" section. */
 const DEV_CALL = JSON.stringify({
   summary: 'Обсудили покупки на выходные и звонок маме.',
+  topics: [
+    { title: 'Покупки', points: ['Молоко закончилось', 'Хлеб взять в пекарне у дома'] },
+    { title: 'Мама', points: ['День рождения в субботу, подарок пока не выбран'] },
+  ],
   decisions: [],
   tasks: ['Я: купить молоко и хлеб', 'Я: позвонить маме в пятницу'],
+  questions: ['Что подарить маме?'],
 })
 
 /**

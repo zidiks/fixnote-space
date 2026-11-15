@@ -1,4 +1,4 @@
-import type { ChatScope, Fragment, ToolSpec } from '@fixnote/core'
+import { type ChatScope, type Fragment, type ToolSpec, WRITING_STYLE } from '@fixnote/core'
 import type { AgentMessage, ToolDef } from './client'
 import { historyMessages, type PastTurn, turnText } from './context'
 
@@ -65,7 +65,9 @@ Memory:
 Answering:
 - Your last message, after the tools, is the answer the user sees: make it complete on its own, and do not narrate what you are about to do.
 - After changing notes, say in one short sentence what you did. If a tool fails, say what went wrong.
-- Answer in the language of the user's last message; when it is unclear, in the user's language given with it. Be brief and concrete; use short lists when it helps.`
+- Answer in the language of the user's last message; when it is unclear, in the user's language given with it. Be brief and concrete; use short lists when it helps.
+
+${WRITING_STYLE}`
 
 const LANGUAGE_NAMES: Record<string, string> = { en: 'English', ru: 'Russian', es: 'Spanish' }
 

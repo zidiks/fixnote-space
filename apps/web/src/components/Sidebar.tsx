@@ -46,7 +46,7 @@ function NavItem({
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'mb-0.5 flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13.5px] text-sidebar-foreground transition-colors hover:bg-sidebar-accent',
+        'flex h-9.5 w-full items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-sidebar-foreground transition-colors hover:bg-sidebar-accent',
         active && 'bg-sidebar-accent font-medium text-foreground',
       )}
     >
@@ -79,12 +79,12 @@ export function Sidebar() {
       },
     })
   return (
-    <aside className="flex h-full w-64 shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
+    <aside className="flex h-full w-[300px] shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
       <div className="px-2">
         <button
           type="button"
           onClick={() => setSpotlightOpen(true)}
-          className="flex h-8 w-full items-center gap-2 rounded-md border border-sidebar-border bg-background/60 px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-background"
+          className="flex h-9.5 w-full items-center gap-2 rounded-sm border border-sidebar-border bg-background px-2.25 text-[13px] text-muted-foreground transition-colors hover:bg-card"
         >
           <Search className="size-3.5" />
           <span className="flex-1 text-left">{t('sidebar.search')}</span>

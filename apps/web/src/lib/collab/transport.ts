@@ -12,30 +12,32 @@ const fromB64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeA
 /**
  * A shared note's live-editing room over a private Supabase Realtime channel "shared:<id>": only
  * its members may join, only owner and editors may send (policies on realtime.messages). Messages
- * are sealed before they get here. Sends made before the channel is joined wait for it.
+ * are sealed before they get here. Realtime joins the channel again by itself after the network
+ * comes back; while it is not joined, messages are dropped (supabase-js would post each one over
+ * REST, which fails the same way) and the session asks for what it missed once it is (`onStatus`).
  */
 export function realtimeTransport(client: SupabaseClient, sharedId: string): CollabTransport {
   let handler: ((m: Uint8Array) => void) | null = null
+  const statusHandlers = new Set<(connected: boolean) => void>()
   let joined = false
-  const waiting: string[] = []
   const channel = client.channel(`shared:${sharedId}`, {
     config: { private: true, broadcast: { self: false } },
   })
-  const post = (d: string) => void channel.send({ type: 'broadcast', event: 'm', payload: { d } })
   channel.on('broadcast', { event: 'm' }, ({ payload }) => {
     const d = (payload as { d?: unknown } | undefined)?.d
     if (typeof d === 'string') handler?.(fromB64(d))
   })
   channel.subscribe((status) => {
-    if (status !== 'SUBSCRIBED') return
-    joined = true
-    for (const d of waiting.splice(0)) post(d)
+    // SUBSCRIBED again after every rejoin; CHANNEL_ERROR, TIMED_OUT or CLOSED when it drops.
+    joined = status === 'SUBSCRIBED'
+    for (const h of statusHandlers) h(joined)
   })
   return {
     send(message) {
-      const d = toB64(message)
-      if (joined) post(d)
-      else waiting.push(d)
+      if (!joined || channel.state !== 'joined') return
+      void channel
+        .send({ type: 'broadcast', event: 'm', payload: { d: toB64(message) } })
+        .catch(() => undefined)
     },
     onMessage(h) {
       handler = h
@@ -43,25 +45,56 @@ export function realtimeTransport(client: SupabaseClient, sharedId: string): Col
         handler = null
       }
     },
+    onStatus(h) {
+      statusHandlers.add(h)
+      return () => statusHandlers.delete(h)
+    },
     close() {
+      statusHandlers.clear()
       void client.removeChannel(channel)
     },
   }
 }
 
-/** `?dev-backend`: the room between tabs of this browser (they share the fake server too). */
+/**
+ * `?dev-backend`: the room between tabs of this browser (they share the fake server too). Like
+ * Realtime it is out of reach while the browser is offline (DevTools → Network → Offline): what is
+ * sent or arrives meanwhile is lost.
+ */
 export function broadcastChannelTransport(roomId: string): CollabTransport {
   const channel = new BroadcastChannel(`fixnote-collab:${roomId}`)
   let handler: ((m: Uint8Array) => void) | null = null
-  channel.onmessage = (e: MessageEvent<Uint8Array>) => handler?.(e.data)
+  const statusHandlers = new Set<(connected: boolean) => void>()
+  let online = navigator.onLine
+  const status = () => {
+    online = navigator.onLine
+    for (const h of statusHandlers) h(online)
+  }
+  window.addEventListener('online', status)
+  window.addEventListener('offline', status)
+  channel.onmessage = (e: MessageEvent<Uint8Array>) => {
+    if (online) handler?.(e.data)
+  }
   return {
-    send: (message) => channel.postMessage(message),
+    send: (message) => {
+      if (online) channel.postMessage(message)
+    },
     onMessage(h) {
       handler = h
       return () => {
         handler = null
       }
     },
-    close: () => channel.close(),
+    onStatus(h) {
+      statusHandlers.add(h)
+      queueMicrotask(() => h(online))
+      return () => statusHandlers.delete(h)
+    },
+    close: () => {
+      statusHandlers.clear()
+      window.removeEventListener('online', status)
+      window.removeEventListener('offline', status)
+      channel.close()
+    },
   }
 }

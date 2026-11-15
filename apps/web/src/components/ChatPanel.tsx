@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Kbd,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -53,6 +54,7 @@ import {
 } from '../lib/assistant/assistant'
 import { useLlm } from '../lib/assistant/llm'
 import { fileSize } from '../lib/attachments'
+import { useOpenNoteId } from '../lib/layout'
 import { usePlatform } from '../lib/platform'
 import { useFolders, useNote } from '../lib/queries'
 import { useReveal } from '../lib/reveal'
@@ -69,16 +71,17 @@ import { WindowControls } from './WindowControls'
 function useRouteScope(): ChatScope {
   const route = useUi((s) => s.route)
   const folders = useFolders().data
-  const note = useNote(route.kind === 'note' ? route.id : '', { enabled: route.kind === 'note' })
+  // The open note, or the one shown beside a list in the notes layout.
+  const openId = useOpenNoteId()
+  const note = useNote(openId ?? '', { enabled: Boolean(openId) })
   return useMemo(() => {
-    if (route.kind === 'note' && note.data)
-      return { kind: 'note', id: note.data.id, title: note.data.title }
+    if (openId && note.data) return { kind: 'note', id: note.data.id, title: note.data.title }
     if (route.kind === 'folder') {
       const f = folders?.find((x) => x.id === route.id)
       if (f) return { kind: 'folder', id: f.id, name: f.name }
     }
     return { kind: 'all' }
-  }, [route, folders, note.data])
+  }, [openId, route, folders, note.data])
 }
 
 function useScopeLabel() {
@@ -240,15 +243,15 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
 }
 
 /**
- * Search-by-meaning status under the header: one steady line with a thin bar, so the thread below
- * does not jump. The percentage shows only while the model downloads; loading it from the cache
- * and starting it has no percentage to show.
+ * Search-by-meaning status under the header, only for what is rare and worth reading: the model
+ * downloading or starting, unavailable, or offered on a phone. One steady line with a thin bar;
+ * the percentage shows only while the model downloads. Re-indexing notes after edits happens all
+ * the time while typing and shows only as `IndexingHint` in the header.
  */
 function IndexStatus() {
   const { t } = useTranslation()
   const semantic = useAssistant((s) => s.semantic)
   const progress = useAssistant((s) => s.modelProgress)
-  const pending = useAssistant((s) => s.pending)
   const downloading = semantic === 'loading' && progress > 0 && progress < 1
   // A phone does not download the model on its own (mobile data, memory): it offers to.
   const offer = semantic === 'off' && isTouch()
@@ -258,13 +261,11 @@ function IndexStatus() {
       ? downloading
         ? t('chat.index.preparing', { percent: Math.round(progress * 100) })
         : t('chat.index.starting')
-      : semantic === 'ready' && pending > 0
-        ? t('chat.index.indexing', { count: pending })
-        : semantic === 'unavailable'
-          ? t('chat.index.unavailable')
-          : null
+      : semantic === 'unavailable'
+        ? t('chat.index.unavailable')
+        : null
   if (!text) return null
-  const busy = semantic === 'loading' || pending > 0
+  const busy = semantic === 'loading'
   return (
     <div className="relative shrink-0 border-b bg-card px-4 py-1.5 text-[11px] text-muted-foreground tabular-nums">
       <div className="flex items-center gap-2">
@@ -292,6 +293,45 @@ function IndexStatus() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+/** How long notes must wait for indexing before the header shows it: a note saved while typing
+ * is indexed again in a moment, and that should not blink. */
+const INDEXING_HINT_DELAY = 2000
+
+/**
+ * Notes waiting to be indexed again: a small muted spinner in the header (fixed height, so nothing
+ * moves), only when it lasts, with the count in its tooltip.
+ */
+function IndexingHint() {
+  const { t } = useTranslation()
+  const semantic = useAssistant((s) => s.semantic)
+  const pending = useAssistant((s) => s.pending)
+  const waiting = semantic === 'ready' && pending > 0
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    if (!waiting) {
+      setShown(false)
+      return
+    }
+    const timer = setTimeout(() => setShown(true), INDEXING_HINT_DELAY)
+    return () => clearTimeout(timer)
+  }, [waiting])
+  if (!shown || !waiting) return null
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          role="status"
+          aria-label={t('chat.index.indexing', { count: pending })}
+          className="flex size-6 shrink-0 items-center justify-center text-muted-foreground/60 animate-in fade-in-0 duration-500"
+        >
+          <Spinner className="size-3" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{t('chat.index.indexing', { count: pending })}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -424,16 +464,17 @@ export function ChatPanel() {
   const card = (
     <aside
       className={cn(
-        'mr-2 mb-2 ml-1.5 flex min-h-0 w-[380px] flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-sm',
+        'mr-2 mb-2 ml-1.5 flex min-h-0 w-[340px] flex-1 flex-col overflow-hidden rounded-xl border bg-card',
         !platform.window && 'mt-2',
         // A phone: the whole screen.
         'max-sm:m-0 max-sm:w-full max-sm:rounded-none max-sm:border-0',
       )}
       aria-label={t('chat.title')}
     >
-      <header {...drag} className="flex h-12 items-center gap-2.5 border-b px-4">
+      <header {...drag} className="flex h-13 items-center gap-2 border-b px-3">
         <AssistantAvatar size={24} />
         <span className="flex-1 text-sm font-medium">{t('chat.title')}</span>
+        <IndexingHint />
         {messages.length ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -536,7 +577,7 @@ export function ChatPanel() {
             </div>
             <div
               data-voice-target="chat"
-              className="flex items-end gap-1.5 rounded-xl border bg-card p-1.5 focus-within:ring-2 focus-within:ring-ring/30"
+              className="flex items-end gap-1 rounded-lg border bg-card py-2.25 pr-2 pl-3 focus-within:ring-2 focus-within:ring-ring/30"
             >
               <textarea
                 ref={input}
@@ -546,12 +587,12 @@ export function ChatPanel() {
                 onKeyDown={onKey}
                 placeholder={t('chat.placeholder')}
                 aria-label={t('chat.placeholder')}
-                className="flex-1 resize-none overflow-y-hidden bg-transparent px-1.5 py-1 text-sm leading-5 outline-none placeholder:text-muted-foreground"
+                className="flex-1 resize-none overflow-y-hidden bg-transparent py-1 text-sm leading-5 outline-none placeholder:text-muted-foreground"
               />
               <Button
                 size="icon-xs"
                 variant="ghost"
-                className={cn('rounded-lg', voice === 'recording' && 'text-destructive')}
+                className={cn('rounded-sm', voice === 'recording' && 'text-destructive')}
                 onClick={() => void toggleVoice('chat')}
                 aria-label={t('voice.message')}
                 aria-pressed={voice === 'recording'}
@@ -563,7 +604,6 @@ export function ChatPanel() {
                 <Button
                   size="icon-xs"
                   variant="secondary"
-                  className="rounded-lg"
                   onClick={stop}
                   aria-label={t('chat.stop')}
                 >
@@ -572,7 +612,6 @@ export function ChatPanel() {
               ) : (
                 <Button
                   size="icon-xs"
-                  className="rounded-lg"
                   onClick={send}
                   disabled={!draft.trim()}
                   aria-label={t('chat.send')}

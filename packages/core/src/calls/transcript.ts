@@ -17,8 +17,12 @@ export interface CallPiece {
 /** The model's write-up; every part may be empty. */
 export interface CallSummary {
   summary: string
+  /** Subjects discussed with what was said about each (longer calls). */
+  topics?: { title: string; points: string[] }[]
   decisions: string[]
   tasks: string[]
+  /** Questions left open. */
+  questions?: string[]
 }
 
 const words = (text: string) =>
@@ -92,8 +96,10 @@ export interface CallNoteLabels {
   me: string
   them: string
   summary: string
+  topics: string
   decisions: string
   tasks: string
+  questions: string
   transcript: string
 }
 
@@ -104,8 +110,9 @@ const escapeLine = (text: string) =>
 const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim()
 
 /**
- * The call's note: the title, then only the parts the call had (summary, decisions, tasks as
- * checkboxes), then the transcript, folded away when there is a summary above it.
+ * The call's note: the title, then only the parts the call had (summary, topics with their points,
+ * decisions, tasks as checkboxes, open questions), then the transcript, folded away when there is a
+ * write-up above it.
  */
 export function callNoteMarkdown(opts: {
   title: string
@@ -117,6 +124,10 @@ export function callNoteMarkdown(opts: {
   const parts = [`# ${oneLine(opts.title)}`]
   const decisions = summary?.decisions.map(oneLine).filter(Boolean) ?? []
   const tasks = summary?.tasks.map(oneLine).filter(Boolean) ?? []
+  const questions = summary?.questions?.map(oneLine).filter(Boolean) ?? []
+  const topics = (summary?.topics ?? [])
+    .map((t) => ({ title: oneLine(t.title), points: t.points.map(oneLine).filter(Boolean) }))
+    .filter((t) => t.title || t.points.length)
   const about = summary?.summary.trim() ?? ''
   if (about) {
     parts.push(
@@ -127,11 +138,21 @@ export function callNoteMarkdown(opts: {
         .join('\n\n'),
     )
   }
+  if (topics.length) {
+    parts.push(`## ${labels.topics}`)
+    for (const t of topics) {
+      const points = t.points.map((p) => `- ${escapeLine(p)}`).join('\n')
+      parts.push(...(t.title ? [`### ${escapeLine(t.title)}`] : []), ...(points ? [points] : []))
+    }
+  }
   if (decisions.length) {
     parts.push(`## ${labels.decisions}`, decisions.map((d) => `- ${escapeLine(d)}`).join('\n'))
   }
   if (tasks.length) {
     parts.push(`## ${labels.tasks}`, tasks.map((t) => `- [ ] ${escapeLine(t)}`).join('\n'))
+  }
+  if (questions.length) {
+    parts.push(`## ${labels.questions}`, questions.map((q) => `- ${escapeLine(q)}`).join('\n'))
   }
   const lines = opts.turns.map(
     (t) =>
@@ -139,7 +160,7 @@ export function callNoteMarkdown(opts: {
   )
   if (lines.length) {
     const body = lines.join('\n\n')
-    const written = about || decisions.length || tasks.length
+    const written = about || topics.length || decisions.length || tasks.length || questions.length
     parts.push(
       written
         ? `<details>\n<summary>${labels.transcript}</summary>\n\n${body}\n\n</details>`

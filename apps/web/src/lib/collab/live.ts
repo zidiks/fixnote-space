@@ -70,7 +70,9 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     session.awareness.setLocalStateField('user', { ...user })
   }
   session.awareness.on('change', recolor)
-  if (!readOnly) await session.whenSynced(1200)
+  // Offline nobody can answer: the note opens from this device's copy right away, and the room
+  // catches up both ways when the network is back (the session asks again on reconnecting).
+  if (!readOnly && navigator.onLine) await session.whenSynced(1200)
   return {
     session,
     user,

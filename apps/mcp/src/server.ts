@@ -1,4 +1,10 @@
-import { type BlobStore, noteToolSpec, type SqlDriver } from '@fixnote/core'
+import {
+  type BlobStore,
+  noteToolSpec,
+  type SqlDriver,
+  WRITING_STYLE,
+  WRITING_STYLE_SHORT,
+} from '@fixnote/core'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { NotesTools, type ToolContent } from './tools'
@@ -10,8 +16,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
   const server = new McpServer(
     { name: 'fixnote', version: VERSION },
     {
-      instructions:
-        "FixNote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Notes can hold images and files: get_note lists them, get_attachment opens one, attach_file adds one. Create, change, move or delete notes and folders only when the user asks; every change is shown to the user in FixNote and can be undone there. The user decides in FixNote what this app may do and which folders and notes it can see.",
+      instructions: `${"FixNote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Notes can hold images and files: get_note lists them, get_attachment opens one, attach_file adds one. Create, change, move or delete notes and folders only when the user asks; every change is shown to the user in FixNote and can be undone there. The user decides in FixNote what this app may do and which folders and notes it can see."} ${WRITING_STYLE_SHORT}`,
     },
   )
   const tools = new NotesTools(
@@ -224,6 +229,20 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
       },
     },
     ({ date, append }) => run(() => tools.daily(date, append)),
+  )
+
+  // The full writing guide the in-app assistant follows, for clients that let the user pick prompts.
+  server.registerPrompt(
+    'writing_style',
+    {
+      title: 'FixNote writing style',
+      description: 'How notes written into FixNote should read: clean, direct, well structured.',
+    },
+    () => ({
+      messages: [
+        { role: 'user' as const, content: { type: 'text' as const, text: WRITING_STYLE } },
+      ],
+    }),
   )
 
   return server
