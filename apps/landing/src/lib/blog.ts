@@ -1,7 +1,20 @@
 import { type CollectionEntry, getCollection } from 'astro:content'
+import type { ImageMetadata } from 'astro'
 import { isLang, LANGS, type Lang, localePath } from '../i18n'
 
 export type Post = CollectionEntry<'blog'>
+
+const covers = import.meta.glob<{ default: ImageMetadata }>('../assets/blog/*/*.png', {
+  eager: true,
+})
+
+/**
+ * A post's cover (1200×630, also its og:image): src/assets/blog/<lang>/<slug>.png, made in Figma
+ * (tools/figma-bridge/fixnote/blog-covers.mjs). The cover has text, so each language has its own;
+ * a post without one gets the generated Open Graph card and no picture.
+ */
+export const coverOf = (post: Post): ImageMetadata | undefined =>
+  covers[`../assets/blog/${post.id}.png`]?.default
 
 /** The language and URL slug of a post, from its path `<lang>/<slug>`. */
 export function postInfo(post: Post): { lang: Lang; slug: string } {
