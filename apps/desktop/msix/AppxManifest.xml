@@ -51,7 +51,14 @@
   </Resources>
 
   <Applications>
-    <Application Id="Fixnote" Executable="Fixnote.exe" EntryPoint="Windows.FullTrustApplication">
+    <!-- SupportsMultipleInstances: a console alias requires it, and each MCP client runs its own
+         fixnote-mcp. The app itself stays single: a second Fixnote.exe hands over to the running
+         one (single-instance plugin). -->
+    <Application
+      Id="Fixnote"
+      Executable="Fixnote.exe"
+      EntryPoint="Windows.FullTrustApplication"
+      desktop4:SupportsMultipleInstances="true">
       <uap:VisualElements
         DisplayName="Fixnote"
         Description="Private notes with an assistant that helps you remember."
@@ -66,23 +73,9 @@
             <uap:DisplayName>Fixnote</uap:DisplayName>
           </uap3:Protocol>
         </uap3:Extension>
-      </Extensions>
-    </Application>
-
-    <!-- One copy per MCP client: Claude, Cursor and Codex can each run their own at once. -->
-    <Application
-      Id="Mcp"
-      Executable="fixnote-mcp.exe"
-      EntryPoint="Windows.FullTrustApplication"
-      desktop4:SupportsMultipleInstances="true">
-      <uap:VisualElements
-        DisplayName="Fixnote MCP server"
-        Description="Lets AI apps on this computer read and edit your Fixnote notes."
-        BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png"
-        AppListEntry="none" />
-      <Extensions>
+        <!-- The MCP server is an alias of this app, not an Application of its own: a second
+             Application would need AppListEntry="none", which the Store refuses (a headless app
+             needs the HeadlessAppBypass restricted approval). -->
         <uap5:Extension
           Category="windows.appExecutionAlias"
           Executable="fixnote-mcp.exe"

@@ -6,6 +6,11 @@
 /video/*
   Cache-Control: public, max-age=604800
 
+# MCP Registry domain proof for space.fixnote/* (apps/relay/server.json). The private key is
+# kept off the repository; the registry fetches this as text/plain, without redirects.
+/.well-known/mcp-registry-auth
+  Content-Type: text/plain; charset=utf-8
+
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "space.fixnote/fixnote",
+  "title": "Fixnote",
+  "description": "Search, read and add to your Fixnote notes. End-to-end encrypted: read on your own device.",
+  "version": "0.2.0",
+  "websiteUrl": "https://fixnote.space/",
+  "icons": [
+    {
+      "src": "https://fixnote.space/apple-touch-icon.png",
+      "mimeType": "image/png",
+      "sizes": ["180x180"]
+    },
+    { "src": "https://fixnote.space/favicon.svg", "mimeType": "image/svg+xml", "sizes": ["any"] }
+  ],
+  "remotes": [{ "type": "streamable-http", "url": "https://mcp.fixnote.space/mcp" }]
+}
