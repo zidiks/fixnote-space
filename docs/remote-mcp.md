@@ -143,6 +143,8 @@ AI app ──authorize (PKCE)──▶ Supabase Auth ──302──▶ app.fixn
 
 ## What Claude and ChatGPT require (checked Oct 2026)
 
+Listing in their directories and in the MCP Registry: docs/mcp-directories.md.
+
 - **Claude** ([authentication for connectors](https://claude.com/docs/connectors/building/authentication)):
   MCP over Streamable HTTP; 401 with `WWW-Authenticate` `resource_metadata` (required for claude.ai);
   `resource` must equal the URL the user pastes (`https://mcp.fixnote.space/mcp`); only the first
