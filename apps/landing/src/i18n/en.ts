@@ -2,52 +2,52 @@ import type { Dict } from './index'
 
 export const en: Dict = {
   meta: {
-    siteName: 'FixNote',
+    siteName: 'Fixnote',
     home: {
-      title: 'AI note-taking app with end-to-end encryption | FixNote',
+      title: 'AI note-taking app with end-to-end encryption | Fixnote',
       description:
         'A private AI note-taking app for Windows, macOS and the web. Notes are end-to-end encrypted; type or dictate, and the assistant answers with sources.',
     },
     features: {
-      title: 'FixNote features: AI assistant, voice notes, meeting notes',
+      title: 'Fixnote features: AI assistant, voice notes, meeting notes',
       description:
         'An AI assistant for your notes, offline voice to text, bot-free meeting notes, OCR, a Telegram bot, shared notes and end-to-end encryption.',
     },
     security: {
-      title: 'FixNote security: how your notes are protected',
+      title: 'Fixnote security: how your notes are protected',
       description:
-        'How FixNote encrypts notes on your device, what the server stores, what the assistant sees and how to work fully offline.',
+        'How Fixnote encrypts notes on your device, what the server stores, what the assistant sees and how to work fully offline.',
     },
     privacy: {
-      title: 'FixNote privacy policy',
-      description: 'What data FixNote has, why it needs it and how to delete it.',
+      title: 'Fixnote privacy policy',
+      description: 'What data Fixnote has, why it needs it and how to delete it.',
     },
     download: {
-      title: 'Download FixNote: notes app for Windows and Mac',
+      title: 'Download Fixnote: notes app for Windows and Mac',
       description:
-        'FixNote for Windows and macOS (Apple Silicon and Intel), plus a web version that runs in your browser. Free, no account needed.',
+        'Fixnote for Windows and macOS (Apple Silicon and Intel), plus a web version that runs in your browser. Free, no account needed.',
     },
     blog: {
-      title: 'FixNote blog: note-taking, AI and privacy',
+      title: 'Fixnote blog: note-taking, AI and privacy',
       description:
         'How to keep notes you can find again, how end-to-end encryption works and how an assistant helps you remember.',
     },
     releaseNotes: {
-      title: 'What’s new in FixNote: release notes',
+      title: 'What’s new in Fixnote: release notes',
       description:
-        'Every FixNote version in order: what was added and what was fixed in the Windows and macOS apps and the web app.',
+        'Every Fixnote version in order: what was added and what was fixed in the Windows and macOS apps and the web app.',
     },
     setup: {
-      title: 'How to install FixNote on Windows and Mac',
+      title: 'How to install Fixnote on Windows and Mac',
       description:
-        'How to download and install FixNote, what to do about the macOS and SmartScreen warnings on first launch, and how to turn on Pro.',
+        'How to download and install Fixnote, what to do about the macOS and SmartScreen warnings on first launch, and how to turn on Pro.',
     },
     windows: {
-      title: 'Notes app for Windows 10 and 11, free and offline | FixNote',
+      title: 'Notes app for Windows 10 and 11, free and offline | Fixnote',
       description:
         'A note-taking app for Windows 10 and 11: bot-free call summaries, offline dictation, system-wide shortcuts, MCP for Claude and encryption. Free to use.',
     },
-    notFound: { title: 'Page not found · FixNote', description: 'This page does not exist.' },
+    notFound: { title: 'Page not found · Fixnote', description: 'This page does not exist.' },
   },
 
   nav: {
@@ -68,7 +68,7 @@ export const en: Dict = {
     comparisons: 'Comparisons',
     skip: 'Skip to content',
     language: 'Language',
-    windows: 'FixNote for Windows',
+    windows: 'Fixnote for Windows',
     tidy: 'Tidy up',
     integrations: 'Integrations',
     search: 'Search',
@@ -84,7 +84,7 @@ export const en: Dict = {
     downloadFor: { mac: 'Download for macOS', windows: 'Download for Windows' },
     more: 'Learn more',
     platforms: 'Windows, macOS and the web · Free, no account needed',
-    shotAlt: 'FixNote: today’s notes and an assistant answering with links to notes',
+    shotAlt: 'Fixnote: today’s notes and an assistant answering with links to notes',
   },
 
   intro: {
@@ -96,7 +96,7 @@ export const en: Dict = {
     free: 'Free to use',
     noAccount: 'No account required',
     shotAlt:
-      'FixNote: a shared trip note edited by several people, and the assistant finding related notes',
+      'Fixnote: a shared trip note edited by several people, and the assistant finding related notes',
     offline: { title: 'Works offline', text: 'Write and search your notes without internet.' },
     together: { title: 'Edit together', text: 'Share notes and see changes in real time.' },
     encrypted: {
@@ -126,16 +126,16 @@ export const en: Dict = {
       contact: 'Contact us',
       items: [
         {
-          q: 'Is FixNote really free?',
+          q: 'Is Fixnote really free?',
           a: 'Yes. Everything that runs on your device is free, with no time limit and no account required. Pro adds encrypted sync, collaboration, and cloud features.',
         },
         {
-          q: 'Can I use FixNote without the internet?',
+          q: 'Can I use Fixnote without the internet?',
           a: 'Yes. Write, search, and organize your notes on your device without a connection. Sync and cloud features need the internet.',
         },
         {
           q: 'Who can read my notes?',
-          a: "Your synced notes are encrypted on your device, and FixNote's servers can't read them. If you use cloud AI, the information needed for your request is sent to your chosen provider.",
+          a: "Your synced notes are encrypted on your device, and Fixnote's servers can't read them. If you use cloud AI, the information needed for your request is sent to your chosen provider.",
         },
         {
           q: 'Can I import my existing notes?',
@@ -146,8 +146,8 @@ export const en: Dict = {
           a: 'Your notes stay on your devices. You keep Pro until the end of your paid period, then return to Free. Cloud features are paused until you renew.',
         },
         {
-          q: 'Which devices does FixNote support?',
-          a: 'FixNote is available for Windows, macOS, and in your browser. You can also use the web app on your phone.',
+          q: 'Which devices does Fixnote support?',
+          a: 'Fixnote is available for Windows, macOS, and in your browser. You can also use the web app on your phone.',
         },
       ],
     },
@@ -155,7 +155,7 @@ export const en: Dict = {
       title: 'Turn scattered thoughts\ninto something useful.',
     },
     footer: {
-      question: 'A question about FixNote?',
+      question: 'A question about Fixnote?',
       write: 'Write to',
       contact: 'Contact us',
     },
@@ -163,7 +163,7 @@ export const en: Dict = {
       eyebrow: 'Tidy up',
       title1: 'Save now.',
       title2: 'Sort later.',
-      lead: 'Don’t worry about organizing every note.\nFixNote helps you tidy things up when you need it.',
+      lead: 'Don’t worry about organizing every note.\nFixnote helps you tidy things up when you need it.',
       items: [
         {
           title: 'Smarter folders',
@@ -179,12 +179,12 @@ export const en: Dict = {
         },
       ],
       link: 'Explore Tidy up',
-      alt: 'Tidy up in FixNote: suggested folders, titles and duplicates, each with Accept',
+      alt: 'Tidy up in Fixnote: suggested folders, titles and duplicates, each with Accept',
     },
     integrations: {
       eyebrow: 'Integrations',
       title: 'Your notes, one prompt away.',
-      lead: 'Connect FixNote to ChatGPT, Claude, Cursor, and Codex. Search, create,\nand update notes right from the tools you already use.',
+      lead: 'Connect Fixnote to ChatGPT, Claude, Cursor, and Codex. Search, create,\nand update notes right from the tools you already use.',
       tools: 'Supported tools',
       mcp: {
         title: 'Powered by MCP',
@@ -196,7 +196,7 @@ export const en: Dict = {
         text: 'Choose which notes connected tools can access and what they’re allowed to do.',
         link: 'How permissions work',
       },
-      alt: 'A note in the FixNote desktop app',
+      alt: 'A note in the Fixnote desktop app',
     },
     recall: {
       title1: 'Remember the idea.',
@@ -234,7 +234,7 @@ export const en: Dict = {
       },
       provider: {
         title: 'Choose your provider',
-        text: 'FixNote AI, your own key, or Ollama',
+        text: 'Fixnote AI, your own key, or Ollama',
       },
       local: {
         title: 'Keep it local',
@@ -243,12 +243,12 @@ export const en: Dict = {
       },
       terms: {
         title: 'AI on your terms',
-        text: 'Use FixNote AI, bring your own API key, or run AI locally with Ollama.',
+        text: 'Use Fixnote AI, bring your own API key, or run AI locally with Ollama.',
         link: 'Compare AI options',
       },
       synced: {
         title: 'Private, even when synced',
-        text: 'Your notes are encrypted before syncing.\nNot even FixNote can read them.',
+        text: 'Your notes are encrypted before syncing.\nNot even Fixnote can read them.',
         link: 'How encryption works',
       },
     },
@@ -257,7 +257,7 @@ export const en: Dict = {
       title2: 'Just write it down or say it out loud.',
       eyebrow: 'Voice capture',
       title: 'Just say it. Save it.',
-      text: 'Speak your thoughts. FixNote turns them into searchable notes.',
+      text: 'Speak your thoughts. Fixnote turns them into searchable notes.',
       link: 'Explore voice notes',
     },
     plans: {
@@ -279,7 +279,7 @@ export const en: Dict = {
           'Voice dictation',
           'Import and export',
         ],
-        button: 'Download FixNote',
+        button: 'Download Fixnote',
       },
       pro: {
         name: 'Pro',
@@ -291,7 +291,7 @@ export const en: Dict = {
         items: [
           'Everything in Free',
           'Encrypted sync',
-          'FixNote AI',
+          'Fixnote AI',
           'Shared notes and folders',
           'Integrations',
           '20 GB encrypted storage',
@@ -304,10 +304,10 @@ export const en: Dict = {
   tiles: [
     {
       id: 'ai',
-      eyebrow: 'FixNote AI',
+      eyebrow: 'Fixnote AI',
       title: 'Ask your notes.\nGet an answer.',
       text: 'The assistant searches by meaning in three languages and answers with links to your notes. Only your question and the notes it needs go to the model.',
-      alt: 'The FixNote assistant in dark mode answering a question about a vacation with links to two notes',
+      alt: 'The Fixnote assistant in dark mode answering a question about a vacation with links to two notes',
     },
     {
       id: 'calls',
@@ -328,7 +328,7 @@ export const en: Dict = {
       eyebrow: 'Search',
       title: 'Any language.\nAny keyboard layout.',
       text: '“телеграм” finds “Telegram”, “розыгрыш” finds “giveaway”. Search opens from anywhere with Ctrl+K or ⌘K.',
-      alt: 'FixNote search with the matching notes and the word highlighted',
+      alt: 'Fixnote search with the matching notes and the word highlighted',
     },
   ],
 
@@ -347,13 +347,13 @@ export const en: Dict = {
         id: 'telegram',
         title: 'Telegram',
         text: 'Forward text, a voice message or a photo to the bot. Only your app can read them.',
-        alt: 'FixNote settings, Integrations, with the Telegram bot connection',
+        alt: 'Fixnote settings, Integrations, with the Telegram bot connection',
       },
       {
         id: 'tidy',
         title: 'Tidy up',
         text: 'Suggests titles and folders and finds duplicates. Nothing changes without your OK.',
-        alt: 'Tidy up in FixNote with suggestions to accept or dismiss',
+        alt: 'Tidy up in Fixnote with suggestions to accept or dismiss',
       },
       {
         id: 'folders',
@@ -366,32 +366,32 @@ export const en: Dict = {
 
   reasons: {
     headline: 'A few more reasons\nto keep your notes here.',
-    label: 'Why FixNote',
+    label: 'Why Fixnote',
     items: [
       {
         id: 'models',
-        title: 'FixNote AI, your own key\nor Ollama.',
-        alt: 'AI settings: FixNote AI, your own key or Ollama on your computer',
+        title: 'Fixnote AI, your own key\nor Ollama.',
+        alt: 'AI settings: Fixnote AI, your own key or Ollama on your computer',
       },
       {
         id: 'import',
         title: 'Move in from Notion,\nBear and Obsidian.',
-        alt: 'FixNote settings, Data, with import and export',
+        alt: 'Fixnote settings, Data, with import and export',
       },
       {
         id: 'offline',
         title: 'Works offline\nand without an account.',
-        alt: 'FixNote settings, Advanced, with the models that run on the device',
+        alt: 'Fixnote settings, Advanced, with the models that run on the device',
       },
       {
         id: 'dark',
         title: 'Light and dark.\nJust like your system.',
-        alt: 'The FixNote home screen in dark mode',
+        alt: 'The Fixnote home screen in dark mode',
       },
       {
         id: 'languages',
         title: 'English, Spanish\nand Russian.',
-        alt: 'FixNote general settings: language and theme',
+        alt: 'Fixnote general settings: language and theme',
       },
     ],
     privacy: {
@@ -405,7 +405,7 @@ export const en: Dict = {
   tools: {
     headline: 'Everything notes need.\nIn one app.',
     compare: 'Compare with other apps',
-    label: 'FixNote tools',
+    label: 'Fixnote tools',
     items: [
       {
         id: 'checklists',
@@ -461,7 +461,7 @@ export const en: Dict = {
 
   compare: {
     headline: 'Which notes app\nis right for you?',
-    lead: 'FixNote next to Notion, Obsidian, Evernote, Apple Notes and Joplin: what each one does and what it costs.',
+    lead: 'Fixnote next to Notion, Obsidian, Evernote, Apple Notes and Joplin: what each one does and what it costs.',
     more: 'Best AI note-taking apps in 2026',
     included: 'Included',
     limited: 'Limited',
@@ -485,13 +485,13 @@ export const en: Dict = {
     footnote:
       'Based on each vendor’s own site and help pages as of October 2026. A check means the app has the feature on at least one plan (Notion AI and AI Meeting Notes come with Notion Business). Price of the cheapest paid plan, billed monthly. Names and icons belong to their owners.',
     detailed: 'Detailed comparisons',
-    vsLink: 'FixNote vs {name}',
+    vsLink: 'Fixnote vs {name}',
   },
 
   pricing: {
     headline: 'Try Pro.',
     lead: '7 days free, no card needed. Then $7 a month or $60 a year.',
-    name: 'FixNote Pro',
+    name: 'Fixnote Pro',
     kind: 'Subscription',
     price: '$7',
     year: '$60 a year',
@@ -504,7 +504,7 @@ export const en: Dict = {
       { id: 'sync', title: 'Sync', text: 'Your notes on all your devices, encrypted.' },
       {
         id: 'ai',
-        title: 'FixNote AI',
+        title: 'Fixnote AI',
         text: 'The assistant without your own key, with a monthly allowance.',
       },
       { id: 'shared', title: 'Shared notes', text: 'Notes and folders with people, by email.' },
@@ -556,7 +556,7 @@ export const en: Dict = {
     web: { name: 'Web', detail: 'Chrome, Edge, Safari, Firefox', button: 'Open' },
     macNoteTitle: 'First launch on a Mac',
     macNote:
-      'Until the app is notarized by Apple, macOS may say it is damaged. Drag FixNote to Applications and run this once in Terminal:',
+      'Until the app is notarized by Apple, macOS may say it is damaged. Drag Fixnote to Applications and run this once in Terminal:',
     windowsNoteTitle: 'First launch on Windows',
     windowsNote:
       'Windows may show a SmartScreen warning: click “More info” and then “Run anyway”. A signed installer is coming later.',
@@ -568,7 +568,7 @@ export const en: Dict = {
     items: [
       {
         q: 'Do I need an account?',
-        a: 'No. FixNote works on your device without signing up and without internet. An account is only needed for Pro: sync between devices, FixNote AI, shared notes and links.',
+        a: 'No. Fixnote works on your device without signing up and without internet. An account is only needed for Pro: sync between devices, Fixnote AI, shared notes and links.',
       },
       {
         q: 'Who can read my notes?',
@@ -579,7 +579,7 @@ export const en: Dict = {
         a: 'Only your question, your folder names and the notes the assistant found or opened to answer it, never your whole library. In the desktop app you can use Ollama, and then nothing goes online.',
       },
       {
-        q: 'How much does FixNote cost?',
+        q: 'How much does Fixnote cost?',
         a: 'Everything that runs on your device is free, with no time limit. Pro is $7 a month or $60 a year, and you can try it for 7 days without a card.',
       },
       {
@@ -595,7 +595,7 @@ export const en: Dict = {
         a: 'Yes. Import understands a Markdown folder (Obsidian too), a Bear backup and a Notion export, and keeps folders, dates and images. On a Mac you can bring in Apple Notes too. You can export everything back to Markdown at any time.',
       },
       {
-        q: 'Which languages does FixNote support?',
+        q: 'Which languages does Fixnote support?',
         a: 'The app is in English, Spanish and Russian. Search and the assistant understand notes that mix these languages, including transliteration and slang.',
       },
     ],
@@ -607,15 +607,15 @@ export const en: Dict = {
   },
 
   cta: {
-    title: 'Try FixNote',
+    title: 'Try Fixnote',
     text: 'Free, no account needed: Windows, macOS and the web.',
     download: 'Download',
     open: 'Open in the browser',
   },
 
   notes: [
-    'Search runs on your device. With FixNote AI, the question and the passages found pass through our server to the model provider and are not stored. With your own key, requests go straight to the service you chose; with Ollama they stay on your computer.',
-    'Free works without an account and has no time limit. An account is needed for Pro: sync, FixNote AI, shared notes, links, the Telegram bot and files on the server.',
+    'Search runs on your device. With Fixnote AI, the question and the passages found pass through our server to the model provider and are not stored. With your own key, requests go straight to the service you chose; with Ollama they stay on your computer.',
+    'Free works without an account and has no time limit. An account is needed for Pro: sync, Fixnote AI, shared notes, links, the Telegram bot and files on the server.',
     'Call summaries are in the app for Windows and for macOS 14.2 and later. No audio is kept.',
     'The Pro trial starts in the app after you sign in. No card needed; when the week ends, the account goes back to Free unless you subscribe.',
   ],
@@ -634,7 +634,7 @@ export const en: Dict = {
     breadcrumbs: 'Breadcrumbs',
     directory: 'Site directory',
     explore: 'Explore',
-    product: 'FixNote',
+    product: 'Fixnote',
     download: 'Download',
     allPosts: 'All articles',
     support: 'Help',
@@ -642,7 +642,7 @@ export const en: Dict = {
     rss: 'RSS',
     privacy: 'Privacy',
     email: 'Write to us',
-    help: 'A question about FixNote? Write to ',
+    help: 'A question about Fixnote? Write to ',
     rights: 'All rights reserved.',
     compare: 'Comparisons',
     guide: 'Best note-taking apps',
@@ -650,7 +650,7 @@ export const en: Dict = {
 
   featuresIndex: {
     eyebrow: 'Features',
-    headline: 'Everything FixNote does',
+    headline: 'Everything Fixnote does',
     lead: 'Each feature has its own page: how it works, what reaches the server, and when another app is the better fit.',
     groups: {
       ai: 'Assistant and AI',
@@ -678,7 +678,7 @@ export const en: Dict = {
     differ: 'Where they differ',
     feature: 'Feature',
     choose: 'How to choose',
-    why: 'Why choose FixNote',
+    why: 'Why choose Fixnote',
     still: 'When {name} still makes sense',
     verdict: 'Verdict',
     faq: 'Questions',
@@ -689,11 +689,11 @@ export const en: Dict = {
   securityPage: {
     eyebrow: 'Security',
     headline: ['Your notes are', '\n', 'readable only by', { text: 'you', tone: 'green' }],
-    lead: 'FixNote is built so that you don’t have to trust us: encryption happens on your device, and the server stores only what it cannot read.',
+    lead: 'Fixnote is built so that you don’t have to trust us: encryption happens on your device, and the server stores only what it cannot read.',
     sections: [
       {
         title: 'Encrypted on your device',
-        text: 'When you create an account, FixNote generates a random key and shows it to you as 12 words. Every note is encrypted on the device (XChaCha20-Poly1305) with a fresh key, wrapped with your account key. The ciphertext is bound to its note, so the server cannot swap one note for another.',
+        text: 'When you create an account, Fixnote generates a random key and shows it to you as 12 words. Every note is encrypted on the device (XChaCha20-Poly1305) with a fresh key, wrapped with your account key. The ciphertext is bound to its note, so the server cannot swap one note for another.',
       },
       {
         title: 'What the server stores',
@@ -701,7 +701,7 @@ export const en: Dict = {
       },
       {
         title: 'What the assistant sees',
-        text: 'Searching your notes happens on your device. The language model gets your question and the notes the assistant found or opened to answer it. Choose FixNote AI, your own key (OpenAI, OpenRouter, Groq, DeepSeek) or Ollama in the desktop app, and then nothing goes online.',
+        text: 'Searching your notes happens on your device. The language model gets your question and the notes the assistant found or opened to answer it. Choose Fixnote AI, your own key (OpenAI, OpenRouter, Groq, DeepSeek) or Ollama in the desktop app, and then nothing goes online.',
       },
       {
         title: 'Voice and Telegram',
@@ -717,7 +717,7 @@ export const en: Dict = {
       },
       {
         title: 'Fully local',
-        text: 'FixNote works without an account and without internet. The desktop app has an Only on this device mode: it turns off sync, Telegram and links, and the assistant works only through Ollama.',
+        text: 'Fixnote works without an account and without internet. The desktop app has an Only on this device mode: it turns off sync, Telegram and links, and the assistant works only through Ollama.',
       },
     ],
     stored: 'What the server stores for a note',
@@ -725,9 +725,9 @@ export const en: Dict = {
 
   downloadPage: {
     eyebrow: 'Download',
-    headline: ['FixNote for', { text: 'your', tone: 'brand' }, 'devices'],
+    headline: ['Fixnote for', { text: 'your', tone: 'brand' }, 'devices'],
     lead: 'Pick the installer for your system or open the web version. Once you sign in, notes sync between all your devices.',
-    windows: 'What FixNote does on Windows',
+    windows: 'What Fixnote does on Windows',
     requirementsTitle: 'System requirements',
     requirements: [
       'Windows 10 or 11 (64-bit); WebView2 installs automatically',
@@ -741,7 +741,7 @@ export const en: Dict = {
     more: 'More articles',
     eyebrow: 'Blog',
     headline: ['Notes', { text: 'about notes', tone: 'brand' }],
-    lead: 'How to write thoughts down so you can find them later, and how FixNote works inside.',
+    lead: 'How to write thoughts down so you can find them later, and how Fixnote works inside.',
     read: 'Read',
     minutes: 'min',
     back: 'All articles',
@@ -757,12 +757,12 @@ export const en: Dict = {
     eyebrow: 'Privacy',
     title: 'Privacy policy',
     updated: 'Updated October 17, 2026',
-    lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data FixNote has and why.',
+    lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data Fixnote has and why.',
     sections: [
       {
         title: 'Without an account',
         text: [
-          'FixNote works without an account. Your notes, attachments and settings then stay on your device only. In Only on this device mode the desktop app sends nothing to our server.',
+          'Fixnote works without an account. Your notes, attachments and settings then stay on your device only. In Only on this device mode the desktop app sends nothing to our server.',
         ],
       },
       {
@@ -792,14 +792,14 @@ export const en: Dict = {
       {
         title: 'Assistant',
         text: [
-          'Search across your notes runs on your device. When you ask FixNote AI, your question and the matching note excerpts pass through our server to a language model provider to get the answer. We do not store or log what is in these requests.',
+          'Search across your notes runs on your device. When you ask Fixnote AI, your question and the matching note excerpts pass through our server to a language model provider to get the answer. We do not store or log what is in these requests.',
           'With your own key, requests go straight to the service you chose and follow its terms. With Ollama everything stays on your computer.',
         ],
       },
       {
         title: 'AI apps (remote access)',
         text: [
-          'If you connect an AI app such as ChatGPT or Claude to FixNote, its requests come to our server mcp.fixnote.space and are passed to your device where FixNote is open. The device decrypts the notes and answers, and the answer with the notes it needs passes through our server to that app. Requests and answers only pass through memory: we do not store or log them. The server has no keys to your notes. When you approve the connection in the FixNote app, the server keeps the address back to the AI app for at most two minutes, until the connect page in your browser picks it up.',
+          'If you connect an AI app such as ChatGPT or Claude to Fixnote, its requests come to our server mcp.fixnote.space and are passed to your device where Fixnote is open. The device decrypts the notes and answers, and the answer with the notes it needs passes through our server to that app. Requests and answers only pass through memory: we do not store or log them. The server has no keys to your notes. When you approve the connection in the Fixnote app, the server keeps the address back to the AI app for at most two minutes, until the connect page in your browser picks it up.',
           'We keep only what is needed to run it: which apps you connected, when they last asked, which access you revoked, and the ids of the folders and notes you let them see. You can revoke access in Settings → Integrations. What the AI app receives is then handled under its provider’s own rules.',
         ],
       },
@@ -839,7 +839,7 @@ export const en: Dict = {
       {
         title: 'Children',
         text: [
-          'FixNote is not meant for children under 13, and we do not knowingly collect their data.',
+          'Fixnote is not meant for children under 13, and we do not knowingly collect their data.',
         ],
       },
       {
@@ -852,7 +852,7 @@ export const en: Dict = {
 
   releasePage: {
     eyebrow: 'What’s new',
-    title: 'FixNote release notes',
+    title: 'Fixnote release notes',
     lead: 'What each version added and fixed. The desktop app updates itself, and the web app is always the latest.',
     version: 'Version',
     latest: 'Latest',
@@ -861,26 +861,26 @@ export const en: Dict = {
 
   setupPage: {
     eyebrow: 'Install',
-    title: 'How to install FixNote',
+    title: 'How to install Fixnote',
     lead: 'Download the installer, answer your system once on first launch, and sign in if you want Pro.',
     steps: [
       {
-        title: 'Download FixNote',
-        text: 'Pick the installer for Windows or for your Mac: Apple silicon (M1 and later) or Intel. On a Mac, open the .dmg and drag FixNote into Applications.',
+        title: 'Download Fixnote',
+        text: 'Pick the installer for Windows or for your Mac: Apple silicon (M1 and later) or Intel. On a Mac, open the .dmg and drag Fixnote into Applications.',
       },
       {
         title: 'Open it the first time',
-        text: 'Until FixNote is notarized by Apple, macOS asks about it on first launch, and Windows may show SmartScreen. You answer once; after that it opens like any other app and updates itself.',
+        text: 'Until Fixnote is notarized by Apple, macOS asks about it on first launch, and Windows may show SmartScreen. You answer once; after that it opens like any other app and updates itself.',
       },
       {
         title: 'Sign in if you want Pro',
-        text: 'FixNote works right away without an account. For sync, FixNote AI and shared notes, sign in with your email in Settings → Account & sync. The 7-day Pro trial needs no card; you subscribe in Settings → Billing, and Pro works at once on every device of the account.',
+        text: 'Fixnote works right away without an account. For sync, Fixnote AI and shared notes, sign in with your email in Settings → Account & sync. The 7-day Pro trial needs no card; you subscribe in Settings → Billing, and Pro works at once on every device of the account.',
       },
     ],
-    macTitle: 'My Mac says FixNote can’t be opened',
+    macTitle: 'My Mac says Fixnote can’t be opened',
     mac: [
       'macOS 15 Sequoia and later: open System Settings → Privacy & Security, scroll down and click Open Anyway.',
-      'macOS 14 Sonoma or earlier: in Finder, right-click FixNote, choose Open and confirm.',
+      'macOS 14 Sonoma or earlier: in Finder, right-click Fixnote, choose Open and confirm.',
       'If macOS says the app is damaged, run this once in Terminal:',
     ],
     windowsTitle: 'If Windows shows SmartScreen',
@@ -893,20 +893,20 @@ export const en: Dict = {
   windowsPage: {
     eyebrow: 'Windows',
     headline: 'A notes app for your Windows PC',
-    lead: 'FixNote is a note-taking app for Windows 10 and 11 that works offline and without an account. It writes up your calls with no bot in the meeting, turns dictation into text on your own computer and opens with a shortcut over any window.',
+    lead: 'Fixnote is a note-taking app for Windows 10 and 11 that works offline and without an account. It writes up your calls with no bot in the meeting, turns dictation into text on your own computer and opens with a shortcut over any window.',
     facts: 'Windows 10 and 11, 64-bit · Free, no time limit · No account needed',
-    shotAlt: 'FixNote on Windows: today’s notes and the assistant answering with links to notes',
+    shotAlt: 'Fixnote on Windows: today’s notes and the assistant answering with links to notes',
     sections: [
       {
         id: 'calls',
         title: 'Call summaries with no bot in the call',
-        text: 'Zoom, Teams, Telegram or any other app: FixNote takes the computer’s sound through WASAPI, the standard Windows audio interface, and your microphone. No bot joins, no drivers, no extensions. Speech is transcribed on your computer while you talk, and after “Finish” the model writes a summary, decisions and tasks. No audio is kept.',
+        text: 'Zoom, Teams, Telegram or any other app: Fixnote takes the computer’s sound through WASAPI, the standard Windows audio interface, and your microphone. No bot joins, no drivers, no extensions. Speech is transcribed on your computer while you talk, and after “Finish” the model writes a summary, decisions and tasks. No audio is kept.',
         link: 'How call summaries work',
       },
       {
         id: 'shortcuts',
         title: 'Shortcuts from any window and a tray icon',
-        text: 'FixNote does not need to stay on screen. Closing the window hides it in the tray, and the system-wide shortcuts work while a browser or an editor is in front. The tray icon’s menu has a new note, a voice note, today’s note, search and call recording. Shortcuts inside the app follow the key’s place on the keyboard, so Ctrl+K works in any layout. You can change each one in Settings → Shortcuts.',
+        text: 'Fixnote does not need to stay on screen. Closing the window hides it in the tray, and the system-wide shortcuts work while a browser or an editor is in front. The tray icon’s menu has a new note, a voice note, today’s note, search and call recording. Shortcuts inside the app follow the key’s place on the keyboard, so Ctrl+K works in any layout. You can change each one in Settings → Shortcuts.',
         link: 'How search works',
       },
       {
@@ -939,35 +939,35 @@ export const en: Dict = {
       { keys: 'Ctrl+Alt+N', text: 'New note' },
       { keys: 'Ctrl+Alt+R', text: 'Voice note' },
       { keys: 'Ctrl+Alt+K', text: 'Search' },
-      { keys: 'Ctrl+Alt+Space', text: 'Show or hide FixNote' },
+      { keys: 'Ctrl+Alt+Space', text: 'Show or hide Fixnote' },
     ],
     installTitle: 'Installing and updates',
     install:
-      'The .exe installer sets FixNote up on Windows 10 and 11 (64-bit) and adds WebView2 if it is missing. After that the app updates itself. On first launch Windows may show SmartScreen: click “More info”, then “Run anyway”. A Microsoft Store version is on its way: the Store signs it, updates come through the Store, and it shares notes with the version from this site.',
-    setup: 'How to install FixNote',
-    compareTitle: 'FixNote and other note-taking apps',
+      'The .exe installer sets Fixnote up on Windows 10 and 11 (64-bit) and adds WebView2 if it is missing. After that the app updates itself. On first launch Windows may show SmartScreen: click “More info”, then “Run anyway”. A Microsoft Store version is on its way: the Store signs it, updates come through the Store, and it shares notes with the version from this site.',
+    setup: 'How to install Fixnote',
+    compareTitle: 'Fixnote and other note-taking apps',
     compareText:
-      'How FixNote differs from Notion, Obsidian, Evernote and Joplin on Windows, and what to use instead of Apple Notes when your computer is not a Mac.',
+      'How Fixnote differs from Notion, Obsidian, Evernote and Joplin on Windows, and what to use instead of Apple Notes when your computer is not a Mac.',
     faq: [
       {
         q: 'Does Windows have a notes app?',
-        a: 'It has Notepad and Sticky Notes, which are enough for a line or two. FixNote is for when notes pile up: folders, a daily note, search by meaning, an assistant that answers from your notes, and call summaries.',
+        a: 'It has Notepad and Sticky Notes, which are enough for a line or two. Fixnote is for when notes pile up: folders, a daily note, search by meaning, an assistant that answers from your notes, and call summaries.',
       },
       {
-        q: 'Is FixNote for Windows free?',
-        a: 'Yes. Everything that runs on your computer is free with no time limit: notes, search, dictation, call summaries with your own key or Ollama, MCP, import and export. Pro, at $7 a month, adds sync, FixNote AI, shared notes and the Telegram bot.',
+        q: 'Is Fixnote for Windows free?',
+        a: 'Yes. Everything that runs on your computer is free with no time limit: notes, search, dictation, call summaries with your own key or Ollama, MCP, import and export. Pro, at $7 a month, adds sync, Fixnote AI, shared notes and the Telegram bot.',
       },
       {
-        q: 'Does FixNote work on Windows 10?',
+        q: 'Does Fixnote work on Windows 10?',
         a: 'Yes, on Windows 10 and 11, 64-bit. The installer adds WebView2, which the app’s window runs on, if it is missing.',
       },
       {
-        q: 'Can I use FixNote on both Windows and Mac?',
+        q: 'Can I use Fixnote on both Windows and Mac?',
         a: 'Yes. There are apps for Windows and macOS and a web app. With Pro, notes sync between them end-to-end encrypted.',
       },
       {
-        q: 'Does FixNote work offline?',
-        a: 'Yes. Notes are stored on your computer, and search and dictation run there too. You need the internet once to download the models, and for what goes through the server: sync and FixNote AI.',
+        q: 'Does Fixnote work offline?',
+        a: 'Yes. Notes are stored on your computer, and search and dictation run there too. You need the internet once to download the models, and for what goes through the server: sync and Fixnote AI.',
       },
     ],
   },

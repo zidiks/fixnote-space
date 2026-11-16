@@ -2,6 +2,7 @@
 import mark from '../assets/landing/home-mark.svg?url'
 import wordmark from '../assets/landing/wordmark.svg?url'
 import { APPS, RIVALS } from '../data/apps'
+import { SOCIAL } from '../data/social'
 import { APP_URL, CONTACT_EMAIL, type Lang, localePath, t } from '../i18n'
 import { topicHref } from '../lib/blog'
 import { vsPath } from '../lib/pages'
@@ -47,6 +48,7 @@ const columns = [
       { label: d.footer.privacy, href: localePath(lang, '/privacy/') },
       { label: d.consent.settings, href: localePath(lang, '/privacy/#cookies'), cookies: true },
       { label: d.landing.footer.contact, href: `mailto:${CONTACT_EMAIL}` },
+      ...SOCIAL.map((account) => ({ label: account.name, href: account.href, social: true })),
     ],
   },
 ]
@@ -55,13 +57,13 @@ const columns = [
 <footer class="home-footer">
   <div class="home-footer-panel">
     <nav aria-label={d.footer.directory} class="home-footer-nav">
-      {columns.map(col=>(<div><h3>{col.title}</h3><ul>{col.links.map(link=>(<li><a href={link.href} data-consent-open={'cookies' in link ? '' : undefined}>{link.label}{'note' in link && <small>{link.note}</small>}</a></li>))}</ul></div>))}
+      {columns.map(col=>(<div><h3>{col.title}</h3><ul>{col.links.map(link=>(<li><a href={link.href} data-consent-open={'cookies' in link ? '' : undefined} target={'social' in link ? '_blank' : undefined} rel={'social' in link ? 'me noopener' : undefined}>{link.label}{'note' in link && <small>{link.note}</small>}</a></li>))}</ul></div>))}
     </nav>
-    <a href={home} class="home-footer-mark" aria-label="FixNote"><img src={mark} alt="" width="72" height="72" /></a>
-    <img src={wordmark} class="home-footer-wordmark" alt="FixNote" width="586" height="140" />
+    <a href={home} class="home-footer-mark" aria-label="Fixnote"><img src={mark} alt="" width="72" height="72" /></a>
+    <img src={wordmark} class="home-footer-wordmark" alt="Fixnote" width="586" height="140" />
     <div class="home-footer-bottom">
       <p>{d.landing.footer.question}<br /><span>{d.landing.footer.write}{' '}<a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</span></p>
-      <p>Copyright © {new Date().getFullYear()} FixNote.<br /><span>{d.footer.rights}</span></p>
+      <p>Copyright © {new Date().getFullYear()} Fixnote.<br /><span>{d.footer.rights}</span></p>
     </div>
   </div>
 </footer>

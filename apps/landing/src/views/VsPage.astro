@@ -14,7 +14,7 @@ import { fill, getComparisons, type Vs, vsPath } from '../lib/pages'
 import { breadcrumbs, faqPage } from '../lib/schema'
 
 /**
- * FixNote next to one other app: the two side by side, the table, how to choose, the longer
+ * Fixnote next to one other app: the two side by side, the table, how to choose, the longer
  * sections from Markdown, both sides' reasons, a verdict, questions and the other comparisons.
  */
 interface Props {
@@ -36,7 +36,7 @@ const site = Astro.site ?? new URL('https://fixnote.space')
 const jsonLd = [
   faqPage(v.faq),
   breadcrumbs([
-    { name: 'FixNote', url: new URL(localePath(lang, '/'), site).href },
+    { name: 'Fixnote', url: new URL(localePath(lang, '/'), site).href },
     { name: v.title, url: new URL(vsPath(lang, rival), site).href },
   ]),
 ]
@@ -56,7 +56,7 @@ const jsonLd = [
       <div class="flex items-center gap-3">
         <AppIcon app="fixnote" size={48} />
         <div>
-          <p class="typo-body font-semibold text-link">FixNote</p>
+          <p class="typo-body font-semibold text-link">Fixnote</p>
           <p class="typo-caption text-muted">{c.free} · {price(APPS.fixnote.paid)}</p>
         </div>
       </div>

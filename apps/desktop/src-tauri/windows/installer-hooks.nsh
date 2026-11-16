@@ -8,6 +8,15 @@
   Sleep 500
 !macroend
 
+; Explorer keeps icons in its cache by the exe's path, so after an update the shortcuts in Start, on
+; the desktop and pinned to the taskbar kept the old icon. Tell the shell the icons changed
+; (SHCNE_ASSOCCHANGED, flushed) and have Windows rebuild its icon cache.
+!macro NSIS_HOOK_POSTINSTALL
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0x1000, p 0, p 0)'
+  nsExec::Exec '"$SYSDIR\ie4uinit.exe" -show'
+  Pop $0
+!macroend
+
 !macro NSIS_HOOK_PREUNINSTALL
   nsExec::Exec 'taskkill /F /T /IM fixnote-mcp.exe'
   Pop $0

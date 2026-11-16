@@ -11,6 +11,7 @@ mod db;
 mod deep_link;
 mod files;
 mod http;
+mod icon_refresh;
 mod keys;
 mod links;
 mod mcp;
@@ -107,6 +108,7 @@ pub fn run() {
             std::fs::create_dir_all(&dir)?;
             let conn = db::open(&dir.join("fixnote.db"))?;
             app.manage(db::Db(Mutex::new(conn)));
+            icon_refresh::after_update(&dir, &app.package_info().version.to_string());
             if let Some(window) = app.get_webview_window("main") {
                 webview::disable_browser_shortcuts(&window);
                 webview::grant_microphone(&window);

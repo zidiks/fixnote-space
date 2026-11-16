@@ -1,37 +1,37 @@
 ---
-title: 'How end-to-end encryption works in FixNote'
-description: 'A 12-word phrase, a fresh key for every version of a note and a server that stores only ciphertext: what FixNote sees and what happens if you lose the phrase.'
+title: 'How end-to-end encryption works in Fixnote'
+description: 'A 12-word phrase, a fresh key for every version of a note and a server that stores only ciphertext: what Fixnote sees and what happens if you lose the phrase.'
 date: 2026-09-18
 updated: 2026-10-11
 translationKey: e2ee
 faq:
-  - q: Can FixNote read my notes?
+  - q: Can Fixnote read my notes?
     a: No. The server stores only ciphertext, and the keys exist only on your devices. Passages of notes reach a model only when you ask the assistant a question.
   - q: What happens if I lose my recovery phrase?
     a: Your notes stay available on the devices where you are signed in, and you can show the phrase again there after an email code. If you lose the phrase and every device, nobody can recover the notes.
-  - q: Which encryption does FixNote use?
+  - q: Which encryption does Fixnote use?
     a: XChaCha20-Poly1305 from the libsodium library. Keys are derived on your device from a 128-bit random secret, written down as a 12-word BIP39 phrase.
   - q: Do I need encryption if I don't use sync?
     a: Without an account, notes never leave your device at all. Encryption comes into play when you sign in and your notes start to sync.
 ---
 
-Notes hold things you would rather keep to yourself: plans, money, health, drafts of emails. Can you sync them through the cloud without the service being able to read them? In FixNote a note is encrypted on your device, and the server only receives what it cannot read. This article walks through where the keys come from, how a note is encrypted, what the server still sees, and what to do if you lose your recovery phrase.
+Notes hold things you would rather keep to yourself: plans, money, health, drafts of emails. Can you sync them through the cloud without the service being able to read them? In Fixnote a note is encrypted on your device, and the server only receives what it cannot read. This article walks through where the keys come from, how a note is encrypted, what the server still sees, and what to do if you lose your recovery phrase.
 
 ## What end-to-end encryption means for notes
 
 End-to-end encryption means a note stays encrypted on its way to the server, while it is stored there and on its way to your other device. Only your devices can decrypt it, because only they have the keys. The server holds bytes that mean nothing without a key.
 
-In FixNote this applies to sync. Without an account, notes never leave the device. Sync between devices is part of Pro; on the free plan with an account, sync only downloads.
+In Fixnote this applies to sync. Without an account, notes never leave the device. Sync between devices is part of Pro; on the free plan with an account, sync only downloads.
 
 ## It all starts with 12 words
 
-When you create an account, the app generates 16 random bytes (128 bits) and shows them as a phrase of 12 English words using the BIP39 standard. The words are easy to write on paper, and the last word carries a checksum, so the app catches a typo right away. After showing the phrase, FixNote asks you to type a few of the words by their numbers to make sure you wrote it down.
+When you create an account, the app generates 16 random bytes (128 bits) and shows them as a phrase of 12 English words using the BIP39 standard. The words are easy to write on paper, and the last word carries a checksum, so the app catches a typo right away. After showing the phrase, Fixnote asks you to type a few of the words by their numbers to make sure you wrote it down.
 
 All other keys are derived from this secret on your device: for notes, for folder names, for checking the phrase, for links, and a key pair for incoming data. Neither the phrase nor the keys are ever sent to the server. In the desktop app the secret lives in the system credential store (Windows Credential Manager, macOS Keychain). In the browser it sits in browser storage, encrypted with a key that scripts can use but cannot read.
 
 ## How a note is encrypted
 
-Every time a note goes to the server, FixNote encrypts it with a fresh random key using XChaCha20-Poly1305 from the libsodium library. This cipher checks integrity: change a single byte of the ciphertext and decryption fails.
+Every time a note goes to the server, Fixnote encrypts it with a fresh random key using XChaCha20-Poly1305 from the libsodium library. This cipher checks integrity: change a single byte of the ciphertext and decryption fails.
 
 The note's key is in turn encrypted with your account key and stored next to the ciphertext. The ciphertext is also bound to the note's ID. So the server cannot put one note's content in place of another's, because decrypting such a swap fails too.
 
@@ -61,7 +61,7 @@ Messages to the Telegram bot pass through Telegram unencrypted, which is how the
 
 ## What goes to the model when you ask the assistant
 
-Searching your notes, including search by meaning, happens on your device. The model receives your question, the passages found for it and any notes the assistant reads while answering. It never gets your whole database. If you'd rather not send even that, connect your own key for an OpenAI-compatible provider, or Ollama in the desktop app. In "Only on this device" mode FixNote does not contact our server at all: there is no sync, Telegram, sharing or FixNote AI.
+Searching your notes, including search by meaning, happens on your device. The model receives your question, the passages found for it and any notes the assistant reads while answering. It never gets your whole database. If you'd rather not send even that, connect your own key for an OpenAI-compatible provider, or Ollama in the desktop app. In "Only on this device" mode Fixnote does not contact our server at all: there is no sync, Telegram, sharing or Fixnote AI.
 
 ## What happens if you lose the phrase
 

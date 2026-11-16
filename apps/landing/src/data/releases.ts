@@ -101,15 +101,15 @@ export const RELEASES: readonly Release[] = [
     date: '2026-10-01',
     notes: {
       ru: [
-        'Повторный запуск открывает уже работающий FixNote, а не вторую копию.',
+        'Повторный запуск открывает уже работающий Fixnote, а не вторую копию.',
         'Из значка в трее можно создать заметку, начать голосовую, открыть заметку дня и поиск.',
       ],
       en: [
-        'Launching FixNote again brings up the running app instead of a second copy.',
+        'Launching Fixnote again brings up the running app instead of a second copy.',
         'The tray icon creates a note, starts a voice note, opens today’s note and search.',
       ],
       es: [
-        'Abrir FixNote otra vez muestra la app que ya está abierta en lugar de una segunda copia.',
+        'Abrir Fixnote otra vez muestra la app que ya está abierta en lugar de una segunda copia.',
         'El icono de la bandeja crea una nota, empieza una nota de voz, abre la nota de hoy y la búsqueda.',
       ],
     },
@@ -120,17 +120,17 @@ export const RELEASES: readonly Release[] = [
     notes: {
       ru: [
         'Итоги созвонов работают на macOS 14.2 и новее.',
-        'Закрытое окно прячется в трей или строку меню, и FixNote продолжает работать.',
+        'Закрытое окно прячется в трей или строку меню, и Fixnote продолжает работать.',
         'В настройках видно, сколько места занимает каждая модель на устройстве.',
       ],
       en: [
         'Call summaries work on macOS 14.2 and later.',
-        'Closing the window hides FixNote to the tray or menu bar, and it keeps running.',
+        'Closing the window hides Fixnote to the tray or menu bar, and it keeps running.',
         'Settings show how much space each on-device model takes.',
       ],
       es: [
         'Los resúmenes de llamadas funcionan en macOS 14.2 y posteriores.',
-        'Cerrar la ventana oculta FixNote en la bandeja o la barra de menús, y sigue funcionando.',
+        'Cerrar la ventana oculta Fixnote en la bandeja o la barra de menús, y sigue funcionando.',
         'Los ajustes muestran cuánto ocupa cada modelo del dispositivo.',
       ],
     },
@@ -140,15 +140,15 @@ export const RELEASES: readonly Release[] = [
     date: '2026-09-30',
     notes: {
       ru: [
-        'FixNote записывает созвон на Windows и делает из него заметку с итогами.',
+        'Fixnote записывает созвон на Windows и делает из него заметку с итогами.',
         'Веб-версия удобна на телефоне: кнопка «Назад», раскладка под узкий экран, клавиатура iOS и значок на главном экране.',
       ],
       en: [
-        'FixNote records a call on Windows and turns it into a note with a summary.',
+        'Fixnote records a call on Windows and turns it into a note with a summary.',
         'The web app works well on phones: the back button, layouts for narrow screens, the iOS keyboard and a home screen icon.',
       ],
       es: [
-        'FixNote graba una llamada en Windows y la convierte en una nota con resumen.',
+        'Fixnote graba una llamada en Windows y la convierte en una nota con resumen.',
         'La app web funciona bien en el móvil: el botón Atrás, diseños para pantallas estrechas, el teclado de iOS y un icono en la pantalla de inicio.',
       ],
     },
@@ -169,17 +169,17 @@ export const RELEASES: readonly Release[] = [
       ru: [
         'Приложение открывается без вспышек и сразу в нужной теме.',
         'Свёрнутые папки остаются свёрнутыми после перезапуска.',
-        'FixNote AI видит список папок и может глубже подумать над сложным вопросом.',
+        'Fixnote AI видит список папок и может глубже подумать над сложным вопросом.',
       ],
       en: [
         'The app opens without flashes and in the right theme straight away.',
         'Folded folders stay folded after a restart.',
-        'FixNote AI sees your folders and can think longer about a hard question.',
+        'Fixnote AI sees your folders and can think longer about a hard question.',
       ],
       es: [
         'La app se abre sin destellos y con el tema correcto desde el principio.',
         'Las carpetas plegadas siguen plegadas tras reiniciar.',
-        'FixNote AI ve tus carpetas y puede pensar más a fondo una pregunta difícil.',
+        'Fixnote AI ve tus carpetas y puede pensar más a fondo una pregunta difícil.',
       ],
     },
   },
@@ -224,19 +224,19 @@ export const RELEASES: readonly Release[] = [
     date: '2026-09-29',
     notes: {
       ru: [
-        'FixNote читает текст на картинках прямо на устройстве, и его находит поиск.',
+        'Fixnote читает текст на картинках прямо на устройстве, и его находит поиск.',
         'Правка ИИ в открытой заметке впечатывается на месте, её видно по ходу.',
-        'FixNote AI работает и в общих заметках.',
+        'Fixnote AI работает и в общих заметках.',
       ],
       en: [
-        'FixNote reads the text in images on your device, and search finds it.',
+        'Fixnote reads the text in images on your device, and search finds it.',
         'An AI edit to an open note is typed in place, so you watch it happen.',
-        'FixNote AI works in shared notes too.',
+        'Fixnote AI works in shared notes too.',
       ],
       es: [
-        'FixNote lee el texto de las imágenes en tu dispositivo, y la búsqueda lo encuentra.',
+        'Fixnote lee el texto de las imágenes en tu dispositivo, y la búsqueda lo encuentra.',
         'Una edición de la IA en una nota abierta se escribe en su sitio, a la vista.',
-        'FixNote AI también funciona en las notas compartidas.',
+        'Fixnote AI también funciona en las notas compartidas.',
       ],
     },
   },
@@ -278,9 +278,9 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.16',
     date: '2026-09-29',
     notes: {
-      ru: ['При выходе из аккаунта FixNote спрашивает, что делать с заметками на устройстве.'],
+      ru: ['При выходе из аккаунта Fixnote спрашивает, что делать с заметками на устройстве.'],
       en: ['Signing out asks what to do with the notes on the device.'],
-      es: ['Al cerrar sesión, FixNote pregunta qué hacer con las notas del dispositivo.'],
+      es: ['Al cerrar sesión, Fixnote pregunta qué hacer con las notas del dispositivo.'],
     },
   },
   {
@@ -385,15 +385,15 @@ export const RELEASES: readonly Release[] = [
     notes: {
       ru: [
         'Заметкой можно поделиться с человеком по почте и редактировать её вместе в реальном времени.',
-        'В узком окне FixNote перестраивается под ширину.',
+        'В узком окне Fixnote перестраивается под ширину.',
       ],
       en: [
         'Share a note with someone by email and edit it together in real time.',
-        'In a narrow window FixNote rearranges itself to fit.',
+        'In a narrow window Fixnote rearranges itself to fit.',
       ],
       es: [
         'Comparte una nota con alguien por correo y editadla juntos en tiempo real.',
-        'En una ventana estrecha, FixNote se reorganiza para caber.',
+        'En una ventana estrecha, Fixnote se reorganiza para caber.',
       ],
     },
   },
@@ -411,15 +411,15 @@ export const RELEASES: readonly Release[] = [
     date: '2026-09-27',
     notes: {
       ru: [
-        'Если одну заметку изменили на двух устройствах, FixNote сохраняет обе версии и даёт их сравнить.',
+        'Если одну заметку изменили на двух устройствах, Fixnote сохраняет обе версии и даёт их сравнить.',
         'Две заметки дня за одну дату объединяются в одну.',
       ],
       en: [
-        'When one note changes on two devices, FixNote keeps both versions and lets you compare them.',
+        'When one note changes on two devices, Fixnote keeps both versions and lets you compare them.',
         'Two daily notes for the same date are merged into one.',
       ],
       es: [
-        'Si una nota cambia en dos dispositivos, FixNote guarda ambas versiones y te deja compararlas.',
+        'Si una nota cambia en dos dispositivos, Fixnote guarda ambas versiones y te deja compararlas.',
         'Dos notas diarias de la misma fecha se unen en una.',
       ],
     },
@@ -440,17 +440,17 @@ export const RELEASES: readonly Release[] = [
       ru: [
         'В заметках появились таблицы.',
         'Новую заметку и папку можно создать сочетанием клавиш.',
-        'FixNote подключается к Codex по MCP.',
+        'Fixnote подключается к Codex по MCP.',
       ],
       en: [
         'Notes can hold tables.',
         'Keyboard shortcuts create a new note and a new folder.',
-        'FixNote connects to Codex over MCP.',
+        'Fixnote connects to Codex over MCP.',
       ],
       es: [
         'Las notas admiten tablas.',
         'Hay atajos de teclado para crear una nota y una carpeta.',
-        'FixNote se conecta a Codex por MCP.',
+        'Fixnote se conecta a Codex por MCP.',
       ],
     },
   },
@@ -533,9 +533,9 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.0',
     date: '2026-09-26',
     notes: {
-      ru: ['Первая версия FixNote для Windows, macOS и браузера.'],
-      en: ['The first version of FixNote for Windows, macOS and the browser.'],
-      es: ['La primera versión de FixNote para Windows, macOS y el navegador.'],
+      ru: ['Первая версия Fixnote для Windows, macOS и браузера.'],
+      en: ['The first version of Fixnote for Windows, macOS and the browser.'],
+      es: ['La primera versión de Fixnote para Windows, macOS y el navegador.'],
     },
   },
 ]

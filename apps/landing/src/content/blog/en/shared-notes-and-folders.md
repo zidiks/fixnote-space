@@ -1,13 +1,13 @@
 ---
-title: 'How to share notes and folders in FixNote: roles and encryption'
-description: 'How to invite someone to a FixNote note or folder, how edit and view access differ, how live edits show up, and what the server knows without seeing the text.'
+title: 'How to share notes and folders in Fixnote: roles and encryption'
+description: 'How to invite someone to a Fixnote note or folder, how edit and view access differ, how live edits show up, and what the server knows without seeing the text.'
 date: 2026-10-04
 updated: 2026-10-11
 translationKey: shared-notes
 faq:
-  - q: 'Does the person I invite need FixNote Pro?'
-    a: 'No. Pro is needed by the person who shares the note or folder. The people invited only need a free FixNote account.'
-  - q: 'Can the FixNote server read a shared note?'
+  - q: 'Does the person I invite need Fixnote Pro?'
+    a: 'No. Pro is needed by the person who shares the note or folder. The people invited only need a free Fixnote account.'
+  - q: 'Can the Fixnote server read a shared note?'
     a: 'No. The text, live edits and files of a shared note are encrypted with its key, and each member gets that key sealed so only they can open it. The server knows the members, their email addresses and their access.'
   - q: 'What happens when two people type in the same paragraph at once?'
     a: 'The edits are merged. A shared note keeps its changes as a CRDT (Yjs), which combines simultaneous edits without conflicts.'
@@ -15,11 +15,11 @@ faq:
     a: '30 days. If it isn’t accepted by then, the owner sees "Invite again" next to the address.'
 ---
 
-How do you keep one note together with someone: a shopping list, a trip plan, notes for a project? In FixNote you can share a note or a whole folder with people by email, and the server still can't read the text. This post covers invitations, access levels, editing together and how shared notes are encrypted.
+How do you keep one note together with someone: a shopping list, a trip plan, notes for a project? In Fixnote you can share a note or a whole folder with people by email, and the server still can't read the text. This post covers invitations, access levels, editing together and how shared notes are encrypted.
 
 ## How to invite someone to a note
 
-Open the note, click "Share" and enter an email address. The person needs a FixNote account; if they don't have one, the app tells you. Then choose the access. With "Can edit" they write in the note with you, with "Can view" they only read it.
+Open the note, click "Share" and enter an email address. The person needs a Fixnote account; if they don't have one, the app tells you. Then choose the access. With "Can edit" they write in the note with you, with "Can view" they only read it.
 
 You can also share a whole folder with "Share…" in its menu. The member gets the folder with all its subfolders and notes, and new notes in it show up for everyone.
 
@@ -31,7 +31,7 @@ The invitation arrives in the person's notification bell, and they click "Accept
 
 ## What editing together looks like
 
-When you are both in the note, you see each other's edits right away. The other person's cursor is shown in its own color with their name, and their new text is briefly highlighted so you can see what changed. If the assistant changes a shared note at someone's request, "FixNote AI · asked by …" appears above the text and its writing types in for everyone.
+When you are both in the note, you see each other's edits right away. The other person's cursor is shown in its own color with their name, and their new text is briefly highlighted so you can see what changed. If the assistant changes a shared note at someone's request, "Fixnote AI · asked by …" appears above the text and its writing types in for everyone.
 
 Two people can write in the same paragraph at the same time. A shared note keeps its changes as a CRDT (we use Yjs), which merges simultaneous edits without conflicts. While you are offline, your edits are kept on the device and merged at the next sync.
 
@@ -53,4 +53,4 @@ Images and files in a shared note are stored on the server under that note and e
 
 A member can leave a note or a folder, and it disappears from their devices. The owner can remove one person or use "Stop sharing", and then the note stays only with them. The [shared notes page](/features/shared-notes/) has the rest of the details.
 
-If you only want to show a note to someone who doesn't use FixNote, a read-only [share link](/features/share-links/) is enough. To try editing together, invite someone close to you to a shopping list with "Can edit", and each of you tick off an item from your own device.
+If you only want to show a note to someone who doesn't use Fixnote, a read-only [share link](/features/share-links/) is enough. To try editing together, invite someone close to you to a shopping list with "Can edit", and each of you tick off an item from your own device.

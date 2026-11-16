@@ -1,6 +1,6 @@
 ---
 title: "How to set up recurring tasks in your daily notes"
-description: "How to keep one note per day in FixNote, carry unfinished tasks over, and set up tasks that show up on schedule: every day, on weekdays, or once a month."
+description: "How to keep one note per day in Fixnote, carry unfinished tasks over, and set up tasks that show up on schedule: every day, on weekdays, or once a month."
 date: 2026-10-05
 updated: 2026-10-11
 translationKey: daily-note
@@ -8,26 +8,26 @@ faq:
   - q: "How do I make a recurring task in my notes?"
     a: "In a daily note, right-click a task, choose Repeat… and pick a rule: every day, every weekday, certain days of the week, a day of the month, or every few days. The task then shows up in the daily notes of those days."
   - q: "How do I move unfinished tasks to today?"
-    a: "Open today's note. If the previous daily note has unchecked tasks, FixNote offers Move here. It never moves tasks on its own."
+    a: "Open today's note. If the previous daily note has unchecked tasks, Fixnote offers Move here. It never moves tasks on its own."
   - q: "What is the shortcut for today's note?"
     a: "Ctrl+D on Windows, ⌘D on a Mac. It works in any keyboard layout."
   - q: "What if two devices both create a note for the same day?"
-    a: "When they sync, FixNote merges them into one note for that date, the same way on every device."
+    a: "When they sync, Fixnote merges them into one note for that date, the same way on every device."
 ---
 
-Where do you jot down a small task, a thought after a call or an order number without making a new note every time? FixNote has a daily note for that: one note per date that collects all the small stuff. Here's how to open it, how to carry unfinished tasks over, and how to set up tasks that appear on their own schedule.
+Where do you jot down a small task, a thought after a call or an order number without making a new note every time? Fixnote has a daily note for that: one note per date that collects all the small stuff. Here's how to open it, how to carry unfinished tasks over, and how to set up tasks that appear on their own schedule.
 
 ## How to open today's note
 
-Press Ctrl+D (⌘D on a Mac). If there's no note for today yet, FixNote creates one with two sections, Tasks and Notes. You can also open it from Today in the sidebar or with the "Open today's note" command in Ctrl+K search. Shortcuts follow the physical key, so they work in any keyboard layout.
+Press Ctrl+D (⌘D on a Mac). If there's no note for today yet, Fixnote creates one with two sections, Tasks and Notes. You can also open it from Today in the sidebar or with the "Open today's note" command in Ctrl+K search. Shortcuts follow the physical key, so they work in any keyboard layout.
 
 Buttons in the note take you to the previous and next day. From today's note you can open tomorrow's straight away and write down what has to happen tomorrow.
 
-There is only ever one daily note per date. If two devices both created one while offline, FixNote merges them into one when they sync.
+There is only ever one daily note per date. If two devices both created one while offline, Fixnote merges them into one when they sync.
 
 ## How to carry unfinished tasks over
 
-If the previous daily note still has unchecked tasks, today's note reminds you: "Unfinished tasks from October 8: 3." Press Move here and the tasks move to today and are removed from the old note. Undo in the message puts everything back. Not now leaves them where they are, and FixNote won't ask again that day. Tasks never move unless you press the button.
+If the previous daily note still has unchecked tasks, today's note reminds you: "Unfinished tasks from October 8: 3." Press Move here and the tasks move to today and are removed from the old note. Undo in the message puts everything back. Not now leaves them where they are, and Fixnote won't ask again that day. Tasks never move unless you press the button.
 
 ## How to make a recurring task
 
@@ -39,7 +39,7 @@ The rule lives right in the task line:
 - [ ] Call mom 🔁 weekly:sun
 ```
 
-That's why it syncs with the note and works on all your devices. When FixNote creates the note for a new day, it adds the tasks that fall on that day. You can also type rules by hand: `daily`, `weekdays`, `weekly:mon,thu`, `monthly:15`.
+That's why it syncs with the note and works on all your devices. When Fixnote creates the note for a new day, it adds the tasks that fall on that day. You can also type rules by hand: `daily`, `weekdays`, `weekly:mon,thu`, `monthly:15`.
 
 ## How to change or stop a repeat
 

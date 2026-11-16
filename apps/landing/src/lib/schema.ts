@@ -1,10 +1,11 @@
 import type { Author } from '../data/authors'
 import { RELEASES } from '../data/releases'
+import { SOCIAL } from '../data/social'
 import { HTML_LANG, type Lang, localePath } from '../i18n'
 
 /**
  * schema.org data shared by every page. The organization, the site and the app have fixed `@id`s,
- * so each page refers to them instead of repeating them, and search engines see one FixNote.
+ * so each page refers to them instead of repeating them, and search engines see one Fixnote.
  */
 export const SITE = new URL('https://fixnote.space')
 
@@ -13,17 +14,20 @@ export const APP_ID = `${SITE.href}#app`
 const websiteId = (lang: Lang) => `${new URL(localePath(lang, '/'), SITE).href}#website`
 
 /**
- * FixNote's own profiles on other sites (Telegram bot, Microsoft Store, social accounts). Search
- * engines use them to tell this FixNote from others with the same name. No GitHub links here (the
+ * Fixnote's own profiles on other sites (Telegram bot, Microsoft Store, social accounts). Search
+ * engines use them to tell this Fixnote from others with the same name. No GitHub links here (the
  * site never links there, CLAUDE.md).
  */
-export const SAME_AS: readonly string[] = ['https://www.saashub.com/fixnote']
+export const SAME_AS: readonly string[] = [
+  'https://www.saashub.com/fixnote',
+  ...SOCIAL.map((account) => account.href),
+]
 
 export const organization = () => ({
   '@context': 'https://schema.org',
   '@type': 'Organization',
   '@id': ORG_ID,
-  name: 'FixNote',
+  name: 'Fixnote',
   url: SITE.href,
   logo: {
     '@type': 'ImageObject',
@@ -39,7 +43,7 @@ export const website = (lang: Lang, description: string) => ({
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   '@id': websiteId(lang),
-  name: 'FixNote',
+  name: 'Fixnote',
   url: new URL(localePath(lang, '/'), SITE).href,
   description,
   inLanguage: HTML_LANG[lang],
@@ -50,7 +54,7 @@ export const app = (lang: Lang, description: string, image: string) => ({
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   '@id': APP_ID,
-  name: 'FixNote',
+  name: 'Fixnote',
   description,
   applicationCategory: 'ProductivityApplication',
   applicationSubCategory: 'Note-taking',

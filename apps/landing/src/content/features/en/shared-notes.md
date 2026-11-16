@@ -1,6 +1,6 @@
 ---
 title: Shared notes and folders, end-to-end encrypted
-metaTitle: 'Encrypted shared notes app: edit together live | FixNote'
+metaTitle: 'Encrypted shared notes app: edit together live | Fixnote'
 description: Invite people by email to a note or a whole folder, pick what they can do, and edit together live. The server stores ciphertext; only members read the text.
 eyebrow: Together
 intro: How do you keep a shopping list or a trip plan with someone else without your text sitting readable on a server? Invite them by email to a note or a whole folder, and you see each other's edits as they happen.
@@ -11,7 +11,7 @@ problem: A note pasted into a chat goes stale after the first edit, and soon eve
 stepsTitle: How it works
 steps:
   - title: Invite by email
-    text: Open a note, click Share and enter the email of someone with a FixNote account. For a folder, pick Share… in its menu.
+    text: Open a note, click Share and enter the email of someone with a Fixnote account. For a folder, pick Share… in its menu.
   - title: Choose access
     text: Can edit lets them change the text with you; Can view lets them only read it.
   - title: They accept
@@ -21,8 +21,8 @@ steps:
 privacy: A shared note has its own key, and each member gets it sealed to their public key. Text, images and live edits pass through the server only in encrypted form. The server knows who is in a note and with what role, and it stores their email addresses.
 faq:
   - q: Do the people I invite need Pro?
-    a: No. The owner needs Pro to share a note or folder; members only need a free FixNote account.
-  - q: Can I invite someone who has no FixNote account?
+    a: No. The owner needs Pro to share a note or folder; members only need a free Fixnote account.
+  - q: Can I invite someone who has no Fixnote account?
     a: No. The note's key is sealed to their account's public key, so they need an account. To just show someone the text, create a read-only link, which opens without one.
   - q: What happens when two people edit the same paragraph at once?
     a: The edits merge. A shared note is stored as a CRDT document (Yjs), which combines simultaneous changes without conflict copies.
@@ -38,7 +38,7 @@ Open the note and click Share at the top. In the Share note dialog, enter an ema
 
 To share a folder, open its menu in the sidebar and pick Share…. The member gets the folder with all its subfolders and notes, and any note you later put in it becomes shared too. You can change someone's role at any time; it applies at once, even if they have the note open.
 
-When the assistant changes a shared note for someone, the note shows "FixNote AI · asked by …", so everyone can see where the edit came from.
+When the assistant changes a shared note for someone, the note shows "Fixnote AI · asked by …", so everyone can see where the edit came from.
 
 ## When it helps
 
@@ -48,6 +48,6 @@ Images and files in a shared note are encrypted with the same key, and the space
 
 ## When another tool is a better fit
 
-If your whole team needs a knowledge base with comments, databases and fine-grained permissions, Notion will serve you better. FixNote has two roles and no comments on text, and its server can't read your notes. See the [Notion comparison](/vs/notion/).
+If your whole team needs a knowledge base with comments, databases and fine-grained permissions, Notion will serve you better. Fixnote has two roles and no comments on text, and its server can't read your notes. See the [Notion comparison](/vs/notion/).
 
-When you only need to show a note to someone who doesn't use FixNote, skip the invitation and send a [read-only link](/features/share-links/).
+When you only need to show a note to someone who doesn't use Fixnote, skip the invitation and send a [read-only link](/features/share-links/).

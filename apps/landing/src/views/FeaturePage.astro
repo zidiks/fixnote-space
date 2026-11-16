@@ -36,7 +36,7 @@ const url = new URL(featurePath(lang, slug), site).href
 const jsonLd = [
   faqPage(f.faq),
   breadcrumbs([
-    { name: 'FixNote', url: new URL(localePath(lang, '/'), site).href },
+    { name: 'Fixnote', url: new URL(localePath(lang, '/'), site).href },
     { name: d.nav.features, url: new URL(localePath(lang, '/features/'), site).href },
     { name: f.card.title, url },
   ]),

@@ -1,13 +1,13 @@
 ---
-title: 'Cómo compartir una nota o carpeta en FixNote: permisos y cifrado'
-description: 'Cómo invitar a alguien a una nota o carpeta de FixNote, en qué se diferencian los permisos, cómo se edita a la vez y qué sabe el servidor sin ver el texto.'
+title: 'Cómo compartir una nota o carpeta en Fixnote: permisos y cifrado'
+description: 'Cómo invitar a alguien a una nota o carpeta de Fixnote, en qué se diferencian los permisos, cómo se edita a la vez y qué sabe el servidor sin ver el texto.'
 date: 2026-10-04
 updated: 2026-10-11
 translationKey: shared-notes
 faq:
-  - q: '¿La persona a la que invito necesita FixNote Pro?'
-    a: 'No. Pro lo necesita quien comparte la nota o la carpeta. A los invitados les basta una cuenta gratuita de FixNote.'
-  - q: '¿Puede el servidor de FixNote leer una nota compartida?'
+  - q: '¿La persona a la que invito necesita Fixnote Pro?'
+    a: 'No. Pro lo necesita quien comparte la nota o la carpeta. A los invitados les basta una cuenta gratuita de Fixnote.'
+  - q: '¿Puede el servidor de Fixnote leer una nota compartida?'
     a: 'No. El texto, los cambios en vivo y los archivos de una nota compartida van cifrados con su clave, y cada miembro recibe esa clave sellada para que solo él pueda abrirla. El servidor conoce a los miembros, sus correos y sus permisos.'
   - q: '¿Qué pasa si dos personas escriben en el mismo párrafo a la vez?'
     a: 'Los cambios se combinan. Una nota compartida guarda sus cambios como un CRDT (Yjs), que une las ediciones simultáneas sin conflictos.'
@@ -15,11 +15,11 @@ faq:
     a: '30 días. Si no se acepta en ese tiempo, el propietario ve «Invitar de nuevo» junto a la dirección.'
 ---
 
-¿Cómo llevar una misma nota entre dos o con un equipo: la lista de la compra, el plan de un viaje, las notas de un proyecto? En FixNote puedes compartir una nota o una carpeta entera con otras personas por correo, y el servidor sigue sin poder leer el texto. Aquí verás cómo funcionan las invitaciones, los permisos, la edición conjunta y el cifrado de las notas compartidas.
+¿Cómo llevar una misma nota entre dos o con un equipo: la lista de la compra, el plan de un viaje, las notas de un proyecto? En Fixnote puedes compartir una nota o una carpeta entera con otras personas por correo, y el servidor sigue sin poder leer el texto. Aquí verás cómo funcionan las invitaciones, los permisos, la edición conjunta y el cifrado de las notas compartidas.
 
 ## Cómo invitar a alguien a una nota
 
-Abre la nota, pulsa «Compartir» y escribe un correo. La persona necesita una cuenta de FixNote; si no la tiene, la app te lo dice. Después elige el permiso. Con «Puede editar» escribe en la nota contigo y con «Puede ver» solo la lee.
+Abre la nota, pulsa «Compartir» y escribe un correo. La persona necesita una cuenta de Fixnote; si no la tiene, la app te lo dice. Después elige el permiso. Con «Puede editar» escribe en la nota contigo y con «Puede ver» solo la lee.
 
 También puedes compartir una carpeta entera con «Compartir…» en su menú. El miembro recibe la carpeta con todas sus subcarpetas y notas, y las notas nuevas que se añadan aparecen para todos.
 
@@ -31,7 +31,7 @@ La invitación llega a la campana de notificaciones de la otra persona, que puls
 
 ## Cómo se ve la edición conjunta
 
-Cuando estáis los dos en la nota, veis los cambios del otro al momento. El cursor de la otra persona tiene su propio color y su nombre, y su texto nuevo se resalta un instante para que se note qué cambió. Si el asistente cambia una nota compartida a petición de alguien, encima del texto aparece «FixNote AI · a petición de …» y lo que escribe aparece para todos.
+Cuando estáis los dos en la nota, veis los cambios del otro al momento. El cursor de la otra persona tiene su propio color y su nombre, y su texto nuevo se resalta un instante para que se note qué cambió. Si el asistente cambia una nota compartida a petición de alguien, encima del texto aparece «Fixnote AI · a petición de …» y lo que escribe aparece para todos.
 
 Dos personas pueden escribir en el mismo párrafo a la vez. Una nota compartida guarda sus cambios como un CRDT (usamos Yjs), que combina las ediciones simultáneas sin conflictos. Si estás sin conexión, tus cambios se guardan en el dispositivo y se combinan en la siguiente sincronización.
 
@@ -53,4 +53,4 @@ Las imágenes y los archivos de una nota compartida se guardan en el servidor ba
 
 Un miembro puede salir de una nota o de una carpeta, y desaparece de sus dispositivos. El propietario puede quitar a una persona o usar «Dejar de compartir», y entonces la nota se queda solo con él. El resto de detalles está en la página de [notas compartidas](/es/features/shared-notes/).
 
-Si solo quieres enseñar una nota a alguien que no usa FixNote, basta con un [enlace de solo lectura](/es/features/share-links/). Para probar la edición conjunta, invita a alguien cercano a tu lista de la compra con «Puede editar» y que cada uno marque un artículo desde su dispositivo.
+Si solo quieres enseñar una nota a alguien que no usa Fixnote, basta con un [enlace de solo lectura](/es/features/share-links/). Para probar la edición conjunta, invita a alguien cercano a tu lista de la compra con «Puede editar» y que cada uno marque un artículo desde su dispositivo.

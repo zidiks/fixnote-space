@@ -1,9 +1,9 @@
 ---
 title: Bot de Telegram para tus notas
-metaTitle: 'Bot de Telegram para notas: guarda mensajes | FixNote'
-description: Envía o reenvía al bot de FixNote textos, audios y fotos de Telegram y se convierten en notas en tu dispositivo. El bot los cifra y no puede leerlos.
+metaTitle: 'Bot de Telegram para notas: guarda mensajes | Fixnote'
+description: Envía o reenvía al bot de Fixnote textos, audios y fotos de Telegram y se convierten en notas en tu dispositivo. El bot los cifra y no puede leerlos.
 eyebrow: Telegram
-intro: ¿Te mandas cosas a Mensajes guardados en Telegram y luego no encuentras nada? Envía o reenvía el mensaje al bot de FixNote y se convierte en una nota en la app, sea texto, audio o foto.
+intro: ¿Te mandas cosas a Mensajes guardados en Telegram y luego no encuentras nada? Envía o reenvía el mensaje al bot de Fixnote y se convierte en una nota en la app, sea texto, audio o foto.
 card:
   title: Bot de Telegram
   text: Reenvía al bot textos, audios y fotos y se convierten en notas.
@@ -14,7 +14,7 @@ steps:
     text: En Ajustes → Integraciones → Telegram pulsa «Conectar» y luego «Iniciar» en el chat de Telegram que se abre. El enlace con el código vale 15 minutos.
   - title: Envía y reenvía
     text: El bot acepta texto, audios, archivos de audio y fotos de hasta 10 MB. Un mensaje reenviado conserva su autor en la nota, y una publicación de un canal público, el enlace a ella.
-  - title: Abre FixNote
+  - title: Abre Fixnote
     text: Los mensajes se convierten en notas cuando la app sincroniza. Los audios se transcriben en tu dispositivo y el sonido queda en la nota como adjunto.
 privacy: El bot sella cada mensaje al momento con la clave pública de tu cuenta, y solo tu app puede abrirlo. El servidor guarda el mensaje sellado hasta que la app lo recoge y después lo borra. Telegram ve tu chat con el bot, como cualquier otro chat.
 faq:
@@ -40,10 +40,10 @@ Los enlaces escondidos tras palabras en las publicaciones reenviadas siguen sien
 
 ## Cuándo es útil
 
-Estás leyendo un canal y quieres guardar una publicación. Reenvíala al bot y la nota tendrá el texto y un enlace al original. En la calle es más fácil grabar un audio que escribir, y FixNote lo convierte en texto en tu ordenador o en el navegador. La foto de un tique o de una tarjeta de visita va por el mismo camino, y luego la búsqueda la encuentra por el [texto de la imagen](/es/features/text-in-images/).
+Estás leyendo un canal y quieres guardar una publicación. Reenvíala al bot y la nota tendrá el texto y un enlace al original. En la calle es más fácil grabar un audio que escribir, y Fixnote lo convierte en texto en tu ordenador o en el navegador. La foto de un tique o de una tarjeta de visita va por el mismo camino, y luego la búsqueda la encuentra por el [texto de la imagen](/es/features/text-in-images/).
 
 Con «Mensajes a la nota del día» activado, todo lo que mandaste desde el móvil durante el día se reúne en una sola nota, lista para ordenar por la tarde en el ordenador.
 
 ## Cuándo conviene otra herramienta
 
-Para un borrador que solo necesitas un par de horas, Mensajes guardados de Telegram es más sencillo: es gratis y ya lo tienes. El bot de FixNote no te devuelve notas ni acepta documentos, así que un PDF es mejor arrastrarlo a una nota en el ordenador. En el modo «Solo en este dispositivo» el bot está desactivado, porque funciona a través de nuestro servidor.
+Para un borrador que solo necesitas un par de horas, Mensajes guardados de Telegram es más sencillo: es gratis y ya lo tienes. El bot de Fixnote no te devuelve notas ni acepta documentos, así que un PDF es mejor arrastrarlo a una nota en el ordenador. En el modo «Solo en este dispositivo» el bot está desactivado, porque funciona a través de nuestro servidor.

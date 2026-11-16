@@ -50,7 +50,7 @@ const features = defineCollection({
 })
 
 /**
- * FixNote next to another app: src/content/vs/<lang>/<rival>.md (rivals in src/data/apps.ts). The
+ * Fixnote next to another app: src/content/vs/<lang>/<rival>.md (rivals in src/data/apps.ts). The
  * table comes from src/data/apps.ts; the Markdown body holds the longer sections.
  */
 const vs = defineCollection({

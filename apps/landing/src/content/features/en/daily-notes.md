@@ -1,6 +1,6 @@
 ---
 title: Daily notes with recurring tasks
-metaTitle: 'Daily note app with recurring tasks | FixNote'
+metaTitle: 'Daily note app with recurring tasks | Fixnote'
 description: One note per day. Ctrl+D opens today's, unfinished tasks move over with one click, and recurring tasks show up on the right days without you copying them.
 eyebrow: Every day
 intro: Where do you put a quick task, an order number or a thought after a call without making a whole new note for it? The daily note collects the small stuff in today's page, carries unfinished tasks forward and adds recurring ones by itself.
@@ -11,15 +11,15 @@ problem: Make a new note for every small thing and a month later your list is hu
 stepsTitle: How it works
 steps:
   - title: Open today
-    text: Press Ctrl+D (⌘D on a Mac) or click Today in the sidebar. If there is no note yet, FixNote creates one with a Tasks and a Notes section.
+    text: Press Ctrl+D (⌘D on a Mac) or click Today in the sidebar. If there is no note yet, Fixnote creates one with a Tasks and a Notes section.
   - title: Carry over what's left
-    text: If the previous daily note has unchecked tasks, FixNote offers to Move here. Nothing moves until you click.
+    text: If the previous daily note has unchecked tasks, Fixnote offers to Move here. Nothing moves until you click.
   - title: Set up recurring tasks
     text: Right-click a task and choose Repeat…. It can come back every day, on weekdays, on chosen days of the week, on a day of the month or every few days.
 privacy: Daily notes live on your device like every other note and work without an account or a connection. The repeat rule is written into the task line itself, so with Pro it syncs with the note, encrypted on the device.
 faq:
   - q: What happens if I skip a few days?
-    a: No notes are created for the days you missed. When you open today's note, FixNote offers to move the unfinished tasks from the last daily note you had.
+    a: No notes are created for the days you missed. When you open today's note, Fixnote offers to move the unfinished tasks from the last daily note you had.
   - q: Can I open tomorrow's note in advance?
     a: Yes. The buttons in a daily note step to the previous and next day, tomorrow included, and recurring tasks due that day appear there too.
   - q: How do I stop a recurring task?
@@ -42,14 +42,14 @@ To make a task repeat, right-click it and choose Repeat…. The option appears i
 - [ ] Call mom 🔁 weekly:sun
 ```
 
-Whenever FixNote creates a note for a new date, it adds the tasks due that day. Change the rule in the latest note that has the task and daily notes already made for later dates follow the new rule.
+Whenever Fixnote creates a note for a new date, it adds the tasks due that day. Change the rule in the latest note that has the task and daily notes already made for later dates follow the new rule.
 
 ## When it helps
 
-Write your three main things in the morning. In the evening there is nothing to sort out: tomorrow FixNote offers to bring the unfinished ones over with one click. Regular chores like paying the internet bill on the 15th or watering the plants every three days only need to be set up once.
+Write your three main things in the morning. In the evening there is nothing to sort out: tomorrow Fixnote offers to bring the unfinished ones over with one click. Regular chores like paying the internet bill on the 15th or watering the plants every three days only need to be set up once.
 
 A daily note also works as a log for call notes, order numbers and thoughts on the go. A month later, search and the [assistant](/features/ask-your-notes/) find what you wrote about a project across all those days at once. Turn on “Voice notes go to today’s note” and it becomes an inbox for everything you dictate.
 
 ## When another tool fits better
 
-Tasks in FixNote have no timed reminders, assignees or phone notifications. If you depend on those, use a task manager such as Todoist and keep the context in FixNote: notes behind tasks, meeting outcomes, decisions. If you are used to daily notes in Obsidian with templates and plugins, the [comparison with Obsidian](/vs/obsidian/) shows what FixNote does without any plugins.
+Tasks in Fixnote have no timed reminders, assignees or phone notifications. If you depend on those, use a task manager such as Todoist and keep the context in Fixnote: notes behind tasks, meeting outcomes, decisions. If you are used to daily notes in Obsidian with templates and plugins, the [comparison with Obsidian](/vs/obsidian/) shows what Fixnote does without any plugins.

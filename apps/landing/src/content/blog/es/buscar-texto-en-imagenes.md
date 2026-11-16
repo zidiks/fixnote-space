@@ -1,26 +1,26 @@
 ---
-title: "Buscar el texto de imágenes y capturas con FixNote: OCR local"
-description: "FixNote lee el texto de capturas, fotos y tiques en tu dispositivo, y la búsqueda encuentra la imagen por las palabras que tiene. Cómo funciona y qué lee peor."
+title: "Buscar el texto de imágenes y capturas con Fixnote: OCR local"
+description: "Fixnote lee el texto de capturas, fotos y tiques en tu dispositivo, y la búsqueda encuentra la imagen por las palabras que tiene. Cómo funciona y qué lee peor."
 date: 2026-10-02
 translationKey: ocr
 faq:
   - q: "¿Cómo encuentro una captura de pantalla por el texto que tiene?"
-    a: "Añade la captura a una nota de FixNote. La app lee su texto en segundo plano, y la búsqueda (Ctrl+K, o ⌘K en Mac) encuentra la nota por palabras que solo aparecen en la imagen."
+    a: "Añade la captura a una nota de Fixnote. La app lee su texto en segundo plano, y la búsqueda (Ctrl+K, o ⌘K en Mac) encuentra la nota por palabras que solo aparecen en la imagen."
   - q: "¿Se suben mis imágenes a algún sitio para el OCR?"
     a: "No. El reconocimiento de texto funciona en tu dispositivo. El texto leído se guarda en la base de datos local y no se sincroniza."
-  - q: "¿Qué idiomas reconoce FixNote en las imágenes?"
+  - q: "¿Qué idiomas reconoce Fixnote en las imágenes?"
     a: "Español, inglés y ruso, también mezclados en una misma imagen."
   - q: "¿Hace falta un plan de pago para leer el texto de las imágenes?"
     a: "No. El reconocimiento de texto forma parte del plan Free y funciona sin cuenta."
 ---
 
-¿Dónde estaba la captura con el número de reserva? La foto de la pizarra después de una reunión, un tique de compra, una diapositiva de la presentación de otra persona: el texto que buscas está en la imagen, y la búsqueda normal de notas solo ve lo que se escribió con el teclado. Aquí verás cómo lee FixNote el texto de las imágenes, dónde aparece el resultado y qué imágenes lee peor.
+¿Dónde estaba la captura con el número de reserva? La foto de la pizarra después de una reunión, un tique de compra, una diapositiva de la presentación de otra persona: el texto que buscas está en la imagen, y la búsqueda normal de notas solo ve lo que se escribió con el teclado. Aquí verás cómo lee Fixnote el texto de las imágenes, dónde aparece el resultado y qué imágenes lee peor.
 
-## Cómo lee FixNote el texto de las imágenes
+## Cómo lee Fixnote el texto de las imágenes
 
-Cuando aparece una imagen en una nota, FixNote lee su texto en segundo plano. Para ello usa Tesseract, un motor de reconocimiento de texto (OCR) de código abierto que funciona dentro de la app, en el ordenador o en el navegador. Lee español, inglés y ruso. FixNote revisa las imágenes de una en una, con una pausa entre ellas, para que la app nunca vaya lenta.
+Cuando aparece una imagen en una nota, Fixnote lee su texto en segundo plano. Para ello usa Tesseract, un motor de reconocimiento de texto (OCR) de código abierto que funciona dentro de la app, en el ordenador o en el navegador. Lee español, inglés y ruso. Fixnote revisa las imágenes de una en una, con una pausa entre ellas, para que la app nunca vaya lenta.
 
-Los datos de idioma ocupan unos ocho megabytes. FixNote los descarga una vez, la primera vez que encuentra una imagen, y a partir de ahí el reconocimiento no necesita internet.
+Los datos de idioma ocupan unos ocho megabytes. Fixnote los descarga una vez, la primera vez que encuentra una imagen, y a partir de ahí el reconocimiento no necesita internet.
 
 ## Adónde va el texto reconocido
 
@@ -46,6 +46,6 @@ Para que una captura aparezca en la búsqueda bastan unas pocas palabras caracte
 
 ## Cómo descargar o quitar el modelo
 
-En Ajustes → Avanzado → Modelos en este dispositivo hay una entrada Texto de imágenes. Ahí ves si los datos de idioma están descargados y cuánto ocupan, y puedes quitarlos. Cuando vuelvan a hacer falta, FixNote los descargará otra vez.
+En Ajustes → Avanzado → Modelos en este dispositivo hay una entrada Texto de imágenes. Ahí ves si los datos de idioma están descargados y cuánto ocupan, y puedes quitarlos. Cuando vuelvan a hacer falta, Fixnote los descargará otra vez.
 
-Arrastra a FixNote una captura con una dirección o un número de pedido, espera un minuto, pulsa Ctrl+K y escribe una palabra de la imagen.
+Arrastra a Fixnote una captura con una dirección o un número de pedido, espera un minuto, pulsa Ctrl+K y escribe una palabra de la imagen.

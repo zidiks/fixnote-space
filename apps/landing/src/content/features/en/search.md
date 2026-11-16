@@ -1,9 +1,9 @@
 ---
 title: Search your notes by words and meaning
-metaTitle: 'Search notes by words and meaning, in 3 languages | FixNote'
-description: FixNote searches your notes on the device by word beginnings, across Cyrillic and Latin, in the text of images and by meaning, even in another language.
+metaTitle: 'Search notes by words and meaning, in 3 languages | Fixnote'
+description: Fixnote searches your notes on the device by word beginnings, across Cyrillic and Latin, in the text of images and by meaning, even in another language.
 eyebrow: Search
-intro: You remember writing something about the holiday, but not which word you used or in which language? FixNote search finds the note by the start of a word, across Cyrillic and Latin spellings, by the text in its images and by meaning.
+intro: You remember writing something about the holiday, but not which word you used or in which language? Fixnote search finds the note by the start of a word, across Cyrillic and Latin spellings, by the text in its images and by meaning.
 card:
   title: Note search
   text: Finds notes by words, transliteration and meaning.
@@ -21,11 +21,11 @@ faq:
   - q: Does search work offline?
     a: Yes. Word search is built into the local database, and the model for search by meaning works without a connection after the first download.
   - q: How do I turn on search by meaning?
-    a: It starts the first time you open the assistant on a computer. FixNote downloads the model (about 120 MB) and indexes your notes in the background. On a phone, tap "Download" in the assistant panel.
+    a: It starts the first time you open the assistant on a computer. Fixnote downloads the model (about 120 MB) and indexes your notes in the background. On a phone, tap "Download" in the assistant panel.
   - q: Will an English query find a note in Spanish or Russian?
     a: By meaning, yes. The model is multilingual and links English, Russian and Spanish, so a question in one language finds a close note in another.
-  - q: Does FixNote search the text in images?
-    a: Yes. Words FixNote has read in screenshots and photos are searched too; those notes come after the ones that contain the words in their text.
+  - q: Does Fixnote search the text in images?
+    a: Yes. Words Fixnote has read in screenshots and photos are searched too; those notes come after the ones that contain the words in their text.
   - q: Do I need Pro for search?
     a: No. All of search works on the Free plan.
 ---
@@ -36,14 +36,14 @@ Open search with Ctrl+K (⌘K on a Mac). Type the start of a word: "travel" also
 
 Search by meaning works once its model is downloaded. That happens the first time you open the assistant on a computer, and you can see its state in Settings → Advanced → "Models on this device", under "Search by meaning". From then on, up to four notes close in meaning appear under the word matches.
 
-The same window creates a new note or opens today's note. On a computer you can also open search from the tray icon or the Mac menu bar with "Search…", even while the FixNote window is hidden.
+The same window creates a new note or opens today's note. On a computer you can also open search from the tray icon or the Mac menu bar with "Search…", even while the Fixnote window is hidden.
 
 ## When it helps
 
-If you write in a mix of languages, you don't have to remember how exactly you spelled a word. Months later you can find the wardrobe measurements from your renovation notes even if you describe them differently now. A screenshot with a booking number turns up by that number, because FixNote reads [text in images](/features/text-in-images/). Before a meeting, type the person's name and you get every note that mentions them, transcripts of past calls included.
+If you write in a mix of languages, you don't have to remember how exactly you spelled a word. Months later you can find the wardrobe measurements from your renovation notes even if you describe them differently now. A screenshot with a booking number turns up by that number, because Fixnote reads [text in images](/features/text-in-images/). Before a meeting, type the person's name and you get every note that mentions them, transcripts of past calls included.
 
 When you want a direct answer, ask the [assistant](/features/ask-your-notes/): it searches the same ways and replies with links. How both kinds of search work is explained in [searching notes in three languages](/blog/searching-notes-in-three-languages/).
 
 ## When another tool is better
 
-FixNote searches your notes, the text in their images and notes others have shared with you. It does not look inside attached PDFs or other files. If you need one search across a knowledge base for a team of dozens, with permissions and sections, Notion fits better ([FixNote vs Notion](/vs/notion/)).
+Fixnote searches your notes, the text in their images and notes others have shared with you. It does not look inside attached PDFs or other files. If you need one search across a knowledge base for a team of dozens, with permissions and sections, Notion fits better ([Fixnote vs Notion](/vs/notion/)).

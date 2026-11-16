@@ -1,23 +1,23 @@
 ---
-title: 'FixNote sin conexión: qué funciona sin internet y con Ollama'
-description: 'Qué hace FixNote sin conexión y sin registrarte, qué desactiva el modo «Solo en este dispositivo» y cómo conectar el asistente a un modelo local con Ollama.'
+title: 'Fixnote sin conexión: qué funciona sin internet y con Ollama'
+description: 'Qué hace Fixnote sin conexión y sin registrarte, qué desactiva el modo «Solo en este dispositivo» y cómo conectar el asistente a un modelo local con Ollama.'
 date: 2026-09-27
 updated: 2026-10-11
 translationKey: offline
 faq:
-  - q: '¿Puedo usar FixNote sin registrarme?'
+  - q: '¿Puedo usar Fixnote sin registrarme?'
     a: 'Sí. El plan Free funciona sin cuenta y sin límite de tiempo: notas, carpetas, búsqueda, dictado y texto de imágenes se quedan en tu dispositivo.'
-  - q: '¿FixNote funciona sin internet?'
+  - q: '¿Fixnote funciona sin internet?'
     a: 'Las apps para Windows y macOS funcionan del todo sin conexión. Necesitas internet una vez para descargar los modelos de búsqueda por significado, reconocimiento de voz y texto de imágenes.'
   - q: '¿Qué desactiva el modo «Solo en este dispositivo»?'
-    a: 'La sincronización, el bot de Telegram, compartir notas, los enlaces a notas y FixNote AI. En este modo el asistente funciona solo con Ollama.'
-  - q: '¿Puedo usar la IA de FixNote sin internet?'
+    a: 'La sincronización, el bot de Telegram, compartir notas, los enlaces a notas y Fixnote AI. En este modo el asistente funciona solo con Ollama.'
+  - q: '¿Puedo usar la IA de Fixnote sin internet?'
     a: 'Sí, con Ollama en la app de escritorio. El modelo funciona en tu ordenador y tus preguntas al asistente no salen de él.'
 ---
 
-¿Se pueden tomar notas en FixNote sin registrarte y sin mandar nada a la nube? Sí. La app funciona sin cuenta y sin conexión, y el modo «Solo en este dispositivo» mantiene tus notas fuera de nuestro servidor aunque hayas iniciado sesión. Aquí verás qué funciona, qué no y cómo conectar el asistente a un modelo en tu propio ordenador.
+¿Se pueden tomar notas en Fixnote sin registrarte y sin mandar nada a la nube? Sí. La app funciona sin cuenta y sin conexión, y el modo «Solo en este dispositivo» mantiene tus notas fuera de nuestro servidor aunque hayas iniciado sesión. Aquí verás qué funciona, qué no y cómo conectar el asistente a un modelo en tu propio ordenador.
 
-## FixNote sin cuenta
+## Fixnote sin cuenta
 
 Instala la app y empieza a escribir; no hay que registrarse. En tu dispositivo tienes notas y carpetas, la nota del día y las tareas repetidas, listas de tareas y tablas, imágenes y archivos, búsqueda por palabras y por significado, dictado, texto de imágenes, e importación y exportación en Markdown. Eso es el plan Free, y no caduca.
 
@@ -27,7 +27,7 @@ Las apps para Windows y macOS funcionan del todo sin conexión. La versión web 
 
 ## Si se corta la conexión
 
-Si has iniciado sesión y te quedas sin conexión, no se detiene nada. Los cambios se acumulan en el dispositivo y, en Pro, la sincronización los envía cuando vuelve la red. Mientras tanto, el estado de sincronización dice «Sin conexión. Los cambios se sincronizarán al volver». Si alguien cambió las mismas líneas en otro dispositivo mientras tanto, FixNote se queda con la versión del servidor, guarda tu cambio como copia y te ofrece compararlas.
+Si has iniciado sesión y te quedas sin conexión, no se detiene nada. Los cambios se acumulan en el dispositivo y, en Pro, la sincronización los envía cuando vuelve la red. Mientras tanto, el estado de sincronización dice «Sin conexión. Los cambios se sincronizarán al volver». Si alguien cambió las mismas líneas en otro dispositivo mientras tanto, Fixnote se queda con la versión del servidor, guarda tu cambio como copia y te ofrece compararlas.
 
 ## El modo «Solo en este dispositivo»
 
@@ -35,13 +35,13 @@ Este modo está en la app de escritorio, en Ajustes → IA, debajo de la elecci�
 
 - La sincronización no envía ni descarga nada, aunque hayas iniciado sesión.
 - El bot de Telegram se desactiva, y no puedes compartir una nota ni crear un enlace a ella.
-- FixNote AI y tu propia clave de API dejan de estar disponibles, así que el asistente funciona solo con Ollama.
+- Fixnote AI y tu propia clave de API dejan de estar disponibles, así que el asistente funciona solo con Ollama.
 
 Todo lo demás funciona como siempre, y la barra lateral muestra «Solo en este dispositivo» donde estaría el estado de sincronización. El servidor MCP para Claude, Cursor y Codex también sigue funcionando, porque lee la base de datos local; lo contamos en [Servidor MCP para tus notas](/es/blog/servidor-mcp-para-notas/).
 
 ## El asistente con Ollama
 
-Ollama ejecuta modelos de lenguaje en tu propio ordenador. Instálalo, descarga un modelo con un comando como `ollama pull llama3.1` y elige Ollama en Ajustes → IA → «Modelo». FixNote encuentra solo los modelos instalados, y el botón «Comprobar» te dice si el elegido responde.
+Ollama ejecuta modelos de lenguaje en tu propio ordenador. Instálalo, descarga un modelo con un comando como `ollama pull llama3.1` y elige Ollama en Ajustes → IA → «Modelo». Fixnote encuentra solo los modelos instalados, y el botón «Comprobar» te dice si el elegido responde.
 
 Ollama funciona en la app de escritorio. La calidad de las respuestas depende del modelo y de tu equipo: los modelos pequeños contestan más rápido, pero fallan más con preguntas largas. Las opciones del asistente están en la [página del asistente](/es/features/ask-your-notes/).
 

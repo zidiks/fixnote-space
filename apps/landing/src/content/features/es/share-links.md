@@ -1,9 +1,9 @@
 ---
 title: Compartir una nota con un enlace
-metaTitle: 'Compartir notas por enlace cifrado | FixNote'
+metaTitle: 'Compartir notas por enlace cifrado | Fixnote'
 description: Crea un enlace de solo lectura y envía una nota a quien quieras. La clave va en la parte del enlace tras #, así el servidor guarda una copia que no puede leer.
 eyebrow: Enlaces
-intro: ¿Cómo mandas una receta o la lista para un viaje a alguien que no usa FixNote? Crea un enlace de solo lectura. Se abre en cualquier navegador, y el servidor solo guarda una copia cifrada de la nota.
+intro: ¿Cómo mandas una receta o la lista para un viaje a alguien que no usa Fixnote? Crea un enlace de solo lectura. Se abre en cualquier navegador, y el servidor solo guarda una copia cifrada de la nota.
 card:
   title: Enlaces de solo lectura
   text: Envía una nota con un enlace que el servidor no puede leer.
@@ -20,7 +20,7 @@ steps:
     text: Dejar de compartir borra la copia del servidor, y el enlace deja de funcionar.
 privacy: La copia se cifra en tu dispositivo con una clave que solo está en la parte del enlace tras #. Los navegadores nunca envían esa parte al servidor, así que guardamos texto cifrado sin su clave. La página del enlace no abre tu cuenta ni la del lector.
 faq:
-  - q: ¿El lector necesita una cuenta de FixNote?
+  - q: ¿El lector necesita una cuenta de Fixnote?
     a: No, el enlace se abre en cualquier navegador. Para crearlo, el dueño de la nota necesita Pro.
   - q: ¿El enlace cambia si edito la nota?
     a: Por sí solo no; muestra la copia del momento en que se creó. La ventana de Compartir dirá «La nota cambió desde entonces.» con un botón Actualizar, y la dirección del enlace no cambia.
@@ -40,12 +40,12 @@ Si luego editas la nota, la misma ventana dirá «La nota cambió desde entonces
 
 ## Cuándo resulta útil
 
-Un enlace va bien para mandar una receta a la familia, la lista de equipaje de un viaje en grupo, los apuntes de clase a los compañeros o las instrucciones para la canguro sobre dónde están las llaves y qué hay de cena. Lo mandas una vez y lo actualizas cuando cambie la nota. Quien lo abra verá la nota con sus imágenes y la fecha de publicación, y si también usa FixNote, la página no toca su cuenta ni sus notas.
+Un enlace va bien para mandar una receta a la familia, la lista de equipaje de un viaje en grupo, los apuntes de clase a los compañeros o las instrucciones para la canguro sobre dónde están las llaves y qué hay de cena. Lo mandas una vez y lo actualizas cuando cambie la nota. Quien lo abra verá la nota con sus imágenes y la fecha de publicación, y si también usa Fixnote, la página no toca su cuenta ni sus notas.
 
-Trata el enlace como la llave de casa: cualquiera que lo tenga puede leer la copia. La página de [cifrado](/es/features/encryption/) explica cómo funcionan las claves en FixNote.
+Trata el enlace como la llave de casa: cualquiera que lo tenga puede leer la copia. La página de [cifrado](/es/features/encryption/) explica cómo funcionan las claves en Fixnote.
 
 ## Cuándo conviene otra herramienta
 
-Un enlace muestra una sola nota y solo para leer. Si la otra persona debe editar contigo, invítala a una [nota compartida](/es/features/shared-notes/); necesitará una cuenta de FixNote.
+Un enlace muestra una sola nota y solo para leer. Si la otra persona debe editar contigo, invítala a una [nota compartida](/es/features/shared-notes/); necesitará una cuenta de Fixnote.
 
 Si quieres un sitio público de muchas páginas, con tu propio dominio y buscador, encajan mejor Obsidian Publish o las páginas públicas de Notion. Mira la [comparación con Obsidian](/es/vs/obsidian/).

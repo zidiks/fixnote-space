@@ -2,52 +2,52 @@ import type { Dict } from './index'
 
 export const es: Dict = {
   meta: {
-    siteName: 'FixNote',
+    siteName: 'Fixnote',
     home: {
-      title: 'App de notas con IA y cifrado de extremo a extremo | FixNote',
+      title: 'App de notas con IA y cifrado de extremo a extremo | Fixnote',
       description:
         'App de notas con IA para Windows, macOS y navegador, con cifrado de extremo a extremo. Escribe o dicta y el asistente responde citando tus notas.',
     },
     features: {
-      title: 'Funciones de FixNote: IA, notas de voz y reuniones',
+      title: 'Funciones de Fixnote: IA, notas de voz y reuniones',
       description:
         'Asistente de IA para tus notas, notas de voz sin internet, resumen de reuniones sin bot, texto de imágenes, bot de Telegram, notas compartidas y cifrado.',
     },
     security: {
-      title: 'Seguridad de FixNote: cómo se protegen tus notas',
+      title: 'Seguridad de Fixnote: cómo se protegen tus notas',
       description:
-        'Cómo FixNote cifra las notas en tu dispositivo, qué guarda el servidor, qué ve el asistente y cómo trabajar totalmente sin conexión.',
+        'Cómo Fixnote cifra las notas en tu dispositivo, qué guarda el servidor, qué ve el asistente y cómo trabajar totalmente sin conexión.',
     },
     privacy: {
-      title: 'Política de privacidad de FixNote',
-      description: 'Qué datos tiene FixNote, para qué los necesita y cómo borrarlos.',
+      title: 'Política de privacidad de Fixnote',
+      description: 'Qué datos tiene Fixnote, para qué los necesita y cómo borrarlos.',
     },
     download: {
-      title: 'Descargar FixNote: app de notas para Windows y Mac',
+      title: 'Descargar Fixnote: app de notas para Windows y Mac',
       description:
-        'FixNote para Windows y macOS (Apple Silicon e Intel) y una versión web que funciona en el navegador. Gratis y sin cuenta.',
+        'Fixnote para Windows y macOS (Apple Silicon e Intel) y una versión web que funciona en el navegador. Gratis y sin cuenta.',
     },
     blog: {
-      title: 'Blog de FixNote: tomar notas, IA y privacidad',
+      title: 'Blog de Fixnote: tomar notas, IA y privacidad',
       description:
         'Cómo tomar notas que luego encuentras, cómo funciona el cifrado de extremo a extremo y cómo un asistente te ayuda a recordar.',
     },
     releaseNotes: {
-      title: 'Novedades de FixNote: historial de versiones',
+      title: 'Novedades de Fixnote: historial de versiones',
       description:
-        'Todas las versiones de FixNote en orden: qué se añadió y qué se corrigió en las apps de Windows y macOS y en la versión web.',
+        'Todas las versiones de Fixnote en orden: qué se añadió y qué se corrigió en las apps de Windows y macOS y en la versión web.',
     },
     setup: {
-      title: 'Cómo instalar FixNote en Windows y Mac',
+      title: 'Cómo instalar Fixnote en Windows y Mac',
       description:
-        'Cómo descargar e instalar FixNote, qué hacer con el aviso de macOS y de SmartScreen la primera vez y cómo activar Pro.',
+        'Cómo descargar e instalar Fixnote, qué hacer con el aviso de macOS y de SmartScreen la primera vez y cómo activar Pro.',
     },
     windows: {
-      title: 'App de notas para PC con Windows 10 y 11, gratis | FixNote',
+      title: 'App de notas para PC con Windows 10 y 11, gratis | Fixnote',
       description:
         'App de notas para Windows 10 y 11: resúmenes de llamadas sin bot, dictado sin internet, atajos desde cualquier ventana y cifrado. Gratis y sin cuenta.',
     },
-    notFound: { title: 'Página no encontrada · FixNote', description: 'Esta página no existe.' },
+    notFound: { title: 'Página no encontrada · Fixnote', description: 'Esta página no existe.' },
   },
 
   nav: {
@@ -68,7 +68,7 @@ export const es: Dict = {
     comparisons: 'Comparativas',
     skip: 'Ir al contenido',
     language: 'Idioma',
-    windows: 'FixNote para Windows',
+    windows: 'Fixnote para Windows',
     tidy: 'Ordenar',
     integrations: 'Integraciones',
     search: 'Búsqueda',
@@ -84,7 +84,7 @@ export const es: Dict = {
     downloadFor: { mac: 'Descargar para macOS', windows: 'Descargar para Windows' },
     more: 'Más información',
     platforms: 'Windows, macOS y navegador · Gratis y sin cuenta',
-    shotAlt: 'FixNote: las notas de hoy y un asistente que responde con enlaces a las notas',
+    shotAlt: 'Fixnote: las notas de hoy y un asistente que responde con enlaces a las notas',
   },
 
   intro: {
@@ -96,7 +96,7 @@ export const es: Dict = {
     free: 'Gratis',
     noAccount: 'Sin cuenta',
     shotAlt:
-      'FixNote: una nota de viaje compartida que editan varias personas y el asistente encontrando notas relacionadas',
+      'Fixnote: una nota de viaje compartida que editan varias personas y el asistente encontrando notas relacionadas',
     offline: { title: 'Funciona sin conexión', text: 'Escribe y busca tus notas sin internet.' },
     together: { title: 'Editad juntos', text: 'Comparte notas y ve los cambios al instante.' },
     encrypted: {
@@ -123,16 +123,16 @@ export const es: Dict = {
       contact: 'Contáctanos',
       items: [
         {
-          q: '¿FixNote es realmente gratis?',
+          q: '¿Fixnote es realmente gratis?',
           a: 'Sí. Todo lo que funciona en tu dispositivo es gratis, sin límite de tiempo y sin cuenta. Pro añade sincronización cifrada, colaboración y funciones en la nube.',
         },
         {
-          q: '¿Puedo usar FixNote sin internet?',
+          q: '¿Puedo usar Fixnote sin internet?',
           a: 'Sí. Escribe, busca y organiza tus notas en tu dispositivo sin conexión. La sincronización y las funciones en la nube necesitan internet.',
         },
         {
           q: '¿Quién puede leer mis notas?',
-          a: 'Tus notas se cifran en tu dispositivo y los servidores de FixNote no pueden leerlas. Si usas IA en la nube, la información necesaria para tu consulta se envía al proveedor elegido.',
+          a: 'Tus notas se cifran en tu dispositivo y los servidores de Fixnote no pueden leerlas. Si usas IA en la nube, la información necesaria para tu consulta se envía al proveedor elegido.',
         },
         {
           q: '¿Puedo importar mis notas?',
@@ -143,8 +143,8 @@ export const es: Dict = {
           a: 'Tus notas permanecen en tus dispositivos. Pro sigue activo hasta el final del periodo pagado y luego vuelves a Free. Las funciones en la nube se pausan hasta que renueves.',
         },
         {
-          q: '¿Qué dispositivos admite FixNote?',
-          a: 'FixNote está disponible para Windows, macOS y en el navegador. También puedes usar la versión web en tu teléfono.',
+          q: '¿Qué dispositivos admite Fixnote?',
+          a: 'Fixnote está disponible para Windows, macOS y en el navegador. También puedes usar la versión web en tu teléfono.',
         },
       ],
     },
@@ -152,7 +152,7 @@ export const es: Dict = {
       title: 'Convierte ideas dispersas\nen algo útil.',
     },
     footer: {
-      question: '¿Tienes alguna pregunta sobre FixNote?',
+      question: '¿Tienes alguna pregunta sobre Fixnote?',
       write: 'Escribe a',
       contact: 'Contáctanos',
     },
@@ -160,7 +160,7 @@ export const es: Dict = {
       eyebrow: 'Ordenar',
       title1: 'Guarda ahora.',
       title2: 'Ordena después.',
-      lead: 'No hace falta organizar cada nota.\nFixNote te ayuda a ponerlo todo en orden cuando lo necesites.',
+      lead: 'No hace falta organizar cada nota.\nFixnote te ayuda a ponerlo todo en orden cuando lo necesites.',
       items: [
         {
           title: 'Carpetas más listas',
@@ -176,12 +176,12 @@ export const es: Dict = {
         },
       ],
       link: 'Descubre Ordenar',
-      alt: 'Ordenar en FixNote: carpetas, títulos y duplicados sugeridos, cada uno con Aceptar',
+      alt: 'Ordenar en Fixnote: carpetas, títulos y duplicados sugeridos, cada uno con Aceptar',
     },
     integrations: {
       eyebrow: 'Integraciones',
       title: 'Tus notas, a un prompt.',
-      lead: 'Conecta FixNote con ChatGPT, Claude, Cursor y Codex. Busca, crea\ny actualiza notas desde las herramientas que ya usas.',
+      lead: 'Conecta Fixnote con ChatGPT, Claude, Cursor y Codex. Busca, crea\ny actualiza notas desde las herramientas que ya usas.',
       tools: 'Herramientas compatibles',
       mcp: {
         title: 'Funciona con MCP',
@@ -193,7 +193,7 @@ export const es: Dict = {
         text: 'Elige qué notas pueden ver las herramientas conectadas y qué pueden hacer.',
         link: 'Cómo funcionan los permisos',
       },
-      alt: 'Una nota en la app de escritorio de FixNote',
+      alt: 'Una nota en la app de escritorio de Fixnote',
     },
     recall: {
       title1: 'Recuerda la idea.',
@@ -231,7 +231,7 @@ export const es: Dict = {
       },
       provider: {
         title: 'Elige tu proveedor',
-        text: 'FixNote AI, tu propia clave u Ollama',
+        text: 'Fixnote AI, tu propia clave u Ollama',
       },
       local: {
         title: 'Todo en local',
@@ -240,12 +240,12 @@ export const es: Dict = {
       },
       terms: {
         title: 'IA a tu manera',
-        text: 'Usa FixNote AI, tu propia clave de API o ejecuta la IA en local con Ollama.',
+        text: 'Usa Fixnote AI, tu propia clave de API o ejecuta la IA en local con Ollama.',
         link: 'Compara las opciones de IA',
       },
       synced: {
         title: 'Privadas, incluso al sincronizar',
-        text: 'Tus notas se cifran antes de sincronizarse.\nNi siquiera FixNote puede leerlas.',
+        text: 'Tus notas se cifran antes de sincronizarse.\nNi siquiera Fixnote puede leerlas.',
         link: 'Cómo funciona el cifrado',
       },
     },
@@ -254,7 +254,7 @@ export const es: Dict = {
       title2: 'Escríbelo o dilo en voz alta.',
       eyebrow: 'Notas de voz',
       title: 'Dilo. Guárdalo.',
-      text: 'Habla y FixNote convierte tus ideas en notas fáciles de encontrar.',
+      text: 'Habla y Fixnote convierte tus ideas en notas fáciles de encontrar.',
       link: 'Descubre las notas de voz',
     },
     plans: {
@@ -276,7 +276,7 @@ export const es: Dict = {
           'Dictado por voz',
           'Importar y exportar',
         ],
-        button: 'Descargar FixNote',
+        button: 'Descargar Fixnote',
       },
       pro: {
         name: 'Pro',
@@ -288,7 +288,7 @@ export const es: Dict = {
         items: [
           'Todo lo de Free',
           'Sincronización cifrada',
-          'FixNote AI',
+          'Fixnote AI',
           'Notas y carpetas compartidas',
           'Integraciones',
           '20 GB de almacenamiento cifrado',
@@ -301,10 +301,10 @@ export const es: Dict = {
   tiles: [
     {
       id: 'ai',
-      eyebrow: 'FixNote AI',
+      eyebrow: 'Fixnote AI',
       title: 'Pregunta a tus notas.\nObtén la respuesta.',
       text: 'El asistente busca por significado en tres idiomas y responde con enlaces a tus notas. Al modelo solo le llegan tu pregunta y las notas que necesita.',
-      alt: 'El asistente de FixNote en modo oscuro responde sobre unas vacaciones con enlaces a dos notas',
+      alt: 'El asistente de Fixnote en modo oscuro responde sobre unas vacaciones con enlaces a dos notas',
     },
     {
       id: 'calls',
@@ -325,7 +325,7 @@ export const es: Dict = {
       eyebrow: 'Búsqueda',
       title: 'Cualquier idioma.\nCualquier teclado.',
       text: '«sorteo» encuentra «giveaway», «телеграм» encuentra «Telegram». La búsqueda se abre desde cualquier sitio con Ctrl+K o ⌘K.',
-      alt: 'La búsqueda de FixNote con las notas encontradas y la palabra resaltada',
+      alt: 'La búsqueda de Fixnote con las notas encontradas y la palabra resaltada',
     },
   ],
 
@@ -344,13 +344,13 @@ export const es: Dict = {
         id: 'telegram',
         title: 'Telegram',
         text: 'Reenvía al bot un texto, un audio o una foto. Solo tu app puede leerlos.',
-        alt: 'Ajustes de FixNote, Integraciones, con la conexión del bot de Telegram',
+        alt: 'Ajustes de Fixnote, Integraciones, con la conexión del bot de Telegram',
       },
       {
         id: 'tidy',
         title: 'Poner orden',
         text: 'Propone títulos y carpetas y encuentra duplicados. Nada cambia sin tu permiso.',
-        alt: 'Poner orden en FixNote con propuestas para aceptar o descartar',
+        alt: 'Poner orden en Fixnote con propuestas para aceptar o descartar',
       },
       {
         id: 'folders',
@@ -363,32 +363,32 @@ export const es: Dict = {
 
   reasons: {
     headline: 'Unas cuantas razones más\npara guardar aquí tus notas.',
-    label: 'Por qué FixNote',
+    label: 'Por qué Fixnote',
     items: [
       {
         id: 'models',
-        title: 'FixNote AI, tu propia clave\no Ollama.',
-        alt: 'Ajustes de AI: FixNote AI, tu propia clave u Ollama en tu ordenador',
+        title: 'Fixnote AI, tu propia clave\no Ollama.',
+        alt: 'Ajustes de AI: Fixnote AI, tu propia clave u Ollama en tu ordenador',
       },
       {
         id: 'import',
         title: 'Múdate desde Notion,\nBear y Obsidian.',
-        alt: 'Ajustes de FixNote, Datos, con importación y exportación',
+        alt: 'Ajustes de Fixnote, Datos, con importación y exportación',
       },
       {
         id: 'offline',
         title: 'Funciona sin internet\ny sin cuenta.',
-        alt: 'Ajustes de FixNote, Avanzado, con los modelos que funcionan en el dispositivo',
+        alt: 'Ajustes de Fixnote, Avanzado, con los modelos que funcionan en el dispositivo',
       },
       {
         id: 'dark',
         title: 'Claro y oscuro.\nComo tu sistema.',
-        alt: 'La pantalla principal de FixNote en modo oscuro',
+        alt: 'La pantalla principal de Fixnote en modo oscuro',
       },
       {
         id: 'languages',
         title: 'Español, inglés\ny ruso.',
-        alt: 'Ajustes generales de FixNote: idioma y tema',
+        alt: 'Ajustes generales de Fixnote: idioma y tema',
       },
     ],
     privacy: {
@@ -402,7 +402,7 @@ export const es: Dict = {
   tools: {
     headline: 'Todo lo que necesitan tus notas.\nEn una sola app.',
     compare: 'Comparar con otras apps',
-    label: 'Herramientas de FixNote',
+    label: 'Herramientas de Fixnote',
     items: [
       {
         id: 'checklists',
@@ -458,7 +458,7 @@ export const es: Dict = {
 
   compare: {
     headline: '¿Qué app de notas\nte conviene?',
-    lead: 'FixNote junto a Notion, Obsidian, Evernote, Apple Notas y Joplin: qué hace cada una y cuánto cuesta.',
+    lead: 'Fixnote junto a Notion, Obsidian, Evernote, Apple Notas y Joplin: qué hace cada una y cuánto cuesta.',
     more: 'Las mejores apps de notas con IA en 2026',
     included: 'Incluido',
     limited: 'Limitado',
@@ -488,13 +488,13 @@ export const es: Dict = {
     footnote:
       'Según el sitio y la ayuda de cada servicio en octubre de 2026. Una marca verde significa que la app lo tiene al menos en un plan (Notion AI y AI Meeting Notes vienen con Notion Business). Precio del plan de pago más barato, con pago mensual. Los nombres y los iconos pertenecen a sus dueños.',
     detailed: 'Comparativas detalladas',
-    vsLink: 'FixNote vs {name}',
+    vsLink: 'Fixnote vs {name}',
   },
 
   pricing: {
     headline: 'Prueba Pro.',
     lead: '7 días gratis, sin tarjeta. Después, 7 $ al mes o 60 $ al año.',
-    name: 'FixNote Pro',
+    name: 'Fixnote Pro',
     kind: 'Suscripción',
     price: '7 $',
     year: '60 $ al año',
@@ -511,7 +511,7 @@ export const es: Dict = {
       },
       {
         id: 'ai',
-        title: 'FixNote AI',
+        title: 'Fixnote AI',
         text: 'El asistente sin clave propia, con un límite mensual.',
       },
       {
@@ -571,7 +571,7 @@ export const es: Dict = {
     web: { name: 'Versión web', detail: 'Chrome, Edge, Safari, Firefox', button: 'Abrir' },
     macNoteTitle: 'Primer inicio en Mac',
     macNote:
-      'Mientras la app no esté notarizada por Apple, macOS puede decir que está dañada. Arrastra FixNote a Aplicaciones y ejecuta esto una vez en Terminal:',
+      'Mientras la app no esté notarizada por Apple, macOS puede decir que está dañada. Arrastra Fixnote a Aplicaciones y ejecuta esto una vez en Terminal:',
     windowsNoteTitle: 'Primer inicio en Windows',
     windowsNote:
       'Windows puede mostrar un aviso de SmartScreen: pulsa «Más información» y luego «Ejecutar de todas formas». El instalador firmado llegará más adelante.',
@@ -583,7 +583,7 @@ export const es: Dict = {
     items: [
       {
         q: '¿Necesito una cuenta?',
-        a: 'No. FixNote funciona en tu dispositivo sin registrarte y sin internet. La cuenta solo hace falta para Pro: sincronizar entre dispositivos, FixNote AI, notas compartidas y enlaces.',
+        a: 'No. Fixnote funciona en tu dispositivo sin registrarte y sin internet. La cuenta solo hace falta para Pro: sincronizar entre dispositivos, Fixnote AI, notas compartidas y enlaces.',
       },
       {
         q: '¿Quién puede leer mis notas?',
@@ -594,7 +594,7 @@ export const es: Dict = {
         a: 'Solo tu pregunta, los nombres de tus carpetas y las notas que el asistente encontró o abrió para responder, nunca toda tu biblioteca. En la app de escritorio puedes usar Ollama, y entonces nada sale a internet.',
       },
       {
-        q: '¿Cuánto cuesta FixNote?',
+        q: '¿Cuánto cuesta Fixnote?',
         a: 'Todo lo que funciona en tu dispositivo es gratis y sin límite de tiempo. Pro cuesta 7 $ al mes o 60 $ al año, y puedes probarlo 7 días sin tarjeta.',
       },
       {
@@ -610,7 +610,7 @@ export const es: Dict = {
         a: 'Sí. La importación entiende una carpeta de Markdown (también Obsidian), una copia de Bear y una exportación de Notion, y conserva carpetas, fechas e imágenes. En Mac también puedes traer Apple Notes. Puedes exportarlo todo a Markdown cuando quieras.',
       },
       {
-        q: '¿En qué idiomas funciona FixNote?',
+        q: '¿En qué idiomas funciona Fixnote?',
         a: 'La app está en español, inglés y ruso. La búsqueda y el asistente entienden notas que mezclan estos idiomas, incluida la transliteración y la jerga.',
       },
     ],
@@ -622,15 +622,15 @@ export const es: Dict = {
   },
 
   cta: {
-    title: 'Prueba FixNote',
+    title: 'Prueba Fixnote',
     text: 'Gratis y sin cuenta: Windows, macOS y navegador.',
     download: 'Descargar',
     open: 'Abrir en el navegador',
   },
 
   notes: [
-    'La búsqueda funciona en tu dispositivo. Con FixNote AI, la pregunta y los fragmentos encontrados pasan por nuestro servidor hasta el proveedor del modelo y no se guardan. Con tu propia clave, las peticiones van directamente al servicio que elegiste; con Ollama se quedan en tu ordenador.',
-    'Free funciona sin cuenta y sin límite de tiempo. La cuenta hace falta para Pro: sincronización, FixNote AI, notas compartidas, enlaces, el bot de Telegram y archivos en el servidor.',
+    'La búsqueda funciona en tu dispositivo. Con Fixnote AI, la pregunta y los fragmentos encontrados pasan por nuestro servidor hasta el proveedor del modelo y no se guardan. Con tu propia clave, las peticiones van directamente al servicio que elegiste; con Ollama se quedan en tu ordenador.',
+    'Free funciona sin cuenta y sin límite de tiempo. La cuenta hace falta para Pro: sincronización, Fixnote AI, notas compartidas, enlaces, el bot de Telegram y archivos en el servidor.',
     'El resumen de llamadas está en la app para Windows y para macOS 14.2 o posterior. El audio no se guarda.',
     'La prueba de Pro se activa en la app después de iniciar sesión. Sin tarjeta; al terminar la semana, la cuenta vuelve a Free si no te suscribes.',
   ],
@@ -649,7 +649,7 @@ export const es: Dict = {
     breadcrumbs: 'Ruta',
     directory: 'Mapa del sitio',
     explore: 'Explorar',
-    product: 'FixNote',
+    product: 'Fixnote',
     download: 'Descargar',
     allPosts: 'Todos los artículos',
     support: 'Ayuda',
@@ -657,7 +657,7 @@ export const es: Dict = {
     rss: 'RSS',
     privacy: 'Privacidad',
     email: 'Escríbenos',
-    help: '¿Una pregunta sobre FixNote? Escribe a ',
+    help: '¿Una pregunta sobre Fixnote? Escribe a ',
     rights: 'Todos los derechos reservados.',
     compare: 'Comparativas',
     guide: 'Las mejores apps de notas',
@@ -665,7 +665,7 @@ export const es: Dict = {
 
   featuresIndex: {
     eyebrow: 'Funciones',
-    headline: 'Todo lo que hace FixNote',
+    headline: 'Todo lo que hace Fixnote',
     lead: 'Cada función tiene su página: cómo funciona, qué llega al servidor y cuándo te conviene más otra app.',
     groups: {
       ai: 'Asistente e IA',
@@ -693,7 +693,7 @@ export const es: Dict = {
     differ: 'En qué se diferencian',
     feature: 'Función',
     choose: 'Cómo elegir',
-    why: 'Por qué FixNote',
+    why: 'Por qué Fixnote',
     still: 'Cuándo conviene {name}',
     verdict: 'Conclusión',
     faq: 'Preguntas',
@@ -704,11 +704,11 @@ export const es: Dict = {
   securityPage: {
     eyebrow: 'Seguridad',
     headline: ['Tus notas', '\n', 'solo las lees', { text: 'tú', tone: 'green' }],
-    lead: 'FixNote está hecho para que no tengas que confiar en nosotros: el cifrado ocurre en tu dispositivo y el servidor solo guarda lo que no puede leer.',
+    lead: 'Fixnote está hecho para que no tengas que confiar en nosotros: el cifrado ocurre en tu dispositivo y el servidor solo guarda lo que no puede leer.',
     sections: [
       {
         title: 'Cifrado en tu dispositivo',
-        text: 'Al crear la cuenta, FixNote genera una clave aleatoria y te la muestra como 12 palabras. Cada nota se cifra en el dispositivo (XChaCha20-Poly1305) con una clave nueva, envuelta con la clave de tu cuenta. El cifrado está ligado a su nota, así que el servidor no puede cambiar una nota por otra.',
+        text: 'Al crear la cuenta, Fixnote genera una clave aleatoria y te la muestra como 12 palabras. Cada nota se cifra en el dispositivo (XChaCha20-Poly1305) con una clave nueva, envuelta con la clave de tu cuenta. El cifrado está ligado a su nota, así que el servidor no puede cambiar una nota por otra.',
       },
       {
         title: 'Qué guarda el servidor',
@@ -716,7 +716,7 @@ export const es: Dict = {
       },
       {
         title: 'Qué ve el asistente',
-        text: 'La búsqueda en tus notas ocurre en tu dispositivo. Al modelo de lenguaje le llegan tu pregunta y las notas que el asistente encontró o abrió para responder. Elige FixNote AI, tu propia clave (OpenAI, OpenRouter, Groq, DeepSeek) u Ollama en la app de escritorio, y entonces nada sale a internet.',
+        text: 'La búsqueda en tus notas ocurre en tu dispositivo. Al modelo de lenguaje le llegan tu pregunta y las notas que el asistente encontró o abrió para responder. Elige Fixnote AI, tu propia clave (OpenAI, OpenRouter, Groq, DeepSeek) u Ollama en la app de escritorio, y entonces nada sale a internet.',
       },
       {
         title: 'Voz y Telegram',
@@ -732,7 +732,7 @@ export const es: Dict = {
       },
       {
         title: 'Totalmente local',
-        text: 'FixNote funciona sin cuenta y sin internet. La app de escritorio tiene el modo Solo en este dispositivo: desactiva la sincronización, Telegram y los enlaces, y el asistente funciona solo con Ollama.',
+        text: 'Fixnote funciona sin cuenta y sin internet. La app de escritorio tiene el modo Solo en este dispositivo: desactiva la sincronización, Telegram y los enlaces, y el asistente funciona solo con Ollama.',
       },
     ],
     stored: 'Así guarda el servidor una nota',
@@ -740,9 +740,9 @@ export const es: Dict = {
 
   downloadPage: {
     eyebrow: 'Descargar',
-    headline: ['FixNote para', { text: 'tus', tone: 'brand' }, 'dispositivos'],
+    headline: ['Fixnote para', { text: 'tus', tone: 'brand' }, 'dispositivos'],
     lead: 'Elige el instalador para tu sistema o abre la versión web. Al iniciar sesión, las notas se sincronizan entre todos tus dispositivos.',
-    windows: 'Qué hace FixNote en Windows',
+    windows: 'Qué hace Fixnote en Windows',
     requirementsTitle: 'Requisitos del sistema',
     requirements: [
       'Windows 10 u 11 (64 bits); WebView2 se instala automáticamente',
@@ -756,7 +756,7 @@ export const es: Dict = {
     more: 'Más artículos',
     eyebrow: 'Blog',
     headline: ['Notas', { text: 'sobre notas', tone: 'brand' }],
-    lead: 'Cómo apuntar ideas para encontrarlas después, y cómo funciona FixNote por dentro.',
+    lead: 'Cómo apuntar ideas para encontrarlas después, y cómo funciona Fixnote por dentro.',
     read: 'Leer',
     minutes: 'min',
     back: 'Todos los artículos',
@@ -772,12 +772,12 @@ export const es: Dict = {
     eyebrow: 'Privacidad',
     title: 'Política de privacidad',
     updated: 'Actualizada el 17 de octubre de 2026',
-    lead: 'En resumen: no podemos leer tus notas, no vendemos datos y no mostramos anuncios. A continuación, qué datos tiene FixNote y para qué.',
+    lead: 'En resumen: no podemos leer tus notas, no vendemos datos y no mostramos anuncios. A continuación, qué datos tiene Fixnote y para qué.',
     sections: [
       {
         title: 'Sin cuenta',
         text: [
-          'FixNote funciona sin cuenta. En ese caso tus notas, adjuntos y ajustes se quedan solo en tu dispositivo. En el modo Solo en este dispositivo, la app de escritorio no envía nada a nuestro servidor.',
+          'Fixnote funciona sin cuenta. En ese caso tus notas, adjuntos y ajustes se quedan solo en tu dispositivo. En el modo Solo en este dispositivo, la app de escritorio no envía nada a nuestro servidor.',
         ],
       },
       {
@@ -807,14 +807,14 @@ export const es: Dict = {
       {
         title: 'Asistente',
         text: [
-          'La búsqueda en tus notas funciona en tu dispositivo. Cuando preguntas a FixNote AI, tu pregunta y los fragmentos encontrados pasan por nuestro servidor a un proveedor de modelos de lenguaje para obtener la respuesta. No guardamos ni registramos el contenido de estas solicitudes.',
+          'La búsqueda en tus notas funciona en tu dispositivo. Cuando preguntas a Fixnote AI, tu pregunta y los fragmentos encontrados pasan por nuestro servidor a un proveedor de modelos de lenguaje para obtener la respuesta. No guardamos ni registramos el contenido de estas solicitudes.',
           'Con tu propia clave, las solicitudes van directamente al servicio que elegiste y siguen sus condiciones. Con Ollama todo se queda en tu ordenador.',
         ],
       },
       {
         title: 'Apps de IA (acceso remoto)',
         text: [
-          'Si conectas una app de IA a FixNote, como ChatGPT o Claude, sus solicitudes llegan a nuestro servidor mcp.fixnote.space y se pasan a tu dispositivo donde FixNote está abierto. El dispositivo descifra las notas y responde, y la respuesta con las notas necesarias pasa por nuestro servidor hasta esa app. Las solicitudes y respuestas solo pasan por la memoria: no las guardamos ni las registramos. El servidor no tiene las llaves de tus notas. Cuando apruebas la conexión en la app de FixNote, el servidor guarda la dirección de vuelta a la app de IA como máximo dos minutos, hasta que la recoge la página de conexión de tu navegador.',
+          'Si conectas una app de IA a Fixnote, como ChatGPT o Claude, sus solicitudes llegan a nuestro servidor mcp.fixnote.space y se pasan a tu dispositivo donde Fixnote está abierto. El dispositivo descifra las notas y responde, y la respuesta con las notas necesarias pasa por nuestro servidor hasta esa app. Las solicitudes y respuestas solo pasan por la memoria: no las guardamos ni las registramos. El servidor no tiene las llaves de tus notas. Cuando apruebas la conexión en la app de Fixnote, el servidor guarda la dirección de vuelta a la app de IA como máximo dos minutos, hasta que la recoge la página de conexión de tu navegador.',
           'Solo guardamos lo necesario para que funcione: qué apps conectaste, cuándo preguntaron por última vez, qué accesos revocaste y los identificadores de las carpetas y notas que les dejas ver. Puedes revocar el acceso en Ajustes → Integraciones. Lo que recibe la app de IA queda sujeto a las reglas de su proveedor.',
         ],
       },
@@ -854,7 +854,7 @@ export const es: Dict = {
       {
         title: 'Menores',
         text: [
-          'FixNote no está pensado para menores de 13 años, y no recopilamos sus datos a sabiendas.',
+          'Fixnote no está pensado para menores de 13 años, y no recopilamos sus datos a sabiendas.',
         ],
       },
       {
@@ -867,7 +867,7 @@ export const es: Dict = {
 
   releasePage: {
     eyebrow: 'Novedades',
-    title: 'Historial de versiones de FixNote',
+    title: 'Historial de versiones de Fixnote',
     lead: 'Qué añadió y qué corrigió cada versión. La app de escritorio se actualiza sola y la versión web siempre es la última.',
     version: 'Versión',
     latest: 'La última',
@@ -876,26 +876,26 @@ export const es: Dict = {
 
   setupPage: {
     eyebrow: 'Instalación',
-    title: 'Cómo instalar FixNote',
+    title: 'Cómo instalar Fixnote',
     lead: 'Descarga el instalador, responde una vez al sistema la primera vez que lo abras e inicia sesión si quieres Pro.',
     steps: [
       {
-        title: 'Descarga FixNote',
-        text: 'Elige el instalador para Windows o para tu Mac: con chip de Apple (M1 o posterior) o Intel. En el Mac, abre el .dmg y arrastra FixNote a Aplicaciones.',
+        title: 'Descarga Fixnote',
+        text: 'Elige el instalador para Windows o para tu Mac: con chip de Apple (M1 o posterior) o Intel. En el Mac, abre el .dmg y arrastra Fixnote a Aplicaciones.',
       },
       {
         title: 'Ábrelo por primera vez',
-        text: 'Mientras Apple no haya notarizado FixNote, macOS preguntará por él la primera vez que lo abras, y Windows puede mostrar SmartScreen. Se responde una vez; después se abre como cualquier otra app y se actualiza sola.',
+        text: 'Mientras Apple no haya notarizado Fixnote, macOS preguntará por él la primera vez que lo abras, y Windows puede mostrar SmartScreen. Se responde una vez; después se abre como cualquier otra app y se actualiza sola.',
       },
       {
         title: 'Inicia sesión si quieres Pro',
-        text: 'Sin cuenta, FixNote funciona desde el primer momento. Para sincronizar, usar FixNote AI y compartir notas, inicia sesión con tu correo en Ajustes → Cuenta y sincronización. La prueba de 7 días de Pro no pide tarjeta; la suscripción se contrata en Ajustes → Facturación y Pro funciona al instante en todos los dispositivos de la cuenta.',
+        text: 'Sin cuenta, Fixnote funciona desde el primer momento. Para sincronizar, usar Fixnote AI y compartir notas, inicia sesión con tu correo en Ajustes → Cuenta y sincronización. La prueba de 7 días de Pro no pide tarjeta; la suscripción se contrata en Ajustes → Facturación y Pro funciona al instante en todos los dispositivos de la cuenta.',
       },
     ],
-    macTitle: 'El Mac dice que no se puede abrir FixNote',
+    macTitle: 'El Mac dice que no se puede abrir Fixnote',
     mac: [
       'macOS 15 Sequoia o posterior: abre Ajustes del Sistema → Privacidad y seguridad, baja hasta el final y pulsa «Abrir igualmente».',
-      'macOS 14 Sonoma o anterior: en el Finder, haz clic derecho en FixNote, elige «Abrir» y confirma.',
+      'macOS 14 Sonoma o anterior: en el Finder, haz clic derecho en Fixnote, elige «Abrir» y confirma.',
       'Si macOS dice que la app está dañada, ejecuta esto una vez en el Terminal:',
     ],
     windowsTitle: 'Si Windows muestra SmartScreen',
@@ -908,21 +908,21 @@ export const es: Dict = {
   windowsPage: {
     eyebrow: 'Windows',
     headline: 'Una app de notas para tu PC con Windows',
-    lead: 'FixNote es una app de notas para Windows 10 y 11 que funciona sin internet y sin cuenta. Resume tus llamadas sin meter un bot en la reunión, convierte el dictado en texto en tu propio ordenador y se abre con un atajo sobre cualquier ventana.',
+    lead: 'Fixnote es una app de notas para Windows 10 y 11 que funciona sin internet y sin cuenta. Resume tus llamadas sin meter un bot en la reunión, convierte el dictado en texto en tu propio ordenador y se abre con un atajo sobre cualquier ventana.',
     facts: 'Windows 10 y 11, 64 bits · Gratis y sin límite de tiempo · Sin cuenta',
     shotAlt:
-      'FixNote en Windows: las notas de hoy y el asistente respondiendo con enlaces a las notas',
+      'Fixnote en Windows: las notas de hoy y el asistente respondiendo con enlaces a las notas',
     sections: [
       {
         id: 'calls',
         title: 'Resumen de llamadas sin bot en la reunión',
-        text: 'Zoom, Teams, Telegram o cualquier otra app: FixNote toma el sonido del ordenador con WASAPI, la interfaz de audio estándar de Windows, y tu micrófono. Ningún bot entra en la llamada, sin drivers ni extensiones. La voz se transcribe en tu ordenador mientras hablas y, al pulsar «Terminar», el modelo escribe un resumen, las decisiones y las tareas. El audio no se guarda.',
+        text: 'Zoom, Teams, Telegram o cualquier otra app: Fixnote toma el sonido del ordenador con WASAPI, la interfaz de audio estándar de Windows, y tu micrófono. Ningún bot entra en la llamada, sin drivers ni extensiones. La voz se transcribe en tu ordenador mientras hablas y, al pulsar «Terminar», el modelo escribe un resumen, las decisiones y las tareas. El audio no se guarda.',
         link: 'Cómo funciona el resumen de llamadas',
       },
       {
         id: 'shortcuts',
         title: 'Atajos desde cualquier ventana e icono en la bandeja',
-        text: 'FixNote no tiene que estar en pantalla. Al cerrar la ventana se oculta en la bandeja del sistema, y los atajos globales funcionan aunque delante haya un navegador o un editor. El menú del icono tiene nota nueva, nota de voz, nota de hoy, búsqueda y grabación de llamadas. Los atajos dentro de la app siguen la posición de la tecla, así que Ctrl+K funciona con cualquier distribución de teclado. Puedes cambiar cada uno en Ajustes → Atajos.',
+        text: 'Fixnote no tiene que estar en pantalla. Al cerrar la ventana se oculta en la bandeja del sistema, y los atajos globales funcionan aunque delante haya un navegador o un editor. El menú del icono tiene nota nueva, nota de voz, nota de hoy, búsqueda y grabación de llamadas. Los atajos dentro de la app siguen la posición de la tecla, así que Ctrl+K funciona con cualquier distribución de teclado. Puedes cambiar cada uno en Ajustes → Atajos.',
         link: 'Cómo funciona la búsqueda',
       },
       {
@@ -955,35 +955,35 @@ export const es: Dict = {
       { keys: 'Ctrl+Alt+N', text: 'Nota nueva' },
       { keys: 'Ctrl+Alt+R', text: 'Nota de voz' },
       { keys: 'Ctrl+Alt+K', text: 'Buscar' },
-      { keys: 'Ctrl+Alt+Espacio', text: 'Mostrar u ocultar FixNote' },
+      { keys: 'Ctrl+Alt+Espacio', text: 'Mostrar u ocultar Fixnote' },
     ],
     installTitle: 'Instalación y actualizaciones',
     install:
-      'El instalador .exe instala FixNote en Windows 10 y 11 (64 bits) y añade WebView2 si falta. Después la app se actualiza sola. La primera vez, Windows puede mostrar SmartScreen: pulsa «Más información» y luego «Ejecutar de todas formas». Estamos preparando una versión para Microsoft Store: la firma la Store, las actualizaciones llegarán por la Store y compartirá las notas con la versión de esta web.',
-    setup: 'Cómo instalar FixNote',
-    compareTitle: 'FixNote y otras apps de notas',
+      'El instalador .exe instala Fixnote en Windows 10 y 11 (64 bits) y añade WebView2 si falta. Después la app se actualiza sola. La primera vez, Windows puede mostrar SmartScreen: pulsa «Más información» y luego «Ejecutar de todas formas». Estamos preparando una versión para Microsoft Store: la firma la Store, las actualizaciones llegarán por la Store y compartirá las notas con la versión de esta web.',
+    setup: 'Cómo instalar Fixnote',
+    compareTitle: 'Fixnote y otras apps de notas',
     compareText:
-      'En qué se diferencia FixNote de Notion, Obsidian, Evernote y Joplin en Windows, y qué usar en lugar de Notas de Apple si tu ordenador no es un Mac.',
+      'En qué se diferencia Fixnote de Notion, Obsidian, Evernote y Joplin en Windows, y qué usar en lugar de Notas de Apple si tu ordenador no es un Mac.',
     faq: [
       {
         q: '¿Windows tiene una app de notas?',
-        a: 'Tiene el Bloc de notas y Notas rápidas (Sticky Notes), que bastan para un par de líneas. FixNote sirve cuando las notas se acumulan: carpetas, nota diaria, búsqueda por significado, un asistente que responde a partir de tus notas y resúmenes de llamadas.',
+        a: 'Tiene el Bloc de notas y Notas rápidas (Sticky Notes), que bastan para un par de líneas. Fixnote sirve cuando las notas se acumulan: carpetas, nota diaria, búsqueda por significado, un asistente que responde a partir de tus notas y resúmenes de llamadas.',
       },
       {
-        q: '¿FixNote para Windows es gratis?',
-        a: 'Sí. Todo lo que funciona en tu ordenador es gratis y sin límite de tiempo: notas, búsqueda, dictado, resúmenes de llamadas con tu propia clave u Ollama, MCP, importación y exportación. Pro, por 7 $ al mes, añade sincronización, FixNote AI, notas compartidas y el bot de Telegram.',
+        q: '¿Fixnote para Windows es gratis?',
+        a: 'Sí. Todo lo que funciona en tu ordenador es gratis y sin límite de tiempo: notas, búsqueda, dictado, resúmenes de llamadas con tu propia clave u Ollama, MCP, importación y exportación. Pro, por 7 $ al mes, añade sincronización, Fixnote AI, notas compartidas y el bot de Telegram.',
       },
       {
-        q: '¿FixNote funciona en Windows 10?',
+        q: '¿Fixnote funciona en Windows 10?',
         a: 'Sí, en Windows 10 y 11 de 64 bits. El instalador añade WebView2, con el que funciona la ventana de la app, si falta.',
       },
       {
-        q: '¿Puedo usar FixNote en Windows y en Mac?',
+        q: '¿Puedo usar Fixnote en Windows y en Mac?',
         a: 'Sí. Hay apps para Windows y macOS y una versión web. Con Pro, las notas se sincronizan entre ellas con cifrado de extremo a extremo.',
       },
       {
-        q: '¿FixNote funciona sin internet?',
-        a: 'Sí. Las notas se guardan en tu ordenador, y la búsqueda y el dictado funcionan allí mismo. Internet hace falta una vez para descargar los modelos y para lo que pasa por el servidor: la sincronización y FixNote AI.',
+        q: '¿Fixnote funciona sin internet?',
+        a: 'Sí. Las notas se guardan en tu ordenador, y la búsqueda y el dictado funcionan allí mismo. Internet hace falta una vez para descargar los modelos y para lo que pasa por el servidor: la sincronización y Fixnote AI.',
       },
     ],
   },

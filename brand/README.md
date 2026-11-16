@@ -1,4 +1,4 @@
-# FixNote logo
+# Fixnote logo
 
 Two shapes, one motion. The mark (`fn`) writes itself; its tail goes back into the `f` and the
 word (`fixnote`) is written; and back. Nothing is redrawn or morphed: each stroke of the pen is a
@@ -30,12 +30,15 @@ What the files must keep, or the build refuses them:
 - `viewBox` from `0 0`; paths with absolute `M L H V C Z` only (flatten in Figma, no transforms).
 - **Holes are cut, not painted** in the background colour (the drop of the mark, `o`, `e`).
 - Mark: one path (outline + the drop, `fill-rule="evenodd"`).
-- Word: four paths in this order: `f`, the dot of `i`, `ixnot` (one piece, with the hole of `o`),
-  `e` (with its hole).
-- **The word's `f` is the mark's `f`**: the same outline at `scale` (strokes.json, mark height →
-  word height), at the left edge, its bar closed with a round end where the mark's bar goes on
-  into the loop. This is why the `f` does not move between the two; if they differ, the mark
-  check fails. A new `f` is drawn in the mark first and copied into the word.
+- Word: three paths in this order: `f`, the dot of `i`, the rest (`ixnote` is one piece, with the
+  holes of the loop, `o` and `e`, `fill-rule="evenodd"`).
+- **The word's `f` is the mark's `f`**: the same outline at `scale` (strokes.json; 1 since the
+  2026-11 monoline logo, Figma 2031:2120–2124), at the left edge. Two differences, each with its
+  own stroke: the mark's stem goes below the word's baseline (`mk-d`, the descender, which goes up
+  as the word is written), and the word closes its bar with a round end where the mark's bar goes
+  on into the loop (`w-fb`, shown only with the word). So the lockup is as tall as the mark
+  (`height` in data.gen.ts) and the `f` does not move between the two. If they differ elsewhere,
+  the check fails. A new `f` is drawn in the mark first and copied into the word.
 
 ## strokes.json
 
@@ -55,9 +58,11 @@ A stroke is a centre line (`d`) drawn with `width`, used as a mask over one `sha
   run-in over the piece before it (no hairline at the joint, and it fills the joint); `at` sets the
   start by hand (the tail starts inside the bar of the `f`).
 - Start and end a little outside the ink: caps are flat.
-- Ids are what `logo.css` animates: `mk-f` (hook and stem), `t0` (bar of the f), `ta`/`tb` (tail:
-  loop, then `n`), `w-i`, `w-x1`/`w-x2` (x, n, then the ring of o), `w-t1`/`w-t2`, `w-e1`/`w-e2`.
-  A new id needs its rule there.
+- Ids are what `logo.css` animates: `mk-f` (hook and stem), `mk-d` (the descender), `t0` (bar of
+  the f), `ta`/`tb` (tail: loop, then `n`), `w-fb` (the word's round end of the bar), `w-i`/`w-n`/
+  `w-o` (one line: i, the rising stroke of x, the loop and n, the ring of o), `w-x` (the falling
+  stroke of x), `w-t1`/`w-t2` (o into the bar of t, then its stem into e), `w-e1`/`w-e2` (bar and
+  ring of e). Ids starting with `w-` are hidden while the mark shows. A new id needs its rule there.
 
 The check renders every stroke fully drawn and compares it with the designer's shapes; a gap or a
 different `f` is an error with the number of pixels. It does not see the motion: after changing
@@ -71,4 +76,10 @@ strokes, step through `logo-motion.html` at 0.5× and look at each crossing.
   `collapse`, `word`) and `logo.css`. `--fx-k` stretches time, `--fx-shift` centres the mark in the
   word's box.
 - Video: `logo-motion.html`, or freeze any frame with `document.getAnimations()` and export.
-- The icon is the mark in white on the orange tile; its drawing is in `build.mjs` (`icon`).
+- The icon is the mark in white on a flat orange tile, laid out as in Figma «Lockup — Icon»; its
+  drawing is in `build.mjs` (`icon`). The same step writes the home page footer's icon
+  (`apps/landing/src/assets/landing/home-mark.svg`; the large faint word there is drawn by hand)
+  and the favicon (`favicon: true`, the mark two thirds of the tile so it reads at 16 px);
+  `pnpm icons` makes `favicon.ico` (16, 32, 48) for the site and the web app.
+- Blog covers and site Open Graph pictures take the word from `fixnote-wordmark.svg` too
+  (`tools/figma-bridge/fixnote/blog-covers.mjs`, `apps/landing/og.mjs`).

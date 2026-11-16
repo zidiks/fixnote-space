@@ -1,9 +1,9 @@
 ---
 title: Edita el texto con IA
-metaTitle: 'Reescribir y corregir textos con IA en tus notas | FixNote'
-description: Selecciona texto en una nota y pide a la IA que lo reescriba, acorte o corrija. FixNote muestra el cambio palabra por palabra y lo aplica al pulsar Aceptar.
+metaTitle: 'Reescribir y corregir textos con IA en tus notas | Fixnote'
+description: Selecciona texto en una nota y pide a la IA que lo reescriba, acorte o corrija. Fixnote muestra el cambio palabra por palabra y lo aplica al pulsar Aceptar.
 eyebrow: Edición con IA
-intro: ¿Quieres un párrafo más claro, un correo más corto o un texto sin erratas sin pegarlo en un chatbot? Selecciónalo, elige una acción y FixNote te muestra la edición propuesta en la propia nota.
+intro: ¿Quieres un párrafo más claro, un correo más corto o un texto sin erratas sin pegarlo en un chatbot? Selecciónalo, elige una acción y Fixnote te muestra la edición propuesta en la propia nota.
 card:
   title: Edición con IA
   text: La IA reescribe, acorta y corrige el texto que seleccionas, y tú aceptas el resultado.
@@ -21,7 +21,7 @@ faq:
   - q: ¿Puede la IA cambiar una nota sin mi permiso?
     a: Por defecto la nota solo cambia cuando pulsas Aceptar. En los modos «Aceptar ediciones» y «Automático» la edición se aplica al momento y un aviso ofrece Deshacer.
   - q: ¿Necesito Pro para editar con IA?
-    a: No. Funciona con tu propia clave de cualquier proveedor compatible con OpenAI o con Ollama en la app de escritorio. Pro añade FixNote AI, que no necesita clave.
+    a: No. Funciona con tu propia clave de cualquier proveedor compatible con OpenAI o con Ollama en la app de escritorio. Pro añade Fixnote AI, que no necesita clave.
   - q: ¿Puedo deshacer una edición que ya acepté?
     a: Sí. Justo después funciona el deshacer normal del editor. Además, cada edición queda en «Actividad de la IA», en Ajustes → IA, y se puede deshacer desde ahí mientras no hayas vuelto a editar la nota.
   - q: ¿Cambiará la IA el idioma, las cifras o los nombres?
@@ -36,11 +36,11 @@ Para cualquier otra cosa, escríbela en el cuadro: «amplíalo a un párrafo», 
 
 Si no seleccionas nada, la edición se aplica a toda la nota y aparece también «Ordenar la nota», que convierte un texto en bruto en una nota con título, párrafos y una lista de tareas.
 
-Mientras revisas la propuesta, la nota no cambia. Si mientras tanto editaste el texto tú mismo, FixNote no lo toca y te pide que lo intentes de nuevo. Cómo se aplican las ediciones se elige en Ajustes → IA → «Modos de IA»: con «Preguntar siempre» cada una espera a Aceptar, y con «Aceptar ediciones» y «Automático» se aplica al instante.
+Mientras revisas la propuesta, la nota no cambia. Si mientras tanto editaste el texto tú mismo, Fixnote no lo toca y te pide que lo intentes de nuevo. Cómo se aplican las ediciones se elige en Ajustes → IA → «Modos de IA»: con «Preguntar siempre» cada una espera a Aceptar, y con «Aceptar ediciones» y «Automático» se aplica al instante.
 
 ## Cuándo resulta útil
 
-Un texto dictado sale como un flujo continuo, con repeticiones y muletillas. Después de guardar una [nota de voz](/es/features/voice-notes/), FixNote ofrece «Ordenar», y el flujo se convierte en una nota con su lista de tareas.
+Un texto dictado sale como un flujo continuo, con repeticiones y muletillas. Después de guardar una [nota de voz](/es/features/voice-notes/), Fixnote ofrece «Ordenar», y el flujo se convierte en una nota con su lista de tareas.
 
 Un correo esbozado en una nota se acorta fácilmente antes de enviarlo. Las notas de una reunión se leen mejor tras Reformatear. Corregir errores viene bien para lo que escribiste en el móvil mientras caminabas.
 
@@ -48,4 +48,4 @@ Para cambiar varias notas a la vez, por ejemplo reunir las tareas de la semana e
 
 ## Cuándo conviene otra herramienta
 
-Si escribes documentos largos en equipo y quieres una IA que trabaje sobre un espacio compartido, te encaja mejor Notion: Notion AI viene con su plan Business. Lo detallamos en la [comparación entre FixNote y Notion](/es/vs/notion/). Para revisar la gramática en todas partes, también en el correo y los chats, tiene más sentido un asistente de escritura aparte como Grammarly. FixNote edita el texto solo dentro de tus notas.
+Si escribes documentos largos en equipo y quieres una IA que trabaje sobre un espacio compartido, te encaja mejor Notion: Notion AI viene con su plan Business. Lo detallamos en la [comparación entre Fixnote y Notion](/es/vs/notion/). Para revisar la gramática en todas partes, también en el correo y los chats, tiene más sentido un asistente de escritura aparte como Grammarly. Fixnote edita el texto solo dentro de tus notas.

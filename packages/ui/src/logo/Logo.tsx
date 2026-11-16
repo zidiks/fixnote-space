@@ -6,13 +6,15 @@ type Phase = 'none' | 'draw' | 'mark' | 'expand' | 'collapse' | 'word'
 
 /** The mark has written itself and rested a moment (logo.css: 0.28 s + 0.95 s). */
 const DRAWN_MS = 1600
-const WORD = logo.word.width / logo.word.height
-const MARK = (logo.mark.width * logo.scale) / logo.word.height
+/** The mark's f goes below the word's baseline: the mark is taller than the word. */
+const MARK_W = logo.mark.width * logo.scale
+const MARK_H = logo.mark.height * logo.scale
 
 /**
- * The FixNote logo: the `fn` mark or the whole word, in the text colour. Changing `variant`
+ * The Fixnote logo: the `fn` mark or the whole word, in the text colour. Changing `variant`
  * unfolds the mark into the word or folds it back; `intro` writes it from nothing once, when it
  * first appears. Shapes and strokes come from brand/ (`pnpm logo`), the motion from logo.css.
+ * `height` is the height of what shows: the mark with its descender, or the word.
  * Decorative: the name goes on what holds it (`aria-label`).
  */
 export function Logo({
@@ -59,6 +61,8 @@ export function Logo({
   }, [variant])
 
   const wide = phase === 'expand' || phase === 'word'
+  /** Pixels per unit of the logo's drawing, so that what `variant` shows is `height` tall. */
+  const unit = height / (variant === 'mark' ? MARK_H : logo.word.height)
   const use = (stroke: (typeof logo.strokes)[number]) => (
     <use key={stroke.id} href={`#${id}-${stroke.shape}`} mask={`url(#${id}-${stroke.id})`} />
   )
@@ -67,20 +71,28 @@ export function Logo({
     <span
       aria-hidden
       className={cn('fx-logo-box', className)}
-      style={{ height, width: height * (wide ? WORD : MARK) }}
+      style={{
+        height: unit * (wide ? logo.word.height : MARK_H),
+        width: unit * (wide ? logo.word.width : MARK_W),
+      }}
     >
       <svg
         className="fx-logo"
         data-phase={phase}
-        viewBox={`0 0 ${logo.word.width} ${logo.word.height}`}
-        style={{ height, width: height * WORD, '--stop': logo.stop } as CSSProperties}
+        viewBox={`0 0 ${logo.word.width} ${logo.height}`}
+        style={
+          {
+            height: unit * logo.height,
+            width: unit * logo.word.width,
+            '--stop': logo.stop,
+          } as CSSProperties
+        }
       >
-        <title>FixNote</title>
+        <title>Fixnote</title>
         <defs>
           <path id={`${id}-f`} d={logo.shapes.f} />
           <path id={`${id}-mark`} fillRule="evenodd" d={logo.shapes.mark} />
-          <path id={`${id}-xnot`} fillRule="evenodd" d={logo.shapes.xnot} />
-          <path id={`${id}-e`} fillRule="evenodd" d={logo.shapes.e} />
+          <path id={`${id}-rest`} fillRule="evenodd" d={logo.shapes.rest} />
           {logo.strokes.map((stroke) => (
             <mask key={stroke.id} id={`${id}-${stroke.id}`}>
               <path

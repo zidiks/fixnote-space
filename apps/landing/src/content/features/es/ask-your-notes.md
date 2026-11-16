@@ -1,7 +1,7 @@
 ---
 title: Un asistente de IA que responde con tus notas
-metaTitle: 'Asistente de notas con IA que cita sus fuentes | FixNote'
-description: El asistente de FixNote encuentra la respuesta en tus notas, enlaza las notas que usó y puede crear y editar notas por ti. Con FixNote AI, tu clave u Ollama.
+metaTitle: 'Asistente de notas con IA que cita sus fuentes | Fixnote'
+description: El asistente de Fixnote encuentra la respuesta en tus notas, enlaza las notas que usó y puede crear y editar notas por ti. Con Fixnote AI, tu clave u Ollama.
 eyebrow: Asistente
 intro: Pregunta con tus palabras qué acordaste con el contratista o dónde apuntaste la contraseña del router. El asistente encuentra las notas, responde y te muestra de dónde sacó la respuesta.
 card:
@@ -19,7 +19,7 @@ steps:
 privacy: La búsqueda por palabras y por significado se hace en tu dispositivo. El modelo recibe tu pregunta, los nombres de tus carpetas, fragmentos de las notas que coinciden y las notas que el asistente abre, nunca toda tu colección. Con Ollama en tu ordenador, el texto no sale de él.
 faq:
   - q: ¿Necesito Pro para hacer preguntas a mis notas?
-    a: No. En el plan gratuito el asistente funciona con tu propia clave de un modelo o con Ollama en la app de escritorio. Pro añade FixNote AI, que no necesita clave.
+    a: No. En el plan gratuito el asistente funciona con tu propia clave de un modelo o con Ollama en la app de escritorio. Pro añade Fixnote AI, que no necesita clave.
   - q: ¿Puede el asistente cambiar una nota sin preguntar?
     a: Por defecto cada cambio espera tu aprobación. Eliminar y hacer muchos cambios a la vez siempre requieren confirmación, y todo lo que hace se puede deshacer.
   - q: ¿Recuerda el asistente las preguntas anteriores?
@@ -42,4 +42,4 @@ Antes de una reunión, pregunta qué se habló la última vez y recibe un resume
 
 ## Cuándo conviene otra herramienta
 
-Si tienes que buscar en la base de conocimiento de una empresa de cientos de personas, te sirve más una wiki de equipo con su propio buscador, como Notion. FixNote responde con tus notas y con las que otros comparten contigo. Mira la [comparación entre FixNote y Notion](/es/vs/notion/). Para probar el asistente, empieza con una pregunta cuya respuesta ya conoces y revisa las fuentes debajo de la respuesta.
+Si tienes que buscar en la base de conocimiento de una empresa de cientos de personas, te sirve más una wiki de equipo con su propio buscador, como Notion. Fixnote responde con tus notas y con las que otros comparten contigo. Mira la [comparación entre Fixnote y Notion](/es/vs/notion/). Para probar el asistente, empieza con una pregunta cuya respuesta ya conoces y revisa las fuentes debajo de la respuesta.
