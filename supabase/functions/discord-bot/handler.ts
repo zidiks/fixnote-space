@@ -2,8 +2,8 @@
  * discord-bot: the Discord capture channel. A user-installed Discord app (it works in any server
  * and DM the person is in, nothing to add to a server):
  *
- * - "Save to FixNote" on any message (right-click → Apps), `/save text:…`, `/disconnect`;
- * - `GET …/discord-bot/oauth`: the end of "Connect" in FixNote (Discord's OAuth with
+ * - "Save to Fixnote" on any message (right-click → Apps), `/save text:…`, `/disconnect`;
+ * - `GET …/discord-bot/oauth`: the end of "Connect" in Fixnote (Discord's OAuth with
  *   `state` = the one-time code from the app) links the Discord user to the account.
  *
  * Discord sends plain messages only over its Gateway (a WebSocket an edge function cannot hold),
@@ -54,43 +54,43 @@ const IS_VOICE_MESSAGE = 1 << 13
 type Lang = 'en' | 'ru' | 'es'
 const TEXT: Record<Lang, Record<string, string>> = {
   en: {
-    saved: 'Saved to FixNote.',
-    savedSome: 'Saved to FixNote: {n}. Other files are not supported yet.',
+    saved: 'Saved to Fixnote.',
+    savedSome: 'Saved to Fixnote: {n}. Other files are not supported yet.',
     notLinked:
-      'Discord is not connected to FixNote yet. In FixNote, open Settings → Integrations → Discord.',
+      'Discord is not connected to Fixnote yet. In Fixnote, open Settings → Integrations → Discord.',
     badCode:
-      'This link has expired. Create a new one in FixNote: Settings → Integrations → Discord.',
-    stopped: 'Disconnected. Nothing from Discord goes to FixNote now.',
+      'This link has expired. Create a new one in Fixnote: Settings → Integrations → Discord.',
+    stopped: 'Disconnected. Nothing from Discord goes to Fixnote now.',
     empty: 'There is nothing in this message I can save.',
-    noKeys: 'Your FixNote account is not set up yet. Open the app and finish signing in.',
+    noKeys: 'Your Fixnote account is not set up yet. Open the app and finish signing in.',
     needsPro:
-      'Saving from messengers is part of FixNote Pro. Open FixNote → Settings → Plan to upgrade.',
+      'Saving from messengers is part of Fixnote Pro. Open Fixnote → Settings → Plan to upgrade.',
     failed: 'Could not save this one. Try again in a moment.',
   },
   ru: {
-    saved: 'Сохранено в FixNote.',
-    savedSome: 'Сохранено в FixNote: {n}. Другие файлы пока не поддерживаются.',
+    saved: 'Сохранено в Fixnote.',
+    savedSome: 'Сохранено в Fixnote: {n}. Другие файлы пока не поддерживаются.',
     notLinked:
-      'Discord ещё не подключён к FixNote. В FixNote откройте Настройки → Интеграции → Discord.',
-    badCode: 'Ссылка устарела. Создайте новую в FixNote: Настройки → Интеграции → Discord.',
-    stopped: 'Отключено. Из Discord в FixNote больше ничего не попадает.',
+      'Discord ещё не подключён к Fixnote. В Fixnote откройте Настройки → Интеграции → Discord.',
+    badCode: 'Ссылка устарела. Создайте новую в Fixnote: Настройки → Интеграции → Discord.',
+    stopped: 'Отключено. Из Discord в Fixnote больше ничего не попадает.',
     empty: 'В этом сообщении нечего сохранить.',
-    noKeys: 'Аккаунт FixNote ещё не настроен. Откройте приложение и завершите вход.',
+    noKeys: 'Аккаунт Fixnote ещё не настроен. Откройте приложение и завершите вход.',
     needsPro:
-      'Сохранение из мессенджеров входит в FixNote Pro. Откройте FixNote → Настройки → Тариф.',
+      'Сохранение из мессенджеров входит в Fixnote Pro. Откройте Fixnote → Настройки → Тариф.',
     failed: 'Не получилось сохранить. Попробуйте ещё раз чуть позже.',
   },
   es: {
-    saved: 'Guardado en FixNote.',
-    savedSome: 'Guardado en FixNote: {n}. Otros archivos aún no se admiten.',
+    saved: 'Guardado en Fixnote.',
+    savedSome: 'Guardado en Fixnote: {n}. Otros archivos aún no se admiten.',
     notLinked:
-      'Discord aún no está conectado a FixNote. En FixNote, abre Ajustes → Integraciones → Discord.',
+      'Discord aún no está conectado a Fixnote. En Fixnote, abre Ajustes → Integraciones → Discord.',
     badCode:
-      'Este enlace ha caducado. Crea uno nuevo en FixNote: Ajustes → Integraciones → Discord.',
-    stopped: 'Desconectado. Nada de Discord llega ya a FixNote.',
+      'Este enlace ha caducado. Crea uno nuevo en Fixnote: Ajustes → Integraciones → Discord.',
+    stopped: 'Desconectado. Nada de Discord llega ya a Fixnote.',
     empty: 'No hay nada que guardar en este mensaje.',
-    noKeys: 'Tu cuenta de FixNote aún no está lista. Abre la app y termina de iniciar sesión.',
-    needsPro: 'Guardar desde mensajería es parte de FixNote Pro. Abre FixNote → Ajustes → Plan.',
+    noKeys: 'Tu cuenta de Fixnote aún no está lista. Abre la app y termina de iniciar sesión.',
+    needsPro: 'Guardar desde mensajería es parte de Fixnote Pro. Abre Fixnote → Ajustes → Plan.',
     failed: 'No se pudo guardar. Inténtalo de nuevo en un momento.',
   },
 }

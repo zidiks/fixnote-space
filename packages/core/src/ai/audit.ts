@@ -59,7 +59,7 @@ export interface AiAction {
   kind: AiActionKind
   /** Human-readable, in the UI language at the time. */
   summary: string
-  /** Who made the change: "DeepSeek via FixNote", "Ollama llama3.1", "Claude Desktop (MCP)". */
+  /** Who made the change: "DeepSeek via Fixnote", "Ollama llama3.1", "Claude Desktop (MCP)". */
   provider: string
   changes: NoteChange[]
   folderChanges: FolderChange[]

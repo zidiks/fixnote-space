@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 /**
  * Supabase Auth's OAuth consent, as one signed-in session sees it (docs/remote-mcp.md,
  * "Connecting"). Used by the connect page (a session that lives only in that tab, or the web app's)
- * and by the FixNote app when `fixnote://connect` asks it.
+ * and by the Fixnote app when `fixnote://connect` asks it.
  */
 
 /** What the person sees before allowing an AI app in. */
@@ -19,7 +19,7 @@ export interface ConsentDetails {
   }
   /** Where the browser goes back to: a look-alike name is not enough to trust. */
   redirectHost: string
-  /** The FixNote account that would be connected. */
+  /** The Fixnote account that would be connected. */
   email: string
 }
 

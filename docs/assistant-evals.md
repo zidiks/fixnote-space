@@ -1,12 +1,12 @@
 # Assistant evaluation set
 
-Manual multi-turn checks of the in-app assistant (FixNote AI chat) with a real model. Run them
+Manual multi-turn checks of the in-app assistant (Fixnote AI chat) with a real model. Run them
 after changing the prompts (`packages/ai/src/agent.ts`, `expand.ts`, `context.ts`), the agent loop
 (`apps/web/src/lib/assistant/agent.ts`, `assistant.ts`) or the model settings. The scripted
 regression suite is `apps/web/src/lib/assistant/evals.test.ts` (runs in `pnpm check`); it checks
 what the model is sent, these check what it does with it.
 
-How to run: a test account with the seed notes below, FixNote AI medium unless the case says
+How to run: a test account with the seed notes below, Fixnote AI medium unless the case says
 otherwise, then once more on hard, once with an own key (OpenAI-compatible) and once with Ollama
 (a small model, 8k context). Start each case with "New chat" unless it says to go on. Note the
 result per model: pass, partial (with what went wrong) or fail.

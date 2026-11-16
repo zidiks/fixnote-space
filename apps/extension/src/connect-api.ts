@@ -2,7 +2,7 @@ import type { Pairing } from './api'
 import { APP_URL, FUNCTIONS_URL } from './config'
 
 /**
- * Connecting like an AI app does (`*_extension_requests.sql`): ask, open FixNote with the
+ * Connecting like an AI app does (`*_extension_requests.sql`): ask, open Fixnote with the
  * request's id, and wait until the person confirms there. The secret stays here; the token comes
  * back only to it.
  */

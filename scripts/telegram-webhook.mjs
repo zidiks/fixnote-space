@@ -41,15 +41,15 @@ await call('setWebhook', {
 })
 const commands = {
   en: [
-    ['start', 'Connect this chat to FixNote'],
+    ['start', 'Connect this chat to Fixnote'],
     ['stop', 'Disconnect'],
   ],
   ru: [
-    ['start', 'Подключить чат к FixNote'],
+    ['start', 'Подключить чат к Fixnote'],
     ['stop', 'Отключить'],
   ],
   es: [
-    ['start', 'Conectar este chat a FixNote'],
+    ['start', 'Conectar este chat a Fixnote'],
     ['stop', 'Desconectar'],
   ],
 }

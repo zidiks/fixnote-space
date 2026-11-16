@@ -92,7 +92,7 @@ export const isProRequired = (err: unknown) =>
 const day = (iso: string | null) =>
   iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString(i18n.resolvedLanguage) : ''
 
-/** FixNote AI's refusal (plan or allowance) in the UI language, or null for other errors. */
+/** Fixnote AI's refusal (plan or allowance) in the UI language, or null for other errors. */
 export function aiRefusalText(err: unknown): string | null {
   if (!(err instanceof ChatError) || !err.code) return null
   switch (err.code) {

@@ -1,6 +1,6 @@
 # Packs the built app (target/release after `tauri build`) into the Microsoft Store package:
-#   <Out>/FixNote-Store-x64.msix       unsigned, for Partner Center (the Store signs it)
-#   <Out>/FixNote-Store-x64-test.msix  unsigned, to install and try (README > Microsoft Store)
+#   <Out>/Fixnote-Store-x64.msix       unsigned, for Partner Center (the Store signs it)
+#   <Out>/Fixnote-Store-x64-test.msix  unsigned, to install and try (README > Microsoft Store)
 # The identity comes from Partner Center (Product management > Product identity); without it the
 # package gets a test identity, fine for trying it out but not accepted by the Store.
 param(
@@ -15,9 +15,9 @@ $ErrorActionPreference = 'Stop'
 $Release = [System.IO.Path]::GetFullPath($Release)
 $Out = [System.IO.Path]::GetFullPath($Out)
 
-if (-not $IdentityName) { $IdentityName = 'FixNote.Test' }
-if (-not $Publisher) { $Publisher = 'CN=FixNote Test' }
-if (-not $PublisherDisplayName) { $PublisherDisplayName = 'FixNote' }
+if (-not $IdentityName) { $IdentityName = 'Fixnote.Test' }
+if (-not $Publisher) { $Publisher = 'CN=Fixnote Test' }
+if (-not $PublisherDisplayName) { $PublisherDisplayName = 'Fixnote' }
 
 # Windows SDK tools (newest SDK that has them).
 $kits = 'C:\Program Files (x86)\Windows Kits\10\bin'
@@ -36,7 +36,7 @@ $version = "$($conf.version).0"
 $layout = Join-Path $Out 'layout'
 if (Test-Path $Out) { Remove-Item $Out -Recurse -Force }
 New-Item -ItemType Directory -Force $layout | Out-Null
-Copy-Item "$Release/fixnote-desktop.exe" "$layout/FixNote.exe"
+Copy-Item "$Release/fixnote-desktop.exe" "$layout/Fixnote.exe"
 # tauri-build copies the sidecar next to the app only when its build script runs; with the build
 # cached it may not have, so fall back to the sidecar itself (src-tauri/binaries).
 $mcp = "$Release/fixnote-mcp.exe"
@@ -71,7 +71,7 @@ try {
   if ($LASTEXITCODE) { throw 'makepri new failed' }
 } finally { Pop-Location }
 
-$msix = Join-Path $Out 'FixNote-Store-x64.msix'
+$msix = Join-Path $Out 'Fixnote-Store-x64.msix'
 & "$tools/makeappx.exe" pack /o /h SHA256 /d $layout /p $msix
 if ($LASTEXITCODE) { throw 'makeappx pack failed' }
 
@@ -85,7 +85,7 @@ $testManifest = $manifest.Replace(
   "Publisher=""$([System.Security.SecurityElement]::Escape($unsigned))""")
 if ($testManifest -eq $manifest) { throw 'the test manifest still has the Store publisher' }
 [System.IO.File]::WriteAllText("$testLayout/AppxManifest.xml", $testManifest, [System.Text.UTF8Encoding]::new($false))
-$test = Join-Path $Out 'FixNote-Store-x64-test.msix'
+$test = Join-Path $Out 'Fixnote-Store-x64-test.msix'
 & "$tools/makeappx.exe" pack /o /h SHA256 /d $testLayout /p $test
 if ($LASTEXITCODE) { throw 'makeappx pack (test copy) failed' }
 Remove-Item $testLayout -Recurse

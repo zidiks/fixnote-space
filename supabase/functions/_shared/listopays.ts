@@ -1,5 +1,5 @@
 /**
- * ListoPays (https://docs.listopays.com): card payments for FixNote Pro, next to Suby (crypto).
+ * ListoPays (https://docs.listopays.com): card payments for Fixnote Pro, next to Suby (crypto).
  * ListoPays has no subscriptions, so a card payment buys a prepaid period (a month or a year) and
  * nothing is charged again by itself. The Website Public Key opens payment pages; the Website
  * Private Key comes back in each webhook (no signature), so it stays in the edge functions'

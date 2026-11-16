@@ -16,7 +16,7 @@ import { usePlatform } from '../../lib/platform'
 import { RemoteMcpCard } from './RemoteMcpCard'
 
 /**
- * Services that send things into FixNote. One card each; more messengers and social networks go
+ * Services that send things into Fixnote. One card each; more messengers and social networks go
  * here the same way.
  */
 export function IntegrationsSection() {

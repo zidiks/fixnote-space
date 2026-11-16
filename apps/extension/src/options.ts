@@ -10,12 +10,12 @@ import { type Answer, browserLabel, type Message, msg } from './messages'
 import { DEFAULT_SITES, parseSites } from './sites'
 
 /**
- * The options page: connect (the extension asks, FixNote confirms, like an AI app), disconnect,
- * and which social networks' own Save buttons also save to FixNote.
+ * The options page: connect (the extension asks, Fixnote confirms, like an AI app), disconnect,
+ * and which social networks' own Save buttons also save to Fixnote.
  */
 
 const PAIRING = 'pairing'
-/** The request waiting for FixNote; kept so reopening this page goes on waiting. */
+/** The request waiting for Fixnote; kept so reopening this page goes on waiting. */
 const REQUEST = 'connectRequest'
 const REQUEST_LIFE = 10 * 60_000
 const POLL = 2000

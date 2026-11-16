@@ -11,12 +11,12 @@ import { NotesTools, type ToolContent } from './tools'
 
 export const VERSION = '0.1.2'
 
-/** The FixNote MCP server over an open notes database and, when given, the app's files. */
+/** The Fixnote MCP server over an open notes database and, when given, the app's files. */
 export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
   const server = new McpServer(
     { name: 'fixnote', version: VERSION },
     {
-      instructions: `${"FixNote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Notes can hold images and files: get_note lists them, get_attachment opens one, attach_file adds one. Create, change, move or delete notes and folders only when the user asks; every change is shown to the user in FixNote and can be undone there. The user decides in FixNote what this app may do and which folders and notes it can see."} ${WRITING_STYLE_SHORT}`,
+      instructions: `${"Fixnote holds the user's personal notes (Markdown). Search before answering questions about what the user wrote, and quote note titles. Notes can hold images and files: get_note lists them, get_attachment opens one, attach_file adds one. Create, change, move or delete notes and folders only when the user asks; every change is shown to the user in Fixnote and can be undone there. The user decides in Fixnote what this app may do and which folders and notes it can see."} ${WRITING_STYLE_SHORT}`,
     },
   )
   const tools = new NotesTools(
@@ -235,8 +235,8 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
   server.registerPrompt(
     'writing_style',
     {
-      title: 'FixNote writing style',
-      description: 'How notes written into FixNote should read: clean, direct, well structured.',
+      title: 'Fixnote writing style',
+      description: 'How notes written into Fixnote should read: clean, direct, well structured.',
     },
     () => ({
       messages: [

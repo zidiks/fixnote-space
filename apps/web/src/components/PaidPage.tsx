@@ -35,8 +35,8 @@ export function PaidPage({
     const apply = () => document.documentElement.classList.toggle('dark', dark.matches)
     apply()
     dark.addEventListener('change', apply)
-    document.title = 'FixNote'
-    // Once, also under StrictMode: the browser asks whether to open FixNote.
+    document.title = 'Fixnote'
+    // Once, also under StrictMode: the browser asks whether to open Fixnote.
     if (!opened && !webWaiting) {
       opened = true
       location.href = link

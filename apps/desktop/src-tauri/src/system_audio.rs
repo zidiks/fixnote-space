@@ -665,7 +665,7 @@ mod imp {
                 msg_send![description, initStereoGlobalTapButExcludeProcesses: &*none];
             let description = description.ok_or("tap description")?;
             let _: () = msg_send![&*description, setPrivate: true];
-            let name = NSString::from_str("FixNote call");
+            let name = NSString::from_str("Fixnote call");
             let _: () = msg_send![&*description, setName: &*name];
 
             let mut tap: ObjectId = 0;
@@ -722,7 +722,7 @@ mod imp {
             set(&sub_tap, "drift", &*NSNumber::new_bool(true));
             let taps = NSArray::from_retained_slice(&[sub_tap]);
             let properties = NSMutableDictionary::<NSString, AnyObject>::new();
-            set(&properties, "name", &*NSString::from_str("FixNote call"));
+            set(&properties, "name", &*NSString::from_str("Fixnote call"));
             // Unique per recording: the last one may still be closing.
             static COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
             let n = COUNT.fetch_add(1, Ordering::Relaxed);

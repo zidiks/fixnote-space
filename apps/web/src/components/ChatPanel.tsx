@@ -354,7 +354,7 @@ export function ChatPanel() {
   const draft = useUi((s) => s.chatDraft)
   const setDraft = useUi((s) => s.setChatDraft)
   const phase = useAccount((s) => s.phase)
-  // FixNote AI goes through our server; your own key or Ollama work without an account.
+  // Fixnote AI goes through our server; your own key or Ollama work without an account.
   const needsAccount = useLlm((s) => s.settings.kind === 'fixnote')
   const error = useAssistant((s) => s.error)
   const messages = useAssistant((s) => s.messages)

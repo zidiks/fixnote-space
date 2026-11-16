@@ -187,7 +187,7 @@ jobs:
           fi
           cargo install artifact-signing-cli --locked
           node -e '
-            const cmd = `artifact-signing-cli -e ${process.env.ENDPOINT} -a ${process.env.ACCOUNT} -c ${process.env.PROFILE} -d FixNote %1`
+            const cmd = `artifact-signing-cli -e ${process.env.ENDPOINT} -a ${process.env.ACCOUNT} -c ${process.env.PROFILE} -d Fixnote %1`
             console.log(JSON.stringify({ bundle: { windows: { signCommand: cmd } } }))
           ' > "$RUNNER_TEMP/winsign.json"
           echo "on=1" >> "$GITHUB_OUTPUT"
@@ -248,7 +248,7 @@ jobs:
           $out = 'apps/desktop/src-tauri/target/msix'
           $name = ([xml](Get-Content "$out/layout/AppxManifest.xml" -Encoding UTF8)).Package.Identity.Name
           # The unsigned test copy (its publisher carries the "unsigned" marker).
-          Add-AppxPackage -Path "$out/FixNote-Store-x64-test.msix" -AllowUnsigned
+          Add-AppxPackage -Path "$out/Fixnote-Store-x64-test.msix" -AllowUnsigned
           $pkg = Get-AppxPackage -Name $name
           if (-not $pkg) { throw "$name is not installed" }
           Write-Host "installed $($pkg.PackageFullName) at $($pkg.InstallLocation)"
@@ -268,8 +268,8 @@ jobs:
           node apps/mcp/scripts/smoke.mjs apps/desktop/src-tauri/binaries/fixnote-mcp-*
           if [ "$RUNNER_OS" = macOS ]; then
             # Without this key macOS never asks for the microphone and dictation gets "not allowed".
-            plutil -p apps/desktop/src-tauri/target/release/bundle/macos/FixNote.app/Contents/Info.plist | grep NSMicrophoneUsageDescription
-            BIN=apps/desktop/src-tauri/target/release/bundle/macos/FixNote.app/Contents/MacOS/fixnote-mcp
+            plutil -p apps/desktop/src-tauri/target/release/bundle/macos/Fixnote.app/Contents/Info.plist | grep NSMicrophoneUsageDescription
+            BIN=apps/desktop/src-tauri/target/release/bundle/macos/Fixnote.app/Contents/MacOS/fixnote-mcp
             codesign -dv --entitlements - "$BIN" 2>&1 || true
             node apps/mcp/scripts/smoke.mjs "$BIN"
             # The check itself must catch the failure it guards against: the same binary signed
@@ -321,7 +321,7 @@ jobs:
           }
           shopt -s globstar nullglob
           cp "$(one artifacts/fixnote-windows-latest/**/*.exe)" release/FixNote-Windows-x64-setup.exe
-          # One MSI per installer language (FixNote_<version>_x64_<lang>.msi).
+          # One MSI per installer language (Fixnote_<version>_x64_<lang>.msi).
           msis=(artifacts/fixnote-windows-latest/**/*.msi)
           [ "${#msis[@]}" -gt 0 ] || { echo "::error::no MSI installers" >&2; exit 1; }
           for msi in "${msis[@]}"; do
@@ -367,4 +367,4 @@ jobs:
         # Makes the tag on the built commit when it does not exist yet (a release from Run workflow).
         run: >-
           gh release create "$TAG" release/*
-          --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "FixNote ${TAG#v}" --generate-notes
+          --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Fixnote ${TAG#v}" --generate-notes

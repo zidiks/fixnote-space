@@ -116,7 +116,7 @@ export async function handle(req: Request, deps: UnfurlDeps, now = Date.now()): 
         redirect: 'manual',
         signal,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; FixNote/1.0; +https://fixnote.space)',
+          'User-Agent': 'Mozilla/5.0 (compatible; Fixnote/1.0; +https://fixnote.space)',
           Accept: 'text/html,application/xhtml+xml,image/*;q=0.8,*/*;q=0.5',
         },
       })

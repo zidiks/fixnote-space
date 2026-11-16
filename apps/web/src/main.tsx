@@ -28,7 +28,7 @@ const billing = params.get('to') === 'app' || card ? params.get('billing') : nul
 const devCard =
   import.meta.env.DEV && params.has('dev-backend') ? params.get('dev-card') || null : null
 // An AI app asks to read the notes (Supabase Auth's OAuth consent step, docs/remote-mcp.md): a page
-// that asks the FixNote app (fixnote://connect) or signs in for this tab only; not the app.
+// that asks the Fixnote app (fixnote://connect) or signs in for this tab only; not the app.
 const consent = location.pathname === '/oauth/consent' ? params.get('authorization_id') || '' : null
 const page = shared ? (
   await import('./components/SharePage').then(({ SharePage }) => (

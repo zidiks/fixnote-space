@@ -20,7 +20,7 @@ export type JsonRpcResponse =
 export interface McpContext {
   /** Runs a tool on the account's device. */
   call(tool: string, args: Record<string, unknown>): Promise<ToolAnswer>
-  /** The client said who it is (`initialize`): its name shows in the app and in FixNote's log. */
+  /** The client said who it is (`initialize`): its name shows in the app and in Fixnote's log. */
   hello(name: string): Promise<void>
 }
 
@@ -58,7 +58,7 @@ export async function answer(message: unknown, ctx: McpContext): Promise<JsonRpc
         result: {
           protocolVersion: negotiateProtocol(params.protocolVersion),
           capabilities: { tools: { listChanged: false } },
-          serverInfo: { name: 'fixnote', title: 'FixNote', version: SERVER_VERSION },
+          serverInfo: { name: 'fixnote', title: 'Fixnote', version: SERVER_VERSION },
           instructions: REMOTE_INSTRUCTIONS,
         },
       }

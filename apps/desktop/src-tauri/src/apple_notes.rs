@@ -1,6 +1,6 @@
 //! Reads Apple Notes on macOS for the import (Settings → Data → Import): the Notes app answers
-//! Apple events (JavaScript for Automation through `osascript`). macOS asks once whether FixNote
-//! may control Notes. Only reading; the notes are turned into FixNote notes in the webview.
+//! Apple events (JavaScript for Automation through `osascript`). macOS asks once whether Fixnote
+//! may control Notes. Only reading; the notes are turned into Fixnote notes in the webview.
 
 use std::process::Command;
 
@@ -74,7 +74,7 @@ function run(argv) {
 }
 "#;
 
-/// Runs the script with `args`; "denied" when macOS does not let FixNote control Notes.
+/// Runs the script with `args`; "denied" when macOS does not let Fixnote control Notes.
 fn run(args: &[&str]) -> Result<String, String> {
     if !cfg!(target_os = "macos") {
         return Err("unsupported".into());

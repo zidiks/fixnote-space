@@ -70,7 +70,7 @@ const saveMessage = (message: object, user = 'd-1') => ({
   guild_id: 'g',
   user: { id: user, username: 'me' },
   data: {
-    name: 'Save to FixNote',
+    name: 'Save to Fixnote',
     type: 3,
     target_id: 'm1',
     resolved: {
@@ -104,7 +104,7 @@ Deno.test('saves a message with its author and where it was', async () => {
   assertEquals(p.kind, 'text')
   assertEquals(p.receivedAt, Date.parse('2026-11-01T10:00:00.000Z'))
   assertEquals(p.text, 'Remember this\n\n— Bob, [Discord](https://discord.com/channels/g/c1/m1)')
-  assertEquals(replies, ['Сохранено в FixNote.'])
+  assertEquals(replies, ['Сохранено в Fixnote.'])
 })
 
 Deno.test('a message that is only a link is saved as a link; images and voice too', async () => {
@@ -132,7 +132,7 @@ Deno.test('a message that is only a link is saved as a link; images and voice to
   const kinds = items.map((i) => open(i.sealed).kind)
   assertEquals(kinds, ['link', 'photo'])
   assertEquals(open(items[0]?.sealed ?? '').url, 'https://example.com/a')
-  assertEquals(replies, ['Сохранено в FixNote: 2. Другие файлы пока не поддерживаются.'])
+  assertEquals(replies, ['Сохранено в Fixnote: 2. Другие файлы пока не поддерживаются.'])
 })
 
 Deno.test('/save keeps the words; not linked, Free and /disconnect answer at once', async () => {

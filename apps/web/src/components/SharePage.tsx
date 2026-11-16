@@ -48,7 +48,7 @@ export function SharePage({ id, linkKey }: { id: string; linkKey: string }) {
 
   const note = typeof state === 'object' ? state : null
   useEffect(() => {
-    document.title = note ? `${note.title || t('common.untitled')} · FixNote` : 'FixNote'
+    document.title = note ? `${note.title || t('common.untitled')} · Fixnote` : 'Fixnote'
   }, [note, t])
 
   return (
@@ -56,7 +56,7 @@ export function SharePage({ id, linkKey }: { id: string; linkKey: string }) {
     <div data-selectable className="min-h-full cursor-auto bg-background text-foreground">
       <main className="mx-auto w-full max-w-3xl px-6 pt-8 pb-24 sm:px-10">
         <header className="mb-8 flex items-center justify-between text-[13px] text-muted-foreground">
-          <a href="/" aria-label="FixNote" className="flex items-center text-foreground">
+          <a href="/" aria-label="Fixnote" className="flex items-center text-foreground">
             <Logo height={18} />
           </a>
           {note ? (

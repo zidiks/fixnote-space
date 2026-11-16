@@ -1,11 +1,11 @@
-# FixNote в Figma: UI-кит и все экраны
+# Fixnote в Figma: UI-кит и все экраны
 
-Весь дизайн FixNote одним файлом `fixnote-figma.json`. Через Figma Bridge он собирается в любом
+Весь дизайн Fixnote одним файлом `fixnote-figma.json`. Через Figma Bridge он собирается в любом
 твоём файле Figma в настоящие переменные, стили, компоненты и экраны, а не в картинки. Получатся
 две страницы:
 
-- **FixNote UI** — UI-кит:
-  - переменные **FixNote Theme** (Light и Dark) и **FixNote Size** (`radius/*`, `space/*`);
+- **Fixnote UI** — UI-кит:
+  - переменные **Fixnote Theme** (Light и Dark) и **Fixnote Size** (`radius/*`, `space/*`);
   - текстовые стили `text/*` (Inter), тени `shadow/xs` и `shadow/float`;
   - иконки `icon/*` (lucide);
   - компоненты: Button (все варианты и состояния), Input, Badge, Kbd, Dialog, Note card, Note snippet,
@@ -53,7 +53,7 @@
 | «Figma did not answer in time» | запусти ту же команду ещё раз: готовое обновится, остальное доделается |
 | «Unknown job …» | в Figma старая копия плагина: закрой его окно, запусти снова, повтори |
 | «Port 7331 is busy» | мост уже запущен, это нормально |
-| Dark лёг отдельной коллекцией **FixNote Theme (Dark)** | так и задумано на бесплатном тарифе Figma (один режим на коллекцию) |
+| Dark лёг отдельной коллекцией **Fixnote Theme (Dark)** | так и задумано на бесплатном тарифе Figma (один режим на коллекцию) |
 
 ## Обновить мост (по желанию)
 

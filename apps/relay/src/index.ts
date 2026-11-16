@@ -15,14 +15,14 @@ export { ConsentHandoff } from './handoff'
 export { UserRelay } from './relay'
 
 export interface Env extends AuthEnv, RelayEnv, HandoffEnv {
-  /** Origins of the FixNote app allowed to call /api (comma-separated). */
+  /** Origins of the Fixnote app allowed to call /api (comma-separated). */
   APP_ORIGINS: string
 }
 
 const cache = new TokenCache()
 
 const PRO_MESSAGE =
-  'Remote access to FixNote needs FixNote Pro: it goes through our server. Open FixNote → Settings → Plan.'
+  'Remote access to Fixnote needs Fixnote Pro: it goes through our server. Open Fixnote → Settings → Plan.'
 
 /** MCP clients in a browser (inspectors) send bearer tokens themselves, so any origin may call. */
 const MCP_CORS = {
@@ -72,7 +72,7 @@ const handoff = (env: Env, authorizationId: string) =>
 async function mcp(req: Request, env: Env): Promise<Response> {
   const unauthorized = (error?: string) =>
     json(
-      { error: 'invalid_token', error_description: error ?? 'Sign in to FixNote' },
+      { error: 'invalid_token', error_description: error ?? 'Sign in to Fixnote' },
       { status: 401, headers: { ...MCP_CORS, 'WWW-Authenticate': challenge(env, error) } },
     )
   if (req.method !== 'POST') {
@@ -85,7 +85,7 @@ async function mcp(req: Request, env: Env): Promise<Response> {
   const clientId = caller.clientId as string
   const relay = stub(env, caller.userId)
   if (await relay.revokedSince(clientId, caller.issuedAt)) {
-    return unauthorized('Access was revoked in FixNote')
+    return unauthorized('Access was revoked in Fixnote')
   }
   let body: unknown
   try {
@@ -107,7 +107,7 @@ async function mcp(req: Request, env: Env): Promise<Response> {
   return json(out, { headers: MCP_CORS })
 }
 
-/** GET /device: a FixNote device opens its WebSocket (session token as a subprotocol). */
+/** GET /device: a Fixnote device opens its WebSocket (session token as a subprotocol). */
 async function device(req: Request, env: Env): Promise<Response> {
   if (req.headers.get('Upgrade')?.toLowerCase() !== 'websocket') {
     return new Response('Expected a WebSocket', { status: 426 })
@@ -203,7 +203,7 @@ export default {
     if (pathname === '/.well-known/oauth-authorization-server') return authorizationServer(env)
     if (pathname === '/') {
       return new Response(
-        `FixNote remote MCP server ${SERVER_VERSION} (${remoteToolList().length} tools). Add ${env.PUBLIC_URL}/mcp to your AI app as a connector.\n`,
+        `Fixnote remote MCP server ${SERVER_VERSION} (${remoteToolList().length} tools). Add ${env.PUBLIC_URL}/mcp to your AI app as a connector.\n`,
         { headers: { 'Content-Type': 'text/plain; charset=utf-8' } },
       )
     }

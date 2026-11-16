@@ -1,5 +1,5 @@
 /*
- * FixNote design tokens, matching the Figma UI Kit: warm paper neutrals, one orange accent,
+ * Fixnote design tokens, matching the Figma UI Kit: warm paper neutrals, one orange accent,
  * yellow highlight. Type comes in three presets (`data-font` on <html>, see "Type presets").
  * Consumers import this file once, after `@import "tailwindcss"`.
  */
@@ -15,7 +15,7 @@
   color-scheme: light;
   --radius: 0.75rem;
 
-  /* Values from the Figma UI Kit (FixNote Theme, Light). */
+  /* Values from the Figma UI Kit (Fixnote Theme, Light). */
   --background: #fdfcfb;
   --foreground: #211f1c;
   --card: #ffffff;
@@ -54,7 +54,7 @@
 
 .dark {
   color-scheme: dark;
-  /* FixNote Theme, Dark. */
+  /* Fixnote Theme, Dark. */
   --background: #151312;
   --foreground: #ebe9e6;
   --card: #1d1b1a;

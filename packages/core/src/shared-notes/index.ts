@@ -238,7 +238,7 @@ export interface SharedSyncReport {
 /** No account with that email (or it has not set up its keys yet). */
 export class PersonNotFoundError extends Error {
   constructor(readonly email: string) {
-    super(`No FixNote account for ${email}`)
+    super(`No Fixnote account for ${email}`)
     this.name = 'PersonNotFoundError'
   }
 }

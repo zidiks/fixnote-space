@@ -66,7 +66,7 @@ interface AssistantState {
   messages: ChatEntry[]
   status: AssistantStatus
   error: string | null
-  /** The error is FixNote AI saying no (plan or allowance), not a failure: shown calmly. */
+  /** The error is Fixnote AI saying no (plan or allowance), not a failure: shown calmly. */
   refused: boolean
   scopeMode: 'auto' | 'all'
   semantic: SemanticState
@@ -438,7 +438,7 @@ export async function ask(
   })
   try {
     const limits = contextLimits()
-    // "Think harder" (Settings → AI) is for FixNote AI; other models are what the person chose.
+    // "Think harder" (Settings → AI) is for Fixnote AI; other models are what the person chose.
     const { settings, level } = useLlm.getState()
     const hard = settings.kind === 'fixnote' && level === 'hard'
     // A follow-up ("and what else was there?") is searched as the question it stands for; notes

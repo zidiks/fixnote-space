@@ -34,7 +34,7 @@ export const OPEN_GATE: ToolGate = {
 
 export interface NoteToolsOptions {
   gate: ToolGate
-  /** Who changes the notes, for the AI activity log: "Claude (MCP)", "DeepSeek via FixNote". */
+  /** Who changes the notes, for the AI activity log: "Claude (MCP)", "DeepSeek via Fixnote". */
   provider: () => string
   /** The activity log kinds: `mcp.*` or `chat.*`. */
   kinds: 'mcp' | 'chat'
@@ -277,7 +277,7 @@ export class NoteTools {
     const blob = info ? await this.attachments?.load(id) : null
     if (!info || !blob) {
       throw new Error(
-        `This file is not on this computer yet. Open "${title(note)}" in FixNote once and it downloads.`,
+        `This file is not on this computer yet. Open "${title(note)}" in Fixnote once and it downloads.`,
       )
     }
     return { note, name, image, info, bytes: new Uint8Array(await blob.arrayBuffer()) }
@@ -287,7 +287,7 @@ export class NoteTools {
   async attachBytes(id: string, bytes: Uint8Array, name: string, mime: string): Promise<string> {
     await this.need('write')
     const attachments = this.attachments
-    if (!attachments) throw new Error('Files are not available: FixNote was not found here.')
+    if (!attachments) throw new Error('Files are not available: Fixnote was not found here.')
     const note = await this.visibleNote(await this.reach(), id)
     const image = mime.startsWith('image/') && mime !== 'image/svg+xml'
     await this.track(

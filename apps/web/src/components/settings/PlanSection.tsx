@@ -363,7 +363,7 @@ function PaymentRow({ payment: p }: { payment: BillingPayment }) {
     setBusy(true)
     try {
       const pdf = await api.receipt(p.id)
-      await platform.saveFile(`FixNote-${p.at.slice(0, 10)}.pdf`, pdf, 'application/pdf')
+      await platform.saveFile(`Fixnote-${p.at.slice(0, 10)}.pdf`, pdf, 'application/pdf')
     } catch {
       toast.error(t('plan.receiptFailed'))
     } finally {

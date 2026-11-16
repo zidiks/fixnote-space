@@ -56,7 +56,7 @@ function actions(shared: SharedNotes, target: PeopleTarget) {
 }
 
 /**
- * People a note or folder is shared with: invite by email (they must have a FixNote account and
+ * People a note or folder is shared with: invite by email (they must have a Fixnote account and
  * accept), change what they may do, remove them; a member can leave. The key goes to each person
  * sealed to their own key, so the server never reads the notes.
  */

@@ -194,7 +194,7 @@ describe('runImport', () => {
     expect(a?.content).toBe('# a\n\nText ![](big.png)')
   })
 
-  it('round-trips a FixNote export into an empty database', async () => {
+  it('round-trips a Fixnote export into an empty database', async () => {
     const work = await repo.createFolder('Work')
     await repo.createNote({ content: '# Plan\n![pic](attachment:att1)', folderId: work.id })
     await repo.createNote({ content: 'loose #tag' })

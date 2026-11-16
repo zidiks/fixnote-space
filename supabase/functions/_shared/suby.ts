@@ -1,5 +1,5 @@
 /**
- * Suby.fi API v3 (https://docs.suby.fi/v3-beta): the few calls FixNote needs. The key's prefix picks
+ * Suby.fi API v3 (https://docs.suby.fi/v3-beta): the few calls Fixnote needs. The key's prefix picks
  * the environment (sk_sandbox_… or sk_live_…); it lives only in the edge functions' secrets.
  */
 

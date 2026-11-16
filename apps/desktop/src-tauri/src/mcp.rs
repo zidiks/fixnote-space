@@ -157,13 +157,13 @@ mod tests {
     #[test]
     fn adds_the_server_to_codex_and_keeps_the_rest() {
         let before = "# my settings\nmodel = \"o3\"\n\n[mcp_servers.other]\ncommand = \"x\"\n";
-        let after = with_fixnote_toml(before, "C:\\FixNote\\fixnote-mcp.exe").unwrap();
+        let after = with_fixnote_toml(before, "C:\\Fixnote\\fixnote-mcp.exe").unwrap();
         assert!(after.starts_with("# my settings\nmodel = \"o3\""));
         let doc: toml_edit::DocumentMut = after.parse().unwrap();
         assert_eq!(doc["mcp_servers"]["other"]["command"].as_str(), Some("x"));
         assert_eq!(
             doc["mcp_servers"]["fixnote"]["command"].as_str(),
-            Some("C:\\FixNote\\fixnote-mcp.exe")
+            Some("C:\\Fixnote\\fixnote-mcp.exe")
         );
         let fresh = with_fixnote_toml("", "/app/fixnote-mcp").unwrap();
         assert_eq!(
@@ -185,13 +185,13 @@ mod tests {
     fn adds_the_server_and_keeps_other_settings() {
         let before = r#"{"theme":"dark","mcpServers":{"other":{"command":"x"}}}"#;
         let after: Value =
-            serde_json::from_str(&with_fixnote(before, "C:\\FixNote\\fixnote-mcp.exe").unwrap())
+            serde_json::from_str(&with_fixnote(before, "C:\\Fixnote\\fixnote-mcp.exe").unwrap())
                 .unwrap();
         assert_eq!(after["theme"], "dark");
         assert_eq!(after["mcpServers"]["other"]["command"], "x");
         assert_eq!(
             after["mcpServers"]["fixnote"]["command"],
-            "C:\\FixNote\\fixnote-mcp.exe"
+            "C:\\Fixnote\\fixnote-mcp.exe"
         );
         let fresh: Value =
             serde_json::from_str(&with_fixnote("", "/app/fixnote-mcp").unwrap()).unwrap();

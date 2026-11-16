@@ -20,7 +20,7 @@ export interface EditInput {
 /** Marker the dev backend uses to recognize an edit request; keep it in the prompt. */
 export const EDIT_MARKER = 'You edit a fragment of a note'
 
-const SYSTEM = `${EDIT_MARKER} in FixNote, a private notes app.
+const SYSTEM = `${EDIT_MARKER} in Fixnote, a private notes app.
 
 Rules:
 - Reply with the replacement Markdown only: no preface, no explanations, no code fences around it.

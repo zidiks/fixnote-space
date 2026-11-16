@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "FixNote",
+  "productName": "Fixnote",
   "version": "0.1.2",
   "identifier": "space.fixnote.app",
   "build": {
@@ -13,7 +13,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "FixNote",
+        "title": "Fixnote",
         "width": 1280,
         "height": 820,
         "minWidth": 560,

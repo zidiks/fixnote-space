@@ -4,7 +4,7 @@
  * limits. A small plugin (./plugin, imported once into Figma desktop) asks this bridge for jobs and
  * runs them through the Plugin API; the commands below (or the MCP tools of `mcp`) queue the jobs.
  * Writing: variables, styles and layers from JSON specs, upserted by key; `push-kit` builds the
- * FixNote UI kit from the repository (kit.mjs). `node bridge.mjs help` lists every command.
+ * Fixnote UI kit from the repository (kit.mjs). `node bridge.mjs help` lists every command.
  *
  *   node bridge.mjs serve                 keep running in a terminal (localhost:7331 only)
  *   node bridge.mjs mcp                   MCP server on stdio; starts the bridge when none runs
@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url'
 
 const VERSION = '2.2.0' // pack.mjs reads it for the archive and the .mcpb manifest
 const HERE = dirname(fileURLToPath(import.meta.url))
-/** The FixNote UI kit: only inside the repository (kit.mjs reads its sources), none when packed. */
+/** The Fixnote UI kit: only inside the repository (kit.mjs reads its sources), none when packed. */
 const kit = existsSync(join(HERE, 'kit.mjs'))
   ? await import('./kit.mjs').then((m) => (m.KIT_READY ? m : null))
   : null
@@ -284,7 +284,7 @@ const readJson = (file) => {
 
 /**
  * Runs a bundle: `{format: 'figma-bridge/bundle@1', name, page, steps: [{kind, params, label,
- * id?, unless?: {step, mode}}]}` (kit.mjs makes one of the FixNote kit). `page` moves every build
+ * id?, unless?: {step, mode}}]}` (kit.mjs makes one of the Fixnote kit). `page` moves every build
  * step to another page. A step with `unless` is skipped when the step `id` it names created that
  * mode (the Dark collection for plans with one mode). Returns one line per step.
  */
@@ -556,7 +556,7 @@ const TOOLS = [
         {
           name: 'figma_push_kit',
           description:
-            'Push the FixNote UI kit from the repository: tokens from packages/ui/src/styles.css as variables (Light/Dark), ' +
+            'Push the Fixnote UI kit from the repository: tokens from packages/ui/src/styles.css as variables (Light/Dark), ' +
             'text and shadow styles, lucide icons, and components bound to them (Button, Input, Badge, Kbd, Dialog, note row, title bar, Spotlight, two app screens, ' +
             'note card, note snippet, sidebar). Re-running updates the same components. parts: any of ' +
             `${kit.KIT_PARTS.join(', ')} (default all, in that order; later parts need the earlier ones in the file).`,
@@ -604,7 +604,7 @@ async function mcp(out) {
         instructions:
           'Reads and writes the Figma file open in Figma desktop through the Figma Bridge plugin. ' +
           'Writes are idempotent by key: push the same specs again to update. Order: figma_variables, ' +
-          `figma_styles, components, then layers that use them${kit ? '; figma_push_kit does all of it for FixNote' : ''}.`,
+          `figma_styles, components, then layers that use them${kit ? '; figma_push_kit does all of it for Fixnote' : ''}.`,
       })
     if (method === 'ping') return reply(id, {})
     if (method === 'tools/list')
@@ -761,7 +761,7 @@ const HELP = `Figma Bridge ${VERSION}: read and write the Figma file open on thi
 
 ${
   kit
-    ? `  push-kit [parts] [--page "FixNote UI"] the FixNote UI kit as variables, styles, components
+    ? `  push-kit [parts] [--page "Fixnote UI"] the Fixnote UI kit as variables, styles, components
                                          parts: ${kit.KIT_PARTS.join(' ')}
   export-kit [file.json] [parts]         the same as one bundle file, for other Figma files
 `
@@ -838,7 +838,7 @@ try {
       break
     }
     case 'push-kit':
-      if (!kit) fail('push-kit needs the FixNote repository (tools/figma-bridge/bridge.mjs there).')
+      if (!kit) fail('push-kit needs the Fixnote repository (tools/figma-bridge/bridge.mjs there).')
       await applyBundle(
         await kit.kitBundle({ parts: rest.length ? rest : undefined, page: flags.page }),
         { log: (l) => console.log(l) },
@@ -846,7 +846,7 @@ try {
       break
     case 'export-kit': {
       if (!kit)
-        fail('export-kit needs the FixNote repository (tools/figma-bridge/bridge.mjs there).')
+        fail('export-kit needs the Fixnote repository (tools/figma-bridge/bridge.mjs there).')
       const [file = 'fixnote-ui-kit.json', ...parts] = rest
       const bundle = await kit.kitBundle({
         parts: parts.length ? parts : undefined,

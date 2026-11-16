@@ -2,7 +2,7 @@ import { splitAtQuiet } from '@fixnote/core/speech'
 import type { AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
 import { Tensor } from '@huggingface/transformers'
 
-/** The languages FixNote speaks; detection chooses among these unless told otherwise. */
+/** The languages Fixnote speaks; detection chooses among these unless told otherwise. */
 export const DEFAULT_LANGUAGES = ['en', 'ru', 'es']
 /** Whisper hears 30 s at a time; longer recordings go in pieces cut at pauses. */
 const WINDOW_S = 28

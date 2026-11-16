@@ -13,15 +13,15 @@ use tauri::{AppHandle, Emitter, Manager, Wry};
 const ID: &str = "main";
 
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Open FixNote", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit FixNote", true, None::<&str>)?;
+    let open = MenuItem::with_id(app, "open", "Open Fixnote", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit Fixnote", true, None::<&str>)?;
     let menu = MenuBuilder::new(app)
         .item(&open)
         .separator()
         .item(&quit)
         .build()?;
     let mut tray = TrayIconBuilder::with_id(ID)
-        .tooltip("FixNote")
+        .tooltip("Fixnote")
         .menu(&menu)
         // On macOS a menu bar icon opens its menu; on Windows a click opens the app.
         .show_menu_on_left_click(cfg!(target_os = "macos"))

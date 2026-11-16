@@ -2,9 +2,9 @@
 <!--
   The Microsoft Store package (MSIX). build.ps1 fills in the {{...}} placeholders: the identity comes from
   Partner Center (Product management > Product identity), the version from tauri.conf.json.
-  - FixNote.exe is the app; fixnote-mcp.exe is the MCP server, reachable as the `fixnote-mcp`
+  - Fixnote.exe is the app; fixnote-mcp.exe is the MCP server, reachable as the `fixnote-mcp`
     command (alias) so MCP clients can start it whatever version is installed (src-tauri/src/store.rs).
-  - fixnote:// links start FixNote.exe with the link as its argument (src-tauri/src/deep_link.rs).
+  - fixnote:// links start Fixnote.exe with the link as its argument (src-tauri/src/deep_link.rs).
   - The app's data folders and Claude's config folder are excluded from AppData virtualization, so
     the Store build, the installer build and the MCP server all see the same notes, and connecting
     Claude writes the config Claude reads (needs unvirtualizedResources).
@@ -26,7 +26,9 @@
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>FixNote</DisplayName>
+    <!-- Must equal the name reserved in Partner Center ("Fixnote" alone was taken). The Start menu
+         keeps the short name (VisualElements below). -->
+    <DisplayName>Fixnote: Private AI Notes</DisplayName>
     <PublisherDisplayName>{{PUBLISHER_DISPLAY_NAME}}</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <virtualization:FileSystemWriteVirtualization>
@@ -49,9 +51,9 @@
   </Resources>
 
   <Applications>
-    <Application Id="FixNote" Executable="FixNote.exe" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="Fixnote" Executable="Fixnote.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="FixNote"
+        DisplayName="Fixnote"
         Description="Private notes with an assistant that helps you remember."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -61,7 +63,7 @@
       <Extensions>
         <uap3:Extension Category="windows.protocol">
           <uap3:Protocol Name="fixnote" Parameters="&quot;%1&quot;">
-            <uap:DisplayName>FixNote</uap:DisplayName>
+            <uap:DisplayName>Fixnote</uap:DisplayName>
           </uap3:Protocol>
         </uap3:Extension>
       </Extensions>
@@ -74,8 +76,8 @@
       EntryPoint="Windows.FullTrustApplication"
       desktop4:SupportsMultipleInstances="true">
       <uap:VisualElements
-        DisplayName="FixNote MCP server"
-        Description="Lets AI apps on this computer read and edit your FixNote notes."
+        DisplayName="Fixnote MCP server"
+        Description="Lets AI apps on this computer read and edit your Fixnote notes."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png"

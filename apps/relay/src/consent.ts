@@ -6,7 +6,7 @@ import {
 } from '@fixnote/core/remote-mcp'
 
 /**
- * The connect handoff (docs/remote-mcp.md, "Connecting"): the FixNote app answers Supabase's OAuth
+ * The connect handoff (docs/remote-mcp.md, "Connecting"): the Fixnote app answers Supabase's OAuth
  * consent and leaves the redirect back to the AI app here; the connect page in the browser picks it
  * up once. One tiny Durable Object per authorization id (`ConsentHandoff`) holds only that redirect
  * and whether it was allowed, for at most `CONSENT_TTL_MS`, and forgets it on the first read.

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Packs Figma Bridge for other people (no repository, no FixNote kit):
+ * Packs Figma Bridge for other people (no repository, no Fixnote kit):
  *
  *   dist/figma-bridge-<version>.zip   the archive to send: a "Figma Bridge" folder with
  *     Figma Bridge.mcpb               Claude Desktop extension (double-click; runs on Claude's own Node)
@@ -11,7 +11,7 @@
  *   dist/Figma Bridge.mcpb            the same extension on its own
  *
  * `node tools/figma-bridge/pack.mjs` (or `pnpm figma:pack`); with `kit` also dist/fixnote-figma.zip:
- * the FixNote UI kit and the Screens page as one bundle file (pages "FixNote UI" and "Screens"), a
+ * the Fixnote UI kit and the Screens page as one bundle file (pages "Fixnote UI" and "Screens"), a
  * README and a prompt, and this bridge, for another person's Figma file. No dependencies: the zip writer is
  * below, and it keeps the executable bit of Install.command for macOS.
  */
@@ -102,7 +102,7 @@ console.log(`Figma Bridge ${version}, ${tools.length} tools:`)
 console.log(`  ${join(DIST, name)}  (${Math.round(archive.length / 1024)} KB, send this)`)
 console.log(`  ${join(DIST, `${FOLDER}.mcpb`)}  (${Math.round(mcpb.length / 1024)} KB)`)
 
-// `node pack.mjs kit`: the FixNote UI kit for someone else's Figma file, as one archive: the kit
+// `node pack.mjs kit`: the Fixnote UI kit for someone else's Figma file, as one archive: the kit
 // bundle (export-kit), how to apply it (README, a prompt for their AI) and this bridge next to it.
 if (process.argv[2] === 'kit') {
   // The kit from the code, then (when exported: `bridge.mjs export-page Screens <file>`) the
@@ -118,7 +118,7 @@ if (process.argv[2] === 'kit') {
   const show = kit.steps.pop()
   const bundle = {
     ...kit,
-    name: screens ? 'FixNote UI kit and screens' : kit.name,
+    name: screens ? 'Fixnote UI kit and screens' : kit.name,
     pages: screens ? [kit.page, screens.page] : [kit.page],
     steps: [...kit.steps, ...(screens?.steps ?? []), show],
   }

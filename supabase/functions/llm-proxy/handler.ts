@@ -49,7 +49,7 @@ export const unmetered: Meter = {
 }
 
 const REFUSED: Record<NonNullable<Allowance['reason']>, [number, string]> = {
-  pro_required: [402, 'The assistant is part of FixNote Pro'],
+  pro_required: [402, 'The assistant is part of Fixnote Pro'],
   month_limit: [429, 'This month’s AI allowance is used up'],
   day_limit: [429, 'Today’s AI allowance is used up'],
   paused: [503, 'The assistant is paused for a while'],

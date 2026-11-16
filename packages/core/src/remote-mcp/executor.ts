@@ -45,13 +45,13 @@ export interface RemoteCallEntry {
   ok: boolean
 }
 
-const SETTINGS = 'FixNote → Settings → AI → Connected apps'
-const READ_ONLY = `FixNote allows AI apps to read only. To let them add and change notes, open ${SETTINGS} and choose "Read and write".`
+const SETTINGS = 'Fixnote → Settings → AI → Connected apps'
+const READ_ONLY = `Fixnote allows AI apps to read only. To let them add and change notes, open ${SETTINGS} and choose "Read and write".`
 const NO_DELETE =
-  'AI apps connected through remote access cannot delete. Delete notes in FixNote itself.'
+  'AI apps connected through remote access cannot delete. Delete notes in Fixnote itself.'
 const NOT_REMOTE =
-  'AI apps connected through remote access cannot do this. Do it in FixNote itself.'
-const TOO_MANY = `Too many changes in a short time: FixNote takes no more changes from AI apps for a few minutes. Reading still works. Each change can be undone in FixNote → Settings → AI → AI activity.`
+  'AI apps connected through remote access cannot do this. Do it in Fixnote itself.'
+const TOO_MANY = `Too many changes in a short time: Fixnote takes no more changes from AI apps for a few minutes. Reading still works. Each change can be undone in Fixnote → Settings → AI → AI activity.`
 
 async function kv(db: SqlDriver, key: string): Promise<string | null> {
   const [row] = await db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [key])
@@ -103,7 +103,7 @@ export function remoteGate(db: SqlDriver, repo: NotesRepo, remote: RemoteScope =
   return {
     async need(level) {
       if ((await kv(db, MCP_REMOTE_KEY)) !== '1') {
-        throw new AccessError('Remote access is turned off in FixNote → Settings → Integrations.')
+        throw new AccessError('Remote access is turned off in Fixnote → Settings → Integrations.')
       }
       const access = parseMcpAccess(await kv(db, MCP_ACCESS_KEY))
       if (access === 'off') throw new AccessError(`Access to notes is turned off in ${SETTINGS}.`)

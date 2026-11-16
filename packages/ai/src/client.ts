@@ -44,7 +44,7 @@ export interface ChatRequest {
   tools?: ToolDef[]
   temperature?: number
   maxTokens?: number
-  /** More fields for the request body, for one provider (FixNote AI's `level`). */
+  /** More fields for the request body, for one provider (Fixnote AI's `level`). */
   body?: Record<string, unknown>
   signal?: AbortSignal
   fetch?: typeof fetch
@@ -54,7 +54,7 @@ export class ChatError extends Error {
   constructor(
     readonly status: number,
     message: string,
-    /** Why FixNote AI refused (llm-proxy): 'pro_required', 'month_limit', 'day_limit', 'paused'. */
+    /** Why Fixnote AI refused (llm-proxy): 'pro_required', 'month_limit', 'day_limit', 'paused'. */
     readonly code: string | null = null,
     /** When the allowance renews (YYYY-MM-DD), with a limit code. */
     readonly resetsAt: string | null = null,

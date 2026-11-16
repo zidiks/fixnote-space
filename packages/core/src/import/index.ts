@@ -18,7 +18,7 @@ interface PlannedImage {
   match: string
   alt: string
   file: string
-  /** Attachment id in a FixNote export, so every note sharing it points to one copy. */
+  /** Attachment id in a Fixnote export, so every note sharing it points to one copy. */
   key?: string
 }
 
@@ -165,7 +165,7 @@ export function parseFrontMatter(content: string): {
 }
 
 /**
- * Front matter tags kept as a last line of `#words` (FixNote has no tags; the words stay
+ * Front matter tags kept as a last line of `#words` (Fixnote has no tags; the words stay
  * searchable), leaving out the ones the text already has.
  */
 export function withTagLine(body: string, tags: readonly string[]): string {
@@ -342,7 +342,7 @@ interface FixnoteExport {
   attachments?: Record<string, string>
 }
 
-/** FixNote's own export: the JSON copy has everything, including folders and daily notes. */
+/** Fixnote's own export: the JSON copy has everything, including folders and daily notes. */
 function planFixnote(files: ImportFile[]): ImportPlan {
   const json = files.find((f) => /(^|\/)fixnote\.json$/.test(f.path))
   const data = JSON.parse(text(json?.data ?? new Uint8Array())) as FixnoteExport
@@ -389,7 +389,7 @@ export interface ImportResult {
   duplicates: number
 }
 
-/** Image targets differ between the source (`img/a.png`) and FixNote (`attachment:…`). */
+/** Image targets differ between the source (`img/a.png`) and Fixnote (`attachment:…`). */
 const masked = (content: string) =>
   content
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '![$1]()')

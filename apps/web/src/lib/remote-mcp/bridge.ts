@@ -94,7 +94,7 @@ const deviceLabel = () => {
           : /Linux/.test(ua)
             ? 'Linux'
             : ''
-  return [os, platform.kind === 'desktop' ? 'FixNote' : 'FixNote web'].filter(Boolean).join(' · ')
+  return [os, platform.kind === 'desktop' ? 'Fixnote' : 'Fixnote web'].filter(Boolean).join(' · ')
 }
 
 /**

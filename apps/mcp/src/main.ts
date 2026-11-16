@@ -15,7 +15,7 @@ async function main() {
   const path = argValue('--db') ?? defaultDatabasePath()
   if (!existsSync(path)) {
     process.stderr.write(
-      `FixNote database not found at ${path}. Open the FixNote app once first.\n`,
+      `Fixnote database not found at ${path}. Open the Fixnote app once first.\n`,
     )
     process.exit(1)
   }
@@ -24,7 +24,7 @@ async function main() {
   const version = Number(row?.user_version ?? 0)
   if (version !== MIGRATIONS.length) {
     process.stderr.write(
-      `FixNote database is at schema v${version}, this server expects v${MIGRATIONS.length}. Update and open the FixNote app.\n`,
+      `Fixnote database is at schema v${version}, this server expects v${MIGRATIONS.length}. Update and open the Fixnote app.\n`,
     )
     process.exit(1)
   }

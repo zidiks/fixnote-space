@@ -1,4 +1,4 @@
-# FixNote
+# Fixnote
 
 Private personal notes with an assistant that helps you remember. Local-first, end-to-end encrypted,
 voice input, chat over your notes, MCP. Desktop (Tauri, Windows first) and web from one codebase.
@@ -45,7 +45,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   every accepted change can be undone.
 - AI history (Settings → AI): every change the assistant made to a note, with before and after,
   and undo as long as the note has not changed since.
-- Choice of model (Settings → AI): FixNote AI (DeepSeek through our proxy, needs an account), your
+- Choice of model (Settings → AI): Fixnote AI (DeepSeek through our proxy, needs an account), your
   own key for OpenAI, OpenRouter, Groq, DeepSeek or any OpenAI-compatible API, or Ollama on this
   computer. The key stays in the OS keychain (desktop) or encrypted in the browser. Local-only
   mode turns off sync, Telegram and sharing and allows only Ollama.
@@ -53,7 +53,7 @@ Offline first, on web and desktop; an account is optional and only adds sync:
   with permission create notes or append to them (Settings → AI → MCP; off / read / read and
   write). The server `fixnote-mcp` ships with the app and works on the local database.
 - Import (Settings → Data): a folder of Markdown files (Obsidian too), a Bear backup
-  (`.bear2bk`), a Notion export (`.zip`) or a FixNote export, with folders, dates and images (front matter tags stay as `#words` at the end).
+  (`.bear2bk`), a Notion export (`.zip`) or a Fixnote export, with folders, dates and images (front matter tags stay as `#words` at the end).
   Notes that are already there are skipped; Undo removes the whole import.
 - Share a note by link (signed in): the copy is sealed with a key that exists only in the link, so
   the server cannot read it. Update the link after edits or turn it off, from the note or from
@@ -123,11 +123,11 @@ on first launch.
 
 CI builds a `.dmg` for Apple Silicon (`fixnote-macos-latest`) and one for Intel Macs
 (`fixnote-macos-15-intel`), see [CI](#ci). It is ad-hoc signed but not notarized, so
-after dragging FixNote to Applications, clear the download flag once, or macOS reports the app
+after dragging Fixnote to Applications, clear the download flag once, or macOS reports the app
 as damaged:
 
 ```bash
-xattr -cr /Applications/FixNote.app
+xattr -cr /Applications/Fixnote.app
 ```
 
 Hardened runtime is off (`tauri.macos.conf.json`): the bundled MCP server runs V8, which crashes
@@ -253,7 +253,7 @@ builds.
 
 ## Plans (Free and Pro)
 
-Free is everything on the device; Pro is what goes through the server: personal sync, FixNote AI,
+Free is everything on the device; Pro is what goes through the server: personal sync, Fixnote AI,
 sharing notes and folders (people invited join on Free), public links, capture from messengers and
 20 GB of files. The server decides (triggers and the storage policy in
 `supabase/migrations/*_plans.sql` and `*_open_trial.sql`); the app only explains (Settings → Plan,
@@ -283,8 +283,8 @@ the sidebar card, "This is part of Pro", the note at the end of the trial).
   until the paid period ends, taken away on a refund or chargeback). Settings → Billing shows the
   subscription and its payments with PDF receipts, switches monthly to yearly from the period end
   and cancels, all through the `billing` function (the Suby key stays there). Set up once:
-  1. Suby dashboard → Products → Create: Recurring payments, "FixNote Pro, monthly" ($7 USD,
-     Monthly) and "FixNote Pro, yearly" ($60 USD, Yearly). Leave Access & delivery, the discount,
+  1. Suby dashboard → Products → Create: Recurring payments, "Fixnote Pro, monthly" ($7 USD,
+     Monthly) and "Fixnote Pro, yearly" ($60 USD, Yearly). Leave Access & delivery, the discount,
      custom fields and the After payment URLs empty: the app sets where the buyer returns. Note
      their ids (`pro_…`).
   2. Dashboard → Settings: an API key (start with `sk_sandbox_…` to test, `sk_live_…` for real),
@@ -297,7 +297,7 @@ the sidebar card, "This is part of Pro", the note at the end of the trial).
   Bought in the web app, the buyer comes back to it; bought in the desktop app, to
   `?billing=success&to=app`, a page that opens the app again with `fixnote://billing/success`
   (registered by the installers and the MSIX package; macOS and browsers ask once whether to
-  open FixNote). Either way the app that started the payment shows "checking", then the welcome.
+  open Fixnote). Either way the app that started the payment shows "checking", then the welcome.
   Going live: the same three secrets with the live values (`sk_live_…` key, the live products'
   `pro_…` ids, the live webhook's `whsec_…`); the key's prefix picks Suby's environment, nothing
   else changes. Payment methods are set per product in the Suby dashboard. Until card payments are
@@ -416,9 +416,11 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
 - Microsoft Store: the Windows job also packs the app into an MSIX (`apps/desktop/msix`:
   `AppxManifest.xml`, `build.ps1`, images from `pnpm --filter @fixnote/desktop icons`), installs it
   on the runner and checks that the MCP server answers through its `fixnote-mcp` alias. The
-  `fixnote-microsoft-store` artifact has `FixNote-Store-x64.msix` (upload this one in Partner
+  `fixnote-microsoft-store` artifact has `Fixnote-Store-x64.msix` (upload this one in Partner
   Center; the Store signs it) and an unsigned test copy. Set up once:
-  1. Partner Center → Apps and games → New product → MSIX or PWA app, reserve the name FixNote.
+  1. Partner Center → Apps and games → New product → MSIX or PWA app, reserve the name
+     `Fixnote: Private AI Notes` (done; "Fixnote" alone was taken). It must equal
+     `Properties/DisplayName` in `AppxManifest.xml`.
   2. Product management → Product identity: copy `Package/Identity/Name`,
      `Package/Identity/Publisher` and `Package/Properties/PublisherDisplayName` into the GitHub
      variables `MSSTORE_IDENTITY_NAME`, `MSSTORE_PUBLISHER`, `MSSTORE_PUBLISHER_DISPLAY_NAME`
@@ -431,5 +433,5 @@ CI builds with the repository variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON
 
   The Store version never updates itself (Settings shows "updates from the Microsoft Store"): each
   release, run the release, then upload the new `.msix` in a new submission. To try the test copy
-  on Windows 11: `Add-AppxPackage FixNote-Store-x64-test.msix -AllowUnsigned` in PowerShell
+  on Windows 11: `Add-AppxPackage Fixnote-Store-x64-test.msix -AllowUnsigned` in PowerShell
   (`Remove-AppxPackage` takes it off again).

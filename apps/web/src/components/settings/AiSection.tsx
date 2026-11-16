@@ -178,7 +178,7 @@ function AiModeSection() {
   )
 }
 
-/** How hard FixNote AI thinks in the chat; only for FixNote AI (other models are chosen above). */
+/** How hard Fixnote AI thinks in the chat; only for Fixnote AI (other models are chosen above). */
 function AiLevelSection() {
   const { t } = useTranslation()
   const level = useLlm((s) => s.level)

@@ -70,14 +70,14 @@ const MIME_BY_EXT: Record<string, string> = {
 const isText = (mime: string) =>
   mime.startsWith('text/') || /^application\/(json|xml|x-yaml|yaml)$/.test(mime)
 
-const SETTINGS = 'FixNote → Settings → AI → Connected apps'
+const SETTINGS = 'Fixnote → Settings → AI → Connected apps'
 
 const kv = async (db: SqlDriver, key: string): Promise<string | null> => {
   const [row] = await db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [key])
   return row?.value ?? null
 }
 
-/** What the user allowed connected apps in FixNote, read again on every call. */
+/** What the user allowed connected apps in Fixnote, read again on every call. */
 function settingsGate(db: SqlDriver): ToolGate {
   return {
     async need(level) {
@@ -86,8 +86,8 @@ function settingsGate(db: SqlDriver): ToolGate {
       if (access === 'off') throw new AccessError(`Access to notes is turned off in ${SETTINGS}.`)
       throw new AccessError(
         level === 'write'
-          ? `FixNote allows reading only. To let this app add and change notes, open ${SETTINGS} and allow writing.`
-          : `FixNote does not let connected apps delete. To allow it, open ${SETTINGS} and choose full access.`,
+          ? `Fixnote allows reading only. To let this app add and change notes, open ${SETTINGS} and allow writing.`
+          : `Fixnote does not let connected apps delete. To allow it, open ${SETTINGS} and choose full access.`,
       )
     },
     scope: async () => parseMcpScope(await kv(db, SCOPE_KEY)),
@@ -152,7 +152,7 @@ export class NotesTools extends NoteTools {
     file: { path?: string; data?: string; name?: string; mime?: string },
   ): Promise<string> {
     await this.need('write')
-    if (!this.attachments) throw new Error('Files are not available: FixNote was not found here.')
+    if (!this.attachments) throw new Error('Files are not available: Fixnote was not found here.')
     await this.visibleNote(await this.reach(), id)
     let bytes: Uint8Array
     let name = file.name?.trim() ?? ''
@@ -178,4 +178,4 @@ export class NotesTools extends NoteTools {
 }
 
 const tooBig = (size: number) =>
-  `The file is ${fileSize(size)}; FixNote takes files up to ${fileSize(MAX_ATTACHMENT_BYTES)}.`
+  `The file is ${fileSize(size)}; Fixnote takes files up to ${fileSize(MAX_ATTACHMENT_BYTES)}.`

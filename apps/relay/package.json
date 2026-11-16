@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Remote MCP relay (Cloudflare Worker + Durable Object): forwards MCP tool calls to the person's online FixNote device. Holds no keys and no note content.",
+  "description": "Remote MCP relay (Cloudflare Worker + Durable Object): forwards MCP tool calls to the person's online Fixnote device. Holds no keys and no note content.",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",

@@ -81,7 +81,7 @@ export const NOTE_TOOL_SPECS: readonly ToolSpec[] = [
   {
     name: 'create_note',
     description:
-      'Saves a new note (Markdown; the first line becomes its title). Without a folder it lands on Home without a folder. The user sees it in FixNote and can undo it.',
+      'Saves a new note (Markdown; the first line becomes its title). Without a folder it lands on Home without a folder. The user sees it in Fixnote and can undo it.',
     parameters: params(
       { content: { type: 'string' }, folder: { type: 'string', description: FOLDER } },
       ['content'],
@@ -126,7 +126,7 @@ export const NOTE_TOOL_SPECS: readonly ToolSpec[] = [
   },
   {
     name: 'delete_note',
-    description: 'Deletes a note. The user can restore it from the AI activity log in FixNote.',
+    description: 'Deletes a note. The user can restore it from the AI activity log in Fixnote.',
     parameters: params({ id: { type: 'string' } }, ['id']),
     level: 'full',
   },
@@ -157,7 +157,7 @@ export const NOTE_TOOL_SPECS: readonly ToolSpec[] = [
   {
     name: 'delete_folder',
     description:
-      'Deletes a folder and the folders inside it. Their notes are kept and end up without a folder. The user can undo it in FixNote.',
+      'Deletes a folder and the folders inside it. Their notes are kept and end up without a folder. The user can undo it in Fixnote.',
     parameters: params({ folder: { type: 'string', description: FOLDER } }, ['folder']),
     level: 'full',
   },

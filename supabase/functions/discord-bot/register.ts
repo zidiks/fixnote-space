@@ -15,17 +15,17 @@ const commands = [
   {
     // Message command: right-click a message → Apps.
     type: 3,
-    name: 'Save to FixNote',
-    name_localizations: { ru: 'Сохранить в FixNote', 'es-ES': 'Guardar en FixNote' },
+    name: 'Save to Fixnote',
+    name_localizations: { ru: 'Сохранить в Fixnote', 'es-ES': 'Guardar en Fixnote' },
     ...everywhere,
   },
   {
     type: 1,
     name: 'save',
-    description: 'Save text or a link to FixNote',
+    description: 'Save text or a link to Fixnote',
     description_localizations: {
-      ru: 'Сохранить текст или ссылку в FixNote',
-      'es-ES': 'Guardar texto o un enlace en FixNote',
+      ru: 'Сохранить текст или ссылку в Fixnote',
+      'es-ES': 'Guardar texto o un enlace en Fixnote',
     },
     options: [
       {
@@ -41,10 +41,10 @@ const commands = [
   {
     type: 1,
     name: 'disconnect',
-    description: 'Stop saving from Discord to FixNote',
+    description: 'Stop saving from Discord to Fixnote',
     description_localizations: {
-      ru: 'Больше не сохранять из Discord в FixNote',
-      'es-ES': 'Dejar de guardar de Discord en FixNote',
+      ru: 'Больше не сохранять из Discord в Fixnote',
+      'es-ES': 'Dejar de guardar de Discord en Fixnote',
     },
     ...everywhere,
   },

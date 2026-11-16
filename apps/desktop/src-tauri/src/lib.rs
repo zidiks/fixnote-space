@@ -1,4 +1,4 @@
-//! Desktop shell for FixNote.
+//! Desktop shell for Fixnote.
 //!
 //! The UI and all domain logic live in apps/web and packages/core. Rust hosts only what the browser
 //! cannot do well: the local SQLite database, the OS keychain, native file dialogs, fetching
@@ -160,7 +160,7 @@ pub fn run() {
             tray::app_quit
         ])
         .build(tauri::generate_context!())
-        .expect("error while running FixNote")
+        .expect("error while running Fixnote")
         .run(|app, event| match event {
             // Quitting from the OS (⌘Q) while a call is being recorded: ask first.
             tauri::RunEvent::ExitRequested {

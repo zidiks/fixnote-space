@@ -39,38 +39,38 @@ const MAX_FILE = 10 * 1024 * 1024
 type Lang = 'en' | 'ru' | 'es'
 const TEXT: Record<Lang, Record<string, string>> = {
   en: {
-    linked: 'Done. Everything you send here will appear in FixNote. To disconnect, send /stop.',
-    notLinked: 'This chat is not connected. In FixNote, open Settings → Integrations → Telegram.',
+    linked: 'Done. Everything you send here will appear in Fixnote. To disconnect, send /stop.',
+    notLinked: 'This chat is not connected. In Fixnote, open Settings → Integrations → Telegram.',
     badCode:
-      'This link has expired. Create a new one in FixNote: Settings → Integrations → Telegram.',
-    stopped: 'Chat disconnected. Messages no longer go to FixNote.',
+      'This link has expired. Create a new one in Fixnote: Settings → Integrations → Telegram.',
+    stopped: 'Chat disconnected. Messages no longer go to Fixnote.',
     unsupported: 'For now I take text, voice messages and photos.',
     tooBig: 'This file is too large (over 10 MB).',
-    noKeys: 'Your FixNote account is not set up yet. Open the app and finish signing in.',
+    noKeys: 'Your Fixnote account is not set up yet. Open the app and finish signing in.',
     needsPro:
-      'Saving from messengers is part of FixNote Pro. Open FixNote → Settings → Plan to upgrade.',
+      'Saving from messengers is part of Fixnote Pro. Open Fixnote → Settings → Plan to upgrade.',
   },
   ru: {
-    linked: 'Готово. Всё, что вы пришлёте сюда, появится в FixNote. Отключить: /stop',
-    notLinked: 'Этот чат не подключён. В FixNote откройте Настройки → Интеграции → Telegram.',
-    badCode: 'Ссылка устарела. Создайте новую в FixNote: Настройки → Интеграции → Telegram.',
-    stopped: 'Чат отключён. Сообщения больше не попадают в FixNote.',
+    linked: 'Готово. Всё, что вы пришлёте сюда, появится в Fixnote. Отключить: /stop',
+    notLinked: 'Этот чат не подключён. В Fixnote откройте Настройки → Интеграции → Telegram.',
+    badCode: 'Ссылка устарела. Создайте новую в Fixnote: Настройки → Интеграции → Telegram.',
+    stopped: 'Чат отключён. Сообщения больше не попадают в Fixnote.',
     unsupported: 'Пока принимаю текст, голосовые и фото.',
     tooBig: 'Файл слишком большой (больше 10 МБ).',
-    noKeys: 'Аккаунт FixNote ещё не настроен. Откройте приложение и завершите вход.',
+    noKeys: 'Аккаунт Fixnote ещё не настроен. Откройте приложение и завершите вход.',
     needsPro:
-      'Сохранение из мессенджеров входит в FixNote Pro. Откройте FixNote → Настройки → Тариф.',
+      'Сохранение из мессенджеров входит в Fixnote Pro. Откройте Fixnote → Настройки → Тариф.',
   },
   es: {
-    linked: 'Listo. Todo lo que envíes aquí aparecerá en FixNote. Para desconectar, envía /stop.',
-    notLinked: 'Este chat no está conectado. En FixNote, abre Ajustes → Integraciones → Telegram.',
+    linked: 'Listo. Todo lo que envíes aquí aparecerá en Fixnote. Para desconectar, envía /stop.',
+    notLinked: 'Este chat no está conectado. En Fixnote, abre Ajustes → Integraciones → Telegram.',
     badCode:
-      'Este enlace ha caducado. Crea uno nuevo en FixNote: Ajustes → Integraciones → Telegram.',
-    stopped: 'Chat desconectado. Los mensajes ya no llegan a FixNote.',
+      'Este enlace ha caducado. Crea uno nuevo en Fixnote: Ajustes → Integraciones → Telegram.',
+    stopped: 'Chat desconectado. Los mensajes ya no llegan a Fixnote.',
     unsupported: 'Por ahora acepto texto, mensajes de voz y fotos.',
     tooBig: 'Este archivo es demasiado grande (más de 10 MB).',
-    noKeys: 'Tu cuenta de FixNote aún no está lista. Abre la app y termina de iniciar sesión.',
-    needsPro: 'Guardar desde mensajería es parte de FixNote Pro. Abre FixNote → Ajustes → Plan.',
+    noKeys: 'Tu cuenta de Fixnote aún no está lista. Abre la app y termina de iniciar sesión.',
+    needsPro: 'Guardar desde mensajería es parte de Fixnote Pro. Abre Fixnote → Ajustes → Plan.',
   },
 }
 

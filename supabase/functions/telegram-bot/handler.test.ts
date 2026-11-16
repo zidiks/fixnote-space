@@ -72,7 +72,7 @@ Deno.test('a Free account is told that saving from messengers needs Pro', async 
   await send({ text: 'Купить молоко' })
   assertEquals(items.length, 0)
   assertEquals(
-    sent.at(-1)?.text.startsWith('Сохранение из мессенджеров входит в FixNote Pro'),
+    sent.at(-1)?.text.startsWith('Сохранение из мессенджеров входит в Fixnote Pro'),
     true,
   )
 })

@@ -89,7 +89,7 @@ function ContextField({ settings }: { settings: ProviderSettings }) {
   )
 }
 
-/** Which model answers: FixNote AI, the user's own OpenAI-compatible key, or Ollama. */
+/** Which model answers: Fixnote AI, the user's own OpenAI-compatible key, or Ollama. */
 export function ProviderSection() {
   const { t } = useTranslation()
   const platform = usePlatform()

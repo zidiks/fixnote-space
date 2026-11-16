@@ -1,4 +1,4 @@
-# FixNote — working notes for Claude
+# Fixnote — working notes for Claude
 
 Read docs/CONCEPT.md before larger changes; section 10 lists decisions already made.
 
@@ -92,7 +92,7 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `AuditLog` (`chat.memory`, `ai_actions.memory`) and listed with the answer's changes. Deleting, and more than a few
   changes in one answer, always ask; in "ask" mode every change asks. Each answer lists its changes
   (`chat_messages.actions`) with Undo all. llm-proxy takes tools; a step that only returns tool
-  results is not a new request, and cached prompt tokens count a tenth. FixNote AI has two levels
+  results is not a new request, and cached prompt tokens count a tenth. Fixnote AI has two levels
   (Settings → AI, `useLlm().level`): medium = `LLM_MODEL` (deepseek-flash, thinking off), hard =
   `LLM_MODEL_HARD` (deepseek-v4-pro, thinking on; tokens weighed by `LLM_HARD_WEIGHT`). A thinking
   model gets its `reasoning_content` back with every earlier call and answer (DeepSeek with tools
@@ -101,7 +101,7 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   turn carries the folder list (`tools.folders()`); `search_notes` and `list_recent` take `folder`.
   A change to a note open on screen goes through `registerOpenNote` (`lib/assistant/open-notes.ts`):
   solo it is one editor step that types in (`editor/ai-typing.ts`); in a shared note it is written
-  into the live Yjs document, and the awareness field `ai` shows "FixNote AI · asked by …" in LiveBar.
+  into the live Yjs document, and the awareness field `ai` shows "Fixnote AI · asked by …" in LiveBar.
 - Logo (brand/README.md): the designer's two SVGs and `brand/strokes.json` are the source;
   `pnpm logo` makes `packages/ui/src/logo/data.gen.ts`, the icon SVGs and `brand/logo-motion.html`
   and checks that the strokes open the whole logo (`pnpm icons` then makes every PNG). `<Logo>`
@@ -123,7 +123,7 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Capture (Telegram): the bot only seals and queues (`supabase/functions/telegram-bot`); notes are
   made on the device (`packages/core/src/capture`). The payload format lives in both places.
   Discord (`functions/discord-bot`): a user-installed app, since plain messages need the Gateway;
-  "Save to FixNote" on a message, `/save`, `/disconnect` as signed HTTP interactions (deferred
+  "Save to Fixnote" on a message, `/save`, `/disconnect` as signed HTTP interactions (deferred
   answer, `EdgeRuntime.waitUntil`); Connect is Discord's OAuth with `state` = the capture code,
   back to `…/discord-bot/oauth`; commands are registered with `register.ts`. The browser
   extension (`apps/extension`, MV3, `pnpm --filter @fixnote/extension build` → dist) seals in
@@ -176,8 +176,8 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   image". Local and derived: not synced, forgotten with the notes.
 - Every AI change to a note goes through `AuditLog` (`packages/core/src/ai/audit.ts`), so it shows
   in Settings → AI and can be undone. LLM calls go through `llm()` in
-  `apps/web/src/lib/assistant/llm.ts` (FixNote AI, the user's key, or Ollama). In local-only mode
-  nothing may reach our server: no sync, Telegram, sharing or FixNote AI.
+  `apps/web/src/lib/assistant/llm.ts` (Fixnote AI, the user's key, or Ollama). In local-only mode
+  nothing may reach our server: no sync, Telegram, sharing or Fixnote AI.
 - MCP server: `apps/mcp`; its tools are `NoteTools` from core (writes only through `NotesRepo`, every
   change in `AuditLog`, folders too) behind a gate that reads the user's settings. Images and files: it reads and writes the desktop app's `blobs/` folder
   (`apps/mcp/src/blobs.ts` names files exactly like `blobs.rs`); an attachment is visible only
@@ -197,7 +197,7 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   The device side is `RemoteBridge` (core) started by `lib/remote-mcp/bridge.ts` when Remote access
   is on (kv `mcp.remote`, per device), signed in, not Free, not local-only. OAuth is Supabase Auth's
   OAuth 2.1 server (`[auth.oauth_server]`). Its consent step `/oauth/consent` is `ConnectPage`, a
-  page of its own (no local DB, no account, like `PaidPage`): "Approve in the FixNote app" opens
+  page of its own (no local DB, no account, like `PaidPage`): "Approve in the Fixnote app" opens
   `fixnote://connect?authorization_id=…` (core `remote-mcp/connect.ts`), the app shows
   `ConnectDialog` (always asks: any page can open the link; client, can/cannot, redirect host),
   answers Supabase with its own session and posts the redirect to the relay
@@ -267,7 +267,7 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   (`unsyncedChanges`). Anything new stored per account must be removed there too.
 - The recovery phrase shows only after a code sent to the account's email (`RecoveryPhrase` in
   `AccountSection.tsx`, `sendCheckCode`/`checkCode` on the backend; `123456` with `?dev-backend`).
-- Plans: Free = on the device, Pro = through our server (sync push, FixNote AI, sharing, links,
+- Plans: Free = on the device, Pro = through our server (sync push, Fixnote AI, sharing, links,
   capture, files). The server enforces it (`*_plans.sql`: triggers, storage policy, `ai_allowance`
   in `llm-proxy`); the app only explains (`lib/plan.ts`, `PlanSection`, `ProCard`, `withPro`). On
   Free, sync only downloads (`engine.sync({ push: false })`). `MemorySharedServer.isPro` and

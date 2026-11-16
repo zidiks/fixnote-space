@@ -25,7 +25,7 @@ pub async fn fetch_page(url: String) -> Result<FetchedPage, String> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(8))
         .redirect(reqwest::redirect::Policy::limited(5))
-        .user_agent("Mozilla/5.0 (compatible; FixNote/1.0; +https://fixnote.space)")
+        .user_agent("Mozilla/5.0 (compatible; Fixnote/1.0; +https://fixnote.space)")
         .build()
         .map_err(|e| e.to_string())?;
     let mut res = client

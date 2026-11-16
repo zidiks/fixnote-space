@@ -1,5 +1,5 @@
 /**
- * Every FixNote screen and state, captured into Figma (page "Screens") from the running app:
+ * Every Fixnote screen and state, captured into Figma (page "Screens") from the running app:
  *
  *   pnpm dev, open http://localhost:5173/?dev-backend at 1280×820 (phones: 390×844), seed once
  *   (seed.js), then in the page:
@@ -593,7 +593,7 @@ async function chat(_s, phase) {
   const question = {
     id: 'demo-q',
     kind: 'user',
-    content: 'Что осталось сделать по запуску FixNote 2.0?',
+    content: 'Что осталось сделать по запуску Fixnote 2.0?',
     scope: { kind: 'all' },
     citations: [],
     confidence: null,
@@ -607,7 +607,7 @@ async function chat(_s, phase) {
       'По плану запуска осталось три задачи [1]:\n\n- Обновить лендинг и цены\n- Записать демо-видео на 60 секунд\n- Подготовить пост для Product Hunt\n\nДве уже готовы: отзывы бета-тестеров собраны, онбординг переделан. Главный риск — синхронизация больших заметок на медленном интернете [1]. А на созвоне с дизайном решили выпускать тёмную тему вместе с новым видом [2].',
     scope: { kind: 'all' },
     citations: [
-      { n: 1, noteId: plan, title: 'План запуска FixNote 2.0', quote: 'Обновить лендинг и цены' },
+      { n: 1, noteId: plan, title: 'План запуска Fixnote 2.0', quote: 'Обновить лендинг и цены' },
       {
         n: 2,
         noteId: call,
@@ -630,7 +630,7 @@ async function chat(_s, phase) {
     useAssistant.setState({
       messages: [question, { ...answer, content: '', citations: [], status: 'streaming' }],
       status: 'thinking',
-      activity: 'Ищу «запуск FixNote»',
+      activity: 'Ищу «запуск Fixnote»',
       error: null,
     })
   await sleep(500)

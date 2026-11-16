@@ -1,5 +1,5 @@
 /**
- * The FixNote UI kit for Figma, built from the repository each time it is pushed:
+ * The Fixnote UI kit for Figma, built from the repository each time it is pushed:
  *
  * - colours from packages/ui/src/styles.css (`:root` = Light, `.dark` = Dark; `var(--x)` stays an
  *   alias), radii from `--radius`, the shadows `shadow-xs` and `--shadow-float`;
@@ -26,10 +26,10 @@ const REPO = (() => {
   return resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 })()
 const STYLES = join(REPO, 'packages/ui/src/styles.css')
-/** False outside the FixNote repository (the packed bridge): there is no kit to push. */
+/** False outside the Fixnote repository (the packed bridge): there is no kit to push. */
 export const KIT_READY = existsSync(STYLES)
-const COLORS = 'FixNote Theme'
-const SIZES = 'FixNote Size'
+const COLORS = 'Fixnote Theme'
+const SIZES = 'Fixnote Size'
 const ROOT = 'kit'
 
 export const KIT_PARTS = [
@@ -115,7 +115,7 @@ const ALPHA = [
 ]
 
 export function readTokens() {
-  if (!existsSync(STYLES)) throw new Error(`Not in the FixNote repository: ${STYLES} is missing`)
+  if (!existsSync(STYLES)) throw new Error(`Not in the Fixnote repository: ${STYLES} is missing`)
   const css = readFileSync(STYLES, 'utf8')
   const light = declarations(css, ':root')
   const dark = declarations(css, '.dark')
@@ -1444,7 +1444,7 @@ function screenParts() {
                 light('Zoom', '#28c840'),
               ],
             },
-            text('App', 'FixNote', 'sm-semibold', '$foreground', { w: 'fill' }),
+            text('App', 'Fixnote', 'sm-semibold', '$foreground', { w: 'fill' }),
             ghost('square-pen', 'Новая заметка'),
             ghost('panel-left-close', 'Скрыть боковую панель'),
           ],
@@ -1579,7 +1579,7 @@ function spotlight() {
           item('calendar-days', 'Wednesday, October 28, 2026', '28 окт.'),
           item('file-text', '8 направлений A/B-тестов Hero', '28 окт.'),
           item('file-text', 'Кольцо бонусы SF эссенции', '27 окт.'),
-          item('file-text', 'Приоритеты запуска FixNote по географии', '25 окт.'),
+          item('file-text', 'Приоритеты запуска Fixnote по географии', '25 окт.'),
           item('file-text', 'Тарифы', '25 окт.'),
           heading('Команды'),
           item('square-pen', 'Новая заметка'),
@@ -1635,7 +1635,7 @@ const NOTES_30 = [
   {
     Title: 'Тарифы',
     Excerpt:
-      'Free — всё на устройстве. Pro — синхронизация, FixNote AI, общий доступ, ссылки и файлы.',
+      'Free — всё на устройстве. Pro — синхронизация, Fixnote AI, общий доступ, ссылки и файлы.',
     Date: '12 окт.',
   },
 ]
@@ -1742,7 +1742,7 @@ function screen(name, withSearch) {
               use('sidebar/section', undefined, { Label: 'Папки' }, { w: 'fill', name: 'Папки' }),
               folder('Level Legends', '63', 'active', true, true),
               folder('Fixnote Internal', '1', 'default', false, false),
-              folder('FixNote', '9', 'default', true, false),
+              folder('Fixnote', '9', 'default', true, false),
             ],
           },
         ],
@@ -1904,7 +1904,7 @@ function screensBoard() {
  * same file rebuilds the kit in another Figma file without this repository. Parts come in
  * KIT_PARTS order: later ones use the variables and components of earlier ones.
  */
-export async function kitBundle({ parts, page = 'FixNote UI' } = {}) {
+export async function kitBundle({ parts, page = 'Fixnote UI' } = {}) {
   const want = parts?.length ? parts : KIT_PARTS
   for (const p of want)
     if (!KIT_PARTS.includes(p)) throw new Error(`No kit part ${p}: ${KIT_PARTS.join(', ')}`)
@@ -1913,7 +1913,7 @@ export async function kitBundle({ parts, page = 'FixNote UI' } = {}) {
   const root = {
     key: ROOT,
     type: 'FRAME',
-    name: 'FixNote UI',
+    name: 'Fixnote UI',
     layout: 'row',
     gap: 96,
     pad: 0,
@@ -1948,7 +1948,7 @@ export async function kitBundle({ parts, page = 'FixNote UI' } = {}) {
   steps.push({ kind: 'show', label: 'kit', params: { keys: [ROOT] } })
   return {
     format: 'figma-bridge/bundle@1',
-    name: 'FixNote UI kit',
+    name: 'Fixnote UI kit',
     page,
     parts: KIT_PARTS.filter((p) => want.includes(p)),
     made: new Date().toISOString(),

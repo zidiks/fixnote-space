@@ -69,16 +69,16 @@ port = 465
 user = "resend"
 pass = "env(SUPABASE_AUTH_SMTP_PASS)"
 admin_email = "no-reply@fixnote.space"
-sender_name = "FixNote"
+sender_name = "Fixnote"
 
 # New users get the "confirmation" email, returning users the "magic_link" one.
 # Both carry the same code; language comes from user metadata `lang` (en | es | ru).
 [auth.email.template.confirmation]
-subject = "FixNote: code / código / код"
+subject = "Fixnote: code / código / код"
 content_path = "./supabase/templates/otp.html"
 
 [auth.email.template.magic_link]
-subject = "FixNote: code / código / код"
+subject = "Fixnote: code / código / код"
 content_path = "./supabase/templates/otp.html"
 
 [auth.external.apple]

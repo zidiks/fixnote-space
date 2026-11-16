@@ -43,7 +43,7 @@ async function readFiles(list: FileList): Promise<ImportFile[]> {
 }
 
 /**
- * Brings notes in from Markdown folders, Bear, Notion, a FixNote export or (on a Mac) Apple Notes,
+ * Brings notes in from Markdown folders, Bear, Notion, a Fixnote export or (on a Mac) Apple Notes,
  * with Undo.
  */
 export function ImportSection() {

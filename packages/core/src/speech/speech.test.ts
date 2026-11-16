@@ -57,8 +57,8 @@ describe('speechVocabulary', () => {
       'Позвонить Олегом? Нет, написать Олегом в Telegram. Тинькофф ждёт.\n- [ ] Купить хлеб',
       '# Планы\nНовый кластер Kubernetes в Тинькофф, Telegram бот',
     ]
-    const words = speechVocabulary(notes, ['Работа', 'FixNote'])
-    expect(words.slice(0, 2)).toEqual(['Работа', 'FixNote'])
+    const words = speechVocabulary(notes, ['Работа', 'Fixnote'])
+    expect(words.slice(0, 2)).toEqual(['Работа', 'Fixnote'])
     expect(words).toContain('Олегом')
     expect(words).toContain('Тинькофф')
     expect(words).toContain('Kubernetes')
@@ -69,8 +69,8 @@ describe('speechVocabulary', () => {
   })
 
   it('builds a prompt from the words and the end of what was said', () => {
-    expect(speechPrompt(['FixNote', 'Олег'], 'Позвонить Олегу')).toBe(
-      'FixNote, Олег. Позвонить Олегу',
+    expect(speechPrompt(['Fixnote', 'Олег'], 'Позвонить Олегу')).toBe(
+      'Fixnote, Олег. Позвонить Олегу',
     )
     expect(speechPrompt([], 'раз два три', 7)).toBe('три')
     expect(speechPrompt([], '')).toBe('')

@@ -94,7 +94,7 @@ export function DesktopTray() {
       { id: 'quit', text: t('tray.quit') },
     ]
     void tray
-      .menu(items, call === 'recording' ? t('tray.recording') : remote || 'FixNote')
+      .menu(items, call === 'recording' ? t('tray.recording') : remote || 'Fixnote')
       .catch(() => undefined)
   }, [tray, t, canCall, call, voice, remote])
 

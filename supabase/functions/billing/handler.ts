@@ -1,6 +1,6 @@
 /**
  * billing: the signed-in account's subscription, through Suby (the key never leaves here).
- * - `checkout` (the default): a Suby checkout for FixNote Pro, monthly or yearly. It carries the
+ * - `checkout` (the default): a Suby checkout for Fixnote Pro, monthly or yearly. It carries the
  *   account's email (Suby's customer) and id (metadata), which suby-webhook uses to give the
  *   account Pro once the payment goes through.
  * - `overview`: the subscription as Suby has it (plan, period, a switch waiting) and its payments.
@@ -414,16 +414,16 @@ async function cardAction(
       const date = (iso: string | null) => (iso ?? '').slice(0, 10)
       const paid = (order.paidAmount ?? order.amount).toFixed(2)
       const pdf = receiptPdf([
-        'FixNote Pro - receipt',
+        'Fixnote Pro - receipt',
         `Date: ${date(order.paidAt)}`,
-        `Plan: FixNote Pro, ${order.plan === 'year' ? '1 year' : '1 month'}, prepaid (no automatic renewal)`,
+        `Plan: Fixnote Pro, ${order.plan === 'year' ? '1 year' : '1 month'}, prepaid (no automatic renewal)`,
         `Pro from ${date(order.periodStart)} to ${date(order.periodEnd)}`,
         `Amount: ${paid} ${order.currency}`,
         'Paid by card through ListoPays',
         `Account: ${email}`,
         `Order: ${order.id}`,
         `Transaction: ${order.transactionId ?? ''}`,
-        'FixNote - https://fixnote.space',
+        'Fixnote - https://fixnote.space',
       ])
       return json({ pdf: toBase64(pdf) })
     }

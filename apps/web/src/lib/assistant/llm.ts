@@ -14,7 +14,7 @@ export interface ProviderSettings {
   model: string
   /**
    * How many tokens the model takes at once, when the person knows better than the guess from the
-   * model's name (Ollama's num_ctx, a model we do not know). Not for FixNote AI.
+   * model's name (Ollama's num_ctx, a model we do not know). Not for Fixnote AI.
    */
   contextTokens?: number | null
 }
@@ -38,7 +38,7 @@ export const PRESETS: Record<
 }
 
 export const OLLAMA_URL = 'http://localhost:11434'
-/** What FixNote AI is called in requests; llm-proxy picks the real model from `level`. */
+/** What Fixnote AI is called in requests; llm-proxy picks the real model from `level`. */
 const FIXNOTE_MODEL = 'fixnote'
 const SETTINGS_KEY = 'ai.provider'
 const LOCAL_ONLY_KEY = 'mode.localOnly'
@@ -56,7 +56,7 @@ export const AI_MODES: readonly AiMode[] = ['ask', 'edits', 'auto']
 const AI_MODE_KEY = 'ai.mode'
 
 /**
- * How hard FixNote AI thinks in the chat. medium: the fast model, no reasoning; hard: the larger
+ * How hard Fixnote AI thinks in the chat. medium: the fast model, no reasoning; hard: the larger
  * model reasoning before it answers, slower and using the monthly allowance several times faster
  * (llm-proxy weighs its tokens).
  */
@@ -190,7 +190,7 @@ export async function llm(): Promise<
   const headers: Record<string, string> = { Authorization: `Bearer ${key}` }
   if (s.preset === 'openrouter') {
     headers['HTTP-Referer'] = 'https://fixnote.space'
-    headers['X-Title'] = 'FixNote'
+    headers['X-Title'] = 'Fixnote'
   }
   // DeepSeek's models think by default, and with tools then want their reasoning back with every
   // earlier answer, which the chat does not keep: plain answers, as with the other providers.
@@ -217,10 +217,10 @@ export interface ContextLimits {
   answer: number
 }
 
-/** FixNote AI's models (deepseek-flash, deepseek-v4-pro) take 1M tokens (DeepSeek docs, 2026). */
+/** Fixnote AI's models (deepseek-flash, deepseek-v4-pro) take 1M tokens (DeepSeek docs, 2026). */
 export const FIXNOTE_WINDOW = 1_000_000
 /**
- * What a chat with FixNote AI sends at most. Every step of an answer sends the whole prompt and
+ * What a chat with Fixnote AI sends at most. Every step of an answer sends the whole prompt and
  * counts against the monthly allowance (cached tokens a tenth), so a chat is summarized long
  * before the window is full.
  */
@@ -259,7 +259,7 @@ export function contextLimits(): ContextLimits {
 /** Who answers, for the AI activity log. */
 export function providerLabel(): string {
   const s = useLlm.getState().settings
-  if (s.kind === 'fixnote') return 'DeepSeek · FixNote'
+  if (s.kind === 'fixnote') return 'DeepSeek · Fixnote'
   if (s.kind === 'ollama') return `Ollama · ${modelOf(s)}`
   const name =
     s.preset === 'other' ? new URL(baseUrlOf(s) || 'http://custom').host : PRESETS[s.preset].name

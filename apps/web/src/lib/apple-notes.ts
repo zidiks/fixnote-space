@@ -8,7 +8,7 @@ const TRASH = /recently deleted|недавно удал|eliminad|borrad/i
 export const isTrash = (folder: AppleNotesFolder) => TRASH.test(folder.path.at(-1) ?? '')
 
 /**
- * Where a folder's notes go: the default folder ("Notes") has no folder in FixNote, the rest keep
+ * Where a folder's notes go: the default folder ("Notes") has no folder in Fixnote, the rest keep
  * their path; with several accounts (iCloud, On My Mac, Gmail) each account is a folder too.
  */
 export function folderPath(folder: AppleNotesFolder, accounts: number): string[] {
@@ -57,7 +57,7 @@ function decode(src: string): { data: Uint8Array; mime: string } | null {
 }
 
 /**
- * The HTML the Notes app gives (a `<div>` per line, images as data URIs) as FixNote Markdown, with
+ * The HTML the Notes app gives (a `<div>` per line, images as data URIs) as Fixnote Markdown, with
  * the images as `![](img:<key>)` for `planConverted`. Attachments that are not inline images
  * (PDFs, scans, drawings) are not in the HTML; `lost` counts them.
  */

@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "FixNote",
-  "short_name": "FixNote",
+  "name": "Fixnote",
+  "short_name": "Fixnote",
   "description": "Private personal notes with an assistant that remembers for you.",
   "start_url": "/",
   "display": "standalone",

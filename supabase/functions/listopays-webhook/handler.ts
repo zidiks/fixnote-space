@@ -61,7 +61,7 @@ export async function handle(req: Request, deps: WebhookDeps): Promise<Response>
   // Always sent as USD; an event without a currency is taken as the one we asked for.
   const currency = str(metadata.currency) ?? 'USD'
   if (!order || !UUID.test(order) || !transaction || !Number.isFinite(amount)) {
-    console.error('listopays: an event FixNote cannot match', { order, transaction })
+    console.error('listopays: an event Fixnote cannot match', { order, transaction })
     return new Response('ok')
   }
 

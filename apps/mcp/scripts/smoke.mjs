@@ -23,7 +23,7 @@ const missing = spawnSync(binary, [], {
 })
 console.log(`missing db: exit ${missing.status}, signal ${missing.signal ?? 'none'}`)
 if (missing.error) throw missing.error
-if (!(missing.stderr ?? '').includes('FixNote database not found')) {
+if (!(missing.stderr ?? '').includes('Fixnote database not found')) {
   console.error(missing.stderr)
   throw new Error('fixnote-mcp did not start')
 }

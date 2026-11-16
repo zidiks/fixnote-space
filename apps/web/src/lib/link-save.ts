@@ -56,7 +56,7 @@ export interface SavedLink {
 }
 
 async function askModel(req: PlaceRequest) {
-  // FixNote AI on Free would only answer "Pro needed".
+  // Fixnote AI on Free would only answer "Pro needed".
   if (useLlm.getState().settings.kind === 'fixnote' && isFree()) return null
   const reach = await llm()
   if (!reach.ok) return null

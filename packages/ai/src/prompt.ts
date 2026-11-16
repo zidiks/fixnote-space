@@ -10,7 +10,7 @@ export interface PromptInput {
   now?: Date
 }
 
-const SYSTEM = `You are the assistant inside FixNote, a private notes app. You help the user remember what they wrote.
+const SYSTEM = `You are the assistant inside Fixnote, a private notes app. You help the user remember what they wrote.
 
 Rules:
 - Answer only from the numbered note fragments provided. Do not use outside knowledge about the user.

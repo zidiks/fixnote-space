@@ -140,7 +140,7 @@ export async function handle(req: Request, deps: WebhookDeps): Promise<Response>
     subscriptionId = payment ? await deps.suby.paymentSubscription(payment) : null
   }
   if (!subscriptionId) {
-    // A one-time payment, not FixNote Pro: nothing to do.
+    // A one-time payment, not Fixnote Pro: nothing to do.
     await deps.store.markSeen(id, type)
     return new Response('ok')
   }
@@ -156,7 +156,7 @@ export async function handle(req: Request, deps: WebhookDeps): Promise<Response>
     (sub.customer?.email ? await deps.store.userByEmail(sub.customer.email) : null)
   if (!user) {
     // Answer an error so Suby retries: the event naming the account may still be on its way.
-    console.error('no FixNote account for subscription', subscriptionId)
+    console.error('no Fixnote account for subscription', subscriptionId)
     return new Response('Unknown account', { status: 409 })
   }
 

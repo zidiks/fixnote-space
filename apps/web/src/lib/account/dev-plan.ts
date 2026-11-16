@@ -255,7 +255,7 @@ const DEV_PDF = `%PDF-1.4
 2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
 3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 120]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj
 4 0 obj<</Length 52>>stream
-BT /F1 14 Tf 20 60 Td (FixNote Pro receipt, dev) Tj ET
+BT /F1 14 Tf 20 60 Td (Fixnote Pro receipt, dev) Tj ET
 endstream endobj
 5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
 trailer<</Root 1 0 R>>
@@ -364,7 +364,7 @@ export function devAiRefusal(): Response | null {
       status,
       headers: { 'Content-Type': 'application/json' },
     })
-  if (tier(s) === 'free') return refuse(402, 'pro_required', 'The assistant is part of FixNote Pro')
+  if (tier(s) === 'free') return refuse(402, 'pro_required', 'The assistant is part of Fixnote Pro')
   if (ai.used >= ai.limit) return refuse(429, 'month_limit', 'This month’s AI allowance is used up')
   if (ai.today >= ai.day_limit) return refuse(429, 'day_limit', 'Today’s AI allowance is used up')
   return null

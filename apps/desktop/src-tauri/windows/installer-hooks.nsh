@@ -1,5 +1,5 @@
-; The MCP server (fixnote-mcp.exe) is started by Claude and other MCP clients, not by FixNote, so
-; the installer's check for a running FixNote misses it, and a running file cannot be replaced: the
+; The MCP server (fixnote-mcp.exe) is started by Claude and other MCP clients, not by Fixnote, so
+; the installer's check for a running Fixnote misses it, and a running file cannot be replaced: the
 ; update used to fail halfway and leave MCP broken. Stop it first; the client starts it again.
 
 !macro NSIS_HOOK_PREINSTALL

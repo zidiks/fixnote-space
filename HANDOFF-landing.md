@@ -1,4 +1,4 @@
-# Handoff: FixNote landing redesign (continue from here)
+# Handoff: Fixnote landing redesign (continue from here)
 
 ## Current source — updated 2026-11-04, supersedes the older brief below
 
@@ -108,7 +108,7 @@
   Browser verified identical left/right edges at 1920×1080, 1395×770 and Spanish 1280×720, with no
   nav overlap. Mobile Spanish at 375×812 has no section overflow. Logo remains hidden in header.
 
-You are continuing work on the FixNote landing page redesign in this repo (branch `upd/new-landing`,
+You are continuing work on the Fixnote landing page redesign in this repo (branch `upd/new-landing`,
 nothing committed yet). Read `CLAUDE.md` first (conventions; the landing section is at the end) and
 keep to it. Reply to the user in Russian.
 

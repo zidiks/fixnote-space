@@ -6,7 +6,7 @@
 - **читать**: слои, JSON, картинки, исходные фото, чтобы верстать по макету;
 - **писать**: переменные, стили, фреймы с auto layout, текст, компоненты, наборы вариантов и
   инстансы. В Figma получаются настоящие редактируемые компоненты, привязанные к переменным, а не
-  картинки. Главное применение: `figma_push_kit` переносит UI-кит FixNote из кода в Figma.
+  картинки. Главное применение: `figma_push_kit` переносит UI-кит Fixnote из кода в Figma.
 
 Как это устроено: маленький плагин в Figma выполняет задания через Plugin API (у него нет лимитов,
 в отличие от REST API и хостового Figma MCP), а мост `bridge.mjs` на вашем компьютере передаёт ему
@@ -75,7 +75,7 @@ Claude Desktop показывает её в списке расширений. �
 `~/Figma Bridge/files`. Плагин им обновлять не нужно: мост сам пересылает новый `code.js`; заново
 импортировать надо только при изменении `ui.html` или `manifest.json`.
 
-**Дизайн FixNote для чужого файла Figma (кит и экраны).**
+**Дизайн Fixnote для чужого файла Figma (кит и экраны).**
 
 ```bash
 node tools/figma-bridge/bridge.mjs export-page Screens tools/figma-bridge/.figma/fixnote-screens.json
@@ -115,7 +115,7 @@ MCP `figma_apply`); повторная заливка обновляет те ж
 только для `ui.html` и `manifest.json`. Если в **Plugins → Development** два плагина с одинаковым
 именем, оставьте тот, что из `tools/figma-bridge/plugin`.
 
-## UI-кит FixNote в Figma
+## UI-кит Fixnote в Figma
 
 Из MCP-клиента вызовите `figma_push_kit` (или просто напишите Claude «залей кит в Figma через
 figma-bridge»). Без MCP:
@@ -124,11 +124,11 @@ figma-bridge»). Без MCP:
 node tools/figma-bridge/bridge.mjs push-kit
 ```
 
-На странице **FixNote UI** появится рамка `FixNote UI` с досками:
+На странице **Fixnote UI** появится рамка `Fixnote UI` с досками:
 
 | Часть | Что делает | Откуда берётся |
 |---|---|---|
-| `tokens` | коллекция **FixNote Theme**, режимы Light и Dark: все цвета, альфа-варианты для колец фокуса, слои `shadow-float`. Коллекция **FixNote Size**: `radius/*`, `space/*`. Текстовые стили `text/*` (Inter), стили эффектов `shadow/xs` и `shadow/float`. Плюс доска с образцами | `packages/ui/src/styles.css`: `:root` = Light, `.dark` = Dark, OKLCH переводится в sRGB, `var(--x)` остаётся алиасом |
+| `tokens` | коллекция **Fixnote Theme**, режимы Light и Dark: все цвета, альфа-варианты для колец фокуса, слои `shadow-float`. Коллекция **Fixnote Size**: `radius/*`, `space/*`. Текстовые стили `text/*` (Inter), стили эффектов `shadow/xs` и `shadow/float`. Плюс доска с образцами | `packages/ui/src/styles.css`: `:root` = Light, `.dark` = Dark, OKLCH переводится в sRGB, `var(--x)` остаётся алиасом |
 | `icons` | компоненты `icon/*` 16×16 и `icon/spinner` | lucide-react, установленный в `apps/web` (те же пути, обводка 1.75) |
 | `button` | **Button**: набор из 60 вариантов `variant × size`, плюс `hover / focus / disabled / loading` на размере default. Свойства: `Label`, `Show icon`, `Glyph` (замена иконки) | `buttonVariants` в `button.tsx` |
 | `controls` | **Input** (`default / filled / focus / disabled`), **Badge** (`default / outline / brand`), **Kbd** | `input.tsx`, `badge.tsx`, `kbd.tsx` |
@@ -142,9 +142,9 @@ node tools/figma-bridge/bridge.mjs push-kit
   Переменные и стили находятся по имени. Слои, которые вы сами добавили внутрь компонентов кита,
   при следующем push пропадут: источник истины — код.
 - **Тёмная тема.** Все доски залиты `$background`. Выделите доску (или любой фрейм с инстансами) →
-  справа **Layer → Apply variable mode → FixNote Theme → Dark**.
+  справа **Layer → Apply variable mode → Fixnote Theme → Dark**.
 - **Если тариф даёт один режим на коллекцию**, Dark записывается в отдельную коллекцию
-  **FixNote Theme (Dark)** с теми же именами переменных, и `push-kit` об этом пишет. Компоненты
+  **Fixnote Theme (Dark)** с теми же именами переменных, и `push-kit` об этом пишет. Компоненты
   привязаны к Light; чтобы переключить тему, придётся заменить коллекцию (Swap library/collection)
   или поднять тариф.
 - Можно залить только часть кита: `push-kit button notes` или `figma_push_kit {parts: ["button"]}`.
@@ -166,7 +166,7 @@ node tools/figma-bridge/bridge.mjs push-kit
   основе экрана, сделайте его копию (Ctrl+D) или перенесите на другую страницу: копия не связана
   с ключами моста и push её не трогает. Свои варианты компонентов держите в отдельных компонентах.
 - **Тёмная тема на Starter.** Коллекция с одним режимом переключиться не может, Dark лежит отдельной
-  коллекцией **FixNote Theme (Dark)**. На Professional и выше push сам добавит режим Dark в основную
+  коллекцией **Fixnote Theme (Dark)**. На Professional и выше push сам добавит режим Dark в основную
   коллекцию, и экраны переключатся через **Apply variable mode**.
 
 **Когда меняется UI в коде.** Токены, иконки и подписи кит перечитывает сам при каждом push.
@@ -174,13 +174,13 @@ node tools/figma-bridge/bridge.mjs push-kit
 (`h-9 px-4` → `h: 36, pad: [0, '$space/16']`). Поменяли классы компонента — поправьте его спек
 рядом и запустите push снова.
 
-## Экраны FixNote в Figma
+## Экраны Fixnote в Figma
 
 Страница **Screens** — все экраны приложения во всех состояниях, снятые с работающего приложения:
 по ряду на группу (первый запуск, главная, заметка, папки и ссылки, поиск, ассистент, диалоги,
 диктовка и звонок, настройки, аккаунт и Pro, вид «Заметки», тёмная тема, телефон). Это не
 картинки: фреймы с auto layout там, где ряды и колонки ровные; цвета привязаны к переменным кита
-(тёмные экраны — к **FixNote Theme (Dark)**), текст — к его стилям, иконки lucide — инстансы `icon/*`.
+(тёмные экраны — к **Fixnote Theme (Dark)**), текст — к его стилям, иконки lucide — инстансы `icon/*`.
 
 Перезалить после изменений в UI:
 
@@ -200,7 +200,7 @@ node tools/figma-bridge/bridge.mjs push-kit
 
 ### Снять любую страницу
 
-Движок (`web/capture.js`) не знает про FixNote: мост отдаёт его любой странице на этом компьютере.
+Движок (`web/capture.js`) не знает про Fixnote: мост отдаёт его любой странице на этом компьютере.
 
 ```js
 const cap = await import('http://127.0.0.1:7331/web/capture.js')
@@ -227,7 +227,7 @@ await cap.push({ key: 'screen/pricing', name: 'Pricing', page: 'Screens', x: 0, 
 | `figma_show` | выделить слои и показать их |
 | `figma_remove` | удалить залитые слои по ключу или любые по id |
 | `figma_script` | запасной выход: выполнить JS на Plugin API (такие слои без ключей не обновляются) |
-| `figma_push_kit` | весь кит FixNote или его части |
+| `figma_push_kit` | весь кит Fixnote или его части |
 
 ### Формат спеков `figma_build`
 
@@ -286,7 +286,7 @@ await cap.push({ key: 'screen/pricing', name: 'Pricing', page: 'Screens', x: 0, 
 | `node bridge.mjs render 279:51 --scale 2` | картинка слоя (`--format png\|jpg\|svg\|pdf`) |
 | `node bridge.mjs originals 279:51` | фото в исходном виде |
 | `node bridge.mjs find "Hero"` | слои на текущей странице по имени или тексту |
-| `node bridge.mjs push-kit [части] [--page "FixNote UI"]` | кит FixNote |
+| `node bridge.mjs push-kit [части] [--page "Fixnote UI"]` | кит Fixnote |
 | `node bridge.mjs build spec.json [--page name]` | слои из файла (`{page, nodes}` или массив спеков) |
 | `node bridge.mjs variables vars.json` / `styles styles.json` | переменные / стили из файла |
 | `node bridge.mjs keys` / `remove <ключи…>` | что залито / удалить |

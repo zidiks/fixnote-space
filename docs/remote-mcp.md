@@ -8,12 +8,12 @@ decrypts and answers.
 ChatGPT / Claude ──HTTPS (MCP Streamable HTTP) + OAuth 2.1──▶ mcp.fixnote.space (relay, apps/relay)
                                    │  WebSocket opened by the device (hibernatable)
                                    ▼
-            FixNote desktop (tray) or an open web tab, Remote access on
+            Fixnote desktop (tray) or an open web tab, Remote access on
             keys → decrypt → core NoteTools (gate: mcp.access, mcp.scope ∩ account scope) → answer
 ```
 
 - The relay stores **no note content**. Plaintext (the question's arguments and the answer) passes
-  through relay memory only, as with FixNote AI today: "goes through our server, not stored or
+  through relay memory only, as with Fixnote AI today: "goes through our server, not stored or
   logged". Its Durable Object stores only: connected client ids and names, last use (to within
   5 min), revocations, and the account's remote scope as folder/note **ids**.
 - Tools: reading (`search_notes`, `get_note`, `list_recent`, `list_folders`, `daily_note` without
@@ -53,7 +53,7 @@ Verified in Supabase docs (Oct 2026; the feature is **beta**):
 It does authorization code + PKCE (S256), dynamic client registration, refresh tokens with
 rotation, discovery at `https://<ref>.supabase.co/.well-known/oauth-authorization-server/auth/v1`,
 a consent UI we host (`site_url` + `authorization_url_path`), and `listGrants` / `revokeGrant` for
-the user. So FixNote has **no OAuth server of its own and no token tables**.
+the user. So Fixnote has **no OAuth server of its own and no token tables**.
 
 Flow:
 
@@ -64,7 +64,7 @@ Flow:
    `/.well-known/oauth-authorization-server` on the MCP origin get Supabase's document proxied.)
 3. The app registers itself (DCR), sends the person to Supabase's authorize endpoint with PKCE;
    Supabase redirects to `https://app.fixnote.space/oauth/consent?authorization_id=…`.
-4. The connect page answers it, usually through the FixNote app (see **Connecting** below):
+4. The connect page answers it, usually through the Fixnote app (see **Connecting** below):
    Allow/Deny → `approveAuthorization` / `denyAuthorization` → back to the AI app with a code (or
    `error=access_denied`).
 5. The app exchanges the code at Supabase; its access token is a normal Supabase user JWT plus a
@@ -94,9 +94,9 @@ no sidebar, no local database, no account store, no sync.
 ```
 AI app ──authorize (PKCE)──▶ Supabase Auth ──302──▶ app.fixnote.space/oauth/consent?authorization_id=A
                                                      │ ConnectPage: "An AI app wants to read your notes"
-            "Approve in the FixNote app" ────────────┤ opens fixnote://connect?authorization_id=A
+            "Approve in the Fixnote app" ────────────┤ opens fixnote://connect?authorization_id=A
                                                      ▼
- FixNote desktop (deep_link.rs → tray::show → webview) ConnectDialog, always asks:
+ Fixnote desktop (deep_link.rs → tray::show → webview) ConnectDialog, always asks:
    getAuthorizationDetails(A) with the app's session → client, can/cannot, redirect host, account
    Allow / Deny → approveAuthorization / denyAuthorization(A) → redirect R (code or access_denied)
    POST mcp.fixnote.space/api/consent/A {approved, redirect: R}   (app session bearer)
@@ -108,11 +108,11 @@ AI app ──authorize (PKCE)──▶ Supabase Auth ──302──▶ app.fixn
 - **Before sign-in** Supabase shows nothing (`getAuthorizationDetails` needs a session), so the page
   says "An AI app wants to use your notes" with what it can do (search and read; add and change
   notes and create folders if writing is allowed; only what Settings → AI → Connected apps allows)
-  and cannot (delete anything or rename folders; use the notes while FixNote is closed). The client's name, site, logo and redirect host appear in the app's dialog, or on the
+  and cannot (delete anything or rename folders; use the notes while Fixnote is closed). The client's name, site, logo and redirect host appear in the app's dialog, or on the
   page once signed in there. A browser with the web app's session goes straight to Allow/Deny.
 - **Fallback / phones**: "Sign in with an email code instead": an OTP session that lives only in
   that tab (`persistSession: false`), then the same card with Allow/Deny.
-- After 5 s without an answer the page offers "Open FixNote again", the download page
+- After 5 s without an answer the page offers "Open Fixnote again", the download page
   (fixnote.space/download) and the email code; after 3 min it stops polling.
 - **The app** (`App.tsx` deep-link listener, also on a cold start: links wait in Rust until the
   webview takes them; the window comes to the front from the tray) parses the link
@@ -122,7 +122,7 @@ AI app ──authorize (PKCE)──▶ Supabase Auth ──302──▶ app.fixn
   with a redirect at once) gets "connecting again → Continue / Cancel"; Cancel hands over
   `{approved: false, redirect: null}` and the page shows "Not connected".
 - **Never automatic**: any web page can open a `fixnote://` link, so the dialog always asks and
-  shows the redirect host with "Allow only if you just connected FixNote in <host> yourself". This
+  shows the redirect host with "Allow only if you just connected Fixnote in <host> yourself". This
   is the same risk as any OAuth consent screen reached by a link (consent phishing); the host line
   is what protects it.
 - **The handoff** (`apps/relay/src/consent.ts`): one `ConsentHandoff` Durable Object per
@@ -261,7 +261,7 @@ then $0.15/M requests) when daily requests approach 100k or before launch to the
 
 - Renaming folders and deletes, with on-device confirmation for deletes
   and bulk changes (a dialog on the answering device; the call waits or fails with "confirm in
-  FixNote"), never retried on another device.
+  Fixnote"), never retried on another device.
 - Attachments (`get_attachment` as image/resource content), size limits through the relay.
 - Optional: `aud` = resource via a Supabase custom access token hook; per-client scope; CIMD;
   `tools/list_changed` when the access level changes; a device picker when several answer.

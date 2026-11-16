@@ -1,6 +1,6 @@
 /**
  * What MCP clients (Claude Desktop, Cursor…) may do with the notes, as the user set it in
- * FixNote → Settings → AI. Stored in the `kv` table, read by the MCP server on every call.
+ * Fixnote → Settings → AI. Stored in the `kv` table, read by the MCP server on every call.
  */
 
 /** off: nothing; read: search and read; write: also create and change; full: also delete. */

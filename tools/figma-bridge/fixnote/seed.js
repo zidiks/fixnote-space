@@ -1,5 +1,5 @@
 /**
- * Demo content for capturing FixNote screens into Figma (tools/figma-bridge/fixnote/screens.md):
+ * Demo content for capturing Fixnote screens into Figma (tools/figma-bridge/fixnote/screens.md):
  * folders, notes with headings, tasks, links, a call note, daily notes, a saved link and a picture.
  * Runs in the app's own page (`pnpm dev`, `?dev-backend`), through the app's database:
  *
@@ -9,7 +9,7 @@
  * It writes through NotesRepo like the app. Seeding twice does nothing (it looks for its first note).
  */
 
-const MARK = 'План запуска FixNote 2.0'
+const MARK = 'План запуска Fixnote 2.0'
 const DAY = 86_400_000
 
 const iso = (t) => {
@@ -146,7 +146,7 @@ export async function seed() {
 
 - Как я веду заметки с голосом и не трачу время на расшифровку
 - 5 способов разобрать «Входящие» за 10 минут
-- Сравнение: Bear, Apple Notes и FixNote
+- Сравнение: Bear, Apple Notes и Fixnote
 - Почему заметки должны жить на вашем устройстве
 `,
     ideas.id,

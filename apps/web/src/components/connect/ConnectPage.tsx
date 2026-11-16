@@ -14,8 +14,8 @@ const downloadUrl = (lang: string | undefined) =>
 
 /**
  * `/oauth/consent?authorization_id=…`: Supabase Auth's OAuth consent step, when ChatGPT, claude.ai
- * or another AI app connects to FixNote (docs/remote-mcp.md, "Connecting"). A page of its own, not
- * the app: no local database, no account, no sync. It asks the FixNote app to answer
+ * or another AI app connects to Fixnote (docs/remote-mcp.md, "Connecting"). A page of its own, not
+ * the app: no local database, no account, no sync. It asks the Fixnote app to answer
  * (`fixnote://connect`), waits for the answer at the relay and goes back to the AI app; or signs in
  * with an email code that lives only in this tab (phones, no desktop app) and asks right here.
  */
@@ -39,7 +39,7 @@ export function ConnectPage({ authorizationId }: { authorizationId: string }) {
   }, [])
 
   useEffect(() => {
-    document.title = `${t('connect.pageTitle')} · FixNote`
+    document.title = `${t('connect.pageTitle')} · Fixnote`
   }, [t])
 
   const leave = (url: string, approved: boolean) => {

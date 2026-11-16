@@ -1,7 +1,7 @@
 /**
- * Connecting an AI app (ChatGPT, claude.ai…) to FixNote: Supabase Auth's OAuth server sends the
+ * Connecting an AI app (ChatGPT, claude.ai…) to Fixnote: Supabase Auth's OAuth server sends the
  * browser to the connect page (`/oauth/consent?authorization_id=…`), which can hand the question
- * to the FixNote app with `fixnote://connect?authorization_id=…`. The app asks, answers Supabase
+ * to the Fixnote app with `fixnote://connect?authorization_id=…`. The app asks, answers Supabase
  * with its own session and leaves the redirect at the relay (`POST /api/consent/<id>`); the page
  * picks it up (`GET /consent/<id>`) and goes back to the AI app. Shared by the relay, the page and
  * the app, so nothing here imports anything. See docs/remote-mcp.md.
@@ -22,7 +22,7 @@ const ID = /^[A-Za-z0-9_-]{8,128}$/
 export const isAuthorizationId = (id: unknown): id is string =>
   typeof id === 'string' && ID.test(id)
 
-/** The link the connect page opens to ask the FixNote app. */
+/** The link the connect page opens to ask the Fixnote app. */
 export const connectLink = (authorizationId: string) =>
   `fixnote://connect?authorization_id=${encodeURIComponent(authorizationId)}`
 

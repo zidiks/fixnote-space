@@ -411,7 +411,7 @@ export function deviceLabel(): string {
             : ''
   const app =
     '__TAURI_INTERNALS__' in window
-      ? 'FixNote'
+      ? 'Fixnote'
       : /Edg\//.test(ua)
         ? 'Edge'
         : /Firefox\//.test(ua)

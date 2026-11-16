@@ -33,7 +33,7 @@ function ClientMark({ client }: { client: ConsentDetails['client'] | null }) {
   )
 }
 
-/** FixNote ⇄ the AI app, with a quiet pulse between them while `live`. */
+/** Fixnote ⇄ the AI app, with a quiet pulse between them while `live`. */
 export function ConnectMarks({
   client,
   live = false,

@@ -1,6 +1,6 @@
 /**
  * Keyboard shortcuts the person can change (Settings → Shortcuts): in-app ones, and on the
- * desktop system-wide ones that work while FixNote is hidden or another app is in front.
+ * desktop system-wide ones that work while Fixnote is hidden or another app is in front.
  * A binding names the physical key (`KeyboardEvent.code`), so it works in any layout: Ctrl+K on
  * a Russian layout reports key "л" but code "KeyK".
  *

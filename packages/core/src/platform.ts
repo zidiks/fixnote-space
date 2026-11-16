@@ -192,7 +192,7 @@ export interface AppleNote {
 
 /**
  * Apple Notes on this Mac (desktop app on macOS only). Errors with "denied" when the user has not
- * let FixNote control Notes (System Settings → Privacy & Security → Automation).
+ * let Fixnote control Notes (System Settings → Privacy & Security → Automation).
  */
 export interface AppleNotesSource {
   folders(): Promise<AppleNotesFolder[]>
@@ -301,7 +301,7 @@ export interface Platform {
    */
   readonly mcp?: {
     info(): Promise<{ command: string; built: boolean }>
-    /** Adds FixNote to the client's config; resolves with the config file path. */
+    /** Adds Fixnote to the client's config; resolves with the config file path. */
     connect(client: 'claude' | 'cursor' | 'codex'): Promise<string>
   }
   /**

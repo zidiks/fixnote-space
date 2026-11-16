@@ -3,7 +3,7 @@ import { DEFAULT_SITES, parseSites, postOf, ruleFor, saveButton } from './sites'
 
 /**
  * Content script on X, Reddit, YouTube and Instagram: when the person presses the site's own
- * Save / Bookmark, the post is saved to FixNote too, if they switched that site on in the
+ * Save / Bookmark, the post is saved to Fixnote too, if they switched that site on in the
  * extension's options (off by default). Listens in the capture phase, so the site's own handler
  * changing the button afterwards does not matter; nothing on the page is changed.
  */

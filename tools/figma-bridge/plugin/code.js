@@ -297,7 +297,7 @@ async function context() {
   const collections = await figma.variables.getLocalVariableCollectionsAsync()
   const colName = new Map(collections.map((c) => [c.id, c.name]))
   const vars = new Map()
-  // Shorter collection names first: "FixNote Colors" wins over "FixNote Colors (Dark)".
+  // Shorter collection names first: "Fixnote Colors" wins over "Fixnote Colors (Dark)".
   const list = (await figma.variables.getLocalVariablesAsync()).sort(
     (a, b) =>
       (colName.get(a.variableCollectionId) ?? '').length -

@@ -1,7 +1,7 @@
 /**
  * Who is calling the relay. Both kinds of caller carry a Supabase access token:
  * - an AI app (`client`): a token from Supabase Auth's OAuth 2.1 server, which has `client_id`;
- * - a FixNote device (`device`): the app's own session, which must not have `client_id`, so a token
+ * - a Fixnote device (`device`): the app's own session, which must not have `client_id`, so a token
  *   handed to an AI app can never pose as a device.
  * Supabase checks the signature and that the session still exists (`/auth/v1/user`), so a revoked
  * grant or a signed-out session stops working; the answer is kept for a minute per token.
@@ -61,7 +61,7 @@ export function resourceMetadata(env: AuthEnv) {
     resource: resourceUrl(env),
     authorization_servers: [issuer(env)],
     bearer_methods_supported: ['header'],
-    resource_name: 'FixNote',
+    resource_name: 'Fixnote',
     resource_documentation: 'https://fixnote.space/privacy/',
   }
 }
@@ -120,7 +120,7 @@ export async function checkToken(
   }
   const clientId = typeof c.client_id === 'string' && c.client_id ? c.client_id : null
   if (kind === 'client' && !clientId) return deny('Connect through OAuth')
-  if (kind === 'device' && clientId) return deny('Not a FixNote session')
+  if (kind === 'device' && clientId) return deny('Not a Fixnote session')
   const issuedAt = typeof c.iat === 'number' ? c.iat : 0
 
   const key = await sha256(token)
