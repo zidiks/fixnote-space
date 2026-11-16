@@ -1,6 +1,6 @@
 // Remote MCP relay (apps/relay): https://mcp.fixnote.space/mcp for ChatGPT, claude.ai and other
 // remote MCP clients. It forwards tool calls to the person's online Fixnote device and stores no
-// note content. Deploy: `pnpm --filter @fixnote/relay deploy` (see docs/remote-mcp.md).
+// note content. Deploy: `pnpm --filter @fixnote/relay run deploy` ("run": bare `deploy` is pnpm's own command) (see docs/remote-mcp.md).
 // Fits the Workers Free plan: SQLite-backed Durable Objects + WebSocket hibernation.
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",

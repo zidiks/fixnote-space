@@ -25,12 +25,14 @@ The private key is on the publisher's computer in `%USERPROFILE%\.mcp-registry\`
 `key.hex` for the CLI), never in the repository. Losing it is not fatal: make a new pair, put the
 new line in the file next to the old one, log in with the new key, then drop the old line.
 
-```powershell
-# once: mcp-publisher.exe from github.com/modelcontextprotocol/registry/releases, into PATH
-mcp-publisher login http --domain fixnote.space --private-key-file "$env:USERPROFILE\.mcp-registry\key.hex"
-cd apps/relay
-mcp-publisher publish
+```bash
+# mcp-publisher.exe from github.com/modelcontextprotocol/registry/releases (1.8.9 used; it takes
+# the key only as --private-key, not from a file or MCP_PRIVATE_KEY)
+mcp-publisher login http --domain fixnote.space --private-key "$(cat "$USERPROFILE/.mcp-registry/key.hex")"
+cd apps/relay && mcp-publisher publish
 ```
+
+Published 2026-11-16: `space.fixnote/fixnote` 0.2.0.
 
 Check: `https://registry.modelcontextprotocol.io/v0/servers?search=space.fixnote`. Other
 directories (PulseMCP, Glama, VS Code, GitHub) read the registry, so this one goes first.
