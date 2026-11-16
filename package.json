@@ -25,6 +25,9 @@
     "sb:functions": "supabase functions deploy llm-proxy && supabase functions deploy unfurl && supabase functions deploy telegram-bot && supabase functions deploy discord-bot && supabase functions deploy capture-extension &&supabase functions deploy billing && supabase functions deploy suby-webhook && supabase functions deploy listopays-webhook && supabase functions deploy storage-cleanup",
     "tg:webhook": "node scripts/telegram-webhook.mjs",
     "figma": "node tools/figma-bridge/bridge.mjs",
+    "figma:install": "node tools/figma-bridge/bridge.mjs install",
+    "figma:pack": "node tools/figma-bridge/pack.mjs",
+    "figma:kit": "node tools/figma-bridge/pack.mjs kit",
     "logo": "node brand/build.mjs",
     "icons": "pnpm logo && pnpm --filter @fixnote/desktop icons"
   },
