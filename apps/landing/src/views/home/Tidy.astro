@@ -1,9 +1,9 @@
 ---
 import { Image } from 'astro:assets'
-import tidy from '../../assets/landing/tidy-ru.png'
 import ArrowLink from '../../components/ArrowLink.astro'
 import { type Lang, t } from '../../i18n'
 import { featurePath } from '../../lib/pages'
+import { landingShot } from '../../lib/shots'
 
 /** Tidy up: the words and three points on the left, the Tidy up screen on the right. */
 interface Props {
@@ -38,6 +38,6 @@ const c = t(lang).landing.tidy
     </div>
   </div>
   <div class="tidy-shot fx">
-    <Image src={tidy} alt={c.alt} widths={[578, 612]} sizes="(min-width: 1069px) 578px, 100vw" />
+    <Image src={landingShot('tidy', lang)} alt={c.alt} widths={[578, 1156]} sizes="(min-width: 1069px) 578px, 100vw" />
   </div>
 </section>

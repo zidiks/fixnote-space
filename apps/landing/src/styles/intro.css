@@ -608,7 +608,8 @@
   object-fit: cover;
 }
 .card-shot {
-  aspect-ratio: 639 / 493;
+  /* Figma 566:54100, the picture of the Refine card. */
+  aspect-ratio: 578 / 475;
   overflow: hidden;
   border-radius: calc(16 * var(--u));
 }

@@ -411,7 +411,7 @@
 }
 .integ-shot {
   position: relative;
-  aspect-ratio: 916 / 632;
+  aspect-ratio: 1161 / 796;
   overflow: hidden;
   border-radius: calc(16.25 * var(--u));
   background: #fff;
@@ -427,18 +427,55 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+.integ-chat {
+  display: none;
+}
+/* Figma 331:6444 (y 4095): the app window, the two cards over its left edge and an AI app's chat
+   over its right edge, in a 1608 × 857 box; it is clipped on windows narrower than that. */
 @media (min-width: 1069px) {
   .integ {
     padding-top: calc(178 * var(--u));
+    overflow-x: clip;
   }
   .integ-grid {
-    display: flex;
-    align-items: flex-start;
-    gap: calc(16 * var(--u));
+    display: block;
+    position: relative;
+    width: calc(1608 * var(--u));
+    height: calc(857 * var(--u));
+    margin-right: auto;
+    margin-left: 50%;
+    translate: -50%;
+  }
+  .integ-cards {
+    display: contents;
+  }
+  .integ-cards > * {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    top: calc(44 * var(--u));
+  }
+  .integ-cards > :nth-child(2) {
+    left: calc(40 * var(--u));
+    top: calc(392 * var(--u));
   }
   .integ-shot {
-    flex: none;
-    width: calc(916 * var(--u));
+    position: absolute;
+    left: calc(232 * var(--u));
+    top: 0;
+    width: calc(1161 * var(--u));
+  }
+  .integ-chat {
+    display: block;
+    position: absolute;
+    z-index: 2;
+    left: calc(1170 * var(--u));
+    top: calc(233 * var(--u));
+    width: calc(438 * var(--u));
+  }
+  .integ-chat img {
+    width: 100%;
+    height: auto;
   }
 }
 
@@ -519,11 +556,15 @@
   max-width: none;
   border-radius: calc(15 * var(--u));
 }
-.recall-pic-tall img {
-  top: 6.717%;
-  left: 7.677%;
-  width: 84.645%;
-  height: 86.564%;
+/* Pictures rendered from Figma as the whole card (paper included, landing-shots.mjs). */
+.recall-pic-full::before {
+  content: none;
+}
+.recall-pic-full img {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
 }
 .recall-copy {
   display: flex;
@@ -958,7 +999,7 @@
 /* Figma 331:10712: a 1 px orange stroke, solid at the bottom-left corner and fading along both
    edges. 45deg (Figma has about 41) so the bottom and the left edge fade at the same pace. */
 .plan-free::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   padding: 1px;

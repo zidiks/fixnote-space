@@ -1,12 +1,10 @@
 ---
 import { Image } from 'astro:assets'
-import images from '../../assets/landing/recall-images-ru.png'
 import keys from '../../assets/landing/recall-keys.png'
-import languages from '../../assets/landing/recall-languages-ru.png'
-import meaning from '../../assets/landing/recall-meaning-ru.png'
 import ArrowLink from '../../components/ArrowLink.astro'
 import { type Lang, t } from '../../i18n'
 import { featurePath } from '../../lib/pages'
+import { landingShot } from '../../lib/shots'
 
 /**
  * Search: the headline stays while scrolling moves the row of four cards sideways (home.css, the
@@ -19,10 +17,10 @@ const { lang } = Astro.props
 const c = t(lang).landing.recall
 // The current design's order: meaning, languages, keyboard shortcut, text in images.
 const cards = [
-  { ...c.meaning, shot: meaning, href: featurePath(lang, 'search') },
-  { ...c.languages, shot: languages, href: featurePath(lang, 'search') },
+  { ...c.meaning, shot: landingShot('recall-meaning', lang), full: true, href: featurePath(lang, 'search') },
+  { ...c.languages, shot: landingShot('recall-languages', lang), full: true, href: featurePath(lang, 'search') },
   { ...c.keys, shot: keys, keys: true, href: featurePath(lang, 'search') },
-  { ...c.images, shot: images, wide: true, href: featurePath(lang, 'text-in-images') },
+  { ...c.images, shot: landingShot('recall-images', lang), full: true, href: featurePath(lang, 'text-in-images') },
 ]
 ---
 
@@ -40,7 +38,7 @@ const cards = [
         {
           cards.map((card) => (
             <li class="recall-card">
-              <div class:list={['recall-pic', 'wide' in card && card.wide && 'recall-pic-tall', 'keys' in card && 'recall-pic-keys']} aria-hidden="true">
+              <div class:list={['recall-pic', 'full' in card && 'recall-pic-full', 'keys' in card && 'recall-pic-keys']} aria-hidden="true">
                 {card.shot && <Image src={card.shot} alt="" widths={[547, 1094]} sizes="547px" loading="lazy" />}
               </div>
               <div class="recall-copy">

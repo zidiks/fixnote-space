@@ -1,12 +1,12 @@
 ---
 import { Image } from 'astro:assets'
-import shot from '../../assets/landing/integrations-ru.png'
 import chatgpt from '../../assets/landing/tools/tool-chatgpt.svg?url'
 import claude from '../../assets/landing/tools/tool-claude.svg?url'
 import gemini from '../../assets/landing/tools/tool-gemini.svg?url'
 import GlassCard from '../../components/GlassCard.astro'
 import { type Lang, t } from '../../i18n'
 import { featurePath } from '../../lib/pages'
+import { landingShot } from '../../lib/shots'
 
 /** Integrations: the headline, the AI apps it works with, two cards and a note in the app. */
 interface Props {
@@ -43,7 +43,16 @@ const mcp = featurePath(lang, 'mcp')
       />
     </div>
     <div class="integ-shot fx">
-      <Image src={shot} alt={c.alt} widths={[916, 1374, 1832]} sizes="(min-width: 1069px) 916px, 100vw" />
+      <Image
+        src={landingShot('integrations', lang)}
+        alt={c.alt}
+        widths={[916, 1161, 1741, 2322]}
+        sizes="(min-width: 1069px) 1161px, 100vw"
+      />
+    </div>
+    <!-- An AI app asking Fixnote for the note on the left (Figma 577:58086). -->
+    <div class="integ-chat fx" aria-hidden="true">
+      <Image src={landingShot('integrations-chat', lang)} alt="" widths={[438, 876]} sizes="438px" loading="lazy" />
     </div>
   </div>
 </section>

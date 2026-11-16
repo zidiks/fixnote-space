@@ -1,0 +1,270 @@
+{
+  "_": "Text maps for tools/figma-bridge/fixnote/landing-shots.mjs: shared UI first, then per picture. A value is the new text, or {text, keep: [[newPart, oldPart]]} to give newPart the style oldPart had (a link, a bold run).",
+  "ui": {
+    "es": {
+      "Search": "Buscar",
+      "Home": "Inicio",
+      "Today": "Hoy",
+      "Links": "Enlaces",
+      "Overview": "Vista general",
+      "Tidy up": "Poner orden",
+      "Folders": "Carpetas",
+      "Work": "Trabajo",
+      "Projects": "Proyectos",
+      "Meetings": "Reuniones",
+      "Personal": "Personal",
+      "Ideas": "Ideas",
+      "Reading": "Lectura",
+      "Travel": "Viajes",
+      "Japan 2027": "Japón 2027",
+      "Lisbon weekend": "Finde en Lisboa",
+      "No folders yet.": "Aún no hay carpetas.",
+      "Folder name": "Nombre de la carpeta",
+      "Go Pro": "Pasar a Pro",
+      "Sync, AI assistant and collaboration. 7 days free, no card needed.": "Sincronización, asistente de IA y colaboración. 7 días gratis, sin tarjeta.",
+      "Sign in to sync": "Entrar para sincronizar",
+      "Shared note": "Nota compartida",
+      "Edited by Sofia · just now": "Editado por Sofía · ahora mismo",
+      "Sofia": "Sofía",
+      "Japan trip — April 2027": "Viaje a Japón — abril de 2027",
+      "Tokyo · Hakone · Kyoto · Osaka  ·  Apr 2–14, 12 days": "Tokio · Hakone · Kioto · Osaka  ·  2–14 de abril, 12 días",
+      "Before we go": "Antes de salir",
+      "Book flights to Tokyo Haneda": "Reservar vuelos a Tokio Haneda",
+      "Renew passports": "Renovar pasaportes",
+      "Get a ": "Comprar el ",
+      "14-day JR Pass": "JR Pass de 14 días",
+      "Reserve teamLab Planets tickets": "Reservar teamLab Planets",
+      " for Apr 4": " para el 4 de abril",
+      "Order eSIMs for everyone": "Pedir eSIM para todos"
+    }
+  },
+  "hero": {
+    "es": {
+      "Cherry blossom season, so everything books up early. Flights and the first Tokyo nights need to be locked in before December.": "Temporada de cerezos en flor: todo se reserva pronto. Los vuelos y las primeras noches en Tokio hay que cerrarlos antes de diciembre.",
+      "Route": "Ruta",
+      "Tokyo — ": {
+        "text": "Tokio — ",
+        "keep": [["Tokio", "Tokyo"]]
+      },
+      "5 nights in Shibuya": "5 noches en Shibuya",
+      " + Nikko day trip": " + día en Nikko",
+      "Hakone — 1 night, ryokan with a private onsen": {
+        "text": "Hakone — 1 noche, ryokan con onsen privado",
+        "keep": [["Hakone", "Hakone"]]
+      },
+      "Kyoto — 4 nights near Gion, Fushimi Inari at sunrise": {
+        "text": "Kioto — 4 noches cerca de Gion, Fushimi Inari al amanecer",
+        "keep": [["Kioto", "Kyoto"]]
+      },
+      "Osaka — 2 nights, street food in Dotonbori": {
+        "text": "Osaka — 2 noches, comida callejera en Dotonbori",
+        "keep": [["Osaka", "Osaka"]]
+      },
+      "Budget and bookings live in Trip budget 2027.": {
+        "text": "El presupuesto y las reservas están en Presupuesto del viaje 2027.",
+        "keep": [["Presupuesto del viaje 2027", "Trip budget 2027"]]
+      },
+      "Assistant": "Asistente",
+      "Find what I saved about Japan before — planning the April trip": "Busca lo que guardé sobre Japón: estoy planeando el viaje de abril",
+      "Searched 248 notes · found 5 about Japan": "248 notas revisadas · 5 sobre Japón",
+      "You’ve saved 5 notes about Japan over the last two years. These fit your route best:": "Guardaste 5 notas sobre Japón en los últimos dos años. Estas encajan mejor con tu ruta:",
+      "Kyoto ryokan shortlist": "Ryokans en Kioto, preselección",
+      "Travel · Mar 2025": "Viajes · mar 2025",
+      "Tokyo food spots from Kenji": "Dónde comer en Tokio, de Kenji",
+      "Ideas · Jan 2026": "Ideas · ene 2026",
+      "JR Pass vs regional passes": "JR Pass o pases regionales",
+      "Links · japan-guide.com": "Enlaces · japan-guide.com",
+      "Sakura season notes": "Temporada de sakura",
+      "Reading · Feb 2026": "Lectura · feb 2026",
+      "Add Kenji’s food list and the ryokan shortlist to this note?": "¿Añado a esta nota la lista de Kenji y la preselección de ryokans?",
+      "Add to note": "Añadir a la nota",
+      "Open all 5": "Abrir las 5",
+      "Ask anything or give a task…": "Pregunta o pide una tarea…"
+    }
+  },
+  "refine": {
+    "es": {
+      "Cherry blossom season, so everything books up early.": "Temporada de cerezos, así que todo se reserva pronto.",
+      "Flights and the first Tokyo nights need to be locked in before December.": "Los vuelos y las primeras noches en Tokio, antes de diciembre.",
+      "Ask AI to edit this text…": "Pide a la IA que edite este texto…",
+      "Rewrite": "Reescribir",
+      "Shorten": "Acortar",
+      "Reformat": "Reformatear",
+      "Fix mistakes": "Corregir errores",
+      "New note from this": "Nueva nota con esto",
+      "Delete": "Eliminar"
+    }
+  },
+  "integrations": {
+    "es": {
+      "Market research": "Estudio de mercado",
+      "Competitive landscape": "Competencia",
+      "Market Opportunity": "Oportunidad de mercado",
+      "The market is crowded with tools that record, transcribe, and summarize meetings.\nBut the real challenge begins afterward: turning conversations into decisions,\nclear ownership, and meaningful progress.": "El mercado está lleno de herramientas que graban, transcriben y resumen reuniones.\nPero el verdadero reto empieza después: convertir las conversaciones en decisiones,\nresponsables claros y avances reales.",
+      "The opportunity is to move beyond meeting summaries and help teams turn discussions into action.": "La oportunidad está en ir más allá de los resúmenes y ayudar a los equipos a pasar a la acción.",
+      "Key market insights": "Claves del mercado",
+      "Summaries are becoming a standard feature": "Los resúmenes ya son algo estándar",
+      "Most competitors focus on transcription accuracy, AI summaries, and searchable meeting history.\nThese features are useful but increasingly difficult to differentiate.": "Casi todos compiten en precisión de transcripción, resúmenes con IA e historial con búsqueda.\nSon útiles, pero cada vez cuesta más diferenciarse con ellos.",
+      "Follow-through remains a major pain point": "El seguimiento sigue siendo el gran problema",
+      "Teams often leave meetings with unclear responsibilities, scattered action items,\nand decisions that are difficult to track.": "Los equipos salen de las reuniones sin responsables claros, con tareas dispersas\ny decisiones difíciles de seguir.",
+      "Trust influences adoption": "La confianza decide la adopción",
+      "Recording consent, data privacy, and control over shared information remain important considerations, particularly for larger teams.": "El consentimiento para grabar, la privacidad y el control de lo que se comparte siguen pesando, sobre todo en equipos grandes.",
+      "Recommended launch experiments": "Experimentos de lanzamiento recomendados",
+      "Decision-first summaries": "Resúmenes centrados en decisiones",
+      "Test recaps organized around decisions and next steps, rather than chronological notes.": "Probar resúmenes organizados por decisiones y próximos pasos, no por orden cronológico.",
+      "Workflow integrations ": "Integraciones con el flujo de trabajo "
+    }
+  },
+  "chat": {
+    "en": {
+      "Analyze my AI meeting tools research in FixNote. Identify key market opportunities and create a structured note with insights and next steps.": "Analyze my AI meeting tools research in Fixnote. Identify key market opportunities and create a structured note with insights and next steps.",
+      "Done! I've created Market Opportunity\nin FixNote, with key insights, market gaps,\nand actionable next steps.\nYour new note is ready to review.": "Done! I've created Market Opportunity\nin Fixnote, with key insights, market gaps,\nand actionable next steps.\nYour new note is ready to review."
+    },
+    "es": {
+      "Analyze my AI meeting tools research in FixNote. Identify key market opportunities and create a structured note with insights and next steps.": "Analiza mi estudio sobre herramientas de IA para reuniones en Fixnote. Encuentra las principales oportunidades y crea una nota ordenada con conclusiones y próximos pasos.",
+      "Done! I've created Market Opportunity\nin FixNote, with key insights, market gaps,\nand actionable next steps.\nYour new note is ready to review.": "¡Listo! He creado Oportunidad de mercado\nen Fixnote, con las claves, los huecos\ndel mercado y los próximos pasos.\nTu nota nueva ya está lista.",
+      "Closed-won deals": "Ventas cerradas",
+      "Share": "Compartir",
+      "Ask App": "Pregunta"
+    }
+  },
+  "tidy": {
+    "en": {
+      "Поиск": "Search",
+      "Главная": "Home",
+      "Сегодня": "Today",
+      "Ссылки": "Links",
+      "Обзор": "Overview",
+      "Навести порядок": "Tidy up",
+      "Папки": "Folders",
+      "Работа": "Work",
+      "Проекты": "Projects",
+      "Встречи": "Meetings",
+      "Личное": "Personal",
+      "Идеи": "Ideas",
+      "Чтение": "Reading",
+      "Дизайн": "Design",
+      "Разработка": "Development",
+      "Папок пока нет.": "No folders yet.",
+      "Название папки": "Folder name",
+      "Перейти на Pro": "Upgrade to Pro",
+      "Синхронизация, AI-ассистент и совместная работа. 7 дней бесплатно, без карты.": "Sync, AI assistant and sharing. 7 days free, no card needed.",
+      "Войти для синхронизации": "Sign in to sync",
+      "AI предлагает папки и заголовки и находит дубликаты. Ничего не меняется без вашего подтверждения.": "AI suggests folders and titles and finds duplicates. Nothing changes until you accept.",
+      "Найти предложения": "Find suggestions",
+      "Принять все": "Accept all",
+      "Отклонить все": "Reject all",
+      "Позвонить в сервис насчёт стиральной машины, номер заявки 48213.": "Call the repair service about the washing machine, ticket 48213.",
+      "Перенести в «Дизайн»": "Move to “Personal”",
+      "Принять": "Accept",
+      "Мысль": "A thought",
+      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Wi-Fi password at the coworking: ask at the front desk, second floor",
+      "Заголовки": "Titles",
+      "Заголовок: «Позвонить в сервис»": "Title: “Call the repair service”",
+      "Заголовок: «Пароль от Wi-Fi»": "Title: “Coworking Wi-Fi password”"
+    },
+    "es": {
+      "Поиск": "Buscar",
+      "Главная": "Inicio",
+      "Сегодня": "Hoy",
+      "Ссылки": "Enlaces",
+      "Обзор": "Vista general",
+      "Навести порядок": "Poner orden",
+      "Папки": "Carpetas",
+      "Работа": "Trabajo",
+      "Проекты": "Proyectos",
+      "Встречи": "Reuniones",
+      "Личное": "Personal",
+      "Идеи": "Ideas",
+      "Чтение": "Lectura",
+      "Links": "Enlaces",
+      "Дизайн": "Diseño",
+      "Разработка": "Desarrollo",
+      "Папок пока нет.": "Aún no hay carpetas.",
+      "Название папки": "Nombre de la carpeta",
+      "Перейти на Pro": "Pasar a Pro",
+      "Синхронизация, AI-ассистент и совместная работа. 7 дней бесплатно, без карты.": "Sincronización, asistente de IA y colaboración. 7 días gratis, sin tarjeta.",
+      "Войти для синхронизации": "Entrar para sincronizar",
+      "AI предлагает папки и заголовки и находит дубликаты. Ничего не меняется без вашего подтверждения.": "La IA propone carpetas y títulos y encuentra duplicados. No cambia nada hasta que lo aceptes.",
+      "Найти предложения": "Buscar sugerencias",
+      "Принять все": "Aceptar todo",
+      "Отклонить все": "Rechazar todo",
+      "Позвонить в сервис насчёт стиральной машины, номер заявки 48213.": "Llamar al servicio técnico por la lavadora, aviso 48213.",
+      "Перенести в «Дизайн»": "Mover a «Personal»",
+      "Принять": "Aceptar",
+      "Мысль": "Una idea",
+      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Contraseña del wifi del coworking: preguntar en recepción, segunda planta",
+      "Заголовки": "Títulos",
+      "Заголовок: «Позвонить в сервис»": "Título: «Llamar al servicio técnico»",
+      "Заголовок: «Пароль от Wi-Fi»": "Título: «Wifi del coworking»"
+    }
+  },
+  "meaning": {
+    "en": {
+      "созвон": "meeting",
+      "Заметки": "Notes",
+      "Созвон с командой дизайна": "Design team sync",
+      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Design team sync Summary We went over the new “notes” view and the dark…",
+      "7 ноября": "November 7",
+      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "November 7 Design sync at 3 pm Reply to emails Run…",
+      "Похожие по смыслу": "Similar in meaning",
+      "6 ноября": "November 6",
+      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "November 6 [x] Send the invoice [x] Review the extension pull request [ ] Call mom",
+      "Мысль": "A thought",
+      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "A thought The best time for notes is right after a talk, while it’s fresh. Saying it is faster than typing.",
+      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Wi-Fi password at the coworking: ask at the front desk, second floor",
+      "Список покупок": "Shopping list",
+      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Shopping list [ ] Oat milk [ ] Bread [x] Coffee beans [ ] AA batteries [ ] Birthday present for Emma"
+    },
+    "es": {
+      "созвон": "reunión",
+      "Заметки": "Notas",
+      "Созвон с командой дизайна": "Reunión con el equipo de diseño",
+      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Reunión con el equipo de diseño Resumen Repasamos la nueva vista «notas» y el tema…",
+      "7 ноября": "7 de noviembre",
+      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "7 de noviembre Reunión de diseño a las 15:00 Responder correos Correr…",
+      "Похожие по смыслу": "Parecidas en significado",
+      "6 ноября": "6 de noviembre",
+      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "6 de noviembre [x] Enviar la factura [x] Revisar el pull request de la extensión [ ] Llamar a mamá",
+      "Мысль": "Una idea",
+      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "Una idea El mejor momento para anotar es justo después de hablar, con todo fresco. Dictar es más rápido que escribir.",
+      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Contraseña del wifi del coworking: preguntar en recepción, segunda planta",
+      "Список покупок": "Lista de la compra",
+      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Lista de la compra [ ] Leche de avena [ ] Pan [x] Café en grano [ ] Pilas AA [ ] Regalo de cumpleaños para Emma"
+    }
+  },
+  "images": {
+    "en": {
+      "созвон": "wifi",
+      "Заметки": "Notes",
+      "Созвон с командой дизайна": "Coworking photos",
+      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Coworking photos In the picture: GUEST WIFI · Cowork-5G · password at the desk…",
+      "7 ноября": "Whiteboard, November 7",
+      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "Whiteboard, November 7 In the picture: WIFI CHANGES FRIDAY · printer on floor 2…",
+      "Похожие по смыслу": "Similar in meaning",
+      "6 ноября": "Office move",
+      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "Office move [x] Ask about the router [x] Label the boxes [ ] Send everyone the new password",
+      "Мысль": "Screenshots",
+      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "Screenshots In the picture: Network settings · Connected to Cowork-5G · Signal strong",
+      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Wi-Fi password at the coworking: ask at the front desk, second floor",
+      "Список покупок": "Router receipt",
+      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Router receipt In the picture: WIFI 6 ROUTER AX3000 · 89.90 · 2-year warranty"
+    },
+    "es": {
+      "созвон": "wifi",
+      "Заметки": "Notas",
+      "Созвон с командой дизайна": "Fotos del coworking",
+      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Fotos del coworking En la imagen: WIFI INVITADOS · Cowork-5G · clave en recepción…",
+      "7 ноября": "Pizarra, 7 de noviembre",
+      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "Pizarra, 7 de noviembre En la imagen: EL WIFI CAMBIA EL VIERNES · impresora en la 2.ª…",
+      "Похожие по смыслу": "Parecidas en significado",
+      "6 ноября": "Mudanza de oficina",
+      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "Mudanza de oficina [x] Preguntar por el router [x] Etiquetar las cajas [ ] Enviar a todos la clave nueva",
+      "Мысль": "Capturas",
+      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "Capturas En la imagen: Ajustes de red · Conectado a Cowork-5G · Señal buena",
+      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Contraseña del wifi del coworking: preguntar en recepción, segunda planta",
+      "Список покупок": "Ticket del router",
+      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Ticket del router En la imagen: ROUTER WIFI 6 AX3000 · 89,90 · garantía de 2 años"
+    }
+  }
+}
