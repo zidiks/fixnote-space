@@ -10,7 +10,7 @@ import sharp from 'sharp'
  * themselves, so a picture always says what its page says.
  *
  * Base.astro writes the picture's address into og:image (/og/<lang>/<path>.png) and a hint for it:
- * `<meta name="og-card" content='{"eyebrow":…,"shot":…,"rival":…,"title":…}'>`. This step reads
+ * `<meta name="og-card" content='{"eyebrow":…,"shot":…,"rival":…,"title":…}'>`, or `{"cover":…}` for a card drawn like a blog cover (the home page). This step reads
  * the <title> (without the brand; the hint's `title` wins), the description and the hint, draws
  * the card in the style of the blog covers and removes the hint from the page.
  */
@@ -176,7 +176,136 @@ async function board({ shot: shotName, rival, key }) {
   )
 }
 
-async function card({ key, title, eyebrow, description, shot: shotName, rival }) {
+const ORANGE = '#EC6100'
+const lucide = (paths) =>
+  svgUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${ORANGE}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`,
+  )
+/** Icons for the chips of a cover board (Lucide). */
+const CHIP_ICONS = {
+  offline: lucide(
+    '<path d="m2 2 20 20"/><path d="M5.8 5.8A7 7 0 0 0 6.6 19H17a4.5 4.5 0 0 0 2.4-.7"/><path d="M21.5 15.8A4.5 4.5 0 0 0 17.5 10h-1.3A7 7 0 0 0 9.6 5.2"/>',
+  ),
+  together: lucide(
+    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  ),
+  encrypted: lucide(
+    '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  ),
+}
+
+/**
+ * A card drawn like the blog covers: a two-tone headline and subline, a CTA pill, and a board
+ * with a few chips instead of a screenshot. For pages that say what they are in a few words
+ * (the home page).
+ */
+async function cover({ key, lines, sub, cta, chips }) {
+  const twoTone = (pair, style) =>
+    h(
+      'div',
+      { display: 'flex', flexDirection: 'column', ...style },
+      pair.map((text, i) => h('div', { color: i ? GREY : INK }, text)),
+    )
+  const left = h(
+    'div',
+    {
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      width: 540,
+      height: H - 60,
+      margin: '30px 0 0 30px',
+    },
+    [
+      img(word, { width: (LOGO_H * wordW) / wordH, height: LOGO_H }),
+      h('div', { display: 'flex', flexDirection: 'column', gap: 30 }, [
+        twoTone(lines, { fontSize: 50, fontWeight: 500, lineHeight: 1.08, letterSpacing: -1.6 }),
+        twoTone(sub, { fontSize: 20.25, lineHeight: 1.3, letterSpacing: -0.3 }),
+      ]),
+      h(
+        'div',
+        {
+          display: 'flex',
+          alignItems: 'center',
+          alignSelf: 'flex-start',
+          height: 51,
+          padding: '0 25.5px',
+          borderRadius: 999,
+          background: INK,
+          color: '#fff',
+          fontSize: 19.5,
+          fontWeight: 500,
+          letterSpacing: -0.2,
+        },
+        cta,
+      ),
+    ],
+  )
+  // Chips stepping down to the right, as the covers place their UI.
+  const chip = ({ icon: name, text }, i) =>
+    h(
+      'div',
+      {
+        display: 'flex',
+        alignItems: 'center',
+        alignSelf: i === 1 ? 'center' : i === 2 ? 'flex-end' : 'flex-start',
+        gap: 14,
+        height: 64,
+        padding: '0 26px 0 20px',
+        borderRadius: 999,
+        background: '#fff',
+        color: INK,
+        fontSize: 22,
+        fontWeight: 500,
+        letterSpacing: -0.3,
+        boxShadow: '0 18px 44px rgba(60,20,0,0.18)',
+      },
+      [img(CHIP_ICONS[name], { width: 26, height: 26 }), h('div', {}, text)],
+    )
+  const board = h(
+    'div',
+    {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'absolute',
+      left: BOARD.x,
+      top: BOARD.y,
+      width: BOARD.size,
+      height: BOARD.size,
+      borderRadius: 24,
+      overflow: 'hidden',
+      backgroundImage: `url(${textureFor(key)})`,
+      backgroundSize: `${BOARD.size}px ${BOARD.size}px`,
+    },
+    [
+      h(
+        'div',
+        { display: 'flex', flexDirection: 'column', gap: 22, width: BOARD.size - 88 },
+        chips.map(chip),
+      ),
+    ],
+  )
+  const svg = await satori(
+    h(
+      'div',
+      {
+        display: 'flex',
+        width: W,
+        height: H,
+        background: BG,
+        fontFamily: 'Geist, Geist Cyrillic',
+        position: 'relative',
+      },
+      [left, board],
+    ),
+    { width: W, height: H, fonts: FONTS },
+  )
+  return (await renderAsync(svg, { fitTo: { mode: 'width', value: W } })).asPng()
+}
+
+async function card({ key, title, eyebrow, description, shot: shotName, rival, cover: c }) {
+  if (c) return cover({ key, ...c })
   const left = h(
     'div',
     {

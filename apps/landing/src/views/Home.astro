@@ -32,7 +32,18 @@ const jsonLd = [app(lang, d.meta.home.description, image), faqPage(d.landing.faq
   jsonLd={jsonLd}
   notes={d.notes}
   overlay
-  og={{ eyebrow: d.hero.eyebrow, title: d.hero.subtitle, shot: `${lang}/home` }}
+  og={{
+    cover: {
+      lines: [d.intro.line1, d.intro.line2],
+      sub: d.intro.lead.split('\n'),
+      cta: d.intro.download,
+      chips: [
+        { icon: 'encrypted', text: d.intro.encrypted.title },
+        { icon: 'offline', text: d.intro.offline.title },
+        { icon: 'together', text: d.intro.together.title },
+      ],
+    },
+  }}
 >
   <Intro lang={lang} />
   <Tidy lang={lang} />

@@ -20,7 +20,19 @@ interface Props {
   /** A picture instead of the page's own Open Graph card. */
   image?: string
   /** What the page's Open Graph card shows next to its title (og.mjs draws it after the build). */
-  og?: { eyebrow?: string; shot?: string; rival?: string; title?: string }
+  og?: {
+    eyebrow?: string
+    shot?: string
+    rival?: string
+    title?: string
+    /** Drawn like a blog cover instead (og.mjs `cover`). */
+    cover?: {
+      lines: string[]
+      sub: string[]
+      cta: string
+      chips: { icon: 'offline' | 'together' | 'encrypted'; text: string }[]
+    }
+  }
   /** The page is about the app (schema.org WebPage.about); false for the privacy policy, 404. */
   aboutApp?: boolean
   type?: 'website' | 'article'
