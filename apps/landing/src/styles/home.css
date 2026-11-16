@@ -1637,7 +1637,8 @@
     width: min(calc(1728 * var(--u)), calc(100% - 48px));
     min-height: calc(838 * var(--u));
     margin: 0 auto;
-    padding: calc(200 * var(--u)) calc(72 * var(--u)) calc(72 * var(--u));
+    /* The content lines up with the FAQ above (140 at the sides, not Figma's 72). */
+    padding: calc(200 * var(--u)) calc(140 * var(--u)) calc(72 * var(--u));
   }
   .home-footer-nav {
     display: flex;
@@ -1650,7 +1651,7 @@
   .home-footer-mark {
     position: absolute;
     top: calc(200 * var(--u));
-    right: calc(72 * var(--u));
+    right: calc(140 * var(--u));
     width: calc(72 * var(--u));
     margin: 0;
   }
