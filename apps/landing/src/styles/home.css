@@ -955,15 +955,15 @@
 .plan-free {
   background: rgb(252 252 252 / 0.5);
 }
-/* Figma 331:10712: a 1 px orange stroke that is solid at the bottom-left corner and fades out
-   along the edges (gradient from the corner towards 157, -183 px on the 468 × 512 card). */
+/* Figma 331:10712: a 1 px orange stroke, solid at the bottom-left corner and fading along both
+   edges. 45deg (Figma has about 41) so the bottom and the left edge fade at the same pace. */
 .plan-free::before {
   content: '';
   position: absolute;
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(41deg, #e5712a 0, rgb(229 113 42 / 0) calc(241 * var(--u)));
+  background: linear-gradient(45deg, #e5712a 0, rgb(229 113 42 / 0) calc(241 * var(--u)));
   pointer-events: none;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,

@@ -112,5 +112,11 @@ const current = (page?: string) =>
     const bar = document.querySelector('.hdr')
     if (!top || !bar || !('IntersectionObserver' in window)) return
     new IntersectionObserver(([e]) => bar.toggleAttribute('data-float', !e.isIntersecting)).observe(top)
+    // A reload in the middle of the page: the browser puts the scroll back after the observer's
+    // first answer and the observer does not always answer again, so look once more then.
+    const sync = () => bar.toggleAttribute('data-float', top.getBoundingClientRect().bottom <= 0)
+    addEventListener('load', () => requestAnimationFrame(sync))
+    addEventListener('pageshow', sync)
+    addEventListener('scroll', sync, { once: true, passive: true })
   })()
 </script>
