@@ -1,23 +1,23 @@
 ---
-title: 'Atajos de teclado de FixNote en Windows y Mac con cualquier teclado'
-description: 'Todos los atajos de teclado de FixNote para Windows y Mac, también los que funcionan desde cualquier app: cómo cambiarlos y por qué sirven con cualquier distribución.'
+title: 'Atajos de teclado de Fixnote en Windows y Mac con cualquier teclado'
+description: 'Todos los atajos de teclado de Fixnote para Windows y Mac, también los que funcionan desde cualquier app: cómo cambiarlos y por qué sirven con cualquier distribución.'
 date: 2026-09-24
 updated: 2026-10-13
 translationKey: hotkeys
 faq:
-  - q: '¿Por qué los atajos de FixNote funcionan con el teclado en español o en ruso?'
-    a: 'FixNote comprueba tanto el carácter que escribe la tecla como la tecla física pulsada. Por eso Ctrl+K funciona aunque esa tecla escriba otra letra en tu distribución.'
+  - q: '¿Por qué los atajos de Fixnote funcionan con el teclado en español o en ruso?'
+    a: 'Fixnote comprueba tanto el carácter que escribe la tecla como la tecla física pulsada. Por eso Ctrl+K funciona aunque esa tecla escriba otra letra en tu distribución.'
   - q: '¿Cómo abro la nota de hoy con el teclado?'
-    a: 'Pulsa Ctrl+D en Windows o ⌘+D en Mac. Si la nota de hoy todavía no existe, FixNote la crea.'
+    a: 'Pulsa Ctrl+D en Windows o ⌘+D en Mac. Si la nota de hoy todavía no existe, Fixnote la crea.'
   - q: '¿Por qué Ctrl+N no crea una nota en el navegador?'
     a: 'El navegador se reserva Ctrl+N para abrir una ventana nueva. En la app web pulsa Ctrl+K y elige «Nueva nota», o dale a «Nueva nota» un atajo propio en Ajustes → Atajos; en la app de escritorio Ctrl+N funciona.'
-  - q: '¿Puedo cambiar los atajos de teclado de FixNote?'
-    a: 'Sí. En Ajustes → Atajos, haz clic en un atajo y pulsa las teclas nuevas. FixNote avisa si otro comando ya las usa, y cada atajo se puede restablecer. Los cambios se guardan en ese dispositivo. Los atajos del editor, como Ctrl+B, no cambian.'
-  - q: '¿Puedo crear una nota en FixNote mientras trabajo en otra app?'
-    a: 'Sí, en la app de escritorio. Ctrl+Alt+N en Windows (⌃⌥N en Mac) abre la ventana con una nota nueva, aunque FixNote esté oculto en la bandeja.'
+  - q: '¿Puedo cambiar los atajos de teclado de Fixnote?'
+    a: 'Sí. En Ajustes → Atajos, haz clic en un atajo y pulsa las teclas nuevas. Fixnote avisa si otro comando ya las usa, y cada atajo se puede restablecer. Los cambios se guardan en ese dispositivo. Los atajos del editor, como Ctrl+B, no cambian.'
+  - q: '¿Puedo crear una nota en Fixnote mientras trabajo en otra app?'
+    a: 'Sí, en la app de escritorio. Ctrl+Alt+N en Windows (⌃⌥N en Mac) abre la ventana con una nota nueva, aunque Fixnote esté oculto en la bandeja.'
 ---
 
-¿Qué atajos de teclado tiene FixNote y siguen funcionando si cambias la distribución del teclado? Aquí tienes la lista completa para Windows y Mac: los atajos generales, los del editor, los que funcionan desde cualquier app, cómo cambiarlos y cómo elegir varias notas a la vez, además de una explicación breve de cómo la app reconoce la tecla.
+¿Qué atajos de teclado tiene Fixnote y siguen funcionando si cambias la distribución del teclado? Aquí tienes la lista completa para Windows y Mac: los atajos generales, los del editor, los que funcionan desde cualquier app, cómo cambiarlos y cómo elegir varias notas a la vez, además de una explicación breve de cómo la app reconoce la tecla.
 
 ## Los atajos principales
 
@@ -59,18 +59,18 @@ El menú del botón derecho muestra los mismos atajos junto a cada comando, así
 
 Cuando pulsas una tecla, el navegador informa de dos cosas: el carácter que salió y la tecla física. En el teclado español, la tecla que en inglés es [ escribe un acento grave, pero su código sigue siendo BracketLeft. En ruso, la tecla K escribe «л» y su código sigue siendo KeyK. Muchas apps solo miran el carácter, y para ellas el atajo deja de existir.
 
-FixNote comprueba las dos cosas. Ctrl+K, Ctrl+J y Ctrl+[ funcionan sin cambiar a la distribución inglesa, en español, en ruso y en otras. Los atajos del editor, como Ctrl+B, también se reconocen por la tecla.
+Fixnote comprueba las dos cosas. Ctrl+K, Ctrl+J y Ctrl+[ funcionan sin cambiar a la distribución inglesa, en español, en ruso y en otras. Los atajos del editor, como Ctrl+B, también se reconocen por la tecla.
 
 ## Atajos que funcionan desde cualquier app
 
-La app de escritorio tiene cuatro atajos más que funcionan con FixNote oculto en la bandeja o con otra app al frente. Traen la ventana y hacen el resto en ella.
+La app de escritorio tiene cuatro atajos más que funcionan con Fixnote oculto en la bandeja o con otra app al frente. Traen la ventana y hacen el resto en ella.
 
 | Windows | Mac | Qué hace |
 |---|---|---|
-| Ctrl+Alt+N | ⌃⌥N | Abre FixNote con una nota nueva |
-| Ctrl+Alt+R | ⌃⌥R | Abre FixNote y empieza una nota de voz; al pulsarlo otra vez termina |
-| Ctrl+Alt+K | ⌃⌥K | Abre FixNote con la búsqueda |
-| Ctrl+Alt+Espacio | ⌃⌥Espacio | Muestra FixNote, o lo oculta si ya está al frente |
+| Ctrl+Alt+N | ⌃⌥N | Abre Fixnote con una nota nueva |
+| Ctrl+Alt+R | ⌃⌥R | Abre Fixnote y empieza una nota de voz; al pulsarlo otra vez termina |
+| Ctrl+Alt+K | ⌃⌥K | Abre Fixnote con la búsqueda |
+| Ctrl+Alt+Espacio | ⌃⌥Espacio | Muestra Fixnote, o lo oculta si ya está al frente |
 
 En Mac llevan Control y Option (⌃⌥), no ⌘: pocas apps usan esa pareja, y los atajos con ⌘ son de la app que está al frente. Una pestaña del navegador no oye las teclas mientras otra app está al frente, así que la app web no los tiene.
 
@@ -78,7 +78,7 @@ En Mac llevan Control y Option (⌃⌥), no ⌘: pocas apps usan esa pareja, y l
 
 Abre Ajustes → Atajos. Ahí están los atajos generales y, en la app de escritorio, los de todo el sistema. Haz clic en un atajo y pulsa las teclas nuevas; Esc cancela. Un atajo va unido al lugar de la tecla en el teclado, así que el que pongas con la distribución española funciona igual al cambiar a la rusa.
 
-FixNote no deja que una combinación lance dos comandos: si las teclas ya están ocupadas, te dice por cuál. Tampoco acepta teclas que el sistema, el navegador o el editor se reservan, como Ctrl+C. Cada atajo de todo el sistema se puede desactivar por separado, y si otro programa ya ocupa sus teclas, los ajustes lo indican y puedes elegir otras. Cada atajo tiene un botón para restablecerlo, y «Restablecer todos los atajos» vuelve a los de siempre.
+Fixnote no deja que una combinación lance dos comandos: si las teclas ya están ocupadas, te dice por cuál. Tampoco acepta teclas que el sistema, el navegador o el editor se reservan, como Ctrl+C. Cada atajo de todo el sistema se puede desactivar por separado, y si otro programa ya ocupa sus teclas, los ajustes lo indican y puedes elegir otras. Cada atajo tiene un botón para restablecerlo, y «Restablecer todos los atajos» vuelve a los de siempre.
 
 Los cambios se guardan en ese dispositivo. Los atajos del editor de la tabla de arriba no se pueden cambiar.
 
@@ -90,6 +90,6 @@ Esc o el botón «Listo» terminan la selección.
 
 ## El icono en la bandeja y en la barra de menús
 
-Si cierras la ventana de FixNote en el ordenador, la app pasa a la bandeja de Windows (a la barra de menús en Mac) y sigue funcionando. Desde el menú del icono puedes crear una nota, empezar una nota de voz, abrir la nota de hoy o la búsqueda y grabar una llamada sin buscar la ventana. Los atajos de todo el sistema hacen lo mismo desde el teclado. Si vuelves a abrir FixNote, se muestra la ventana que ya estaba abierta y no arranca una segunda copia.
+Si cierras la ventana de Fixnote en el ordenador, la app pasa a la bandeja de Windows (a la barra de menús en Mac) y sigue funcionando. Desde el menú del icono puedes crear una nota, empezar una nota de voz, abrir la nota de hoy o la búsqueda y grabar una llamada sin buscar la ventana. Los atajos de todo el sistema hacen lo mismo desde el teclado. Si vuelves a abrir Fixnote, se muestra la ventana que ya estaba abierta y no arranca una segunda copia.
 
-Para empezar, abre FixNote, pulsa Ctrl+D y escribe una tarea en la nota de hoy. Después pulsa Ctrl+K, escribe una palabra de esa tarea y comprueba que la nota aparece.
+Para empezar, abre Fixnote, pulsa Ctrl+D y escribe una tarea en la nota de hoy. Después pulsa Ctrl+K, escribe una palabra de esa tarea y comprueba que la nota aparece.

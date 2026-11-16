@@ -33,15 +33,17 @@ function source(name, count) {
   return { width: Number(box[1]), height: Number(box[2]), paths }
 }
 const mark = source('fixnote-mark.svg', 1)
-const word = source('fixnote-wordmark.svg', 4)
-const [wordF, dot, xnot, e] = word.paths
+const word = source('fixnote-wordmark.svg', 3)
+const [wordF, dot, rest] = word.paths
 const { scale, strokes: spec } = JSON.parse(read('strokes.json'))
 
 const fmt = (n) => String(Number(n.toFixed(3)))
 const scaled = (d, k) => d.replace(/-?\d*\.?\d+(?:e-?\d+)?/g, (n) => fmt(Number(n) * k))
 /** The word's f in the mark's coordinates: the two are one shape. */
 const f = scaled(wordF, 1 / scale)
-const shapes = { f, mark: mark.paths[0], dot, xnot, e }
+const shapes = { f, mark: mark.paths[0], dot, rest }
+/** The mark's f goes below the word's baseline, so the lockup is as tall as the taller of the two. */
+const lockupHeight = Math.max(word.height, mark.height * scale)
 
 // ---- stroke lengths: M, L, C, and A used as half ellipses ----
 function length(d) {
@@ -130,6 +132,7 @@ const data = {
   stop,
   mark: { width: mark.width, height: mark.height },
   word: { width: word.width, height: word.height },
+  height: lockupHeight,
   shapes,
   strokes,
 }
@@ -156,8 +159,7 @@ function markup(id, { live = true } = {}) {
     defs: `<defs>
     <path id="${id}-f" d="${f}"/>
     <path id="${id}-mark" fill-rule="evenodd" d="${shapes.mark}"/>
-    <path id="${id}-xnot" fill-rule="evenodd" d="${xnot}"/>
-    <path id="${id}-e" fill-rule="evenodd" d="${e}"/>
+    <path id="${id}-rest" fill-rule="evenodd" d="${rest}"/>
     ${strokes.map(mask).join('\n    ')}
   </defs>`,
     mark: of('mark'),
@@ -166,7 +168,7 @@ function markup(id, { live = true } = {}) {
 }
 function logoSvg(id) {
   const m = markup(id)
-  return `<svg class="fx-logo" id="${id}" data-phase="word" viewBox="0 0 ${word.width} ${word.height}" role="img" aria-label="FixNote" style="--stop:${stop}">
+  return `<svg class="fx-logo" id="${id}" data-phase="word" viewBox="0 0 ${word.width} ${fmt(lockupHeight)}" role="img" aria-label="Fixnote" style="--stop:${stop}">
   ${m.defs}
   <g data-s="lockup">
     <g transform="scale(${scale})">${m.mark}</g>
@@ -180,8 +182,8 @@ writeFileSync(
   read('motion.template.html')
     .replace('__CSS__', readFileSync(join(root, 'packages/ui/src/logo/logo.css'), 'utf8'))
     .replace('__SHIFT__', fmt((word.width - mark.width * scale) / 2))
-    .replace('__MARK_W__', fmt((28 * mark.width * scale) / word.height + 1))
-    .replace('__WORD_W__', fmt((28 * word.width) / word.height))
+    .replace('__MARK_W__', fmt((28 * mark.width * scale) / lockupHeight + 1))
+    .replace('__WORD_W__', fmt((28 * word.width) / lockupHeight))
     .replace('__STAGE__', logoSvg('stage'))
     .replace('__INLINE__', logoSvg('small')),
 )
@@ -199,48 +201,24 @@ function tile(size) {
   }
   return `M${points.join('L')}Z`
 }
-function icon({ mac = false, bleed = false, sized = false } = {}) {
+/**
+ * As the designer laid it out (Figma «Lockup — Icon»): a flat orange tile, the mark in white,
+ * 120 of 256 px wide, centred across and 72 px from the top (it sits a little low: the f goes
+ * below the n). A launcher that may crop to a circle (bleed) gets it smaller, in the same place.
+ */
+const TILE = '#f86c2d'
+function icon({ mac = false, bleed = false, sized = false, favicon = false } = {}) {
   const shape = bleed ? 'M0 0H1024V1024H0Z' : tile(1024)
-  // The mark takes 58% of the tile's width (44% when the launcher may crop to a circle).
-  const k = ((bleed ? 0.44 : 0.58) * 1024) / mark.width
+  // A browser tab shows 16–32 px: there the mark fills two thirds of the tile, or it is a speck.
+  const share = bleed ? 92 : favicon ? 168 : 120
+  const k = (share / 256) * (1024 / mark.width)
   const x = (1024 - mark.width * k) / 2
-  const y = (1024 - mark.height * k) / 2
-  const lift = mac ? 0.8046875 : 1
-  return `<svg xmlns="http://www.w3.org/2000/svg" ${sized ? 'width="1024" height="1024" ' : ''}viewBox="0 0 1024 1024"><title>FixNote</title>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffa565"/>
-      <stop offset="0.5" stop-color="#f6742f"/>
-      <stop offset="1" stop-color="#e2501a"/>
-    </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0" r="0.85">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.3"/>
-      <stop offset="0.65" stop-color="#fff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#ffeadb"/>
-    </linearGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.38"/>
-      <stop offset="0.5" stop-color="#fff" stop-opacity="0.04"/>
-      <stop offset="1" stop-color="#5a1800" stop-opacity="0.2"/>
-    </linearGradient>
-    <clipPath id="tile"><path d="${shape}"/></clipPath>
-    <filter id="drop" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="${fmt(10 / lift)}" stdDeviation="${fmt(14 / lift)}" flood-color="#000" flood-opacity="0.3"/>
-    </filter>
-    <filter id="lift" x="-30%" y="-30%" width="160%" height="170%">
-      <feDropShadow dx="0" dy="${fmt(12 * lift)}" stdDeviation="${fmt(16 * lift)}" flood-color="#8a2a00" flood-opacity="0.34"/>
-    </filter>
-  </defs>
+  const y = (1024 - mark.height * k) / 2 + (18 * share) / 120
+  return `<svg xmlns="http://www.w3.org/2000/svg" ${sized ? 'width="1024" height="1024" ' : ''}viewBox="0 0 1024 1024"><title>Fixnote</title>
+  ${mac ? '<defs><filter id="drop" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="12.4" stdDeviation="17.4" flood-color="#000" flood-opacity="0.3"/></filter></defs>' : ''}
   <g${mac ? ' transform="translate(100 100) scale(0.8046875)"' : ''}>
-    <path d="${shape}" fill="url(#bg)"${mac ? ' filter="url(#drop)"' : ''}/>
-    <path d="${shape}" fill="url(#glow)"/>
-    ${bleed ? '' : `<path d="${shape}" fill="none" stroke="url(#rim)" stroke-width="10" clip-path="url(#tile)"/>`}
-    <g filter="url(#lift)">
-      <path transform="translate(${fmt(x)} ${fmt(y)}) scale(${fmt(k)})" fill="url(#ink)" fill-rule="evenodd" d="${shapes.mark}"/>
-    </g>
+    <path d="${shape}" fill="${TILE}"${mac ? ' filter="url(#drop)"' : ''}/>
+    <path transform="translate(${fmt(x)} ${fmt(y)}) scale(${fmt(k)})" fill="#fff" fill-rule="evenodd" d="${shapes.mark}"/>
   </g>
 </svg>
 `
@@ -248,8 +226,14 @@ function icon({ mac = false, bleed = false, sized = false } = {}) {
 writeFileSync(join(root, 'apps/desktop/icon-src/app.svg'), icon({ sized: true }))
 writeFileSync(join(root, 'apps/desktop/icon-src/app-macos.svg'), icon({ mac: true, sized: true }))
 writeFileSync(join(root, 'apps/web/public/icon.svg'), icon())
-writeFileSync(join(root, 'apps/landing/public/favicon.svg'), icon())
+writeFileSync(join(root, 'apps/landing/public/favicon.svg'), icon({ favicon: true }))
+writeFileSync(join(root, 'apps/web/public/favicon.svg'), icon({ favicon: true }))
 writeFileSync(join(brand, 'icon-bleed.svg'), icon({ bleed: true }))
+// The home page's footer shows the icon (its large faint word is drawn by hand, not here).
+writeFileSync(
+  join(root, 'apps/landing/src/assets/landing/home-mark.svg'),
+  icon().replace('<svg ', '<svg width="56" height="56" '),
+)
 
 // ---- check: all strokes drawn = the designer's shapes, pixel for pixel ----
 let sharp
@@ -264,16 +248,27 @@ if (sharp) {
     Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-10 -10 ${w + 20} ${h + 20}" width="${(w + 20) * 2}" height="${(h + 20) * 2}"><rect x="-10" y="-10" width="100%" height="100%" fill="#fff"/>${body.replaceAll(' href=', ' xlink:href=')}</svg>`,
     )
+  const use = (s) => `<use href="#c-${s.shape}" mask="url(#c-${s.id})"/>`
+  // The mark: its own strokes (word strokes such as the end of the word's f bar stay hidden).
+  const markOnly = strokes
+    .filter((s) => s.space === 'mark' && !s.id.startsWith('w-'))
+    .map(use)
+    .join('')
+  // The word: its f (every stroke over the f) and the word's own strokes.
+  const wordF = strokes
+    .filter((s) => s.shape === 'f')
+    .map(use)
+    .join('')
   const pairs = {
     mark: [
-      svg(mark.width, mark.height, `${m.defs}${m.mark}`),
+      svg(mark.width, mark.height, `${m.defs}${markOnly}`),
       svg(mark.width, mark.height, `<path fill-rule="evenodd" d="${shapes.mark}"/>`),
     ],
     word: [
       svg(
         word.width,
         word.height,
-        `${m.defs}<g transform="scale(${scale})">${m.mark.split('<use').slice(0, 3).join('<use')}</g><path d="${dot}"/>${m.word}`,
+        `${m.defs}<g transform="scale(${scale})">${wordF}</g><path d="${dot}"/>${m.word}`,
       ),
       svg(
         word.width,

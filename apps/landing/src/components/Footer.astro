@@ -1,6 +1,7 @@
 ---
 import { ANALYTICS } from '../data/analytics'
 import { APPS, RIVALS } from '../data/apps'
+import { SOCIAL } from '../data/social'
 import { APP_URL, CONTACT_EMAIL, type Lang, localePath, t } from '../i18n'
 import { getPosts, postPath, topicHref } from '../lib/blog'
 import { fill, vsPath } from '../lib/pages'
@@ -15,7 +16,7 @@ interface Props {
   lang: Lang
   alternates: Partial<Record<Lang, string>>
   notes?: readonly string[]
-  /** The breadcrumb after "FixNote" (the page's name). */
+  /** The breadcrumb after "Fixnote" (the page's name). */
   crumb?: string
 }
 const { lang, alternates, notes = [], crumb } = Astro.props
@@ -79,6 +80,7 @@ const columns = [
       { label: f.privacy, href: localePath(lang, '/privacy/') },
       { label: f.rss, href: localePath(lang, '/rss.xml') },
       { label: f.email, href: `mailto:${CONTACT_EMAIL}` },
+      ...SOCIAL.map((account) => ({ label: account.name, href: account.href, social: true })),
     ],
   },
 ]
@@ -102,7 +104,7 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
       )
     }
     <nav aria-label={f.breadcrumbs} class="flex items-center gap-2.5 border-b border-black/[0.16] py-3.5">
-      <a href={home} aria-label="FixNote" class="shrink-0">
+      <a href={home} aria-label="Fixnote" class="shrink-0">
         <img src="/favicon.svg" alt="" width="16" height="16" class="h-4 w-4" />
       </a>
       <Chevron class="h-[9px] w-[6px] text-black/[0.56]" />
@@ -110,13 +112,13 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
         crumb ? (
           <>
             <a href={home} class={linkClass}>
-              FixNote
+              Fixnote
             </a>
             <Chevron class="h-[9px] w-[6px] text-black/[0.56]" />
             <span class="text-black/[0.88]">{crumb}</span>
           </>
         ) : (
-          <span class="text-black/[0.88]">FixNote</span>
+          <span class="text-black/[0.88]">Fixnote</span>
         )
       }
     </nav>
@@ -131,7 +133,11 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
             <ul class="space-y-[0.8em]">
               {column.links.map((link) => (
                 <li>
-                  <a href={link.href} class={linkClass}>
+                  <a
+                    href={link.href}
+                    class={linkClass}
+                    {...('social' in link ? { target: '_blank', rel: 'me noopener' } : {})}
+                  >
                     {link.label}
                   </a>
                 </li>
@@ -154,7 +160,7 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
       >
         <img
           src="https://launchnest.io/badge/fixnote.svg?variant=featured&theme=light"
-          alt="FixNote on LaunchNest"
+          alt="Fixnote on LaunchNest"
           width="220"
           height="56"
           loading="lazy"
@@ -167,7 +173,7 @@ const linkClass = 'text-black/[0.72] underline-offset-2 hover:text-black hover:u
       class="flex flex-col gap-2 border-t border-black/[0.16] pt-2 pb-5 small:flex-row small:items-center small:justify-between"
     >
       <div class="flex flex-col gap-1 small:flex-row small:items-center small:gap-7">
-        <p>Copyright © {new Date().getFullYear()} FixNote. {f.rights}</p>
+        <p>Copyright © {new Date().getFullYear()} Fixnote. {f.rights}</p>
         <ul class="flex flex-wrap items-center">
           <li class="leading-none">
             <a class={linkClass} href={localePath(lang, '/privacy/')}>{f.privacy}</a>

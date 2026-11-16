@@ -12,32 +12,55 @@ import sharp from 'sharp'
  * Base.astro writes the picture's address into og:image (/og/<lang>/<path>.png) and a hint for it:
  * `<meta name="og-card" content='{"eyebrow":…,"shot":…,"rival":…,"title":…}'>`. This step reads
  * the <title> (without the brand; the hint's `title` wins), the description and the hint, draws
- * the card in the site's style and removes the hint from the page.
+ * the card in the style of the blog covers and removes the hint from the page.
  */
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 const W = 1200
 const H = 630
-const INK = '#1d1d1f'
-const MUTED = '#6e6e73'
-const FAINT = '#86868b'
-const PANEL = '#f5f5f7'
-/** How wide a screenshot is drawn; it is embedded at twice that so it stays sharp. */
-const SHOT_WIDTH = 760
+// The look of the blog covers (Figma «Blog covers», tools/figma-bridge/fixnote/blog-covers.mjs).
+const BG = '#F5F3F0'
+const INK = '#211F1C'
+const GREY = '#9B9894'
+/** The art board on the right, as on the covers. */
+const BOARD = { x: 600, y: 30, size: 570 }
+/** How wide a screenshot is drawn on the board; it is embedded at twice that so it stays sharp. */
+const SHOT_WIDTH = 720
 
 const font = (subset, weight) =>
   readFileSync(
-    join(root, `node_modules/@fontsource/inter/files/inter-${subset}-${weight}-normal.woff`),
+    join(root, `node_modules/@fontsource/geist/files/geist-${subset}-${weight}-normal.woff`),
   )
 // One family per subset: satori looks for a missing glyph in the next family, not in another
 // file of the same family.
-const FONTS = [400, 600].flatMap((weight) => [
-  { name: 'Inter', data: font('latin', weight), weight, style: 'normal' },
-  { name: 'Inter Cyrillic', data: font('cyrillic', weight), weight, style: 'normal' },
+const FONTS = [400, 500].flatMap((weight) => [
+  { name: 'Geist', data: font('latin', weight), weight, style: 'normal' },
+  { name: 'Geist Cyrillic', data: font('cyrillic', weight), weight, style: 'normal' },
 ])
 
 const dataUri = (buf, type = 'png') => `data:image/${type};base64,${buf.toString('base64')}`
-const logo = dataUri(await sharp(join(root, 'public/logo.png')).resize(112, 112).png().toBuffer())
+const svgUri = (svg) => `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+
+/** The word, from the same source as the app and the covers. */
+const wordSvg = readFileSync(join(root, '../../brand/fixnote-wordmark.svg'), 'utf8')
+const [, wordW, wordH] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(wordSvg).map(Number)
+const word = svgUri(wordSvg.replace('fill="currentColor"', `fill="${INK}"`))
+const LOGO_H = 25.5
+const icon = dataUri(await sharp(join(root, 'public/logo.png')).resize(400, 400).png().toBuffer())
+
+/** The covers' textures (Figma «Social»); a page gets one by its address, so it never changes. */
+const TEXTURES = ['ember-silk', 'ember-cloud', 'dawn-silk', 'dawn-cloud', 'dusk-silk', 'dusk-cloud']
+const textures = Object.fromEntries(
+  TEXTURES.map((name) => [
+    name,
+    dataUri(readFileSync(join(root, `src/assets/og/${name}.jpg`)), 'jpeg'),
+  ]),
+)
+function textureFor(key) {
+  let h = 0
+  for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return textures[TEXTURES[h % TEXTURES.length]]
+}
 
 /** A screenshot from src/assets/shots, shrunk to the size it is drawn at. */
 const shots = new Map()
@@ -56,16 +79,16 @@ async function shot(name) {
 const appIcon = async (name) =>
   dataUri(
     await sharp(join(root, `src/assets/apps/${name}.png`))
-      .resize(176, 176)
+      .resize(300, 300)
       .png()
       .toBuffer(),
   )
 
-/** The brand removed from a page title: "FixNote: x", "x · FixNote", "x | FixNote", "x — FixNote". */
+/** The brand removed from a page title: "Fixnote: x", "x · Fixnote", "x | Fixnote", "x — Fixnote". */
 export function cardTitle(title) {
   const t = title
-    .replace(/\s*[:·|—–-]\s*FixNote\s*$/u, '')
-    .replace(/^FixNote\s*[:·|—–-]\s*/u, '')
+    .replace(/\s*[:·|—–-]\s*Fixnote\s*$/u, '')
+    .replace(/^Fixnote\s*[:·|—–-]\s*/u, '')
     .trim()
   return t ? t[0].toLocaleUpperCase() + t.slice(1) : title
 }
@@ -73,104 +96,152 @@ export function cardTitle(title) {
 const h = (type, style, children) => ({ type, props: { style, children } })
 const img = (src, style) => ({ type: 'img', props: { src, style } })
 
-function titleSize(text, wide) {
+function titleSize(text) {
   const n = text.length
-  if (wide) return n > 80 ? 52 : n > 55 ? 58 : n > 40 ? 64 : 72
-  return n > 60 ? 46 : n > 40 ? 52 : 58
+  return n > 80 ? 38 : n > 60 ? 42 : n > 42 ? 46 : 50
 }
 
-async function card({ title, eyebrow, description, shot: shotName, rival }) {
-  const wide = !shotName && !rival
-  const textWidth = wide ? 1040 : 600
-  const brand = h('div', { display: 'flex', alignItems: 'center', gap: 18 }, [
-    img(logo, { width: 56, height: 56 }),
-    h('div', { fontSize: 32, fontWeight: 600, color: INK, letterSpacing: -0.5 }, 'FixNote'),
-  ])
-  const text = h('div', { display: 'flex', flexDirection: 'column', gap: 18, width: textWidth }, [
-    ...(eyebrow ? [h('div', { fontSize: 28, fontWeight: 600, color: MUTED }, eyebrow)] : []),
-    h(
-      'div',
-      {
-        fontSize: titleSize(title, wide),
-        fontWeight: 600,
-        color: INK,
-        lineHeight: 1.08,
-        letterSpacing: -1.2,
-        lineClamp: wide ? 3 : 4,
-        display: 'block',
-      },
-      title,
-    ),
-    ...(wide && description
-      ? [
-          h(
-            'div',
-            {
-              fontSize: 28,
-              color: MUTED,
-              lineHeight: 1.35,
-              lineClamp: 2,
-              display: 'block',
-              marginTop: 6,
-            },
-            description,
-          ),
-        ]
-      : []),
-  ])
+/** What the art board shows: the page's screenshot, Fixnote next to a rival, or the app icon. */
+async function board({ shot: shotName, rival, key }) {
+  const inner = []
+  if (shotName) {
+    const s = await shot(shotName)
+    // Larger than the board and cut by its right edge, like a window seen from the side.
+    const height = Math.min(Math.round(s.height / 2), 470)
+    inner.push(
+      h(
+        'div',
+        {
+          display: 'flex',
+          position: 'absolute',
+          left: 44,
+          top: Math.round((BOARD.size - height) / 2),
+          width: SHOT_WIDTH,
+          height,
+          borderRadius: 18,
+          overflow: 'hidden',
+          boxShadow: '0 24px 60px rgba(60,20,0,0.28)',
+        },
+        [img(s.src, { width: SHOT_WIDTH, height: Math.round(s.height / 2) })],
+      ),
+    )
+  } else if (rival) {
+    const tile = (src) => img(src, { width: 150, height: 150, borderRadius: 34 })
+    inner.push(
+      h(
+        'div',
+        {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 26,
+          padding: '28px 34px',
+          borderRadius: 40,
+          background: 'rgba(255,255,255,0.85)',
+          boxShadow: '0 24px 60px rgba(60,20,0,0.22)',
+        },
+        [
+          tile(icon),
+          h('div', { fontSize: 34, fontWeight: 500, color: GREY }, 'vs'),
+          tile(await appIcon(rival)),
+        ],
+      ),
+    )
+  } else {
+    inner.push(
+      img(icon, {
+        width: 200,
+        height: 200,
+        borderRadius: 46,
+        boxShadow: '0 24px 60px rgba(60,20,0,0.3)',
+      }),
+    )
+  }
+  return h(
+    'div',
+    {
+      display: 'flex',
+      position: 'absolute',
+      left: BOARD.x,
+      top: BOARD.y,
+      width: BOARD.size,
+      height: BOARD.size,
+      borderRadius: 24,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundImage: `url(${textureFor(key)})`,
+      backgroundSize: `${BOARD.size}px ${BOARD.size}px`,
+    },
+    inner,
+  )
+}
+
+async function card({ key, title, eyebrow, description, shot: shotName, rival }) {
   const left = h(
     'div',
     {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      height: H,
-      padding: '64px 0 56px 80px',
+      width: 540,
+      height: H - 60,
+      margin: '30px 0 0 30px',
     },
-    [brand, text, h('div', { fontSize: 26, color: FAINT }, 'fixnote.space')],
+    [
+      img(word, { width: (LOGO_H * wordW) / wordH, height: LOGO_H }),
+      h('div', { display: 'flex', flexDirection: 'column', gap: 18 }, [
+        ...(eyebrow
+          ? [h('div', { fontSize: 20, fontWeight: 500, color: GREY, letterSpacing: -0.2 }, eyebrow)]
+          : []),
+        h(
+          'div',
+          {
+            fontSize: titleSize(title),
+            fontWeight: 500,
+            color: INK,
+            lineHeight: 1.08,
+            letterSpacing: -1.6,
+            lineClamp: 4,
+            display: 'block',
+          },
+          title,
+        ),
+        ...(description
+          ? [
+              h(
+                'div',
+                {
+                  fontSize: 20.25,
+                  color: GREY,
+                  lineHeight: 1.3,
+                  letterSpacing: -0.3,
+                  lineClamp: 3,
+                  display: 'block',
+                },
+                description,
+              ),
+            ]
+          : []),
+      ]),
+      h(
+        'div',
+        {
+          display: 'flex',
+          alignItems: 'center',
+          alignSelf: 'flex-start',
+          height: 51,
+          padding: '0 25.5px',
+          borderRadius: 999,
+          background: INK,
+          color: '#fff',
+          fontSize: 19.5,
+          fontWeight: 500,
+          letterSpacing: -0.2,
+        },
+        'fixnote.space',
+      ),
+    ],
   )
-
-  let right = null
-  if (shotName) {
-    const s = await shot(shotName)
-    const width = SHOT_WIDTH
-    const height = Math.round((s.height * width) / (SHOT_WIDTH * 2))
-    right = h(
-      'div',
-      {
-        display: 'flex',
-        position: 'absolute',
-        left: 700,
-        top: 92,
-        width,
-        height,
-        borderRadius: 22,
-        overflow: 'hidden',
-        boxShadow: '0 30px 80px rgba(0,0,0,0.16)',
-        border: '1px solid #d2d2d7',
-      },
-      [img(s.src, { width, height })],
-    )
-  } else if (rival) {
-    const icon = (src) => img(src, { width: 176, height: 176, borderRadius: 40 })
-    right = h(
-      'div',
-      {
-        display: 'flex',
-        position: 'absolute',
-        left: 720,
-        top: 0,
-        height: H,
-        alignItems: 'center',
-        gap: 28,
-      },
-      [
-        icon(dataUri(await sharp(join(root, 'public/logo.png')).resize(176, 176).png().toBuffer())),
-        h('div', { fontSize: 40, fontWeight: 600, color: FAINT }, 'vs'),
-        icon(await appIcon(rival)),
-      ],
-    )
-  }
 
   const svg = await satori(
     h(
@@ -179,11 +250,11 @@ async function card({ title, eyebrow, description, shot: shotName, rival }) {
         display: 'flex',
         width: W,
         height: H,
-        background: PANEL,
-        fontFamily: 'Inter, Inter Cyrillic',
+        background: BG,
+        fontFamily: 'Geist, Geist Cyrillic',
         position: 'relative',
       },
-      [left, ...(right ? [right] : [])],
+      [left, await board({ shot: shotName, rival, key })],
     ),
     { width: W, height: H, fonts: FONTS },
   )
@@ -229,6 +300,7 @@ export const ogCards = {
         writeFileSync(file, html.replace(hint[0], ''))
         jobs.push({
           target: join(out, image[1]),
+          key: image[1],
           title: cardTitle(decode(title[1])),
           description: description ? decode(description[1]) : undefined,
           ...JSON.parse(decode(hint[1])),

@@ -1,9 +1,9 @@
 ---
 title: Folders and subfolders
-metaTitle: 'Note folders and subfolders: organize notes fast in FixNote'
-description: Nested folders in FixNote. Move notes one at a time or in bulk, see everything from subfolders in the parent folder, and let AI suggest where notes belong.
+metaTitle: 'Note folders and subfolders: organize notes fast in Fixnote'
+description: Nested folders in Fixnote. Move notes one at a time or in bulk, see everything from subfolders in the parent folder, and let AI suggest where notes belong.
 eyebrow: Organize
-intro: How do you sort your notes into folders without spending an evening on it? FixNote has folders nested as deep as you like, moves many notes at once and has AI that suggests where each note should go.
+intro: How do you sort your notes into folders without spending an evening on it? Fixnote has folders nested as deep as you like, moves many notes at once and has AI that suggests where each note should go.
 card:
   title: Folders
   text: Folders and subfolders, bulk moves and AI suggestions for where notes go.
@@ -34,7 +34,7 @@ Create a folder with the folder-plus icon next to the Folders heading in the sid
 
 There are three ways to file a note. In an open note, Move to lists your folders, No folder and New folder…. In the note list, the same options are in the right-click menu of a card. For a batch, start a selection with Ctrl+click (a long press on a phone) and press Move to on the selection bar. A note created inside a folder lands in that folder right away.
 
-You don't have to file everything by hand. Select some notes and press Tidy up: AI suggests folders and titles, and you accept or reject each one. The assistant can also create folders and move notes into them when you ask something like "move everything about the renovation into Home". Both need a model: FixNote AI, your own key or Ollama.
+You don't have to file everything by hand. Select some notes and press Tidy up: AI suggests folders and titles, and you accept or reject each one. The assistant can also create folders and move notes into them when you ask something like "move everything about the renovation into Home". Both need a model: Fixnote AI, your own key or Ollama.
 
 ## When it helps
 
@@ -44,4 +44,4 @@ Folders also control access. In the [MCP server](/features/mcp/) settings you ca
 
 ## When another tool fits better
 
-If you need databases with properties, filters and views like a kanban board, Notion is the better fit; see the [comparison with Notion](/vs/notion/). FixNote keeps notes in folders and relies on search and the assistant, and it has no graph of links or backlinks. If you think in links between notes, look at Obsidian.
+If you need databases with properties, filters and views like a kanban board, Notion is the better fit; see the [comparison with Notion](/vs/notion/). Fixnote keeps notes in folders and relies on search and the assistant, and it has no graph of links or backlinks. If you think in links between notes, look at Obsidian.

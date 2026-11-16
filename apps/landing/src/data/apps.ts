@@ -1,5 +1,5 @@
 /**
- * FixNote next to the note apps people most often weigh it against: what each one does, as their
+ * Fixnote next to the note apps people most often weigh it against: what each one does, as their
  * own pricing and help pages describe it (checked October 2026). The words for every row live in
  * the i18n files (`compare.rows`); this file holds only the facts, the same in every language.
  * When a vendor changes a plan, change it here and in the "best apps" articles.
@@ -36,7 +36,7 @@ export interface App {
 
 export const APPS: Record<AppId, App> = {
   fixnote: {
-    name: 'FixNote',
+    name: 'Fixnote',
     paid: '$7',
     site: 'fixnote.space',
     marks: {

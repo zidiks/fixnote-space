@@ -1,9 +1,9 @@
 ---
 title: Checklists and tables
-metaTitle: 'Checklists and tables in your notes | FixNote'
-description: Checklists with nested items and tables right inside a FixNote note. The note card shows how many tasks are done, and everything is stored as plain Markdown.
+metaTitle: 'Checklists and tables in your notes | Fixnote'
+description: Checklists with nested items and tables right inside a Fixnote note. The note card shows how many tasks are done, and everything is stored as plain Markdown.
 eyebrow: Lists
-intro: Where do you keep a shopping list, a renovation plan or a price comparison without opening a separate app for each? A FixNote note can hold a checklist with nested items and a table, and it all stays plain Markdown.
+intro: Where do you keep a shopping list, a renovation plan or a price comparison without opening a separate app for each? A Fixnote note can hold a checklist with nested items and a table, and it all stays plain Markdown.
 card:
   title: Checklists and tables
   text: Tasks with checkboxes and tables right in the text of a note.
@@ -32,9 +32,9 @@ faq:
 
 An empty note reminds you: `- [ ]` for tasks. A checklist starts with [ ] and a space at the beginning of a line, while Ctrl+Shift+9 or Checklist in the right-click menu turns lines you already wrote into tasks. Enter adds the next item and Tab nests it. That makes it easy to break a big job into steps: "Pack for the trip" with "Documents" and "First aid kit" underneath.
 
-Tables come from Markdown. Paste text like `| Item | Price |` with a `|---|---|` line under it, and FixNote shows it as a table. Tables in notes imported from Obsidian or Notion open the same way. Tab moves to the next cell and adds a new row at the end of the table. To remove a table, select all its cells and press Backspace.
+Tables come from Markdown. Paste text like `| Item | Price |` with a `|---|---|` line under it, and Fixnote shows it as a table. Tables in notes imported from Obsidian or Notion open the same way. Tab moves to the next cell and adds a new row at the end of the table. To remove a table, select all its cells and press Backspace.
 
-If you dictated a to-do list as one long stream, press Ctrl+Shift+E with nothing selected and choose "Tidy up the note". Anything that sounds like a task becomes a checklist item. For a selected passage, Reformat does something similar. You see every [AI edit](/features/ai-edits/) before it applies and decide whether to accept it. This needs a model: FixNote AI, your own key or Ollama.
+If you dictated a to-do list as one long stream, press Ctrl+Shift+E with nothing selected and choose "Tidy up the note". Anything that sounds like a task becomes a checklist item. For a selected passage, Reformat does something similar. You see every [AI edit](/features/ai-edits/) before it applies and decide whether to accept it. This needs a model: Fixnote AI, your own key or Ollama.
 
 ## When it helps
 
@@ -44,4 +44,4 @@ Checklists are most useful in the [daily note](/features/daily-notes/). Unfinish
 
 ## When another tool fits better
 
-Tables in FixNote are simple: there are no formulas, no sorting and no merged cells, and you can't add a column to an existing table with a button. For calculations, use Excel or Google Sheets. For databases with properties, filters and views, Notion is more convenient; see the [comparison with Notion](/vs/notion/). If your tasks need due dates with reminders and assignees, a task manager such as Todoist fits better.
+Tables in Fixnote are simple: there are no formulas, no sorting and no merged cells, and you can't add a column to an existing table with a button. For calculations, use Excel or Google Sheets. For databases with properties, filters and views, Notion is more convenient; see the [comparison with Notion](/vs/notion/). If your tasks need due dates with reminders and assignees, a task manager such as Todoist fits better.

@@ -1,25 +1,25 @@
 ---
 title: "How to save Telegram messages to your notes"
-description: "How to connect the FixNote bot in Telegram, what you can send it, why the bot can't read your messages, and what to check when a note doesn't show up."
+description: "How to connect the Fixnote bot in Telegram, what you can send it, why the bot can't read your messages, and what to check when a note doesn't show up."
 date: 2026-10-06
 updated: 2026-10-11
 translationKey: telegram-capture
 faq:
   - q: "How do I save Telegram messages to my notes?"
-    a: "Connect the bot in FixNote: Settings → Integrations → Telegram → Connect. Then send or forward text, voice messages and photos to the bot, and each message becomes a note in the app."
-  - q: "Can the FixNote bot read my messages?"
+    a: "Connect the bot in Fixnote: Settings → Integrations → Telegram → Connect. Then send or forward text, voice messages and photos to the bot, and each message becomes a note in the app."
+  - q: "Can the Fixnote bot read my messages?"
     a: "No. The bot seals each message with your account's public key right away, and only your app can open it. Telegram itself sees your chat with the bot, as it sees any chat."
-  - q: "Can I add the FixNote bot to a group?"
+  - q: "Can I add the Fixnote bot to a group?"
     a: "No. The bot works only in a private chat, so other people's messages from a group never end up in your notes."
   - q: "Is the Telegram bot free?"
     a: "The bot is part of Pro. Pro has a 7-day trial with no card, which you start yourself."
 ---
 
-A lot of people send things to their Saved Messages in Telegram and then can never find them again. How do you send thoughts, links and voice messages straight into your notes instead? FixNote has a bot for that: whatever you send or forward to it becomes a note in the app. Here's how to connect it, what you can send, and why the bot can't read your messages.
+A lot of people send things to their Saved Messages in Telegram and then can never find them again. How do you send thoughts, links and voice messages straight into your notes instead? Fixnote has a bot for that: whatever you send or forward to it becomes a note in the app. Here's how to connect it, what you can send, and why the bot can't read your messages.
 
 ## How to connect the bot
 
-The bot is part of Pro and works through your FixNote account. Open Settings → Integrations → Telegram and press Connect. Telegram opens with the bot; press Start there. The link carries a one-time code that is valid for 15 minutes and ties your chat to your account. FixNote's settings then show Connected with your Telegram name.
+The bot is part of Pro and works through your Fixnote account. Open Settings → Integrations → Telegram and press Connect. Telegram opens with the bot; press Start there. The link carries a one-time code that is valid for 15 minutes and ties your chat to your account. Fixnote's settings then show Connected with your Telegram name.
 
 The bot only works in a private chat. If you add it to a group, it stays silent, because otherwise other people's messages would land in your notes.
 
@@ -46,7 +46,7 @@ Voice messages are sealed whole, and there is no transcription on the server. Sp
 
 The app takes messages from the queue, turns them into notes and deletes them from the server. From then on they are encrypted and synced like any other note.
 
-Telegram itself sees your chat with the bot, as it sees every chat in it. Those are Telegram's rules, and FixNote can't change them. More on the [Telegram bot page](/features/telegram/).
+Telegram itself sees your chat with the bot, as it sees every chat in it. Those are Telegram's rules, and Fixnote can't change them. More on the [Telegram bot page](/features/telegram/).
 
 ## Why you can't read notes through the bot
 
@@ -56,6 +56,6 @@ The bot only writes. Searching and asking questions happen in the app. That's on
 
 Messages turn into notes while the app is open. That usually happens almost at once: the server wakes the app as soon as the bot has queued a message. If the app was closed, the notes appear the next time you open it.
 
-If the bot replied "This link has expired", press Connect again: the code in the link is valid for 15 minutes. In Only on this device mode the bot is off, because in that mode FixNote doesn't talk to our server at all.
+If the bot replied "This link has expired", press Connect again: the code in the link is valid for 15 minutes. In Only on this device mode the bot is off, because in that mode Fixnote doesn't talk to our server at all.
 
-Send the bot a short voice message, then open FixNote: a note with its text will be waiting for you.
+Send the bot a short voice message, then open Fixnote: a note with its text will be waiting for you.

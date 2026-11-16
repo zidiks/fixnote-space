@@ -1,9 +1,9 @@
 ---
 title: Sync notes across devices
-metaTitle: 'Notes app that syncs across devices, encrypted | FixNote'
-description: FixNote syncs your notes between Windows, Mac and the browser on your phone. Everything is encrypted on the device, and edits from two devices merge safely.
+metaTitle: 'Notes app that syncs across devices, encrypted | Fixnote'
+description: Fixnote syncs your notes between Windows, Mac and the browser on your phone. Everything is encrypted on the device, and edits from two devices merge safely.
 eyebrow: Sync
-intro: How do you start a note on your work computer and have it at home and on your phone too? With Pro, FixNote syncs notes, folders and files across your devices and encrypts them before they leave.
+intro: How do you start a note on your work computer and have it at home and on your phone too? With Pro, Fixnote syncs notes, folders and files across your devices and encrypts them before they leave.
 card:
   title: Sync
   text: Notes, folders and files on all your devices, encrypted on the device.
@@ -17,7 +17,7 @@ steps:
   - title: Add your other device
     text: Sign in with the same email, then choose Confirm on another device or type your recovery phrase.
   - title: Write wherever you are
-    text: A change goes up shortly after you make it and appears by itself on your other devices where FixNote is open.
+    text: A change goes up shortly after you make it and appears by itself on your other devices where Fixnote is open.
 privacy: Notes, folder names and files are encrypted on the device with your account key, and the server stores only ciphertext. The key exists only on your devices, so nobody can read your notes on the server, us included.
 faq:
   - q: How much does sync cost?
@@ -25,16 +25,16 @@ faq:
   - q: What does sync do on the Free plan?
     a: Without an account everything stays on one device. With an account on Free, sync only downloads the notes in your account; new edits are not uploaded.
   - q: What happens if I edit the same note on two devices?
-    a: Edits in different lines are merged into one note. If both devices changed the same lines, FixNote keeps the server version, saves the other as a conflict copy next to it and offers to compare them.
-  - q: Does FixNote work offline?
+    a: Edits in different lines are merged into one note. If both devices changed the same lines, Fixnote keeps the server version, saves the other as a conflict copy next to it and offers to compare them.
+  - q: Does Fixnote work offline?
     a: Yes. Notes are stored on the device and open without a connection. Changes wait and upload when you're back online.
   - q: Is there a phone app?
-    a: There are no separate iPhone or Android apps. On a phone, FixNote runs in the browser at app.fixnote.space and syncs just like on a computer.
+    a: There are no separate iPhone or Android apps. On a phone, Fixnote runs in the browser at app.fixnote.space and syncs just like on a computer.
 ---
 
 ## How to turn on sync
 
-Open Settings → Account & sync and sign in with your email. There is no password: FixNote sends you a six-digit code. After you sign in, it shows the 12 words of your recovery phrase and asks for a few of them back to make sure you wrote them down. Then turn on Pro: the trial starts in Settings → Billing.
+Open Settings → Account & sync and sign in with your email. There is no password: Fixnote sends you a six-digit code. After you sign in, it shows the 12 words of your recovery phrase and asks for a few of them back to make sure you wrote them down. Then turn on Pro: the trial starts in Settings → Billing.
 
 On your second device, sign in with the same email. If the first device is at hand, choose Confirm on another device, check that the code matches on both screens and press Allow. Otherwise, type the phrase. The article on [end-to-end encrypted notes](/blog/end-to-end-encrypted-notes/) explains where the keys come from and what to do if you lose the phrase.
 
@@ -44,7 +44,7 @@ The same section shows the state: "Synced" with a time, or "Waiting to upload" w
 
 You write on a Windows PC at work, open your Mac in the evening, and the notes, folders and images are already there. In the shop you open app.fixnote.space on your phone and check off the shopping list, and at home the list is already up to date.
 
-Sometimes a note gets edited on a laptop with no connection and on another computer at the same time. FixNote then combines the edits and keeps the disputed lines as a second version. The note shows a banner, "This note was changed on two devices", and Compare opens both versions with a choice: Keep current, Take the other, Combine or Keep both. Two [daily notes](/features/daily-notes/) for the same date from different devices merge into one without asking.
+Sometimes a note gets edited on a laptop with no connection and on another computer at the same time. Fixnote then combines the edits and keeps the disputed lines as a second version. The note shows a banner, "This note was changed on two devices", and Compare opens both versions with a choice: Keep current, Take the other, Combine or Keep both. Two [daily notes](/features/daily-notes/) for the same date from different devices merge into one without asking.
 
 ## When another tool fits better
 

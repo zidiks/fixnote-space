@@ -8,7 +8,7 @@ import type { Lang } from '../i18n'
  */
 export interface Author {
   name: Record<Lang, string>
-  /** What they do at FixNote, e.g. "Co-founder of FixNote". */
+  /** What they do at Fixnote, e.g. "Co-founder of Fixnote". */
   role: Record<Lang, string>
   /** Two or three sentences: who they are and why they write about notes and privacy. */
   bio?: Record<Lang, string>
@@ -22,7 +22,7 @@ export const AUTHORS: Record<string, Author> = {
   // Asked to be shown by first name and role only: no bio, photo or profiles.
   vladimir: {
     name: { ru: 'Владимир', en: 'Vladimir', es: 'Vladimir' },
-    role: { ru: 'сооснователь FixNote', en: 'co-founder of FixNote', es: 'cofundador de FixNote' },
+    role: { ru: 'сооснователь Fixnote', en: 'co-founder of Fixnote', es: 'cofundador de Fixnote' },
   },
 }
 

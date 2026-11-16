@@ -12,7 +12,7 @@ import { featurePath, fill, getFeatures, vsPath } from '../lib/pages'
 import { breadcrumbs, faqPage } from '../lib/schema'
 
 /**
- * "Notes app for Windows": what FixNote does well on Windows in particular, each part linking to
+ * "Notes app for Windows": what Fixnote does well on Windows in particular, each part linking to
  * its feature page, the default system-wide shortcuts, installing, comparisons and questions.
  */
 interface Props {
@@ -40,7 +40,7 @@ const url = new URL(localePath(lang, '/windows/'), site).href
 const jsonLd = [
   faqPage(p.faq),
   breadcrumbs([
-    { name: 'FixNote', url: new URL(localePath(lang, '/'), site).href },
+    { name: 'Fixnote', url: new URL(localePath(lang, '/'), site).href },
     { name: d.nav.windows, url },
   ]),
 ]

@@ -1,9 +1,9 @@
 ---
 title: Share a note by link
-metaTitle: 'Share a note by link, end-to-end encrypted | FixNote'
+metaTitle: 'Share a note by link, end-to-end encrypted | Fixnote'
 description: Create a read-only link and send a note to anyone. The key lives in the part of the link after #, so the server keeps a copy it has no way to read.
 eyebrow: Links
-intro: How do you send a recipe or a packing list to someone who doesn't use FixNote? Create a read-only link. It opens in any browser, and the server only ever holds an encrypted copy of the note.
+intro: How do you send a recipe or a packing list to someone who doesn't use Fixnote? Create a read-only link. It opens in any browser, and the server only ever holds an encrypted copy of the note.
 card:
   title: Read-only links
   text: Send a note as a link the server cannot read.
@@ -20,7 +20,7 @@ steps:
     text: Stop sharing deletes the copy from the server, and the link stops working.
 privacy: The copy is encrypted on your device with a key that lives only in the part of the link after #. Browsers never send that part to a server, so we hold ciphertext without its key. The link's page opens neither your account nor the reader's.
 faq:
-  - q: Does the reader need a FixNote account?
+  - q: Does the reader need a Fixnote account?
     a: No, the link opens in any browser. Creating one takes Pro on the note owner's side.
   - q: Does the link change when I edit the note?
     a: Not by itself; it shows the copy from when it was made. The Share dialog then says "The note has changed since." with an Update button, and the link's address stays the same.
@@ -40,12 +40,12 @@ If you edit the note later, the same dialog says "The note has changed since." C
 
 ## When it helps
 
-A link works well for a recipe you send to relatives, a packing list for a group trip, lecture notes for classmates or instructions for a babysitter on where the keys are and what's for dinner. You send it once and update it as the note changes. The reader sees the note with its images and the date it was shared, and if they use FixNote too, the page leaves their account and notes alone.
+A link works well for a recipe you send to relatives, a packing list for a group trip, lecture notes for classmates or instructions for a babysitter on where the keys are and what's for dinner. You send it once and update it as the note changes. The reader sees the note with its images and the date it was shared, and if they use Fixnote too, the page leaves their account and notes alone.
 
-Treat the link like a house key: anyone who has it can read the copy. The [encryption page](/features/encryption/) explains how the keys work across FixNote.
+Treat the link like a house key: anyone who has it can read the copy. The [encryption page](/features/encryption/) explains how the keys work across Fixnote.
 
 ## When another tool is a better fit
 
-A link shows one note, read-only. If the other person should edit with you, invite them to a [shared note](/features/shared-notes/); they will need a FixNote account.
+A link shows one note, read-only. If the other person should edit with you, invite them to a [shared note](/features/shared-notes/); they will need a Fixnote account.
 
 If you want a public site with many pages, your own domain and search, Obsidian Publish or Notion's public pages fit better. See the [Obsidian comparison](/vs/obsidian/).

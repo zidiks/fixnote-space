@@ -10,20 +10,19 @@
  *   node tools/figma-bridge/bridge.mjs build fixnote/blog-covers.json --page "Blog covers"
  *
  * Rendered at 1x, each cover goes to apps/landing/src/assets/blog/<lang>/<slug>.png.
- * The logo is the ligature wordmark (.figma/732-63570-fixnote-logo-ligatures.svg); if it is
- * missing, render it once: bridge.mjs render 732:63570 --format svg.
+ * The logo is the word from brand/fixnote-wordmark.svg (the designer's, Figma 2031:2121), the
+ * same file the app and the site are made from.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const LOGO = join(HERE, '..', '.figma', '732-63570-fixnote-logo-ligatures.svg')
-if (!existsSync(LOGO)) throw new Error(`No ${LOGO}; run: bridge.mjs render 732:63570 --format svg`)
+const LOGO = join(HERE, '..', '..', '..', 'brand', 'fixnote-wordmark.svg')
 const logoSvg = readFileSync(LOGO, 'utf8')
-// Drawn at the height of the earlier wordmark; the width follows its 749×173 box.
+const [, LOGO_VW, LOGO_VH] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(logoSvg).map(Number)
 const LOGO_H = 25.5
-const LOGO_W = Math.round(((LOGO_H * 749) / 173) * 100) / 100
+const LOGO_W = Math.round(((LOGO_H * LOGO_VW) / LOGO_VH) * 100) / 100
 
 // Social palette (sampled from the Social page frames).
 const INK = '#211F1C'
@@ -434,7 +433,7 @@ const ARTICLES = [
     t: {
       en: {
         head: ['Six note apps.', 'One honest look.'],
-        sub: ['AI, price, encryption, platforms —', 'FixNote vs Notion, Obsidian and more.'],
+        sub: ['AI, price, encryption, platforms —', 'Fixnote vs Notion, Obsidian and more.'],
         cta: 'Read the comparison',
         fixnote: 'E2E always · free AI option',
         notion: 'AI trial · no end-to-end encryption',
@@ -442,7 +441,7 @@ const ARTICLES = [
       },
       ru: {
         head: ['Шесть приложений.', 'Честный взгляд.'],
-        sub: ['ИИ, цена, шифрование, платформы —', 'FixNote, Notion, Obsidian и другие.'],
+        sub: ['ИИ, цена, шифрование, платформы —', 'Fixnote, Notion, Obsidian и другие.'],
         cta: 'Читать сравнение',
         fixnote: 'Всегда E2E · есть бесплатный ИИ',
         notion: 'ИИ на пробу · без сквозного шифрования',
@@ -450,7 +449,7 @@ const ARTICLES = [
       },
       es: {
         head: ['Seis apps de notas.', 'Una mirada honesta.'],
-        sub: ['IA, precio, cifrado, plataformas —', 'FixNote frente a Notion, Obsidian y más.'],
+        sub: ['IA, precio, cifrado, plataformas —', 'Fixnote frente a Notion, Obsidian y más.'],
         cta: 'Leer la comparativa',
         fixnote: 'Siempre E2E · opción de IA gratis',
         notion: 'IA de prueba · sin cifrado de extremo a extremo',
@@ -461,7 +460,7 @@ const ARTICLES = [
       col(
         [
           panel([
-            row('sparkles', 'FixNote', s.fixnote, { right: svg('check', 20, ORANGE) }),
+            row('sparkles', 'Fixnote', s.fixnote, { right: svg('check', 20, ORANGE) }),
             row('file', 'Notion', s.notion),
             row('file', 'Obsidian', s.obsidian),
           ]),
@@ -618,7 +617,7 @@ const ARTICLES = [
       en: {
         head: ['Forward it.', 'It becomes a note.'],
         sub: [
-          'Text, links and voice to the FixNote bot —',
+          'Text, links and voice to the Fixnote bot —',
           'saved encrypted, straight to your folder.',
         ],
         cta: 'Connect the bot',
@@ -628,7 +627,7 @@ const ARTICLES = [
       },
       ru: {
         head: ['Перешлите.', 'Это уже заметка.'],
-        sub: ['Текст, ссылки и голосовые боту FixNote —', 'зашифровано и сразу в нужной папке.'],
+        sub: ['Текст, ссылки и голосовые боту Fixnote —', 'зашифровано и сразу в нужной папке.'],
         cta: 'Подключить бота',
         fwd: 'Переслано из Telegram',
         saved: 'Сохранено в «Ссылки» · fixnote.space/…',
@@ -636,7 +635,7 @@ const ARTICLES = [
       },
       es: {
         head: ['Reenvíalo.', 'Ya es una nota.'],
-        sub: ['Texto, enlaces y voz al bot de FixNote —', 'cifrado y directo a tu carpeta.'],
+        sub: ['Texto, enlaces y voz al bot de Fixnote —', 'cifrado y directo a tu carpeta.'],
         cta: 'Conecta el bot',
         fwd: 'Reenviado desde Telegram',
         saved: 'Guardado en Enlaces · fixnote.space/…',
@@ -811,7 +810,7 @@ const ARTICLES = [
             fill: w(0.16),
             children: [
               text('Placeholder', s.placeholder, { w: 'fill', fill: w(0.75) }),
-              chip('FixNote MCP', { icon: 'check', iconColor: PAPER, fill: w(0.16), color: PAPER }),
+              chip('Fixnote MCP', { icon: 'check', iconColor: PAPER, fill: w(0.16), color: PAPER }),
               {
                 type: 'FRAME',
                 name: 'Send',
@@ -1176,30 +1175,30 @@ const ARTICLES = [
     t: {
       en: {
         head: ['Three ways', 'to run the AI.'],
-        sub: ['FixNote AI, your own key or Ollama —', 'what each sends, and where it runs.'],
+        sub: ['Fixnote AI, your own key or Ollama —', 'what each sends, and where it runs.'],
         cta: 'Pick your model',
         rows: [
-          ['FixNote AI', 'Encrypted · works on Free'],
+          ['Fixnote AI', 'Encrypted · works on Free'],
           ['Your own API key', 'Straight to the provider'],
           ['Ollama', 'Fully on this device'],
         ],
       },
       ru: {
         head: ['Три способа', 'запустить ИИ.'],
-        sub: ['FixNote AI, свой ключ или Ollama —', 'что куда уходит и где работает.'],
+        sub: ['Fixnote AI, свой ключ или Ollama —', 'что куда уходит и где работает.'],
         cta: 'Выбрать модель',
         rows: [
-          ['FixNote AI', 'Зашифровано · есть на Free'],
+          ['Fixnote AI', 'Зашифровано · есть на Free'],
           ['Свой API-ключ', 'Напрямую к провайдеру'],
           ['Ollama', 'Целиком на этом устройстве'],
         ],
       },
       es: {
         head: ['Tres formas', 'de usar la IA.'],
-        sub: ['FixNote AI, tu propia clave u Ollama —', 'qué envía cada uno y dónde se ejecuta.'],
+        sub: ['Fixnote AI, tu propia clave u Ollama —', 'qué envía cada uno y dónde se ejecuta.'],
         cta: 'Elige tu modelo',
         rows: [
-          ['FixNote AI', 'Cifrado · funciona en Free'],
+          ['Fixnote AI', 'Cifrado · funciona en Free'],
           ['Tu propia clave de API', 'Directo al proveedor'],
           ['Ollama', 'Todo en este dispositivo'],
         ],
@@ -1467,7 +1466,9 @@ for (const lang of LANGS) {
           key: `${key}/logo`,
           type: 'SVG',
           name: 'Fixnote',
-          svg: logoSvg.replaceAll('fill="black"', `fill="${ink}"`),
+          svg: logoSvg
+            .replace('fill="currentColor"', `fill="${ink}"`)
+            .replace(/<title>.*?<\/title>/, ''),
           x: 30,
           y: 30,
           w: LOGO_W,

@@ -1,13 +1,13 @@
 ---
 title: 'Cómo conectar tus notas a Claude, Cursor y Codex con MCP'
-description: 'Cómo dar a Claude Desktop, Cursor y Codex acceso a tus notas de FixNote con el servidor MCP, elegir el nivel de acceso y mostrar solo las carpetas que quieras.'
+description: 'Cómo dar a Claude Desktop, Cursor y Codex acceso a tus notas de Fixnote con el servidor MCP, elegir el nivel de acceso y mostrar solo las carpetas que quieras.'
 date: 2026-10-03
 updated: 2026-10-11
 translationKey: mcp
 faq:
-  - q: '¿Hace falta FixNote Pro para usar el servidor MCP?'
+  - q: '¿Hace falta Fixnote Pro para usar el servidor MCP?'
     a: 'No. El servidor MCP está incluido en el plan Free. Funciona en tu ordenador con tus notas locales, así que no necesita cuenta ni internet.'
-  - q: '¿Funciona MCP en la versión web de FixNote?'
+  - q: '¿Funciona MCP en la versión web de Fixnote?'
     a: 'No. El servidor MCP viene con la app de escritorio para Windows y macOS: la app conectada lo inicia en el mismo ordenador.'
   - q: '¿Puede Claude borrar mis notas a través de MCP?'
     a: 'Solo si el acceso está en «Completo». Todo lo que se borre así se puede recuperar en «Actividad de la IA», en Ajustes → IA.'
@@ -15,27 +15,27 @@ faq:
     a: 'Nuestro servidor no interviene. Lo que una app conectada lee por MCP lo envía a su propio modelo según sus propias condiciones, así que ábrele solo las carpetas que no te importe enseñar.'
 ---
 
-Quieres que Claude Desktop, Cursor o Codex sepan qué decidiste en un proyecto y, de paso, que añadan a una nota lo que salió de una conversación. La app de escritorio de FixNote trae un servidor MCP justo para eso. Aquí verás cómo conectarlo, qué permisos dar y cómo dejar a la app dentro de una sola carpeta de trabajo.
+Quieres que Claude Desktop, Cursor o Codex sepan qué decidiste en un proyecto y, de paso, que añadan a una nota lo que salió de una conversación. La app de escritorio de Fixnote trae un servidor MCP justo para eso. Aquí verás cómo conectarlo, qué permisos dar y cómo dejar a la app dentro de una sola carpeta de trabajo.
 
-## Qué es MCP y qué hace el servidor de FixNote
+## Qué es MCP y qué hace el servidor de Fixnote
 
-Model Context Protocol (MCP) es un estándar con el que las apps de IA conectan herramientas externas. Lo entienden Claude Desktop, Claude Code, Cursor, Codex y muchos otros clientes. FixNote les ofrece sus herramientas de notas, las mismas que usa el asistente integrado.
+Model Context Protocol (MCP) es un estándar con el que las apps de IA conectan herramientas externas. Lo entienden Claude Desktop, Claude Code, Cursor, Codex y muchos otros clientes. Fixnote les ofrece sus herramientas de notas, las mismas que usa el asistente integrado.
 
 Con acceso de lectura, la app conectada busca notas, las lee junto con sus imágenes y archivos, consulta las notas recientes y la lista de carpetas y abre la nota del día. Con acceso de escritura, además crea notas, les añade texto y las edita, las mueve entre carpetas, crea y renombra carpetas y adjunta archivos. Para borrar notas y carpetas necesita acceso completo.
 
 ## Dónde funciona el servidor
 
-El servidor MCP viene con las apps para Windows y macOS; la versión web no lo tiene. La app conectada lo inicia cuando lo necesita, y el servidor lee la base de datos local de FixNote en ese ordenador. No necesita internet ni cuenta, así que sigue funcionando en el modo «Solo en este dispositivo», del que hablamos en [FixNote sin internet](/es/blog/app-de-notas-sin-internet/). MCP está incluido en el plan Free.
+El servidor MCP viene con las apps para Windows y macOS; la versión web no lo tiene. La app conectada lo inicia cuando lo necesita, y el servidor lee la base de datos local de Fixnote en ese ordenador. No necesita internet ni cuenta, así que sigue funcionando en el modo «Solo en este dispositivo», del que hablamos en [Fixnote sin internet](/es/blog/app-de-notas-sin-internet/). MCP está incluido en el plan Free.
 
-Abre FixNote al menos una vez en el ordenador para que exista la base de datos. Después de actualizar FixNote, reinicia también la app conectada; el aviso de actualización te lo recuerda.
+Abre Fixnote al menos una vez en el ordenador para que exista la base de datos. Después de actualizar Fixnote, reinicia también la app conectada; el aviso de actualización te lo recuerda.
 
 ## Cómo conectarlo
 
-Ve a Ajustes → IA → «Apps conectadas (MCP)» y pulsa «Añadir a Claude Desktop», «Añadir a Cursor» o «Añadir a Codex». FixNote escribe su configuración en el archivo de esa app y te dice cuál ha cambiado. Luego reinicia la app.
+Ve a Ajustes → IA → «Apps conectadas (MCP)» y pulsa «Añadir a Claude Desktop», «Añadir a Cursor» o «Añadir a Codex». Fixnote escribe su configuración en el archivo de esa app y te dice cuál ha cambiado. Luego reinicia la app.
 
 Para cualquier otro cliente MCP, pulsa «Copiar ajustes». Obtendrás un fragmento JSON corto con el comando que inicia el servidor; pégalo donde tu cliente guarde su lista de servidores MCP.
 
-En un Mac, mueve primero FixNote a Aplicaciones y ábrelo desde ahí. Si se ejecuta desde otra carpeta, FixNote te pedirá que lo muevas, porque la ruta del servidor tiene que mantenerse igual.
+En un Mac, mueve primero Fixnote a Aplicaciones y ábrelo desde ahí. Si se ejecuta desde otra carpeta, Fixnote te pedirá que lo muevas, porque la ruta del servidor tiene que mantenerse igual.
 
 ## Niveles de acceso
 

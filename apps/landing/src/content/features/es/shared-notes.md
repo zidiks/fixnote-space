@@ -1,6 +1,6 @@
 ---
 title: Notas y carpetas compartidas, con cifrado
-metaTitle: 'App de notas compartidas con cifrado | FixNote'
+metaTitle: 'App de notas compartidas con cifrado | Fixnote'
 description: Invita a alguien por correo a una nota o carpeta, elige qué puede hacer y editad juntos en directo. El servidor guarda texto cifrado; solo los miembros lo leen.
 eyebrow: En equipo
 intro: ¿Cómo llevar la lista de la compra o el plan de un viaje entre dos sin que el texto quede legible en un servidor? Invita a la otra persona por correo a una nota o a una carpeta entera, y veréis los cambios del otro al momento.
@@ -11,7 +11,7 @@ problem: Una nota pegada en un chat se queda vieja con el primer cambio, y pront
 stepsTitle: Cómo funciona
 steps:
   - title: Invita por correo
-    text: Abre una nota, pulsa Compartir y escribe el correo de alguien con cuenta de FixNote. Para una carpeta, elige Compartir… en su menú.
+    text: Abre una nota, pulsa Compartir y escribe el correo de alguien con cuenta de Fixnote. Para una carpeta, elige Compartir… en su menú.
   - title: Elige el acceso
     text: Con Puede editar, la persona cambia el texto contigo; con Puede ver, solo lo lee.
   - title: La otra persona acepta
@@ -21,8 +21,8 @@ steps:
 privacy: Cada nota compartida tiene su propia clave, y cada miembro la recibe sellada con su clave pública. El texto, las imágenes y los cambios en directo pasan por el servidor solo cifrados. El servidor sabe quién participa en la nota y con qué rol, y guarda las direcciones de correo.
 faq:
   - q: ¿Las personas que invito necesitan Pro?
-    a: No. Para compartir una nota o una carpeta, el propietario necesita Pro; a los miembros les basta una cuenta gratuita de FixNote.
-  - q: ¿Puedo invitar a alguien sin cuenta de FixNote?
+    a: No. Para compartir una nota o una carpeta, el propietario necesita Pro; a los miembros les basta una cuenta gratuita de Fixnote.
+  - q: ¿Puedo invitar a alguien sin cuenta de Fixnote?
     a: No. La clave de la nota se sella con la clave pública de su cuenta, así que la necesita. Para solo enseñar el texto, crea un enlace de solo lectura, que se abre sin cuenta.
   - q: ¿Qué pasa si dos personas editan el mismo párrafo a la vez?
     a: Los cambios se combinan. Una nota compartida se guarda como documento CRDT (Yjs), que une los cambios simultáneos sin crear copias en conflicto.
@@ -38,7 +38,7 @@ Abre la nota y pulsa Compartir arriba. En la ventana Compartir nota, escribe un 
 
 Para compartir una carpeta, abre su menú en la barra lateral y elige Compartir…. El miembro recibe la carpeta con todas sus subcarpetas y notas, y cualquier nota que metas después en ella pasa a ser compartida. Puedes cambiar el rol de alguien cuando quieras; se aplica al instante, aunque tenga la nota abierta.
 
-Cuando el asistente cambia una nota compartida por encargo de alguien, la nota muestra «FixNote AI · a petición de …», así todos saben de dónde viene el cambio.
+Cuando el asistente cambia una nota compartida por encargo de alguien, la nota muestra «Fixnote AI · a petición de …», así todos saben de dónde viene el cambio.
 
 ## Cuándo resulta útil
 
@@ -48,6 +48,6 @@ Las imágenes y archivos de una nota compartida se cifran con la misma clave, y 
 
 ## Cuándo conviene otra herramienta
 
-Si todo tu equipo necesita una base de conocimiento con comentarios, bases de datos y permisos detallados, Notion te servirá mejor. FixNote tiene dos roles y no tiene comentarios en el texto, y su servidor no puede leer tus notas. Mira la [comparación con Notion](/es/vs/notion/).
+Si todo tu equipo necesita una base de conocimiento con comentarios, bases de datos y permisos detallados, Notion te servirá mejor. Fixnote tiene dos roles y no tiene comentarios en el texto, y su servidor no puede leer tus notas. Mira la [comparación con Notion](/es/vs/notion/).
 
-Si solo quieres enseñar una nota a alguien que no usa FixNote, no hace falta invitarle: basta con un [enlace de solo lectura](/es/features/share-links/).
+Si solo quieres enseñar una nota a alguien que no usa Fixnote, no hace falta invitarle: basta con un [enlace de solo lectura](/es/features/share-links/).

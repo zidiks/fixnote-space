@@ -1,9 +1,9 @@
 ---
 title: Carpetas y subcarpetas
-metaTitle: 'Carpetas y subcarpetas para tus notas | FixNote'
-description: Carpetas anidadas en FixNote. Mueve notas de una en una o en grupo, ve en cada carpeta todo lo de sus subcarpetas y deja que la IA sugiera dónde va cada nota.
+metaTitle: 'Carpetas y subcarpetas para tus notas | Fixnote'
+description: Carpetas anidadas en Fixnote. Mueve notas de una en una o en grupo, ve en cada carpeta todo lo de sus subcarpetas y deja que la IA sugiera dónde va cada nota.
 eyebrow: Orden
-intro: ¿Cómo repartes tus notas en carpetas sin dedicarle una tarde entera? FixNote tiene carpetas anidadas a cualquier profundidad, mueve muchas notas a la vez y cuenta con una IA que sugiere dónde va cada una.
+intro: ¿Cómo repartes tus notas en carpetas sin dedicarle una tarde entera? Fixnote tiene carpetas anidadas a cualquier profundidad, mueve muchas notas a la vez y cuenta con una IA que sugiere dónde va cada una.
 card:
   title: Carpetas
   text: Carpetas y subcarpetas, movimientos en grupo y sugerencias de la IA.
@@ -34,7 +34,7 @@ Crea una carpeta con el icono de carpeta con un más junto al título Carpetas d
 
 Hay tres formas de archivar una nota. En una nota abierta, Mover a ofrece tus carpetas, Sin carpeta y Nueva carpeta…. En la lista de notas, las mismas opciones están en el menú de clic derecho de cada tarjeta. Para un grupo, empieza una selección con Ctrl+clic (pulsación larga en el móvil) y pulsa Mover a en la barra de selección. Una nota creada dentro de una carpeta queda en ella desde el principio.
 
-No hace falta archivarlo todo a mano. Selecciona unas notas y pulsa Ordenar: la IA sugiere carpetas y títulos, y tú aceptas o rechazas cada propuesta. El asistente también crea carpetas y mueve notas a ellas si se lo pides, por ejemplo «mueve todo lo de la reforma a la carpeta Casa». Ambos necesitan un modelo: FixNote AI, tu propia clave u Ollama.
+No hace falta archivarlo todo a mano. Selecciona unas notas y pulsa Ordenar: la IA sugiere carpetas y títulos, y tú aceptas o rechazas cada propuesta. El asistente también crea carpetas y mueve notas a ellas si se lo pides, por ejemplo «mueve todo lo de la reforma a la carpeta Casa». Ambos necesitan un modelo: Fixnote AI, tu propia clave u Ollama.
 
 ## Cuándo resulta útil
 
@@ -44,4 +44,4 @@ Las carpetas también sirven para controlar el acceso. En los ajustes del [servi
 
 ## Cuándo conviene otra herramienta
 
-Si necesitas bases de datos con propiedades, filtros y vistas como un tablero kanban, Notion encaja mejor; mira la [comparación con Notion](/es/vs/notion/). FixNote guarda las notas en carpetas y se apoya en la búsqueda y el asistente, y no tiene grafo de enlaces ni retroenlaces. Si piensas en enlaces entre notas, echa un vistazo a Obsidian.
+Si necesitas bases de datos con propiedades, filtros y vistas como un tablero kanban, Notion encaja mejor; mira la [comparación con Notion](/es/vs/notion/). Fixnote guarda las notas en carpetas y se apoya en la búsqueda y el asistente, y no tiene grafo de enlaces ni retroenlaces. Si piensas en enlaces entre notas, echa un vistazo a Obsidian.

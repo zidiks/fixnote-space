@@ -1,7 +1,7 @@
 ---
 title: An AI assistant that answers from your notes
-metaTitle: 'AI assistant for notes: chat with your notes | FixNote'
-description: 'Chat with your notes: the FixNote assistant answers from them, links the notes it used and can create and edit notes. FixNote AI, your own key or Ollama.'
+metaTitle: 'AI assistant for notes: chat with your notes | Fixnote'
+description: 'Chat with your notes: the Fixnote assistant answers from them, links the notes it used and can create and edit notes. Fixnote AI, your own key or Ollama.'
 eyebrow: Assistant
 intro: Ask in plain words what you agreed with the contractor or where you wrote down the router password. The assistant finds the right notes, answers and shows where the answer came from.
 card:
@@ -19,7 +19,7 @@ steps:
 privacy: Search by words and by meaning runs on your device. The model receives your question, your folder names, fragments of matching notes and the notes the assistant opens, never the whole collection. With Ollama on your computer, nothing leaves it at all.
 faq:
   - q: Do I need Pro to ask questions about my notes?
-    a: No. On the Free plan the assistant works with your own model key, or with Ollama in the desktop app. Pro adds FixNote AI, which needs no key.
+    a: No. On the Free plan the assistant works with your own model key, or with Ollama in the desktop app. Pro adds Fixnote AI, which needs no key.
   - q: Can the assistant change a note without asking?
     a: By default every change waits for your approval. Deleting and many changes at once always ask first, and anything it does can be undone.
   - q: Does the assistant remember earlier questions?
@@ -42,4 +42,4 @@ Before a meeting, ask what was discussed last time and get a short recap with li
 
 ## When another tool is better
 
-If you need to search a shared knowledge base for a company of hundreds, a team wiki with its own search, such as Notion, is the better fit. FixNote answers from your own notes and the notes shared with you. See the [FixNote and Notion comparison](/vs/notion/). To try the assistant, start with a question you already know the answer to and check the sources under the reply.
+If you need to search a shared knowledge base for a company of hundreds, a team wiki with its own search, such as Notion, is the better fit. Fixnote answers from your own notes and the notes shared with you. See the [Fixnote and Notion comparison](/vs/notion/). To try the assistant, start with a question you already know the answer to and check the sources under the reply.

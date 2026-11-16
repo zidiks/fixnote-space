@@ -62,13 +62,13 @@ const jsonLd = [
     about: { '@id': APP_ID },
   },
   breadcrumbs([
-    { name: 'FixNote', url: new URL(localePath(lang, '/'), site).href },
+    { name: 'Fixnote', url: new URL(localePath(lang, '/'), site).href },
     { name: d.nav.blog, url: new URL(localePath(lang, '/blog/'), site).href },
     { name: post.data.title, url },
   ]),
   ...(post.data.faq.length ? [faqPage(post.data.faq)] : []),
 ]
-const title = post.data.title.includes('FixNote') ? post.data.title : `${post.data.title} · FixNote`
+const title = post.data.title.includes('Fixnote') ? post.data.title : `${post.data.title} · Fixnote`
 ---
 
 <Base

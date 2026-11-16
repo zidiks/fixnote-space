@@ -1,6 +1,6 @@
 // The icons that are not the desktop app's own, from what `pnpm logo` made: the web app's
 // (home screen, maskable), the site's, and the macOS menu bar glyph. Run by `pnpm icons`.
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
@@ -10,6 +10,8 @@ const icon = readFileSync(join(repo, 'apps/web/public/icon.svg'))
 // No corners of its own: phones cut the shape themselves.
 const bleed = readFileSync(join(repo, 'brand/icon-bleed.svg'))
 const mark = readFileSync(join(repo, 'brand/fixnote-mark.svg'))
+// The tab icon: the same tile with a larger mark (brand/build.mjs, `favicon`).
+const favicon = readFileSync(join(repo, 'apps/landing/public/favicon.svg'))
 
 const png = (svg, size) =>
   sharp(svg, { density: Math.max(72, (72 * size * 2) / 1024) })
@@ -33,4 +35,29 @@ const out = [
   ],
 ]
 for (const [image, path] of out) await image.toFile(join(repo, path))
-console.log(`${out.length} web, site and menu bar icons`)
+
+/** favicon.ico: PNG images in an ICO directory (Windows Vista and every browser read them). */
+async function ico(svg, sizes) {
+  const images = await Promise.all(sizes.map((size) => png(svg, size).toBuffer()))
+  const head = Buffer.alloc(6 + 16 * images.length)
+  head.writeUInt16LE(0, 0)
+  head.writeUInt16LE(1, 2)
+  head.writeUInt16LE(images.length, 4)
+  let offset = head.length
+  images.forEach((image, i) => {
+    const at = 6 + 16 * i
+    head.writeUInt8(sizes[i] % 256, at)
+    head.writeUInt8(sizes[i] % 256, at + 1)
+    head.writeUInt16LE(1, at + 4)
+    head.writeUInt16LE(32, at + 6)
+    head.writeUInt32LE(image.length, at + 8)
+    head.writeUInt32LE(offset, at + 12)
+    offset += image.length
+  })
+  return Buffer.concat([head, ...images])
+}
+const tab = await ico(favicon, [16, 32, 48])
+for (const path of ['apps/landing/public/favicon.ico', 'apps/web/public/favicon.ico']) {
+  writeFileSync(join(repo, path), tab)
+}
+console.log(`${out.length} web, site and menu bar icons, favicon.ico`)

@@ -1,9 +1,9 @@
 ---
 title: Edit text with AI in your notes
-metaTitle: 'Rewrite and shorten text with AI in your notes | FixNote'
-description: Select text in a note and ask AI to rewrite, shorten or fix it. FixNote shows the change word by word, and the text changes only when you press Accept.
+metaTitle: 'Rewrite and shorten text with AI in your notes | Fixnote'
+description: Select text in a note and ask AI to rewrite, shorten or fix it. Fixnote shows the change word by word, and the text changes only when you press Accept.
 eyebrow: AI edits
-intro: Want a paragraph clearer, an email shorter or the typos gone without pasting text into a chatbot? Select it, pick an action, and FixNote shows the suggested edit right in the note.
+intro: Want a paragraph clearer, an email shorter or the typos gone without pasting text into a chatbot? Select it, pick an action, and Fixnote shows the suggested edit right in the note.
 card:
   title: AI text edits
   text: AI rewrites, shortens and fixes the text you select, and you accept the result.
@@ -21,7 +21,7 @@ faq:
   - q: Can AI change a note without my approval?
     a: By default the note changes only when you press Accept. In the "Accept edits" and "Auto" modes the edit applies right away, and a notification offers Undo.
   - q: Do I need Pro to edit text with AI?
-    a: No. Edits work with your own key for any OpenAI-compatible provider, or with Ollama in the desktop app. Pro adds FixNote AI, which needs no key.
+    a: No. Edits work with your own key for any OpenAI-compatible provider, or with Ollama in the desktop app. Pro adds Fixnote AI, which needs no key.
   - q: Can I undo an edit I already accepted?
     a: Yes. Right after the edit, the editor's normal undo works. Every edit is also recorded under "AI activity" in Settings → AI, where you can undo it as long as the note has not been edited since.
   - q: Will AI change the language, numbers or names?
@@ -36,11 +36,11 @@ For anything else, type it in the box: "expand this into a paragraph", "make the
 
 With nothing selected, the edit applies to the whole note, and you also get "Tidy up the note", which turns a raw dump into a note with a title, paragraphs and a checklist for tasks.
 
-While you review the suggestion, the note stays as it is. If you edited the text yourself in the meantime, FixNote leaves it alone and asks you to try again. How edits apply is set in Settings → AI → "AI modes": with "Ask every time" each one waits for Accept, with "Accept edits" and "Auto" it applies at once.
+While you review the suggestion, the note stays as it is. If you edited the text yourself in the meantime, Fixnote leaves it alone and asks you to try again. How edits apply is set in Settings → AI → "AI modes": with "Ask every time" each one waits for Accept, with "Accept edits" and "Auto" it applies at once.
 
 ## When it helps
 
-Dictated text comes out as one long stream with repeats and filler words. After you save a [voice note](/features/voice-notes/), FixNote offers "Tidy up", and the stream becomes a note with a task list.
+Dictated text comes out as one long stream with repeats and filler words. After you save a [voice note](/features/voice-notes/), Fixnote offers "Tidy up", and the stream becomes a note with a task list.
 
 An email drafted in a note is easy to shorten before you send it. Meeting notes read better after Reformat. Fix mistakes is handy for anything you typed on your phone while walking.
 
@@ -48,4 +48,4 @@ To change several notes at once, for example to gather the week's tasks into one
 
 ## When another tool is better
 
-If you write long documents with a team and want AI that works across a shared workspace, Notion is the better fit: Notion AI comes with its Business plan. See the [FixNote and Notion comparison](/vs/notion/). To check grammar everywhere at once, in email and chat apps too, a separate writing assistant such as Grammarly makes more sense. FixNote edits text inside your notes only.
+If you write long documents with a team and want AI that works across a shared workspace, Notion is the better fit: Notion AI comes with its Business plan. See the [Fixnote and Notion comparison](/vs/notion/). To check grammar everywhere at once, in email and chat apps too, a separate writing assistant such as Grammarly makes more sense. Fixnote edits text inside your notes only.
