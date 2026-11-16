@@ -9,52 +9,44 @@
         --muted: var(--figma-color-text-secondary, #6b6b6b);
         --line: var(--figma-color-border, #e6e6e6);
         --soft: var(--figma-color-bg-secondary, #f5f5f5);
+        --hover: var(--figma-color-bg-hover, #f0f0f0);
+        --danger: var(--figma-color-text-danger, #d93025);
         --accent: #de632c;
         --ok: #1fa35b;
       }
       * {
         box-sizing: border-box;
       }
+      html,
       body {
         margin: 0;
-        padding: 16px;
-        font: 12px/1.4 Inter, system-ui, sans-serif;
+        overflow: hidden;
+      }
+      body {
+        font: 11px/1.4 Inter, system-ui, sans-serif;
         color: var(--fg);
         background: var(--bg);
       }
-      header {
+      /* The strip: always there, 36 px tall. */
+      .strip {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 8px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 600;
-      }
-      .status {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: var(--soft);
-        color: var(--muted);
-        white-space: nowrap;
+        height: 36px;
+        padding: 0 4px 0 12px;
       }
       .dot {
+        flex: none;
         width: 7px;
         height: 7px;
         border-radius: 50%;
         background: #c7c7c7;
         transition: background-color 0.2s ease-out;
       }
-      .status[data-on] .dot {
+      body[data-on] .dot {
         background: var(--ok);
-        box-shadow: 0 0 0 3px rgb(31 163 91 / 0.18);
       }
-      .status[data-busy] .dot {
+      body[data-busy] .dot {
         background: var(--accent);
         animation: pulse 0.9s ease-in-out infinite;
       }
@@ -62,6 +54,49 @@
         50% {
           opacity: 0.35;
         }
+      }
+      #status {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--muted);
+      }
+      #status[data-error] {
+        color: var(--danger);
+      }
+      .toggle {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .toggle:hover {
+        background: var(--hover);
+        color: var(--fg);
+      }
+      .toggle svg {
+        transition: rotate 0.15s ease-out;
+      }
+      body[data-open] .toggle svg {
+        rotate: 180deg;
+      }
+      /* Details: only while open. */
+      .details {
+        display: none;
+        padding: 0 12px 12px;
+        border-top: 1px solid var(--line);
+      }
+      body[data-open] .details {
+        display: block;
       }
       p {
         margin: 10px 0 0;
@@ -71,43 +106,40 @@
         padding: 1px 4px;
         border-radius: 4px;
         background: var(--soft);
-        font: 11px ui-monospace, Menlo, Consolas, monospace;
+        font: 10px ui-monospace, Menlo, Consolas, monospace;
       }
-      button {
+      .send {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 6px;
         width: 100%;
-        height: 36px;
-        margin-top: 14px;
-        border: 0;
-        border-radius: 8px;
-        background: var(--accent);
-        color: #fff;
-        font: 500 12px Inter, system-ui, sans-serif;
+        height: 28px;
+        margin-top: 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 500 11px Inter, system-ui, sans-serif;
         cursor: pointer;
-        transition:
-          scale 0.15s ease-out,
-          opacity 0.15s ease-out;
       }
-      button:active {
-        scale: 0.97;
+      .send:hover:not(:disabled) {
+        background: var(--hover);
       }
-      button:disabled {
-        opacity: 0.55;
+      .send:disabled {
+        opacity: 0.5;
         cursor: default;
       }
       .spinner {
         display: none;
-        width: 12px;
-        height: 12px;
-        border: 2px solid rgb(255 255 255 / 0.4);
-        border-top-color: #fff;
+        width: 10px;
+        height: 10px;
+        border: 1.5px solid var(--line);
+        border-top-color: var(--fg);
         border-radius: 50%;
         animation: spin 0.7s linear infinite;
       }
-      button[data-loading] .spinner {
+      .send[data-loading] .spinner {
         display: block;
       }
       @keyframes spin {
@@ -115,87 +147,134 @@
           transform: rotate(360deg);
         }
       }
-      h2 {
-        margin: 18px 0 6px;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
       ol {
-        margin: 0;
+        max-height: 150px;
+        margin: 10px 0 0;
         padding: 0;
+        overflow-y: auto;
         list-style: none;
-        border-top: 1px solid var(--line);
       }
       li {
         display: flex;
         justify-content: space-between;
         gap: 8px;
-        padding: 6px 0;
+        padding: 4px 0;
         border-bottom: 1px solid var(--line);
       }
-      li span:last-child {
-        color: var(--muted);
+      li span:first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
       }
+      li span:last-child {
+        flex: none;
+        color: var(--muted);
+      }
       li.error span:first-child {
-        color: #d93025;
+        color: var(--danger);
       }
       .empty {
         color: var(--muted);
-        padding: 8px 0;
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Figma Bridge</h1>
-      <span class="status" id="status"><span class="dot"></span><span id="status-text">Waiting for bridge</span></span>
-    </header>
-    <p id="hint">
-      Start the bridge on this computer: <code>node bridge.mjs serve</code>. Keep this window open while you work.
-    </p>
-    <button id="push" type="button" disabled><span class="spinner"></span><span id="push-label">Send selection</span></button>
-    <h2>Activity</h2>
-    <ol id="log"><li class="empty">Nothing yet.</li></ol>
+    <div class="strip">
+      <span class="dot"></span>
+      <span id="status">Waiting for bridge</span>
+      <button class="toggle" id="toggle" type="button" title="Details" aria-expanded="false">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 4.5 6 7.5l3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+    <div class="details">
+      <p id="hint">
+        Start the bridge: <code>node bridge.mjs serve</code>, or let your MCP client run
+        <code>node bridge.mjs mcp</code>. Keep this window open.
+      </p>
+      <button class="send" id="push" type="button" disabled><span class="spinner"></span><span id="push-label">Send selection</span></button>
+      <ol id="log"><li class="empty">Nothing yet.</li></ol>
+    </div>
 
     <script>
       // Talks to the bridge on localhost (bridge.mjs): asks for jobs, hands them to the plugin code,
       // sends back the results. Only localhost is allowed in the manifest.
       const BRIDGE = 'http://localhost:7331'
+      const STRIP = 36
+      const OPEN = 250
+      const WIDTH = 260
+      const body = document.body
       const status = document.getElementById('status')
-      const statusText = document.getElementById('status-text')
       const hint = document.getElementById('hint')
+      const toggle = document.getElementById('toggle')
       const push = document.getElementById('push')
       const pushLabel = document.getElementById('push-label')
       const log = document.getElementById('log')
       const waiting = new Map()
       let online = false
+      let busy = false
       let selected = 0
+      let last = null
 
-      const time = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      const post = (msg) => parent.postMessage({ pluginMessage: msg }, '*')
+      const time = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+      // The strip says one thing: waiting, working on what, or the last action.
+      function render(text, error) {
+        status.textContent = text
+        status.toggleAttribute('data-error', Boolean(error))
+        status.title = text
+      }
+      function idle() {
+        if (!online) render('Waiting for bridge')
+        else if (last) render(`${last.text} · ${last.time}`, last.error)
+        else render('Connected')
+      }
       function note(text, error) {
+        last = { text: `${error ? '✗' : '✓'} ${text}`, time: time(), error }
         if (log.firstElementChild?.classList.contains('empty')) log.innerHTML = ''
         const li = document.createElement('li')
         if (error) li.className = 'error'
         li.innerHTML = '<span></span><span></span>'
         li.firstChild.textContent = text
-        li.lastChild.textContent = time()
+        li.firstChild.title = text
+        li.lastChild.textContent = last.time
         log.prepend(li)
-        while (log.children.length > 30) log.lastChild.remove()
+        while (log.children.length > 40) log.lastChild.remove()
+        idle()
       }
       function setOnline(on) {
         if (on === online) return
         online = on
-        status.toggleAttribute('data-on', on)
-        statusText.textContent = on ? 'Connected' : 'Waiting for bridge'
+        body.toggleAttribute('data-on', on)
         hint.hidden = on
         push.disabled = !on || !selected
+        idle()
       }
-      function setBusy(busy) {
-        status.toggleAttribute('data-busy', busy)
+      function setBusy(job) {
+        busy = Boolean(job)
+        body.toggleAttribute('data-busy', busy)
+        if (job) render(`Working: ${job.kind}${job.label ? ` ${job.label}` : ''}…`)
+        else idle()
+      }
+      function setOpen(open, save = true) {
+        body.toggleAttribute('data-open', open)
+        toggle.setAttribute('aria-expanded', String(open))
+        post({ type: 'resize', width: WIDTH, height: open ? OPEN : STRIP })
+        if (save) post({ type: 'storage-set', key: 'open', value: open })
+      }
+
+      /** A few words about a result: what a write made, or how many files. */
+      function summary(job, result, error) {
+        const what = `${job.kind}${job.label ? ` ${job.label}` : ''}`
+        if (error) return `${what}: ${error}`
+        if (!result) return what
+        if (typeof result.made === 'number')
+          return `${what} · ${result.made} new, ${result.updated ?? 0} updated`
+        if (result.files) return `${what} · ${result.files.length} files`
+        return what
       }
 
       // Bytes travel as base64 inside JSON.
@@ -215,7 +294,7 @@
       function run(job) {
         return new Promise((resolve) => {
           waiting.set(job.id, resolve)
-          parent.postMessage({ pluginMessage: { type: 'job', job } }, '*')
+          post({ type: 'job', job })
         })
       }
 
@@ -226,29 +305,31 @@
             setOnline(true)
             if (res.status === 200) {
               const job = await res.json()
-              setBusy(true)
+              setBusy(job)
               const done = await run(job)
               await fetch(`${BRIDGE}/result/${job.id}`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(done.error ? { error: done.error } : { result: pack(done.result) }),
               })
-              setBusy(false)
-              note(`${job.kind}${job.label ? ` ${job.label}` : ''}`, Boolean(done.error))
+              setBusy(null)
+              note(summary(job, done.result, done.error), Boolean(done.error))
             }
           } catch {
+            setBusy(null)
             setOnline(false)
-            setBusy(false)
             await new Promise((r) => setTimeout(r, 1500))
           }
         }
       }
 
+      toggle.addEventListener('click', () => setOpen(!body.hasAttribute('data-open')))
+
       push.addEventListener('click', () => {
         push.disabled = true
         push.toggleAttribute('data-loading', true)
         pushLabel.textContent = 'Sending…'
-        parent.postMessage({ pluginMessage: { type: 'push' } }, '*')
+        post({ type: 'push' })
       })
 
       addEventListener('message', async (event) => {
@@ -258,6 +339,7 @@
           waiting.get(msg.id)?.(msg)
           waiting.delete(msg.id)
         }
+        if (msg.type === 'storage') setOpen(msg.value === true, false)
         if (msg.type === 'selection') {
           selected = msg.count
           push.disabled = !online || !selected
@@ -282,6 +364,7 @@
         }
       })
 
+      post({ type: 'storage-get', key: 'open' })
       loop()
     </script>
   </body>
