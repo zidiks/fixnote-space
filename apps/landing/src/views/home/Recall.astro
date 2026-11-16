@@ -17,10 +17,25 @@ const { lang } = Astro.props
 const c = t(lang).landing.recall
 // The current design's order: meaning, languages, keyboard shortcut, text in images.
 const cards = [
-  { ...c.meaning, shot: landingShot('recall-meaning', lang), full: true, href: featurePath(lang, 'search') },
-  { ...c.languages, shot: landingShot('recall-languages', lang), full: true, href: featurePath(lang, 'search') },
+  {
+    ...c.meaning,
+    shot: landingShot('recall-meaning', lang),
+    full: true,
+    href: featurePath(lang, 'search'),
+  },
+  {
+    ...c.languages,
+    shot: landingShot('recall-languages', lang),
+    full: true,
+    href: featurePath(lang, 'search'),
+  },
   { ...c.keys, shot: keys, keys: true, href: featurePath(lang, 'search') },
-  { ...c.images, shot: landingShot('recall-images', lang), full: true, href: featurePath(lang, 'text-in-images') },
+  {
+    ...c.images,
+    shot: landingShot('recall-images', lang),
+    full: true,
+    href: featurePath(lang, 'text-in-images'),
+  },
 ]
 ---
 
