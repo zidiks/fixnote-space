@@ -210,6 +210,14 @@ export default {
       })
     }
     if (pathname === '/.well-known/oauth-authorization-server') return authorizationServer(env)
+    // AI apps and favicon services look for the server's icon here: the site's.
+    if (
+      pathname === '/favicon.ico' ||
+      pathname === '/favicon.svg' ||
+      pathname === '/apple-touch-icon.png'
+    ) {
+      return Response.redirect(`https://fixnote.space${pathname}`, 301)
+    }
     if (pathname === '/') {
       return new Response(
         `Fixnote remote MCP server ${SERVER_VERSION} (${remoteToolList().length} tools). Add ${env.PUBLIC_URL}/mcp to your AI app as a connector.\n`,

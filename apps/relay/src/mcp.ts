@@ -3,6 +3,15 @@ import type { ToolAnswer } from './hub'
 
 export const SERVER_VERSION = '0.2.0'
 
+/**
+ * The app icon for AI apps that show one next to the server's name (MCP 2025-11-25
+ * `Implementation.icons`); the site serves them, and the relay's /favicon.ico points there too.
+ */
+export const SERVER_ICONS = [
+  { src: 'https://fixnote.space/favicon.svg', mimeType: 'image/svg+xml', sizes: ['any'] },
+  { src: 'https://fixnote.space/apple-touch-icon.png', mimeType: 'image/png', sizes: ['180x180'] },
+]
+
 type Id = string | number
 
 interface JsonRpcRequest {
@@ -58,7 +67,13 @@ export async function answer(message: unknown, ctx: McpContext): Promise<JsonRpc
         result: {
           protocolVersion: negotiateProtocol(params.protocolVersion),
           capabilities: { tools: { listChanged: false } },
-          serverInfo: { name: 'fixnote', title: 'Fixnote', version: SERVER_VERSION },
+          serverInfo: {
+            name: 'fixnote',
+            title: 'Fixnote',
+            version: SERVER_VERSION,
+            websiteUrl: 'https://fixnote.space/',
+            icons: SERVER_ICONS,
+          },
           instructions: REMOTE_INSTRUCTIONS,
         },
       }
