@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
+import { verifySignInCode } from '../account/review-code'
 import { env } from '../env'
 import { supabase } from '../supabase'
-import { isEmailCode } from './connect-page'
 import { type ConsentAuth, type PollAnswer, pollRelay, supabaseConsent } from './consent'
 
 /**
@@ -58,13 +58,11 @@ export async function connectBackend(): Promise<ConnectBackend | null> {
       return !error
     },
     verifyCode: async (email, code) => {
-      // Accounts only ever get codes, except demo accounts made for AI-app reviewers (OpenAI takes
-      // only a login and password): created with a password from the dashboard, which they type
-      // into the code field. No one else has a password, so nothing else signs in this way.
-      const { error } = isEmailCode(code)
-        ? await tab.auth.verifyOtp({ email, token: code, type: 'email' })
-        : await tab.auth.signInWithPassword({ email, password: code })
-      return error ? null : supabaseConsent(tab)
+      const ok = await verifySignInCode(tab, email, code).then(
+        () => true,
+        () => false,
+      )
+      return ok ? supabaseConsent(tab) : null
     },
     poll: (id) => pollRelay(env.mcpUrl, id),
     openApp: (link) => {

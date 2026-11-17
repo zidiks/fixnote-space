@@ -96,12 +96,20 @@ need the same thing. Not a real person's account. Ours: `review@fixnote.space`, 
 
 - **Mailbox we own** (Cloudflare Email Routing to our inbox), so we can sign it in with the usual
   email code.
-- **Password** for reviewers: OpenAI accepts only a login and password, no email codes. Supabase
-  dashboard → Authentication → Users → Add user → Create new user with a password (or SQL:
-  `extensions.crypt(…, extensions.gen_salt('bf'))` into `auth.users.encrypted_password`). On the
-  connect page (`/oauth/consent`) anything typed into the code field that is not 6 digits is tried
-  as a password (`isEmailCode`, `connect-backend.ts`). Normal accounts have no password, so this
-  opens nothing else. Change it after each review round.
+- **Fixed sign-in code** for reviewers (none of them can read our mailbox): secrets of the
+  `review-login` edge function, never in the repository. `REVIEW_ACCOUNTS` (emails,
+  comma-separated) and `REVIEW_CODE` (8–10 digits, so it never looks like an emailed 6-digit code):
+
+  ```bash
+  pnpm sb secrets set REVIEW_ACCOUNTS=review@fixnote.space REVIEW_CODE=<8-10 digits>
+  pnpm sb functions deploy review-login
+  ```
+
+  In the app and on the connect page (`/oauth/consent`), a code of 8–10 digits goes to
+  `review-login` (`verifySignInCode`, `lib/account/review-code.ts`), which answers a one-time
+  magic-link token hash for those accounts only (10 tries a minute per email); the app signs in
+  with it like with an emailed code. Without both secrets nothing signs in this way. Change the
+  code after each review round. OpenAI asks for "login and password": the email and this code.
 - **Pro**: a `subscriptions` row by hand (Table Editor): `status` active, `current_period_end`
   2030-01-01, `provider` manual. No trial (7 days, once).
 - **Demo device**: the relay answers for an account in `DEMO_ACCOUNTS` itself when none of its
@@ -115,8 +123,11 @@ need the same thing. Not a real person's account. Ours: `review@fixnote.space`, 
 Reviewer instructions (OpenAI "Review details", or the email to Anthropic):
 
 > Connect the app, then on the Fixnote page choose "Sign in with an email code instead", enter
-> `<email>` and press "Send code". Instead of the code, type the password `<password>` into the code
-> field and press "Sign in", then "Allow". The account has Pro and demo notes and works at any
+> `<email>` and press "Send code". Enter the code `<code>` (it does not come by email) and press
+> "Sign in", then "Allow". The account has Pro and demo notes and works at any
 > time; every tool can be tried, changes included (the notes start over daily).
 
-Never commit the password; it goes only into the review forms.
+Never commit the code; it goes only into the review forms. The same email and code sign in to the
+Fixnote app itself (web or desktop), e.g. for Microsoft Store testers; on a new device the app
+then asks for the account's recovery phrase (notes are end-to-end encrypted), so give them that too.
+The connect page never asks for it.

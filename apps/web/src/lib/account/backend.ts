@@ -19,6 +19,7 @@ import { type RemoteMcpApi, supabaseRemoteMcp } from '../remote-mcp/api'
 import { requireSession } from '../supabase'
 import { supabaseSharedRemote } from '../sync/shared-remote'
 import { supabaseRemote } from '../sync/supabase-remote'
+import { verifySignInCode } from './review-code'
 
 export interface Session {
   userId: string
@@ -169,9 +170,10 @@ export function supabaseBackend(
       if (error) throw toError(error)
     },
     async verifyCode(email, code) {
-      const { data, error } = await client.auth.verifyOtp({ email, token: code, type: 'email' })
-      if (error || !data.session) throw error ? toError(error) : new Error('No session')
-      return session(data.session) as Session
+      const s = await verifySignInCode(client, email, code).catch((e: unknown) => {
+        throw toError(e)
+      })
+      return session(s) as Session
     },
     async sendCheckCode(email, lang) {
       const { error } = await client.auth.signInWithOtp({

@@ -149,3 +149,10 @@ verify_jwt = false
 [functions.storage-cleanup]
 enabled = true
 verify_jwt = false
+
+# Fixed sign-in code of the accounts app reviewers use (no JWT: they are signed out). Secrets:
+# `pnpm sb secrets set REVIEW_ACCOUNTS=review@fixnote.space REVIEW_CODE=<8-10 digits>`
+# (docs/mcp-directories.md, "Reviewer account"). Without them it does nothing.
+[functions.review-login]
+enabled = true
+verify_jwt = false

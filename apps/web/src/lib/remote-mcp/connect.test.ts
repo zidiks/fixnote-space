@@ -2,7 +2,7 @@ import type { ConsentResult } from '@fixnote/core'
 import { describe, expect, it, vi } from 'vitest'
 import type { RemoteMcpApi } from './api'
 import { answerConnect, loadConnect } from './connect'
-import { type ConnectStep, connectReducer, isEmailCode, waitForAnswer } from './connect-page'
+import { type ConnectStep, connectReducer, waitForAnswer } from './connect-page'
 import type { Authorization, ConsentAuth, ConsentDetails } from './consent'
 
 const DETAILS: ConsentDetails = {
@@ -186,14 +186,5 @@ describe('the connect page', () => {
     const ctl = new AbortController()
     ctl.abort()
     expect(await waitForAnswer(poll, { signal: ctl.signal, sleep })).toBe('aborted')
-  })
-})
-
-describe('isEmailCode', () => {
-  it('tells the email code from a reviewer password', () => {
-    expect(isEmailCode('123456')).toBe(true)
-    expect(isEmailCode('12345')).toBe(false)
-    expect(isEmailCode('1234567')).toBe(false)
-    expect(isEmailCode('review-Pass-2026')).toBe(false)
   })
 })
