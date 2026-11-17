@@ -96,3 +96,6 @@ export async function waitForAnswer(
   }
   return 'aborted'
 }
+
+/** The 6-digit code from the sign-in email; anything else typed there is a reviewer's password. */
+export const isEmailCode = (value: string) => /^\d{6}$/.test(value)
