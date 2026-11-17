@@ -596,10 +596,10 @@
     padding-top: max(0px, 200 * var(--u) - var(--rt));
     height: calc(100vh + var(--travel, 0px) * 1.2 + max(0px, 200 * var(--u) - var(--rt)));
   }
-  /* The wide header (88 high, 48 from the top) ends lower: the headline stays 32 below it. */
+  /* The wide header, scrolled (88 high, 16 from the top), ends lower: the headline stays 32 below. */
   @media (min-width: 1069px) {
     .recall[data-live] {
-      --rt: max(48 * var(--u) + 120px, (100vh - 902 * var(--u)) / 2);
+      --rt: max(136px, (100vh - 902 * var(--u)) / 2);
     }
   }
   .recall[data-live] .recall-stage {

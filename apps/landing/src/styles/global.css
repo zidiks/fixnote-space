@@ -48,7 +48,8 @@
   }
   @media (min-width: 1069px) {
     html {
-      scroll-padding-top: calc(104px + 48 * clamp(0.8px, min(100vw / 1640, 100vh / 960), 1px));
+      /* The scrolled header ends 104 from the top (16 + 88). */
+      scroll-padding-top: 120px;
     }
   }
   body {
@@ -404,8 +405,9 @@
 }
 
 /*
- * The header (Header.astro): one bar that keeps its place and size; once the page scrolls, a white
- * plate fades in under it (`data-float`). Only the plate's opacity changes.
+ * The header (Header.astro): one bar that keeps its width and height; once the page scrolls
+ * (`data-float`) it moves up close to the top and a frosted plate fades in under it. Only the
+ * bar's offset and the plate's opacity change.
  */
 @layer components {
   .hdr {
@@ -414,6 +416,26 @@
     z-index: 50;
     padding: 0 12px;
     pointer-events: none;
+    /* Where the scrolled bar ends, and how long the blur takes to fade out. */
+    --hdr-end: 68px;
+    --hdr-fade: 28px;
+  }
+  /* Scrolled, the page above the bar is softly blurred; the blur fades out over --hdr-fade and is
+     gone a little above the bar's bottom edge, so nothing below the bar is blurred. */
+  .hdr::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(var(--hdr-end) - 12px);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    -webkit-mask-image: linear-gradient(to top, transparent, #000 var(--hdr-fade));
+    mask-image: linear-gradient(to top, transparent, #000 var(--hdr-fade));
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+  }
+  .hdr[data-float]::before {
+    opacity: 1;
   }
   .hdr-bar {
     position: relative;
@@ -427,6 +449,7 @@
     padding: 0 8px 0 14px;
     border-radius: 16px;
     pointer-events: auto;
+    transition: margin-top 0.5s var(--ease-soft);
   }
   .hdr-bar::before {
     content: "";
@@ -434,7 +457,9 @@
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: #fff;
+    background: rgb(255 255 255 / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    backdrop-filter: blur(20px) saturate(1.8);
     opacity: 0;
     transition: opacity 0.3s ease-out;
   }
@@ -503,16 +528,21 @@
   .hdr-space {
     height: 80px;
   }
-  /* The design: a bar 88 high, 48 from the top and 72 from the sides at 1920, 40 inside. */
+  /* The design: a bar 88 high, 48 from the top and 72 from the sides at 1920, 40 inside; scrolled,
+     it sits 16 from the top. */
   @media (min-width: 1069px) {
     .hdr {
       --u: clamp(0.8px, min(100vw / 1640, 100vh / 960), 1px);
+      --hdr-end: 104px;
       padding: 0 calc(72 * var(--u));
     }
     .hdr-bar {
       height: 88px;
       margin-top: calc(48 * var(--u));
       padding: 0 40px;
+    }
+    .hdr[data-float] .hdr-bar {
+      margin-top: 16px;
     }
     .hdr-download {
       height: 56px;
