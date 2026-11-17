@@ -212,7 +212,15 @@ jobs:
             echo "::notice::no update signing key: this build cannot update itself"
           fi
           if [ -n "$WINSIGN" ]; then args+=(--config "$RUNNER_TEMP/winsign.json"); fi
-          pnpm --filter @fixnote/desktop tauri build --bundles ${{ matrix.bundles }} "${args[@]}"
+          build() { pnpm --filter @fixnote/desktop tauri build --bundles ${{ matrix.bundles }} "${args[@]}" "$@"; }
+          if [ "$RUNNER_OS" = macOS ]; then
+            # hdiutil on GitHub's macOS runners now and then fails inside bundle_dmg.sh (a disk image
+            # still busy). The app is compiled by then, so a second try only packs again; verbose,
+            # to see why if it fails twice.
+            build || { echo "::warning::packing failed, trying once more"; sleep 20; build --verbose; }
+          else
+            build
+          fi
       - name: Windows signatures are valid
         if: runner.os == 'Windows' && steps.winsign.outputs.on != ''
         shell: pwsh
