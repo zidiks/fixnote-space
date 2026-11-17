@@ -29,7 +29,7 @@
     // `npx wrangler secret put SUPABASE_ANON_KEY` keeps it out of the repository.
     // The account AI-app reviewers use (docs/mcp-directories.md, "Reviewer account"); a user id
     // opens nothing by itself.
-    "DEMO_ACCOUNTS": "5b0c454c-4fb1-4068-98ed-7abf26bebcfb",
+    "DEMO_ACCOUNTS": "725ad2a6-cc8e-4b30-beb3-7bcca40bfe3a",
     "APP_ORIGINS": "https://app.fixnote.space,http://tauri.localhost,tauri://localhost,http://localhost:5173"
   },
   "observability": { "enabled": true, "head_sampling_rate": 0.1 }
