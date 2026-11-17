@@ -528,15 +528,17 @@
   .hdr-space {
     height: 80px;
   }
-  /* The design: a bar 88 high, 48 from the top and 72 from the sides at 1920, 40 inside; scrolled,
-     it sits 16 from the top. */
+  /* The design: a bar 88 high, 48 from the top, 40 inside; scrolled, it sits 16 from the top. It is
+     the home footer's block (home.css, 1728 at 1920) and 24 wider on each side, scaled with it;
+     never closer than 12 to the window's edge. */
   @media (min-width: 1069px) {
     .hdr {
       --u: clamp(0.8px, min(100vw / 1640, 100vh / 960), 1px);
       --hdr-end: 104px;
-      padding: 0 calc(72 * var(--u));
+      padding: 0;
     }
     .hdr-bar {
+      width: min(calc(min(1728 * var(--u), 100% - 48px) + 48 * var(--u)), 100% - 24px);
       height: 88px;
       margin-top: calc(48 * var(--u));
       padding: 0 40px;
