@@ -7,10 +7,13 @@ import {
   RELAY_PROTOCOL,
   type RemoteScope,
 } from '@fixnote/core/remote-mcp'
+import type { DemoDevice } from './demo'
 import { type DeviceInfo, type DeviceSocket, Hub, newDeviceInfo } from './hub'
 
 export interface RelayEnv {
   RELAY: DurableObjectNamespace<UserRelay>
+  /** Demo devices of the accounts in `DEMO_ACCOUNTS` (demo.ts). */
+  DEMO: DurableObjectNamespace<DemoDevice>
 }
 
 /** An AI app connected to the account, as the app lists it. No note content, ever. */
@@ -111,8 +114,16 @@ export class UserRelay extends DurableObject<RelayEnv> {
     )
   }
 
-  /** Runs a tool on the newest device of the account. */
-  async call(clientId: string, tool: string, args: Record<string, unknown>) {
+  /**
+   * Runs a tool on the newest device of the account; for a demo account (`demo` = its user id)
+   * with no device online, on its demo device.
+   */
+  async call(
+    clientId: string,
+    tool: string,
+    args: Record<string, unknown>,
+    demo: string | null = null,
+  ) {
     const now = Date.now()
     const row = this.ctx.storage.sql
       .exec<{ name: string; last_used: number }>(
@@ -128,7 +139,19 @@ export class UserRelay extends DurableObject<RelayEnv> {
         now,
       )
     }
-    return this.hub.call({ id: clientId, name: row?.name ?? '' }, tool, args, {
+    const client = { id: clientId, name: row?.name ?? '' }
+    if (demo && !this.hub.devices().some((d) => d.serving)) {
+      const device = this.env.DEMO.get(this.env.DEMO.idFromName(demo))
+      return device.run({
+        type: 'call',
+        id: crypto.randomUUID(),
+        client,
+        tool,
+        args,
+        scope: this.scope(),
+      })
+    }
+    return this.hub.call(client, tool, args, {
       scope: this.scope(),
       retry: isReadCall(tool, args),
     })

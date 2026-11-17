@@ -187,7 +187,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   placeholder otherwise).
 - Remote MCP (ChatGPT, claude.ai; docs/remote-mcp.md): `apps/relay` is a Cloudflare Worker
   (`mcp.fixnote.space`, MCP Streamable HTTP, JSON answers) with one SQLite-backed Durable Object per
-  account holding the devices' hibernatable WebSockets. It stores no note content and no keys: each
+  account holding the devices' hibernatable WebSockets. It stores no note content and no keys (one
+  exception: the reviewers' demo account in `DEMO_ACCOUNTS` gets a `DemoDevice` with demo notes,
+  `apps/relay/src/demo.ts`, answering when none of its devices is online): each
   `tools/call` goes to exactly one device (desktop, then freshest sync; a read retries once on the
   next device, a change never), which runs it with core `RemoteExecutor` (`NoteTools`: reading, and
   creating and changing notes and creating folders when `mcp.access` allows writing; never

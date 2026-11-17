@@ -12,18 +12,24 @@
     "bindings": [
       { "name": "RELAY", "class_name": "UserRelay" },
       // The connect handoff (src/consent.ts): one per OAuth authorization id, 2 minutes at most.
-      { "name": "CONSENT", "class_name": "ConsentHandoff" }
+      { "name": "CONSENT", "class_name": "ConsentHandoff" },
+      // Demo devices of the accounts in DEMO_ACCOUNTS (src/demo.ts): demo notes only.
+      { "name": "DEMO", "class_name": "DemoDevice" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["UserRelay"] },
-    { "tag": "v2", "new_sqlite_classes": ["ConsentHandoff"] }
+    { "tag": "v2", "new_sqlite_classes": ["ConsentHandoff"] },
+    { "tag": "v3", "new_sqlite_classes": ["DemoDevice"] }
   ],
   "vars": {
     "PUBLIC_URL": "https://mcp.fixnote.space",
     "SUPABASE_URL": "https://nsteehqbmljuczxgkvae.supabase.co",
     // The public anon key (the same one the web app ships). Set it before deploying:
     // `npx wrangler secret put SUPABASE_ANON_KEY` keeps it out of the repository.
+    // The account AI-app reviewers use (docs/mcp-directories.md, "Reviewer account"); a user id
+    // opens nothing by itself.
+    "DEMO_ACCOUNTS": "5b0c454c-4fb1-4068-98ed-7abf26bebcfb",
     "APP_ORIGINS": "https://app.fixnote.space,http://tauri.localhost,tauri://localhost,http://localhost:5173"
   },
   "observability": { "enabled": true, "head_sampling_rate": 0.1 }

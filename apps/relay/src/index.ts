@@ -11,13 +11,22 @@ import type { HandoffEnv } from './handoff'
 import { answerBody, SERVER_VERSION } from './mcp'
 import type { RelayEnv } from './relay'
 
+export { DemoDevice } from './demo'
 export { ConsentHandoff } from './handoff'
 export { UserRelay } from './relay'
 
 export interface Env extends AuthEnv, RelayEnv, HandoffEnv {
   /** Origins of the Fixnote app allowed to call /api (comma-separated). */
   APP_ORIGINS: string
+  /** User ids of the accounts AI-app reviewers use (comma-separated): they get a demo device. */
+  DEMO_ACCOUNTS?: string
 }
+
+const isDemo = (env: Env, userId: string) =>
+  (env.DEMO_ACCOUNTS ?? '')
+    .split(',')
+    .map((id) => id.trim())
+    .includes(userId)
 
 const cache = new TokenCache()
 
@@ -100,7 +109,7 @@ async function mcp(req: Request, env: Env): Promise<Response> {
     hello: (name) => relay.hello(clientId, name),
     call: async (tool, args) =>
       caller.pro
-        ? relay.call(clientId, tool, args)
+        ? relay.call(clientId, tool, args, isDemo(env, caller.userId) ? caller.userId : null)
         : { content: [{ type: 'text', text: PRO_MESSAGE }], isError: true },
   })
   if (!out) return new Response(null, { status: 202, headers: MCP_CORS })

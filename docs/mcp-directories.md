@@ -91,28 +91,32 @@ Both change their rules often: read the current pages before submitting.
 ## Reviewer account
 
 One account for all reviewers (OpenAI, Anthropic's Verified review, anyone else who asks): they all
-need the same thing, and only one device has to stay online. Not a real person's account.
+need the same thing. Not a real person's account. Ours: `review@fixnote.space`, user id in
+`DEMO_ACCOUNTS` (`apps/relay/wrangler.jsonc`; made again → put the new id there and deploy).
 
-- **Mailbox we own**, e.g. `review@fixnote.space` (a Resend/Cloudflare route to our inbox), so we can
-  sign it in on our own devices with the usual email code.
+- **Mailbox we own** (Cloudflare Email Routing to our inbox), so we can sign it in with the usual
+  email code.
 - **Password** for reviewers: OpenAI accepts only a login and password, no email codes. Supabase
-  dashboard → Authentication → the user → set a password (30+ random characters). On the connect
-  page (`/oauth/consent`) anything typed into the code field that is not 6 digits is tried as a
-  password (`isEmailCode`, `connect-backend.ts`). Normal accounts have no password, so this opens
-  nothing else. Change it after each review round.
-- **Pro**: a `subscriptions` row by hand (SQL editor), with a period end far ahead.
-- **Demo notes**: a few dozen English notes in folders (work, travel, reading, a few daily notes
-  with tasks, a link or two), so search and every tool return something.
-- **A device that stays online**: the desktop app on a spare computer or a small Windows VM, signed
-  in, Remote access on, "Read and write", window hidden to the tray, sleep off. Without it every
-  call answers "Fixnote is not open on any of your devices" and the review fails. Check it each
-  morning while a review is open (`fixnoteRemote` or a call from claude.ai).
+  dashboard → Authentication → Users → Add user → Create new user with a password (or SQL:
+  `extensions.crypt(…, extensions.gen_salt('bf'))` into `auth.users.encrypted_password`). On the
+  connect page (`/oauth/consent`) anything typed into the code field that is not 6 digits is tried
+  as a password (`isEmailCode`, `connect-backend.ts`). Normal accounts have no password, so this
+  opens nothing else. Change it after each review round.
+- **Pro**: a `subscriptions` row by hand (Table Editor): `status` active, `current_period_end`
+  2030-01-01, `provider` manual. No trial (7 days, once).
+- **Demo device**: the relay answers for an account in `DEMO_ACCOUNTS` itself when none of its
+  devices is online (`apps/relay/src/demo.ts`, Durable Object `DemoDevice`): core's
+  `RemoteExecutor` and `NoteTools` over the object's SQLite (`demo-sql.ts`), with the notes of
+  `demo-notes.ts`. No computer has to stay on. The notes start over when `DEMO_VERSION` changes,
+  or once they are a day old and nobody used them for an hour. A real device of that account,
+  when online, answers instead (its own notes). The only place the relay keeps note content, and
+  only demo notes.
 
 Reviewer instructions (OpenAI "Review details", or the email to Anthropic):
 
 > Connect the app, then on the Fixnote page choose "Sign in with an email code instead", enter
 > `<email>` and press "Send code". Instead of the code, type the password `<password>` into the code
-> field and press "Sign in", then "Allow". The account has Pro and demo notes; its device is kept
-> online, so every tool works.
+> field and press "Sign in", then "Allow". The account has Pro and demo notes and works at any
+> time; every tool can be tried, changes included (the notes start over daily).
 
 Never commit the password; it goes only into the review forms.
