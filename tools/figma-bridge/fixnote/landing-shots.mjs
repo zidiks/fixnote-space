@@ -43,29 +43,24 @@ const JOBS = [
     es: MAPS.tidy.es,
     crop: { layer: 'Main section', side: 735 },
   },
+  // The search cards (Home page, "Remember the idea", 2026-11-17 design). Text in images shows
+  // words in photos: English only.
   {
     name: 'recall-meaning',
-    node: '331:6657',
-    en: MAPS.meaning.en,
-    es: MAPS.meaning.es,
-    mark: 'созвон',
+    node: '855:117243',
+    en: {},
+    es: MAPS.search.es,
+    mark: 'feedback',
   },
-  // Across languages: the query in the other language finds the notes.
+  { name: 'recall-images', node: '855:123231', en: {}, langs: ['en'] },
+  // In Spanish it turns around: a Spanish query finds an English note.
   {
     name: 'recall-languages',
-    node: '331:6657',
-    en: map(MAPS.meaning.en, { созвон: 'reunión' }),
-    es: map(MAPS.meaning.es, { созвон: 'meeting' }),
-    hide: ['Highlight'],
+    node: '855:119223',
+    en: {},
+    es: map(ui('es'), MAPS.languages.es),
   },
-  // Text in images: the same search, finding words that are only in pictures.
-  {
-    name: 'recall-images',
-    node: '331:6657',
-    en: MAPS.images.en,
-    es: MAPS.images.es,
-    mark: 'созвон',
-  },
+  { name: 'recall-keys', node: '855:118237', en: {}, es: { Search: ui('es').Search } },
 ]
 
 function bridge(...args) {
@@ -211,7 +206,7 @@ const tmp = join(tmpdir(), `landing-shots-out-${process.pid}`)
 mkdirSync(tmp, { recursive: true })
 for (const job of JOBS) {
   if (only.length && !only.includes(job.name)) continue
-  for (const lang of ['en', 'es']) {
+  for (const lang of job.langs ?? ['en', 'es']) {
     const id = script(cloneCode(job.node, job[lang], job.hide, job.crop, job.mark))
     try {
       const out = bridge('render', id, '--scale', '2', '--format', 'png', '--out', tmp)

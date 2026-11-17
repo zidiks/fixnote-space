@@ -1,6 +1,5 @@
 ---
 import { Image } from 'astro:assets'
-import keys from '../../assets/landing/recall-keys.png'
 import ArrowLink from '../../components/ArrowLink.astro'
 import { type Lang, t } from '../../i18n'
 import { featurePath } from '../../lib/pages'
@@ -15,27 +14,23 @@ interface Props {
 }
 const { lang } = Astro.props
 const c = t(lang).landing.recall
-// The current design's order: meaning, languages, keyboard shortcut, text in images.
+// The 2026-11-17 design's order: meaning, text in images, languages, keyboard shortcut. The
+// pictures are whole cards rendered from Figma (landing-shots.mjs); the one of text in images
+// reaches past the card on both sides (recall-pic-wide).
 const cards = [
+  { ...c.meaning, shot: landingShot('recall-meaning', lang), href: featurePath(lang, 'search') },
   {
-    ...c.meaning,
-    shot: landingShot('recall-meaning', lang),
-    full: true,
-    href: featurePath(lang, 'search'),
+    ...c.images,
+    shot: landingShot('recall-images', lang),
+    wide: true,
+    href: featurePath(lang, 'text-in-images'),
   },
   {
     ...c.languages,
     shot: landingShot('recall-languages', lang),
-    full: true,
     href: featurePath(lang, 'search'),
   },
-  { ...c.keys, shot: keys, keys: true, href: featurePath(lang, 'search') },
-  {
-    ...c.images,
-    shot: landingShot('recall-images', lang),
-    full: true,
-    href: featurePath(lang, 'text-in-images'),
-  },
+  { ...c.keys, shot: landingShot('recall-keys', lang), href: featurePath(lang, 'search') },
 ]
 ---
 
@@ -53,8 +48,8 @@ const cards = [
         {
           cards.map((card) => (
             <li class="recall-card">
-              <div class:list={['recall-pic', 'full' in card && 'recall-pic-full', 'keys' in card && 'recall-pic-keys']} aria-hidden="true">
-                {card.shot && <Image src={card.shot} alt="" widths={[547, 1094]} sizes="547px" loading="lazy" />}
+              <div class:list={['recall-pic', 'wide' in card && 'recall-pic-wide']} aria-hidden="true">
+                <Image src={card.shot} alt="" widths={[562, 1124]} sizes="562px" loading="lazy" />
               </div>
               <div class="recall-copy">
                 <h3 class="lp-card-title">{card.title}</h3>

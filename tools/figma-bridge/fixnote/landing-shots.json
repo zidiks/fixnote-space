@@ -199,72 +199,31 @@
       "Заголовок: «Пароль от Wi-Fi»": "Título: «Wifi del coworking»"
     }
   },
-  "meaning": {
-    "en": {
-      "созвон": "meeting",
-      "Заметки": "Notes",
-      "Созвон с командой дизайна": "Design team meeting",
-      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Design team meeting Summary We went over the new “notes” view and the dark…",
-      "7 ноября": "November 7",
-      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "November 7 Design meeting at 3 pm Reply to emails Run…",
-      "Похожие по смыслу": "Similar in meaning",
-      "6 ноября": "November 6",
-      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "November 6 [x] Send the invoice [x] Review the extension pull request [ ] Call mom",
-      "Мысль": "A thought",
-      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "A thought The best time for notes is right after a talk, while it’s fresh. Saying it is faster than typing.",
-      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Wi-Fi password at the coworking: ask at the front desk, second floor",
-      "Список покупок": "Shopping list",
-      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Shopping list [ ] Oat milk [ ] Bread [x] Coffee beans [ ] AA batteries [ ] Birthday present for Emma"
-    },
+  "search": {
     "es": {
-      "созвон": "reunión",
-      "Заметки": "Notas",
-      "Созвон с командой дизайна": "Reunión con el equipo de diseño",
-      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Reunión con el equipo de diseño Resumen Repasamos la nueva vista «notas» y el tema…",
-      "7 ноября": "7 de noviembre",
-      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "7 de noviembre Reunión de diseño a las 15:00 Responder correos Correr…",
-      "Похожие по смыслу": "Parecidas en significado",
-      "6 ноября": "6 de noviembre",
-      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "6 de noviembre [x] Enviar la factura [x] Revisar el pull request de la extensión [ ] Llamar a mamá",
-      "Мысль": "Una idea",
-      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "Una idea El mejor momento para anotar es justo después de hablar, con todo fresco. Dictar es más rápido que escribir.",
-      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Contraseña del wifi del coworking: preguntar en recepción, segunda planta",
-      "Список покупок": "Lista de la compra",
-      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Lista de la compra [ ] Leche de avena [ ] Pan [x] Café en grano [ ] Pilas AA [ ] Regalo de cumpleaños para Emma"
+      "feedback": "comentarios",
+      "Notes": "Notas",
+      "Similar in meaning": "Similar en significado",
+      "Design feedback": "Comentarios de diseño",
+      "Design feedback from the team. Reviewed the latest screen ": "Comentarios del equipo sobre la última pantalla ",
+      "November 12": "12 de noviembre",
+      "November 12. Collected feedback on the new homepage layout and navigation": "12 de noviembre. Reunimos comentarios sobre la nueva portada y la navegación",
+      "Design review": "Revisión de diseño",
+      "Discussed the latest interface updates. The team suggested simplifying the navigation.": "Hablamos de los últimos cambios de la interfaz. El equipo propuso simplificar la navegación.",
+      "Product improvements": "Mejoras del producto",
+      "Users find the onboarding confusing. Consider reducing\nthe number of steps.": "A los usuarios les confunde la bienvenida. Conviene reducir\nel número de pasos.",
+      "Meeting notes": "Notas de la reunión",
+      "Reviewed the prototype together. Agreed to improve readability and adjust the layout.": "Revisamos juntos el prototipo. Acordamos mejorar la legibilidad y ajustar el diseño."
     }
   },
-  "images": {
-    "en": {
-      "созвон": "wifi",
-      "Заметки": "Notes",
-      "Созвон с командой дизайна": "Coworking wifi photo",
-      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Coworking wifi photo In the picture: GUEST WIFI · Cowork-5G · password at the desk…",
-      "7 ноября": "Whiteboard, November 7",
-      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "Whiteboard, November 7 In the picture: WIFI CHANGES FRIDAY · printer on floor 2…",
-      "Похожие по смыслу": "Similar in meaning",
-      "6 ноября": "Office move",
-      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "Office move [x] Ask about the router [x] Label the boxes [ ] Send everyone the new password",
-      "Мысль": "Screenshots",
-      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "Screenshots In the picture: Network settings · Connected to Cowork-5G · Signal strong",
-      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Wi-Fi password at the coworking: ask at the front desk, second floor",
-      "Список покупок": "Router receipt",
-      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Router receipt In the picture: WIFI 6 ROUTER AX3000 · 89.90 · 2-year warranty"
-    },
+  "languages": {
     "es": {
-      "созвон": "wifi",
-      "Заметки": "Notas",
-      "Созвон с командой дизайна": "Foto del wifi del coworking",
-      "Созвон с командой дизайна Кратко Обсудили новый вид «как заметки» и тёмную…": "Foto del wifi del coworking En la imagen: WIFI INVITADOS · Cowork-5G · clave en recepción…",
-      "7 ноября": "Pizarra, 7 de noviembre",
-      "7 ноября Созвон с дизайном в 15:00 Ответить на письма Пробежка…": "Pizarra, 7 de noviembre En la imagen: EL WIFI CAMBIA EL VIERNES · impresora en la 2.ª…",
-      "Похожие по смыслу": "Parecidas en significado",
-      "6 ноября": "Mudanza de oficina",
-      "6 ноября [x] Отправить счёт клиенту [x] Ревью pull request с расширением [ ] Позвонить маме": "Mudanza de oficina [x] Preguntar por el router [x] Etiquetar las cajas [ ] Enviar a todos la clave nueva",
-      "Мысль": "Capturas",
-      "Мысль Лучшее время для заметок — сразу после встречи, пока всё свежее. Голосом быстрее, чем набирать.": "Capturas En la imagen: Ajustes de red · Conectado a Cowork-5G · Señal buena",
-      "Пароль от Wi-Fi в коворкинге: спросить у администратора на втором этаже": "Contraseña del wifi del coworking: preguntar en recepción, segunda planta",
-      "Список покупок": "Ticket del router",
-      "Список покупок [ ] Молоко овсяное [ ] Хлеб [x] Кофе в зёрнах [ ] Батарейки AA [ ] Подарок Маше на день рождения": "Ticket del router En la imagen: ROUTER WIFI 6 AX3000 · 89,90 · garantía de 2 años"
+      "travel plans": "planes de viaje",
+      "Weekend in Copenhagen": "Fin de semana en Copenhague",
+      "Train tickets, hotel check-in, and places to visit on Saturday.": "Billetes de tren, entrada al hotel y sitios para visitar el sábado.",
+      "Viaje a Barcelona": "Trip to Barcelona",
+      "Reservar el hotel, guardar los billetes y preparar el itinerario.": "Book the hotel, save the tickets and plan the itinerary.",
+      "Reservar el hotel, guardar los billetes\ny preparar el itinerario.": "Book the hotel, save the tickets\nand plan the itinerary."
     }
   }
 }

@@ -1,14 +1,15 @@
 ---
+import word from '../assets/landing/header-word.svg?raw'
 import { type Lang, localePath, t } from '../i18n'
 import { featurePath } from '../lib/pages'
 import LangMenu from './LangMenu.astro'
-import LogoMark from './LogoMark.astro'
 
 /**
- * One bar: the mark (it is the way home) and product links on the left, an empty centre, the rest and Download on the right.
- * It lies flat over the top of the page and, once the page scrolls, gathers into a floating pill
- * (`data-float`, set by the observer below; no scroll handler). Phones get a full-screen menu
- * (a checkbox, no script). Pages that draw under it (`overlay`) get no spacer.
+ * One bar: the word (it is the way home) and product links on the left, an empty centre, the rest
+ * and Download on the right. Nothing in it moves or changes size; once the page scrolls, a white
+ * plate fades in under it (`data-float`, set by the observer below; no scroll handler). Phones
+ * get a full-screen menu (a checkbox, no script). Pages that draw under it (`overlay`) get no
+ * spacer.
  */
 interface Props {
   lang: Lang
@@ -53,7 +54,7 @@ const current = (page?: string) =>
       <ul class="hdr-links hidden medium:flex">
         <li>
           <a href={home.href} aria-current={current(home.page) ? 'page' : undefined} aria-label={home.label} class="hdr-link hdr-brand">
-            <LogoMark />
+            <Fragment set:html={word} />
           </a>
         </li>
         {

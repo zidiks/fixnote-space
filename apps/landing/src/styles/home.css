@@ -533,38 +533,19 @@
 .recall-pic {
   position: relative;
   aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: calc(20 * var(--u));
-  background: #fff;
 }
-/* The dotted paper behind the screenshot. */
-.recall-pic::before {
-  content: "";
-  position: absolute;
-  inset: 3.65%;
-  opacity: 0.3;
-  background:
-    radial-gradient(circle, #d9d9d9 calc(1.9 * var(--u)), transparent calc(2.1 * var(--u)))
-    calc(-6 * var(--u)) calc(-6 * var(--u)) / calc(16 * var(--u)) calc(16 * var(--u));
-}
+/* Each picture is the whole card rendered from Figma, rounded corners included. */
 .recall-pic img {
   position: absolute;
-  top: 9.21%;
-  left: 9.21%;
-  width: 104.03%;
-  height: 94.82%;
-  max-width: none;
-  border-radius: calc(15 * var(--u));
-}
-/* Pictures rendered from Figma as the whole card (paper included, landing-shots.mjs). */
-.recall-pic-full::before {
-  content: none;
-}
-.recall-pic-full img {
   inset: 0;
   width: 100%;
   height: 100%;
-  border-radius: 0;
+  max-width: none;
+}
+/* Text in images: the phone and the photo reach past the card (16 and 25 of 521 in Figma). */
+.recall-pic-wide img {
+  left: calc(-16 / 521 * 100%);
+  width: calc(562 / 521 * 100%);
 }
 .recall-copy {
   display: flex;
@@ -614,6 +595,12 @@
     --rt: max(88px, (100vh - 902 * var(--u)) / 2);
     padding-top: max(0px, 200 * var(--u) - var(--rt));
     height: calc(100vh + var(--travel, 0px) * 1.2 + max(0px, 200 * var(--u) - var(--rt)));
+  }
+  /* The wide header (88 high, 48 from the top) ends lower: the headline stays 32 below it. */
+  @media (min-width: 1069px) {
+    .recall[data-live] {
+      --rt: max(48 * var(--u) + 120px, (100vh - 902 * var(--u)) / 2);
+    }
   }
   .recall[data-live] .recall-stage {
     position: sticky;
@@ -1557,13 +1544,6 @@
 }
 .home-footer-bottom > p:first-child > span {
   color: #000;
-}
-.recall-pic-keys img {
-  top: 40.88%;
-  left: 26.7%;
-  width: 46.6%;
-  height: 18.23%;
-  border-radius: 0;
 }
 @media (min-width: 1069px) {
   .home-faq,
