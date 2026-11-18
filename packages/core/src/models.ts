@@ -12,6 +12,18 @@ export interface ModelInfo {
 /** Search by meaning (embeddings). */
 export const SEARCH_MODEL: ModelInfo = { id: 'Xenova/multilingual-e5-small', approxBytes: 118e6 }
 
+/**
+ * Language models that run in the app itself (Settings → AI → On this device), lightest first:
+ * for writing help, Tidy up and answers from notes without the internet, or for people who want
+ * nothing to leave the device. Qwen3 (Apache-2.0), 4-bit ONNX; on WebGPU when there is one.
+ */
+export const LOCAL_LLM_MODELS = {
+  small: { id: 'onnx-community/Qwen3-0.6B-ONNX', approxBytes: 570e6 },
+  standard: { id: 'onnx-community/Qwen3-1.7B-ONNX', approxBytes: 1.3e9 },
+} as const satisfies Record<string, ModelInfo>
+
+export type LocalLlmKey = keyof typeof LOCAL_LLM_MODELS
+
 /** Text from images (Tesseract, English, Russian and Spanish). */
 export const OCR_MODEL: ModelInfo = { id: '@tesseract.js-data', approxBytes: 7.8e6 }
 

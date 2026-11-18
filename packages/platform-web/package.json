@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./embed": "./src/embed/client.ts",
+    "./llm": "./src/llm/client.ts",
     "./models": "./src/models.ts",
     "./ocr": "./src/ocr/client.ts",
     "./speech": "./src/speech/client.ts"

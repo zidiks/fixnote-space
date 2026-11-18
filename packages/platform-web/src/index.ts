@@ -2,6 +2,7 @@ import type { Platform, SqlDriver } from '@fixnote/core'
 import { opfsBlobStore } from './blobs'
 import { createTransformersEmbedder } from './embed/client'
 import { webKeyStore, webSecretStore } from './keys'
+import { createLocalLlm } from './llm/client'
 import { localModels } from './models'
 import { createTesseractRecognizer } from './ocr/client'
 import { createSpeechTranscriber } from './speech/client'
@@ -16,6 +17,7 @@ export function createWebPlatform(): Platform {
   let sql: Promise<SqlDriver> | null = null
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
   let transcriber: ReturnType<typeof createSpeechTranscriber> | null = null
+  let localLlm: ReturnType<typeof createLocalLlm> | null = null
   let ocr: ReturnType<typeof createTesseractRecognizer> | null = null
   return {
     kind: 'web',
@@ -39,6 +41,10 @@ export function createWebPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     models: localModels,
+    localLlm: () => {
+      localLlm ??= createLocalLlm()
+      return localLlm
+    },
     ocr: () => {
       ocr ??= createTesseractRecognizer()
       return Promise.resolve(ocr)

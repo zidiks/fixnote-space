@@ -345,6 +345,65 @@ describe('SyncEngine', () => {
     expect((await b.repo.getNote(n.id))?.content).toBe('v2')
   })
 
+  // A dropped connection: the call throws as fetch does, the next sync goes on.
+  const offline = () => {
+    throw new TypeError('Failed to fetch')
+  }
+
+  const live = async (d: Device) =>
+    Number(
+      (
+        await d.db.query<{ n: number }>('SELECT count(*) AS n FROM notes WHERE deleted_at IS NULL')
+      )[0]?.n,
+    )
+
+  it('keeps a change when the connection drops before the server gets it', async () => {
+    const a = await device('a')
+    const n = await a.repo.createNote({ content: 'written offline' })
+    const push = remote.pushNote
+    remote.pushNote = offline
+    await expect(a.engine.sync()).rejects.toThrow('Failed to fetch')
+    expect(await a.engine.pendingCount()).toBe(1)
+    remote.pushNote = push
+    await a.engine.sync()
+    expect(await a.engine.pendingCount()).toBe(0)
+    const b = await device('b')
+    await b.engine.sync()
+    expect((await b.repo.getNote(n.id))?.content).toBe('written offline')
+  })
+
+  it('makes no copy when the server took a change but the answer was lost', async () => {
+    const a = await device('a')
+    const n = await a.repo.createNote({ content: 'v1' })
+    const push = remote.pushNote
+    remote.pushNote = async (row, base) => {
+      await push(row, base)
+      offline()
+      return push(row, base)
+    }
+    await expect(a.engine.sync()).rejects.toThrow('Failed to fetch')
+    remote.pushNote = push
+    await a.engine.sync()
+    expect(await a.engine.pendingCount()).toBe(0)
+    expect(await live(a)).toBe(1)
+    expect((await a.repo.getNote(n.id))?.content).toBe('v1')
+  })
+
+  it('goes on from where a download stopped when the connection drops between pages', async () => {
+    const a = await device('a')
+    for (let i = 0; i < 450; i++) await a.repo.createNote({ content: `note ${i}` })
+    await a.engine.sync()
+    const b = await device('b')
+    const pull = remote.pullNotes
+    let pages = 0
+    remote.pullNotes = (after, limit) => (++pages === 2 ? offline() : pull(after, limit))
+    await expect(b.engine.sync()).rejects.toThrow('Failed to fetch')
+    remote.pullNotes = pull
+    await b.engine.sync()
+    expect(await live(b)).toBe(450)
+    expect(await b.engine.pendingCount()).toBe(0)
+  })
+
   it('serializes overlapping sync calls', async () => {
     const a = await device('a')
     await a.repo.createNote({ content: 'x' })

@@ -7,6 +7,7 @@ import type {
   WindowChrome,
 } from '@fixnote/core'
 import { createTransformersEmbedder } from '@fixnote/platform-web/embed'
+import { createLocalLlm } from '@fixnote/platform-web/llm'
 import { localModels } from '@fixnote/platform-web/models'
 import { createTesseractRecognizer } from '@fixnote/platform-web/ocr'
 import { createSpeechTranscriber } from '@fixnote/platform-web/speech'
@@ -62,6 +63,7 @@ export function createTauriPlatform(): Platform {
   const chrome = detectChrome()
   let embedder: ReturnType<typeof createTransformersEmbedder> | null = null
   let transcriber: ReturnType<typeof createSpeechTranscriber> | null = null
+  let localLlm: ReturnType<typeof createLocalLlm> | null = null
   let ocr: ReturnType<typeof createTesseractRecognizer> | null = null
   return {
     kind: 'desktop',
@@ -86,10 +88,15 @@ export function createTauriPlatform(): Platform {
       return Promise.resolve(transcriber)
     },
     models: localModels,
+    localLlm: () => {
+      localLlm ??= createLocalLlm()
+      return localLlm
+    },
     ...(chrome === 'mac-overlay' ? { appleNotes } : {}),
     // Windows and macOS record what the computer plays (system_audio.rs); Linux does not.
     ...(chrome === 'native' ? {} : { systemAudio }),
     tray,
+    appIcon: (variant) => invoke('set_app_icon', { variant }),
     deepLinks,
     ocr: () => {
       ocr ??= createTesseractRecognizer()

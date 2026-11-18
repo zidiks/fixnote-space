@@ -1,3 +1,4 @@
+import { APP_ICONS, type AppIcon } from '@fixnote/core'
 import {
   currentLanguage,
   i18n,
@@ -6,13 +7,15 @@ import {
   SUPPORTED_LANGUAGES,
   useTranslation,
 } from '@fixnote/i18n'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@fixnote/ui'
+import { Logo, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { FONT_MODES, type FontMode, type Theme, useUi } from '../../app/store'
+import { APP_ICON, appIconOf, setAppIcon } from '../../lib/app-icon'
 import { captureToDaily, VOICE_TO_DAILY } from '../../lib/daily'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
+import { usePlatform } from '../../lib/platform'
 import { LayoutPicker } from '../LayoutOnboarding'
 import { UpdatesSection } from './UpdatesSection'
 
@@ -24,6 +27,7 @@ export function GeneralSection() {
   const setFontMode = useUi((s) => s.setFontMode)
   const layout = useUi((s) => s.layout ?? 'assistant')
   const setLayout = useUi((s) => s.setLayout)
+  const platform = usePlatform()
   const [lang, setLang] = useState<Language>(currentLanguage())
   const { driver } = useDb()
   const qc = useQueryClient()
@@ -94,6 +98,7 @@ export function GeneralSection() {
         <p className="text-sm text-muted-foreground">{t('layout.setting')}</p>
         <LayoutPicker value={layout} onChange={setLayout} />
       </div>
+      {platform.appIcon && <AppIconPicker />}
       <label className="flex max-w-lg items-start gap-3 pt-2">
         <input
           type="checkbox"
@@ -111,6 +116,51 @@ export function GeneralSection() {
         </span>
       </label>
       <UpdatesSection />
+    </div>
+  )
+}
+
+/** The tile and mark colours of each icon (brand/build.mjs, ICON_VARIANTS). */
+const ICON_LOOK: Record<AppIcon, { tile: string; ink: string }> = {
+  orange: { tile: '#f86c2d', ink: '#fff' },
+  dark: { tile: '#161616', ink: '#fff' },
+  light: { tile: '#f4f2ee', ink: '#161616' },
+}
+
+/** The desktop app's icon on this device: the running app's taskbar and Dock icon. */
+function AppIconPicker() {
+  const { t } = useTranslation()
+  const { driver } = useDb()
+  const qc = useQueryClient()
+  const current = useQuery({ queryKey: ['kv', APP_ICON], queryFn: () => appIconOf(driver) }).data
+  const pick = (icon: AppIcon) => {
+    qc.setQueryData(['kv', APP_ICON], icon)
+    void setAppIcon(driver, icon).catch(() => undefined)
+  }
+  return (
+    <div className="max-w-lg space-y-2 pt-1">
+      <p className="text-sm text-muted-foreground">{t('settings.appIcon')}</p>
+      <div className="flex gap-3">
+        {APP_ICONS.map((icon) => (
+          <button
+            key={icon}
+            type="button"
+            aria-pressed={current === icon}
+            aria-label={t(`settings.appIcons.${icon}`)}
+            title={t(`settings.appIcons.${icon}`)}
+            onClick={() => pick(icon)}
+            className="rounded-[18px] p-1 ring-offset-2 ring-offset-background transition-shadow aria-pressed:ring-2 aria-pressed:ring-brand"
+          >
+            <span
+              className="flex size-14 items-center justify-center rounded-[14px] border border-border"
+              style={{ background: ICON_LOOK[icon].tile, color: ICON_LOOK[icon].ink }}
+            >
+              <Logo variant="mark" height={26} />
+            </span>
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">{t('settings.appIconHint')}</p>
     </div>
   )
 }

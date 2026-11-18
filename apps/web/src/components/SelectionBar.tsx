@@ -29,7 +29,7 @@ import {
 } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
-import { findSuggestions, refreshTidyCount } from '../lib/assistant/tidy'
+import { findSuggestions, refreshTidyCount, tidyUnavailableText } from '../lib/assistant/tidy'
 import { useDb, useRepo } from '../lib/db'
 import { useDeleteKeyHandler } from '../lib/delete-key'
 import { useBackLayer } from '../lib/nav-history'
@@ -138,8 +138,8 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
   const tidyUp = () =>
     run('tidy', async () => {
       const found = await findSuggestions(tidy, { noteIds: picked.map((n) => n.id) })
-      if (found === 'signed-out') {
-        toast(t('tidy.signIn'))
+      if (typeof found === 'string') {
+        toast(tidyUnavailableText(found))
         return
       }
       await refreshTidyCount(tidy)

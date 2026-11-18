@@ -21,6 +21,12 @@ describe('deriveExcerpt', () => {
     )
   })
 
+  it('reads an Obsidian callout as its title and text', () => {
+    expect(deriveExcerpt('# Hub\n\n> [!success]- 7 applications\n> 6 waiting')).toBe(
+      '7 applications 6 waiting',
+    )
+  })
+
   it('reads a folded section as its title and text', () => {
     expect(
       deriveExcerpt('# Call\n\n<details>\n<summary>Transcript</summary>\n\nHello\n\n</details>'),

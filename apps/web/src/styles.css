@@ -280,6 +280,35 @@
   padding-left: 1em;
   color: var(--color-muted-foreground);
 }
+/* An Obsidian callout (`callout.ts`): a tinted card with its title; `data-tone` groups the types. */
+.fixnote-editor [data-callout] {
+  --callout: var(--color-muted-foreground);
+  margin: 0.8em 0;
+  padding: 0.75em 1em;
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, var(--callout) 22%, transparent);
+  background: color-mix(in oklab, var(--callout) 8%, transparent);
+}
+.fixnote-editor [data-callout][data-tone="success"] {
+  --callout: var(--color-success);
+}
+.fixnote-editor [data-callout][data-tone="warning"] {
+  --callout: var(--color-brand);
+}
+.fixnote-editor [data-callout][data-tone="danger"] {
+  --callout: var(--color-destructive);
+}
+.fixnote-editor [data-callout-title] {
+  font-weight: 600;
+  color: color-mix(in oklab, var(--callout) 75%, var(--color-foreground));
+  user-select: none;
+}
+.fixnote-editor [data-callout-body] > * + * {
+  margin-top: 0.4em;
+}
+.fixnote-editor [data-callout-title] + [data-callout-body] {
+  margin-top: 0.35em;
+}
 .fixnote-editor a {
   color: var(--color-brand);
   text-decoration: underline;

@@ -12,7 +12,7 @@ import { toast } from 'sonner'
 import { create } from 'zustand'
 import { aiRefusalText } from '../plan'
 import { providerLabel } from './assistant'
-import { llm, useLlm } from './llm'
+import { type LlmUnavailable, llm, offlineText, useLlm } from './llm'
 
 interface TidyState {
   pending: number
@@ -49,14 +49,15 @@ export async function refreshTidyCount(tidy: Tidy) {
 
 /**
  * Asks the model for suggestions (all candidates, or just `noteIds`) and stores them; duplicates
- * are found locally. Returns the new suggestions, or 'signed-out' when there is no model access.
+ * are found locally. Returns the new suggestions, or why no model can be reached (offline,
+ * signed out…).
  */
 export async function findSuggestions(
   tidy: Tidy,
   opts: { noteIds?: string[]; signal?: AbortSignal } = {},
-): Promise<TidySuggestion[] | 'signed-out'> {
+): Promise<TidySuggestion[] | LlmUnavailable> {
   const reach = await llm()
-  if (!reach.ok) return 'signed-out'
+  if (!reach.ok) return reach.reason
   const candidates = await tidy.candidates(opts.noteIds ? { noteIds: opts.noteIds } : {})
   let found: NewTidySuggestion[] = []
   if (candidates.notes.length) {
@@ -78,18 +79,23 @@ export async function findSuggestions(
   return saved
 }
 
+/** Why Tidy up cannot ask a model, in words: signing in has its own hint. */
+export const tidyUnavailableText = (reason: LlmUnavailable) =>
+  reason === 'signed-out' ? i18n.t('tidy.signIn') : i18n.t(`aiProvider.unavailable.${reason}`)
+
 /** The "Find suggestions" button. */
 export async function runTidy(tidy: Tidy, kv: { set(key: string, value: string): Promise<void> }) {
   if (useTidy.getState().running) return
   useTidy.setState({ running: true, error: null })
   try {
     const result = await findSuggestions(tidy)
-    if (result === 'signed-out') useTidy.setState({ error: i18n.t('tidy.signIn') })
+    if (typeof result === 'string') useTidy.setState({ error: tidyUnavailableText(result) })
     else await kv.set(LAST_RUN, String(Date.now()))
   } catch (err) {
     useTidy.setState({
       error:
         aiRefusalText(err) ??
+        offlineText(err) ??
         i18n.t('tidy.error', { message: err instanceof Error ? err.message : String(err) }),
     })
   } finally {
@@ -110,7 +116,8 @@ export async function maybeRunScheduled(
   useTidy.setState({ running: true })
   try {
     const result = await findSuggestions(tidy)
-    if (result !== 'signed-out') await kv.set(LAST_RUN, String(Date.now()))
+    // No model now (offline, signed out): the next launch tries again.
+    if (typeof result !== 'string') await kv.set(LAST_RUN, String(Date.now()))
   } catch {
     // Next launch tries again.
   } finally {
@@ -163,13 +170,13 @@ export async function suggestForNewNote(
 ) {
   if (suggestedThisSession.has(note.id)) return
   suggestedThisSession.add(note.id)
-  let found: TidySuggestion[] | 'signed-out'
+  let found: TidySuggestion[] | LlmUnavailable
   try {
     found = await findSuggestions(deps.tidy, { noteIds: [note.id] })
   } catch {
     return
   }
-  if (found === 'signed-out' || !found.length) return
+  if (typeof found === 'string' || !found.length) return
   const list = found
   // Auto mode: applied right away; the toast offers Undo.
   if (useLlm.getState().mode === 'auto') {

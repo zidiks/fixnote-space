@@ -711,6 +711,9 @@ const es: LocaleResource = {
     custom: 'Tu propia clave',
     customBody: 'Cualquier proveedor compatible con OpenAI. La clave se queda en este dispositivo.',
     ollama: 'Ollama',
+    device: 'En este dispositivo',
+    deviceBody:
+      'Un modelo pequeño dentro de Fixnote: se instala con un clic, funciona sin internet y nada sale del dispositivo.',
     ollamaBody: 'Un modelo en este ordenador, sin internet.',
     desktopOnly: 'En la app de escritorio.',
     provider: 'Proveedor',
@@ -740,6 +743,8 @@ const es: LocaleResource = {
       'no-key': 'Añade tu clave de API en Ajustes → IA.',
       'no-model': 'Elige un modelo en Ajustes → IA.',
       'local-only': 'El modo «solo en este dispositivo» está activo: elige Ollama en Ajustes → IA.',
+      offline:
+        'Sin conexión a internet. La IA vuelve a responder cuando te conectes; un modelo en Ollama funciona sin conexión.',
     },
   },
   window: {
@@ -943,6 +948,10 @@ const es: LocaleResource = {
     data: 'Datos',
     ai: 'IA',
     language: 'Idioma',
+    appIcon: 'Icono de la app',
+    appIcons: { orange: 'Naranja', dark: 'Oscuro', light: 'Claro' },
+    appIconHint:
+      'El icono de la app abierta: barra de tareas y Alt+Tab, o el Dock en un Mac. El menú Inicio y el Finder siguen con el naranja.',
     theme: 'Tema',
     themes: {
       system: 'Sistema',
@@ -1005,7 +1014,30 @@ const es: LocaleResource = {
       'Usa dos teclas modificadoras, como {{example}}, para que las otras apps conserven sus atajos.',
     failed: 'Otra app ya usa estas teclas. Elige otras.',
   },
+  deviceModels: {
+    intro:
+      'Estos modelos funcionan dentro de Fixnote, en este dispositivo. Sirven para corregir y acortar textos, Poner orden y respuestas cortas a partir de tus notas; para tareas largas, Fixnote AI es mejor.',
+    install: 'Instalar',
+    use: 'Usar',
+    remove: 'Eliminar',
+    downloading: 'Descargando… {{percent}}%',
+    measuring: 'Comprobando la velocidad en este dispositivo…',
+    failed: 'No se pudo instalar el modelo: {{message}}',
+    fallback:
+      'Con un modelo instalado, la IA sigue funcionando sin internet: responde en lugar del elegido.',
+    perSecond: 'palabras/s',
+    measured: 'Medido en este dispositivo',
+    guessed: 'Estimado según el hardware de este dispositivo',
+    fit: { good: 'Va bien aquí', ok: 'Funcionará', slow: 'Lento aquí' },
+    models: {
+      small: { name: 'Ligero', body: 'Qwen3 0.6B: rápido, para ayudar a escribir' },
+      standard: { name: 'Estándar', body: 'Qwen3 1.7B: más listo, necesita un buen ordenador' },
+    },
+    pick: 'Modelo',
+    installMore: 'Instalar un modelo en este dispositivo…',
+  },
   models: {
+    language: 'Modelos de lenguaje',
     title: 'Modelos en este dispositivo',
     body: 'Funcionan sin internet y sin nuestro servidor. Se descargan una vez, cuando hacen falta.',
     search: 'Búsqueda por significado',

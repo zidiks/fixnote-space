@@ -3,6 +3,8 @@ import { useTranslation } from '@fixnote/i18n'
 import { ConfirmDialog, isApple } from '@fixnote/ui'
 import { useEffect, useRef, useState } from 'react'
 import { useUi } from '../app/store'
+import { restoreAppIcon } from '../lib/app-icon'
+import { useDb } from '../lib/db'
 import { accelerator, TRAY_ACTION } from '../lib/hotkeys'
 import { usePlatform } from '../lib/platform'
 import { useCreateNote, useOpenDaily } from '../lib/queries'
@@ -27,6 +29,11 @@ export function DesktopTray() {
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const [asking, setAsking] = useState(false)
+  const { driver } = useDb()
+  // The installed icon is orange: another one picked on this device is set again at each launch.
+  useEffect(() => {
+    void restoreAppIcon(driver)
+  }, [driver])
   // A remote AI app reading notes here right now (RemoteActivityPill), shown in the menu too.
   const remote = useActivityText(useRemoteActivity((s) => (s.running.length ? s.shown : null)))
   // The system-wide shortcuts as the plugin takes them; one string, so the effect runs on changes.

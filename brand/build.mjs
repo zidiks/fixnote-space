@@ -4,7 +4,7 @@
 //   the app icon as SVG                desktop icon-src, web icon.svg, landing favicon.svg
 // and checks that the strokes open the whole logo and that the word's f is the mark's f.
 // Sources: fixnote-mark.svg, fixnote-wordmark.svg (the designer's), strokes.json (the pen's way).
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -207,7 +207,20 @@ function tile(size) {
  * below the n). A launcher that may crop to a circle (bleed) gets it smaller, in the same place.
  */
 const TILE = '#f86c2d'
-function icon({ mac = false, bleed = false, sized = false, favicon = false } = {}) {
+/** The icons a person can pick for the desktop app (Settings → General): tile and mark colours. */
+const ICON_VARIANTS = {
+  orange: { tile: TILE, ink: '#fff' },
+  dark: { tile: '#161616', ink: '#fff' },
+  light: { tile: '#f4f2ee', ink: '#161616' },
+}
+function icon({
+  mac = false,
+  bleed = false,
+  sized = false,
+  favicon = false,
+  tile: tileColor = TILE,
+  ink = '#fff',
+} = {}) {
   const shape = bleed ? 'M0 0H1024V1024H0Z' : tile(1024)
   // A browser tab shows 16–32 px: there the mark fills two thirds of the tile, or it is a speck.
   const share = bleed ? 92 : favicon ? 168 : 120
@@ -217,8 +230,8 @@ function icon({ mac = false, bleed = false, sized = false, favicon = false } = {
   return `<svg xmlns="http://www.w3.org/2000/svg" ${sized ? 'width="1024" height="1024" ' : ''}viewBox="0 0 1024 1024"><title>Fixnote</title>
   ${mac ? '<defs><filter id="drop" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="12.4" stdDeviation="17.4" flood-color="#000" flood-opacity="0.3"/></filter></defs>' : ''}
   <g${mac ? ' transform="translate(100 100) scale(0.8046875)"' : ''}>
-    <path d="${shape}" fill="${TILE}"${mac ? ' filter="url(#drop)"' : ''}/>
-    <path transform="translate(${fmt(x)} ${fmt(y)}) scale(${fmt(k)})" fill="#fff" fill-rule="evenodd" d="${shapes.mark}"/>
+    <path d="${shape}" fill="${tileColor}"${mac ? ' filter="url(#drop)"' : ''}/>
+    <path transform="translate(${fmt(x)} ${fmt(y)}) scale(${fmt(k)})" fill="${ink}" fill-rule="evenodd" d="${shapes.mark}"/>
   </g>
 </svg>
 `
@@ -229,10 +242,23 @@ writeFileSync(join(root, 'apps/web/public/icon.svg'), icon())
 writeFileSync(join(root, 'apps/landing/public/favicon.svg'), icon({ favicon: true }))
 writeFileSync(join(root, 'apps/web/public/favicon.svg'), icon({ favicon: true }))
 writeFileSync(join(brand, 'icon-bleed.svg'), icon({ bleed: true }))
-// The home page's footer shows the icon (its large faint word is drawn by hand, not here).
+// The icons to pick from in the desktop app; apps/desktop/scripts/icons.mjs renders them to PNG.
+mkdirSync(join(root, 'apps/desktop/icon-src/variants'), { recursive: true })
+for (const [name, colors] of Object.entries(ICON_VARIANTS)) {
+  writeFileSync(
+    join(root, 'apps/desktop/icon-src/variants', `${name}.svg`),
+    icon({ sized: true, ...colors }),
+  )
+  writeFileSync(
+    join(root, 'apps/desktop/icon-src/variants', `${name}-macos.svg`),
+    icon({ mac: true, sized: true, ...colors }),
+  )
+}
+// The home page's footer shows the bare mark, black, no tile (its large faint word is drawn by
+// hand, not here).
 writeFileSync(
   join(root, 'apps/landing/src/assets/landing/home-mark.svg'),
-  icon().replace('<svg ', '<svg width="56" height="56" '),
+  `<svg width="${mark.width}" height="${mark.height}" viewBox="0 0 ${mark.width} ${mark.height}" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Fixnote</title>\n<path fill="black" fill-rule="evenodd" d="${shapes.mark}"/>\n</svg>\n`,
 )
 
 // ---- check: all strokes drawn = the designer's shapes, pixel for pixel ----

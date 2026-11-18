@@ -706,6 +706,9 @@ const en = {
     custom: 'Your own key',
     customBody: 'Any OpenAI-compatible provider. The key stays on this device.',
     ollama: 'Ollama',
+    device: 'On this device',
+    deviceBody:
+      'A small model inside Fixnote: install it with one click, it works without the internet and nothing leaves the device.',
     ollamaBody: 'A model on this computer, fully offline.',
     desktopOnly: 'In the desktop app.',
     provider: 'Provider',
@@ -734,6 +737,8 @@ const en = {
       'no-key': 'Add your API key in Settings → AI.',
       'no-model': 'Choose a model in Settings → AI.',
       'local-only': 'Only-on-this-device mode is on: choose Ollama in Settings → AI.',
+      offline:
+        'No internet connection. AI answers again once you are back online; a model in Ollama works offline.',
     },
   },
   window: {
@@ -934,6 +939,10 @@ const en = {
     data: 'Data',
     ai: 'AI',
     language: 'Language',
+    appIcon: 'App icon',
+    appIcons: { orange: 'Orange', dark: 'Dark', light: 'Light' },
+    appIconHint:
+      'The icon of the running app: taskbar and Alt+Tab, or the Dock on a Mac. The Start menu and Finder keep the orange one.',
     theme: 'Theme',
     themes: {
       system: 'System',
@@ -994,7 +1003,30 @@ const en = {
     modifierGlobal: 'Use two modifier keys, like {{example}}, so other apps keep their shortcuts.',
     failed: 'Another app already uses these keys. Pick others.',
   },
+  deviceModels: {
+    intro:
+      'These models run inside Fixnote, on this device. They are good at fixing and shortening text, Tidy up and short answers from your notes; for long tasks Fixnote AI is better.',
+    install: 'Install',
+    use: 'Use',
+    remove: 'Remove',
+    downloading: 'Downloading… {{percent}}%',
+    measuring: 'Checking the speed on this device…',
+    failed: 'Could not install the model: {{message}}',
+    fallback:
+      'With a model installed, AI keeps working without the internet: it answers instead of the chosen one.',
+    perSecond: 'words/s',
+    measured: 'Measured on this device',
+    guessed: 'Estimated from this device’s hardware',
+    fit: { good: 'Runs well here', ok: 'Will work', slow: 'Slow here' },
+    models: {
+      small: { name: 'Light', body: 'Qwen3 0.6B: fast, for writing help' },
+      standard: { name: 'Standard', body: 'Qwen3 1.7B: smarter, needs a good computer' },
+    },
+    pick: 'Model',
+    installMore: 'Install a model on this device…',
+  },
   models: {
+    language: 'Language models',
     title: 'Models on this device',
     body: 'They work without the internet or our server. Each downloads once, when first needed.',
     search: 'Search by meaning',

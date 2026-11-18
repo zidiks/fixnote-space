@@ -111,9 +111,12 @@ export class SyncEngine {
       return this.syncOnce(opts.push ?? true)
     })()
     this.running = next
-    void next.finally(() => {
-      if (this.running === next) this.running = null
-    })
+    // The caller gets the failure from `next`; this cleanup branch must not raise it a second time.
+    next
+      .finally(() => {
+        if (this.running === next) this.running = null
+      })
+      .catch(() => undefined)
     return next
   }
 

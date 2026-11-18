@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { fileSize } from '../../lib/attachments'
 import { usePlatform } from '../../lib/platform'
+import { DeviceModels } from './DeviceModels'
 
 type Kind = 'search' | 'ocr' | 'russian' | SpeechModelKey
 
@@ -238,6 +239,13 @@ function ModelsSection() {
           })}
         </div>
       </div>
+
+      {platform.localLlm ? (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">{t('models.language')}</h4>
+          <DeviceModels />
+        </div>
+      ) : null}
     </div>
   )
 }

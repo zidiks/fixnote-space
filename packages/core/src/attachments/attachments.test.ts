@@ -56,6 +56,27 @@ describe('Attachments', () => {
     await prepareDatabase(db)
   })
 
+  it('keeps a file waiting when the connection drops mid-upload, and sends it next time', async () => {
+    const remote = memoryRemote()
+    let n = 0
+    const a = new Attachments(db, memoryBlobs(), { newId: () => `f${++n}` })
+    for (let i = 0; i < 2; i++)
+      await a.add(new Blob([new Uint8Array([i])], { type: 'image/png' }), 'image/png')
+    let calls = 0
+    const flaky = {
+      ...remote,
+      upload: async (id: string, blob: Uint8Array) => {
+        if (++calls === 2) throw new TypeError('Failed to fetch')
+        return remote.upload(id, blob)
+      },
+    }
+    await expect(a.uploadPending(keys(), flaky)).rejects.toThrow('Failed to fetch')
+    expect(await a.pendingCount()).toBe(1)
+    expect(await a.uploadPending(keys(), remote)).toBe(1)
+    expect(await a.pendingCount()).toBe(0)
+    expect([...remote.files.keys()].sort()).toEqual(['f1', 'f2'])
+  })
+
   it('stores locally, uploads encrypted once, and another device downloads on demand', async () => {
     const remote = memoryRemote()
     let n = 0

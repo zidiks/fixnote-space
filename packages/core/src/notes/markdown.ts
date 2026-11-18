@@ -53,6 +53,7 @@ function stripBlock(line: string, tasks: boolean): string {
     .replace(/^\s*<summary>(.*)<\/summary>\s*$/, '$1')
     .replace(/^\s{0,3}#{1,6}\s+/, '') // headings
     .replace(/^\s*>\s?/, '') // quotes
+    .replace(/^\[![\w-]+\][+-]?\s*/, '') // an Obsidian callout's marker (its title stays)
     .replace(/^\s*(?:[-*+]|\d+[.)])\s+(?:\[([ xX])\]\s+)?/, (_, box?: string) =>
       // list items and tasks; with `tasks`, a task keeps whether it is done
       tasks && box ? (box === ' ' ? '[ ] ' : '[x] ') : '',

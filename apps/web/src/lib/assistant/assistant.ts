@@ -54,6 +54,7 @@ import {
   contextLimits,
   type LlmUnavailable,
   llm as llmRoute,
+  offlineText,
   providerLabel,
   useLlm,
 } from './llm'
@@ -222,6 +223,7 @@ function patchMessage(id: string, patch: Partial<ChatEntry>) {
 
 const errorText = (err: unknown) =>
   aiRefusalText(err) ??
+  offlineText(err) ??
   (err instanceof ChatError ? err.message : err instanceof Error ? err.message : String(err))
 
 /** What the rules and the tools take of the context, roughly (the ring by the input). */

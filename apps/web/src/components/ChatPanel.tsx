@@ -64,6 +64,7 @@ import { registerVoiceSink, toggleVoice, useVoice } from '../lib/voice/voice'
 import { AssistantAvatar } from './AssistantAvatar'
 import { AgentActivity, AgentConfirm, AnswerChanges, ContextRing } from './chat/AgentParts'
 import { AnswerText } from './chat/AnswerText'
+import { ModelPicker } from './chat/ModelPicker'
 import { VoiceMessage } from './chat/VoiceMessage'
 import { WindowControls } from './WindowControls'
 
@@ -573,6 +574,7 @@ export function ChatPanel() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <ModelPicker />
               <ContextRing />
             </div>
             <div

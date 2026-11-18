@@ -1,9 +1,12 @@
+import { ChatError } from '@fixnote/ai'
+import { LOCAL_LLM_MODELS, type LocalLlmKey } from '@fixnote/core'
+import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
 import { chatTransport, requestSync, setLocalOnlyCheck } from '../account/account'
 import { platform } from '../platform'
 
 /** Where the assistant's language model runs. */
-export type ProviderKind = 'fixnote' | 'custom' | 'ollama'
+export type ProviderKind = 'fixnote' | 'custom' | 'ollama' | 'device'
 export type Preset = 'openai' | 'openrouter' | 'groq' | 'deepseek' | 'other'
 
 export interface ProviderSettings {
@@ -17,6 +20,8 @@ export interface ProviderSettings {
    * model's name (Ollama's num_ctx, a model we do not know). Not for Fixnote AI.
    */
   contextTokens?: number | null
+  /** Which model runs in the app itself (`device`; models.ts, LOCAL_LLM_MODELS). */
+  deviceModel?: LocalLlmKey
 }
 
 export const PRESETS: Record<
@@ -42,6 +47,10 @@ export const OLLAMA_URL = 'http://localhost:11434'
 const FIXNOTE_MODEL = 'fixnote'
 const SETTINGS_KEY = 'ai.provider'
 const LOCAL_ONLY_KEY = 'mode.localOnly'
+/** The on-device models downloaded on this device (kv, JSON list of LocalLlmKey). */
+const DEVICE_MODELS_KEY = 'ai.deviceModels'
+/** Their measured speed on this device (kv, JSON { key: tokens per second }). */
+const DEVICE_SPEED_KEY = 'ai.deviceSpeed'
 export const API_KEY_SECRET = 'llm-api-key'
 
 const DEFAULTS: ProviderSettings = { kind: 'fixnote', preset: 'openai', baseUrl: '', model: '' }
@@ -71,6 +80,10 @@ interface LlmState {
   /** Desktop: nothing leaves the device (no sync, no server AI; Ollama only). */
   localOnly: boolean
   hasKey: boolean
+  /** On-device models downloaded here; one of them answers when the device is offline. */
+  deviceModels: LocalLlmKey[]
+  /** Tokens per second each on-device model made here, measured after its download. */
+  deviceSpeed: Partial<Record<LocalLlmKey, number>>
   /** The settings above were read from this device (until then they are defaults). */
   loaded: boolean
 }
@@ -81,6 +94,8 @@ export const useLlm = create<LlmState>()(() => ({
   settings: DEFAULTS,
   localOnly: false,
   hasKey: false,
+  deviceModels: [],
+  deviceSpeed: {},
   loaded: false,
 }))
 
@@ -107,7 +122,23 @@ export async function initLlm(store: Kv) {
   const level = AI_LEVELS.find((l) => l === savedLevel) ?? 'medium'
   const localOnly = platform.kind === 'desktop' && (await store.get(LOCAL_ONLY_KEY)) === 'on'
   const hasKey = Boolean(await platform.secrets.get(API_KEY_SECRET).catch(() => null))
-  useLlm.setState({ mode, level, settings, localOnly, hasKey, loaded: true })
+  const deviceModels = await installedDeviceModels(store)
+  let deviceSpeed: LlmState['deviceSpeed'] = {}
+  try {
+    deviceSpeed = JSON.parse((await store.get(DEVICE_SPEED_KEY)) ?? '{}') as LlmState['deviceSpeed']
+  } catch {
+    // measured again on the next download
+  }
+  useLlm.setState({
+    mode,
+    level,
+    settings,
+    localOnly,
+    hasKey,
+    deviceModels,
+    deviceSpeed,
+    loaded: true,
+  })
 }
 
 export async function saveProvider(patch: Partial<ProviderSettings>) {
@@ -125,7 +156,9 @@ export async function saveApiKey(key: string | null) {
 export async function setLocalOnly(on: boolean) {
   useLlm.setState({ localOnly: on })
   await kv?.set(LOCAL_ONLY_KEY, on ? 'on' : 'off')
-  if (on && useLlm.getState().settings.kind !== 'ollama') await saveProvider({ kind: 'ollama' })
+  const { settings, deviceModels } = useLlm.getState()
+  if (on && settings.kind !== 'ollama' && settings.kind !== 'device')
+    await saveProvider({ kind: deviceModels.length ? 'device' : 'ollama' })
   // Back from local-only: catch up with the other devices.
   if (!on) requestSync()
 }
@@ -142,7 +175,32 @@ export interface LlmRoute {
   body?: Record<string, unknown>
 }
 
-export type LlmUnavailable = 'signed-out' | 'no-key' | 'no-model' | 'local-only'
+export type LlmUnavailable = 'signed-out' | 'no-key' | 'no-model' | 'local-only' | 'offline'
+
+/** A model on this computer (in the app, or Ollama at localhost) works without the internet. */
+function runsHere(s: ProviderSettings): boolean {
+  if (s.kind === 'device') return true
+  if (s.kind !== 'ollama') return false
+  try {
+    return /^(localhost|127\.0\.0\.1|\[::1\])$/.test(new URL(baseUrlOf(s)).hostname)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * The words for a request that failed because the connection is gone (the device went offline,
+ * or the request could not reach the server at all); null for any other failure.
+ */
+export function offlineText(err: unknown): string | null {
+  if (err instanceof ChatError || runsHere(useLlm.getState().settings)) return null
+  const message = err instanceof Error ? err.message : String(err)
+  const network =
+    !navigator.onLine ||
+    err instanceof TypeError ||
+    /failed to fetch|network|connection|offline|timed? ?out|dns|resolve/i.test(message)
+  return network ? i18n.t('aiProvider.unavailable.offline') : null
+}
 
 const trimSlash = (url: string) => url.trim().replace(/\/+$/, '')
 
@@ -162,8 +220,14 @@ export function modelOf(s: ProviderSettings): string {
 export async function llm(): Promise<
   { ok: true; route: LlmRoute } | { ok: false; reason: LlmUnavailable }
 > {
-  const { settings: s, localOnly } = useLlm.getState()
-  if (localOnly && s.kind !== 'ollama') return { ok: false, reason: 'local-only' }
+  const { settings: s, localOnly, deviceModels } = useLlm.getState()
+  if (s.kind === 'device') return deviceRoute(s.deviceModel)
+  // No internet (or nothing may leave the device) and a model here: it answers instead.
+  const fallback = deviceModels.at(-1)
+  if (localOnly && s.kind !== 'ollama')
+    return fallback ? deviceRoute(fallback) : { ok: false, reason: 'local-only' }
+  if (!navigator.onLine && !runsHere(s))
+    return fallback ? deviceRoute(fallback) : { ok: false, reason: 'offline' }
   if (s.kind === 'fixnote') {
     const t = await chatTransport()
     return t
@@ -207,6 +271,79 @@ export async function llm(): Promise<
   }
 }
 
+/** The model running in the app: its fetch answers like an OpenAI endpoint (platform-web/llm). */
+function deviceRoute(
+  key: LocalLlmKey | undefined,
+): { ok: true; route: LlmRoute } | { ok: false; reason: LlmUnavailable } {
+  const { deviceModels } = useLlm.getState()
+  const pick = key && deviceModels.includes(key) ? key : deviceModels.at(-1)
+  const local = platform.localLlm?.()
+  if (!pick || !local) return { ok: false, reason: 'no-model' }
+  return {
+    ok: true,
+    route: {
+      url: 'local://chat',
+      headers: {},
+      model: LOCAL_LLM_MODELS[pick].id,
+      fetch: local.fetch,
+    },
+  }
+}
+
+const DEVICE_ORDER = Object.keys(LOCAL_LLM_MODELS) as LocalLlmKey[]
+
+/** The on-device models this device has: recorded when downloaded, and still there. */
+async function installedDeviceModels(store: Kv): Promise<LocalLlmKey[]> {
+  let keys: LocalLlmKey[] = []
+  try {
+    keys = (JSON.parse((await store.get(DEVICE_MODELS_KEY)) ?? '[]') as string[]).filter(
+      (k): k is LocalLlmKey => k in LOCAL_LLM_MODELS,
+    )
+  } catch {
+    return []
+  }
+  const sizes = await Promise.all(
+    keys.map((k) => platform.models?.size(LOCAL_LLM_MODELS[k].id).catch(() => 0) ?? 0),
+  )
+  return keys.filter((_, i) => (sizes[i] ?? 0) > 0)
+}
+
+/** Downloads (the first time) and loads an on-device model; it then shows as installed. */
+export async function installDeviceModel(key: LocalLlmKey, onProgress?: (p: number) => void) {
+  const local = platform.localLlm?.()
+  if (!local) throw new Error('On-device models are not available here')
+  await local.load(LOCAL_LLM_MODELS[key].id, onProgress)
+  // How fast it really is here: the badge in Settings shows this instead of the guess.
+  const speed = await local.benchmark(LOCAL_LLM_MODELS[key].id).catch(() => 0)
+  if (speed > 0) {
+    const deviceSpeed = { ...useLlm.getState().deviceSpeed, [key]: Math.round(speed * 10) / 10 }
+    useLlm.setState({ deviceSpeed })
+    await kv?.set(DEVICE_SPEED_KEY, JSON.stringify(deviceSpeed))
+  }
+  const deviceModels = [...new Set([...useLlm.getState().deviceModels, key])].sort(
+    (a, b) => DEVICE_ORDER.indexOf(a) - DEVICE_ORDER.indexOf(b),
+  )
+  useLlm.setState({ deviceModels })
+  await kv?.set(DEVICE_MODELS_KEY, JSON.stringify(deviceModels))
+}
+
+/** Removes an on-device model's files; a chat that used it goes back to Fixnote AI. */
+export async function removeDeviceModel(key: LocalLlmKey) {
+  platform.localLlm?.().unload()
+  await platform.models?.remove(LOCAL_LLM_MODELS[key].id)
+  const deviceModels = useLlm.getState().deviceModels.filter((k) => k !== key)
+  useLlm.setState({ deviceModels })
+  await kv?.set(DEVICE_MODELS_KEY, JSON.stringify(deviceModels))
+  const s = useLlm.getState().settings
+  if (s.kind === 'device' && (s.deviceModel ?? 'small') === key)
+    await saveProvider(
+      deviceModels.length ? { deviceModel: deviceModels.at(-1) } : { kind: 'fixnote' },
+    )
+}
+
+/** A small model takes a short prompt; its answers stay short too. */
+export const DEVICE_WINDOW = 8192
+
 /** What a chat may send and get back, in tokens. */
 export interface ContextLimits {
   /** What the model takes at once (prompt and answer). */
@@ -236,6 +373,7 @@ export const OLLAMA_WINDOW = 8192
 export function modelWindow(s: ProviderSettings): number {
   if (s.kind === 'fixnote') return FIXNOTE_WINDOW
   if (s.kind === 'ollama') return OLLAMA_WINDOW
+  if (s.kind === 'device') return DEVICE_WINDOW
   const model = modelOf(s).toLowerCase()
   if (/gpt-4\.1|gemini|deepseek-(flash|v4)/.test(model)) return 1_000_000
   if (/gpt-5/.test(model)) return 400_000
@@ -261,6 +399,8 @@ export function providerLabel(): string {
   const s = useLlm.getState().settings
   if (s.kind === 'fixnote') return 'DeepSeek · Fixnote'
   if (s.kind === 'ollama') return `Ollama · ${modelOf(s)}`
+  if (s.kind === 'device')
+    return `On this device · ${LOCAL_LLM_MODELS[s.deviceModel ?? 'small'].id.split('/').pop()}`
   const name =
     s.preset === 'other' ? new URL(baseUrlOf(s) || 'http://custom').host : PRESETS[s.preset].name
   return `${name} · ${modelOf(s)}`

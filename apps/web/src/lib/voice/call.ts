@@ -24,7 +24,7 @@ import {
 import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
 import { create } from 'zustand'
-import { llm } from '../assistant/llm'
+import { llm, offlineText } from '../assistant/llm'
 import { aiRefusalText } from '../plan'
 import { MicrophoneError, Recorder } from './recorder'
 import { RATE, Segmenter, wav } from './segments'
@@ -334,7 +334,10 @@ async function writeUp(transcript: string, durationMs: number): Promise<CallWrit
   } catch (err) {
     toast.error(
       i18n.t('call.summaryFailed', {
-        message: aiRefusalText(err) ?? (err instanceof Error ? err.message : String(err)),
+        message:
+          aiRefusalText(err) ??
+          offlineText(err) ??
+          (err instanceof Error ? err.message : String(err)),
       }),
       { duration: 10_000 },
     )

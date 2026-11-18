@@ -5,6 +5,7 @@
 //! pages for link cards (no CORS) and fixnote:// links. Embeddings and speech run in the webview
 //! (transformers.js).
 
+mod app_icon;
 mod apple_notes;
 mod blobs;
 mod db;
@@ -131,6 +132,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_info,
+            app_icon::set_app_icon,
             window_ready,
             apple_notes::apple_notes_folders,
             apple_notes::apple_notes_read,

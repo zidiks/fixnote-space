@@ -4,6 +4,7 @@ import { TableKit } from '@tiptap/extension-table'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
 import { AttachmentImage } from './attachment-image'
+import { Callout } from './callout'
 import { NoteDetails, NoteDetailsContent, NoteDetailsSummary } from './details'
 import { ImageAwareParagraph } from './paragraph'
 
@@ -17,6 +18,8 @@ export function noteSchema(
     resolveImage?: (id: string) => Promise<{ url: string; mime: string } | null>
     /** Undo comes from Yjs when the note is edited live. */
     live?: boolean
+    /** A note only shown (a shared link's page): links open in a new tab. */
+    readOnly?: boolean
   } = {},
 ): AnyExtension[] {
   return [
@@ -24,20 +27,28 @@ export function noteSchema(
       ...(opts.live ? { undoRedo: false as const } : {}),
       paragraph: false,
       heading: { levels: [1, 2, 3] },
-      link: {
-        openOnClick: false,
-        autolink: true,
-        linkOnPaste: true,
-        // Files dropped into a note are links to attachment:<id>.
-        protocols: ['attachment'],
-        ...(opts.shouldAutoLink ? { shouldAutoLink: opts.shouldAutoLink } : {}),
-      },
+      link: opts.readOnly
+        ? {
+            openOnClick: true,
+            autolink: false,
+            HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' },
+          }
+        : {
+            openOnClick: false,
+            autolink: true,
+            linkOnPaste: true,
+            // Files dropped into a note are links to attachment:<id>.
+            protocols: ['attachment'],
+            ...(opts.shouldAutoLink ? { shouldAutoLink: opts.shouldAutoLink } : {}),
+          },
     }),
     ImageAwareParagraph,
     TaskList,
     TaskItem.configure({ nested: true }),
     // Markdown (GFM) tables, read and written as `| a | b |`.
     TableKit.configure({ table: { resizable: false } }),
+    // Obsidian callouts, `> [!info] Title` in Markdown (notes imported from Obsidian).
+    Callout,
     // Folded sections, `<details>` in Markdown (a call's transcript).
     NoteDetails,
     NoteDetailsSummary,

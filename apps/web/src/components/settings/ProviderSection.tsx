@@ -21,6 +21,7 @@ import {
   useLlm,
 } from '../../lib/assistant/llm'
 import { usePlatform } from '../../lib/platform'
+import { DeviceModels } from './DeviceModels'
 
 function Choice({
   active,
@@ -164,6 +165,14 @@ export function ProviderSection() {
           body={t('aiProvider.customBody')}
           onSelect={() => choose('custom')}
         />
+        {platform.localLlm && (
+          <Choice
+            active={settings.kind === 'device'}
+            title={t('aiProvider.device')}
+            body={t('aiProvider.deviceBody')}
+            onSelect={() => choose('device')}
+          />
+        )}
         <Choice
           active={settings.kind === 'ollama'}
           disabled={!desktop}
@@ -251,6 +260,8 @@ export function ProviderSection() {
           </Field>
         </div>
       ) : null}
+
+      {settings.kind === 'device' && platform.localLlm ? <DeviceModels /> : null}
 
       {settings.kind === 'ollama' && desktop ? (
         <div className="space-y-2 pt-1">

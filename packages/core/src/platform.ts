@@ -1,3 +1,4 @@
+import type { DeviceHardware } from './device-fit'
 /**
  * Platform boundary.
  *
@@ -215,6 +216,27 @@ export interface SystemAudio {
   stop(): Promise<void>
 }
 
+/**
+ * A language model running in the app itself (models.ts, LOCAL_LLM_MODELS): downloaded once
+ * from Settings, then it works without the internet.
+ */
+export interface LocalLlm {
+  /** Downloads (the first time) and loads `model`. */
+  load(model: string, onProgress?: ProgressListener): Promise<void>
+  /** Frees the model (after it was removed). */
+  unload(): void
+  /** Generation speed here, in tokens per second (a short answer of the loaded model). */
+  benchmark(model: string): Promise<number>
+  /** What the app can tell of this device's hardware, for the fit badge (device-fit.ts). */
+  hardware(): Promise<DeviceHardware>
+  /** Answers like an OpenAI chat completions endpoint (streamed), for the app's LLM client. */
+  fetch: typeof fetch
+}
+
+/** The desktop app's icons to pick from (Settings → General); orange is the installed one. */
+export const APP_ICONS = ['orange', 'dark', 'light'] as const
+export type AppIcon = (typeof APP_ICONS)[number]
+
 /** A line of the tray menu; one without `id` is a separator. */
 export type TrayMenuItem = { id: string; text: string; enabled?: boolean } | { id?: undefined }
 
@@ -274,11 +296,15 @@ export interface Platform {
   readonly embedder: () => Promise<Embedder>
   readonly transcriber: () => Promise<Transcriber>
   readonly models?: LocalModels
+  /** A language model on the device (missing where it cannot run). */
+  readonly localLlm?: () => LocalLlm
   /** Apple Notes to import from (the desktop app on macOS). */
   readonly appleNotes?: AppleNotesSource
   /** The sound the computer plays, for call notes (the desktop app on Windows and macOS). */
   readonly systemAudio?: SystemAudio
   readonly tray?: DesktopTray
+  /** Sets the running app's icon (the desktop app: taskbar, Alt+Tab, the macOS Dock). */
+  readonly appIcon?: (variant: AppIcon) => Promise<void>
   readonly deepLinks?: DeepLinks
   /** Text from images, on the device (missing where it cannot run). */
   readonly ocr?: () => Promise<TextRecognizer>

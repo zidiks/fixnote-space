@@ -1,15 +1,11 @@
 import { type SharedNote, sharedFileBytes } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button, Logo } from '@fixnote/ui'
-import { TaskItem, TaskList } from '@tiptap/extension-list'
-import { Markdown } from '@tiptap/markdown'
 import { EditorContent, useEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
 import { Link2Off, TriangleAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { openSharedLink } from '../lib/shared-link'
-import { AttachmentImage } from './editor/attachment-image'
-import { ImageAwareParagraph } from './editor/paragraph'
+import { noteSchema } from './editor/schema'
 
 type State = 'loading' | 'gone' | 'broken' | 'failed' | SharedNote
 
@@ -122,22 +118,12 @@ function SharedContent({ note }: { note: SharedNote }) {
   const editor = useEditor(
     {
       editable: false,
-      extensions: [
-        StarterKit.configure({
-          paragraph: false,
-          heading: { levels: [1, 2, 3] },
-          link: {
-            openOnClick: true,
-            autolink: false,
-            HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' },
-          },
-        }),
-        ImageAwareParagraph,
-        TaskList,
-        TaskItem.configure({ nested: true }),
-        Markdown,
-        AttachmentImage.configure({ resolve: async (fileId) => files.get(fileId) ?? null }),
-      ],
+      // The note's own schema (tables, folded sections…), so a shared link shows what the
+      // editor shows.
+      extensions: noteSchema({
+        readOnly: true,
+        resolveImage: async (fileId) => files.get(fileId) ?? null,
+      }),
       content: note.content,
       contentType: 'markdown',
       editorProps: { attributes: { class: 'fixnote-editor', 'aria-readonly': 'true' } },
