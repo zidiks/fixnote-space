@@ -82,6 +82,13 @@ Both want what we have (public HTTPS, OAuth with PKCE and DCR, `title` and
 - **Claude** (claude.com/docs/connectors/building/submission): submitted from the directory portal
   in claude.ai; automated scan, then listed as a community connector. Run the review criteria
   checklist (claude.com/docs/connectors/building/review-criteria) first.
+
+  Submitted 2026-11-18 (claude.ai/directory/manage, slug `fixnote`, Productivity, contact
+  Vladimir Mironov); in review. The form reads the tools from a connector already added to
+  Claude ("Fixnote review"), so after a server change disconnect and connect it again before
+  the form sees it. It asks for `annotations.title` on every tool (`remoteToolList`), the icon
+  as a URL (`https://fixnote.space/logo.png`), and no credentials: reviewers ask for test access
+  by email, answered with the text below.
 - **ChatGPT** (platform.openai.com, plugins): needs a verified OpenAI organization; a ZIP with
   `plugin.json` and `mcp.json` pointing at the remote server, icon 64×64 under 5 KB, name up to
   30 characters, screenshots. The server URL cannot change after approval.
