@@ -202,8 +202,8 @@ export interface McpToolDescription {
     /** The same name again: directories (Claude's) read it from here. */
     title: string
     readOnlyHint: boolean
-    /** Only for changes: whether text already in a note may be replaced. */
-    destructiveHint?: boolean
+    /** Whether text already in a note may be replaced; false for reading. Always set (ChatGPT asks). */
+    destructiveHint: boolean
     openWorldHint: false
   }
 }
@@ -246,7 +246,7 @@ export function remoteToolList(): McpToolDescription[] {
       description,
       inputSchema: parameters,
       annotations: reads
-        ? { title: TITLES[name], readOnlyHint: true, openWorldHint: false }
+        ? { title: TITLES[name], readOnlyHint: true, destructiveHint: false, openWorldHint: false }
         : {
             title: TITLES[name],
             readOnlyHint: false,

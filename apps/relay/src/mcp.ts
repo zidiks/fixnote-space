@@ -5,7 +5,7 @@ export const SERVER_VERSION = '0.2.0'
 
 /**
  * The app icon for AI apps that show one next to the server's name (MCP 2025-11-25
- * `Implementation.icons`); the site serves them, and the relay's /favicon.ico points there too.
+ * `Implementation.icons`); the site serves them, and the relay serves the same ones from its host.
  */
 export const SERVER_ICONS = [
   { src: 'https://fixnote.space/favicon.svg', mimeType: 'image/svg+xml', sizes: ['any'] },

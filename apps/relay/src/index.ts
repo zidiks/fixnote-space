@@ -20,6 +20,11 @@ export interface Env extends AuthEnv, RelayEnv, HandoffEnv {
   APP_ORIGINS: string
   /** User ids of the accounts AI-app reviewers use (comma-separated): they get a demo device. */
   DEMO_ACCOUNTS?: string
+  /**
+   * The domain token the OpenAI plugin dashboard shows ("Connect MCP server"), served as is at
+   * /.well-known/openai-apps-challenge. Not secret; set with `wrangler secret put` or a var.
+   */
+  OPENAI_APPS_CHALLENGE?: string
 }
 
 const isDemo = (env: Env, userId: string) =>
@@ -193,6 +198,20 @@ async function authorizationServer(env: Env): Promise<Response> {
   })
 }
 
+const ICONS = new Set(['/favicon.ico', '/favicon.svg', '/apple-touch-icon.png'])
+
+/** One of the site's icons, fetched from fixnote.space (cached by Cloudflare for a day). */
+async function siteIcon(pathname: string): Promise<Response> {
+  const res = await fetch(`https://fixnote.space${pathname}`, { cf: { cacheTtl: 86400 } })
+  if (!res.ok) return new Response('Not found', { status: 404 })
+  return new Response(res.body, {
+    headers: {
+      'Content-Type': res.headers.get('Content-Type') ?? 'application/octet-stream',
+      'Cache-Control': 'public, max-age=86400',
+    },
+  })
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(req.url)
@@ -210,18 +229,20 @@ export default {
       })
     }
     if (pathname === '/.well-known/oauth-authorization-server') return authorizationServer(env)
-    // AI apps and favicon services look for the server's icon here: the site's.
-    if (
-      pathname === '/favicon.ico' ||
-      pathname === '/favicon.svg' ||
-      pathname === '/apple-touch-icon.png'
-    ) {
-      return Response.redirect(`https://fixnote.space${pathname}`, 301)
+    if (pathname === '/.well-known/openai-apps-challenge') {
+      const token = env.OPENAI_APPS_CHALLENGE?.trim()
+      return token
+        ? new Response(token, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+        : new Response('Not found', { status: 404 })
     }
+    // AI apps (Claude's directory) and favicon services take the server's icon from its own host:
+    // the site's icons, served from here (some do not follow a redirect to another host).
+    if (ICONS.has(pathname)) return siteIcon(pathname)
     if (pathname === '/') {
+      const text = `Fixnote remote MCP server ${SERVER_VERSION} (${remoteToolList().length} tools). Add ${env.PUBLIC_URL}/mcp to your AI app as a connector.`
       return new Response(
-        `Fixnote remote MCP server ${SERVER_VERSION} (${remoteToolList().length} tools). Add ${env.PUBLIC_URL}/mcp to your AI app as a connector.\n`,
-        { headers: { 'Content-Type': 'text/plain; charset=utf-8' } },
+        `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Fixnote MCP server</title><link rel="icon" href="/favicon.ico" sizes="32x32"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"></head><body><p>${text}</p><p><a href="https://fixnote.space/features/mcp/">How to connect</a></p></body></html>\n`,
+        { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
       )
     }
     return new Response('Not found', { status: 404 })

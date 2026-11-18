@@ -1,0 +1,104 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "fixnote",
+  "version": "1.0.0",
+  "description": "Search, read and add to your Fixnote notes. End-to-end encrypted: read on your own device.",
+  "author": {
+    "name": "Fixnote",
+    "email": "info@fixnote.space",
+    "url": "https://fixnote.space/"
+  },
+  "homepage": "https://fixnote.space/features/mcp/",
+  "keywords": ["notes", "knowledge base", "productivity", "end-to-end encryption", "daily notes"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Fixnote",
+        "shortDescription": "Search and add to your notes",
+        "longDescription": "Fixnote is a private notes app for Windows, macOS and the web, with an assistant that helps you remember. This app lets ChatGPT search and read your notes, and, where you allow it, create notes, add to them, edit them, move them and create folders. It never deletes or renames anything.\n\nNotes are end-to-end encrypted. The server stores no note content and no keys: each request goes to your own device (the desktop app, or app.fixnote.space in a browser) with Remote access turned on, which reads the notes and answers. In Fixnote you choose which folders and notes AI apps can see and whether they may change anything, and every change can be undone there.\n\nRemote access is part of Fixnote Pro.",
+        "developerName": "Fixnote",
+        "category": "Productivity",
+        "capabilities": [
+          "Search notes by words and meaning",
+          "Read a note with its folder and dates",
+          "Create notes and add to them",
+          "Edit, rewrite and move notes",
+          "Create folders"
+        ],
+        "websiteURL": "https://fixnote.space/",
+        "supportURL": "https://fixnote.space/setup/",
+        "privacyPolicyURL": "https://fixnote.space/privacy/",
+        "termsOfServiceURL": "https://fixnote.space/terms/",
+        "defaultPrompt": [
+          "What do my notes say about my next trip?",
+          "Save a short summary of this chat as a note",
+          "What is on my daily note today?"
+        ],
+        "brandColor": "#F86C2D",
+        "brandColorDark": "#F86C2D",
+        "logo": "./assets/logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Answer a question from the user's notes",
+              "prompt": "What do my notes say about Lisbon?",
+              "tools_triggered": ["search_notes", "get_note"],
+              "expected_behavior": "Finds the note \"Lisbon in March\" in the Travel folder and summarizes it: TAP flights March 14 to 21, an apartment in Alfama, ideas (surfing in Ericeira, a fado bar in Mouraria, a day trip to Sintra) and a budget of about €1,200."
+            },
+            {
+              "description": "Show how the notes are organized",
+              "prompt": "List my folders and show my three most recent notes.",
+              "tools_triggered": ["list_folders", "list_recent"],
+              "expected_behavior": "Lists the folders (Work, Work / Meetings, Travel, Reading, Health, Home, Ideas) with note counts, and the three most recently edited notes with their folders and a short excerpt."
+            },
+            {
+              "description": "Read today's daily note",
+              "prompt": "What is on my daily note today?",
+              "tools_triggered": ["daily_note"],
+              "expected_behavior": "Shows the tasks and lines of today's daily note, or says there is no daily note for today yet. The demo account's dates follow UTC."
+            },
+            {
+              "description": "Save something from the chat as a new note in a new folder",
+              "prompt": "Create a folder called Trips and save a note in it called \"Porto weekend\" with a short packing list.",
+              "tools_triggered": ["create_folder", "create_note"],
+              "expected_behavior": "Creates the folder Trips and a note titled \"Porto weekend\" in it with a short Markdown checklist, then confirms both. The change shows in Fixnote and can be undone there."
+            },
+            {
+              "description": "Change and extend an existing note, then file another one",
+              "prompt": "In my Lisbon note, change the budget to about €1,500 and add \"book the Sintra day trip\" at the end. Then move my \"Gift ideas\" note to Home.",
+              "tools_triggered": [
+                "search_notes",
+                "get_note",
+                "edit_note",
+                "append_to_note",
+                "move_note"
+              ],
+              "expected_behavior": "Replaces the budget line in \"Lisbon in March\", adds the new task at the end of that note, moves \"Gift ideas\" from Ideas to Home, and confirms each change."
+            }
+          ],
+          "negative": [
+            {
+              "description": "A general question that has nothing to do with the user's notes",
+              "prompt": "What will the weather be like in Lisbon tomorrow?"
+            },
+            {
+              "description": "A writing task that does not ask to save anything",
+              "prompt": "Write a short poem about autumn."
+            },
+            {
+              "description": "Deleting is not something this app can do",
+              "prompt": "Delete my Lisbon note."
+            }
+          ]
+        },
+        "demo_recording_url": "https://REPLACE-WITH-THE-DEMO-VIDEO-LINK",
+        "commerce": false
+      },
+      "publication": {
+        "release_notes": "First release: search, read and add to your Fixnote notes from ChatGPT."
+      }
+    }
+  }
+}
