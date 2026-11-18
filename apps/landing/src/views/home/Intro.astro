@@ -1,8 +1,7 @@
 ---
-import { Picture } from 'astro:assets'
-import type { ImageMetadata } from 'astro'
 import { APP_URL, DOWNLOADS, type Lang, localePath, t } from '../../i18n'
 import '../../styles/intro.css'
+import HeroApp from './HeroApp.astro'
 import IntroCard, { type CardKind } from './IntroCard.astro'
 
 /**
@@ -21,11 +20,6 @@ const { lang } = Astro.props
 const d = t(lang)
 const c = d.intro
 const downloadPage = localePath(lang, '/download/')
-const shots = import.meta.glob<{ default: ImageMetadata }>('../../assets/shots/*/home.png', {
-  eager: true,
-})
-const shot = shots[`../../assets/shots/${lang}/home.png`]?.default
-if (!shot) throw new Error(`No screenshot ${lang}/home`)
 const flying: CardKind[] = ['offline', 'encrypted', 'together']
 ---
 
@@ -58,15 +52,7 @@ const flying: CardKind[] = ['offline', 'encrypted', 'together']
       </div>
     </div>
     <div class="intro-app">
-      <Picture
-        src={shot}
-        alt={c.shotAlt}
-        formats={['avif', 'webp']}
-        widths={[800, 1240, 1860, 2480]}
-        sizes="(min-width: 1069px) 1241px, calc(100vw - 32px)"
-        loading="eager"
-        fetchpriority="high"
-      />
+      <HeroApp lang={lang} />
     </div>
   </div>
   <div class="fly-layer" aria-hidden="true">

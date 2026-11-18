@@ -1,36 +1,36 @@
 ---
-import { Image } from 'astro:assets'
 import ArrowLink from '../../components/ArrowLink.astro'
 import { type Lang, t } from '../../i18n'
+import { topicHref } from '../../lib/blog'
 import { featurePath } from '../../lib/pages'
-import { landingShot } from '../../lib/shots'
+import '../../styles/recall-cards.css'
+import ImagesCard from './recall/ImagesCard.astro'
+import KeysCard from './recall/KeysCard.astro'
+import LanguagesCard from './recall/LanguagesCard.astro'
+import MeaningCard from './recall/MeaningCard.astro'
+import VoiceCard from './recall/VoiceCard.astro'
 
 /**
- * Search: the headline stays while scrolling moves the row of four cards sideways (home.css, the
- * script below). Without it (phones, reduced motion, no script) the row scrolls by itself.
+ * Search: the headline stays while scrolling moves the row of five cards sideways (home.css, the
+ * script below). Without it (phones, reduced motion, no script) the row scrolls by itself. Each
+ * card is a small looping scene (views/home/recall, recall-cards.css) that plays while on screen.
  */
 interface Props {
   lang: Lang
 }
 const { lang } = Astro.props
 const c = t(lang).landing.recall
-// The 2026-11-17 design's order: meaning, text in images, languages, keyboard shortcut. The
-// pictures are whole cards rendered from Figma (landing-shots.mjs); the one of text in images
-// reaches past the card on both sides (recall-pic-wide).
+// The design's order: meaning, voice, text in images, languages, keyboard shortcut.
 const cards = [
-  { ...c.meaning, shot: landingShot('recall-meaning', lang), href: featurePath(lang, 'search') },
-  {
-    ...c.images,
-    shot: landingShot('recall-images', lang),
-    wide: true,
-    href: featurePath(lang, 'text-in-images'),
-  },
+  { ...c.meaning, Card: MeaningCard, href: featurePath(lang, 'search') },
+  { ...c.voice, Card: VoiceCard, href: featurePath(lang, 'voice-notes') },
+  { ...c.images, Card: ImagesCard, wide: true, href: featurePath(lang, 'text-in-images') },
   {
     ...c.languages,
-    shot: landingShot('recall-languages', lang),
-    href: featurePath(lang, 'search'),
+    Card: LanguagesCard,
+    href: await topicHref(lang, 'search', '/features/search/'),
   },
-  { ...c.keys, shot: landingShot('recall-keys', lang), href: featurePath(lang, 'search') },
+  { ...c.keys, Card: KeysCard, href: await topicHref(lang, 'hotkeys', '/features/search/') },
 ]
 ---
 
@@ -46,10 +46,10 @@ const cards = [
     <div class="recall-window">
       <ul class="recall-track">
         {
-          cards.map((card) => (
+          cards.map(({ Card, ...card }) => (
             <li class="recall-card">
-              <div class:list={['recall-pic', 'wide' in card && 'recall-pic-wide']} aria-hidden="true">
-                <Image src={card.shot} alt="" widths={[562, 1124]} sizes="562px" loading="lazy" />
+              <div class:list={['recall-pic', 'wide' in card && 'recall-pic-wide']}>
+                <Card lang={lang} />
               </div>
               <div class="recall-copy">
                 <h3 class="lp-card-title">{card.title}</h3>
@@ -65,6 +65,20 @@ const cards = [
 </section>
 
 <script is:inline>
+  // The cards play only while on screen (and never with reduced motion): their CSS animations sit
+  // paused until a card gets data-play.
+  ;(() => {
+    const cards = document.querySelectorAll('#recall .rc')
+    if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) e.target.toggleAttribute('data-play', e.isIntersecting)
+      },
+      { threshold: 0.35 },
+    )
+    for (const card of cards) io.observe(card)
+  })()
+
   // While the block is pinned, the page's scroll moves the row; the row eases after the wheel like
   // the intro does. The media query is the one in home.css.
   ;(() => {

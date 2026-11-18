@@ -1,0 +1,136 @@
+---
+import { Image } from 'astro:assets'
+import FileText from '@lucide/astro/icons/file-text'
+import Search from '@lucide/astro/icons/search'
+import X from '@lucide/astro/icons/x'
+import texture from '../../../assets/landing/recall/ember-silk.jpg'
+import goodMorning from '../../../assets/landing/recall/good-morning.jpg'
+import vibes from '../../../assets/landing/recall/morning-vibes.jpg'
+import wallet from '../../../assets/landing/recall/wallet.png'
+import { type Lang, t } from '../../../i18n'
+import { loopCss } from '../../../lib/anim'
+import Typed from './Typed.astro'
+import { imagesLoop } from './timelines'
+
+/**
+ * Text in images: the query finds notes, then the pictures they hold, with the words marked where
+ * the text in each picture says them. The pictures reach past the card (recall-pic-wide).
+ */
+interface Props {
+  lang: Lang
+}
+const d = t(Astro.props.lang).landing.recall.demo
+const c = d.images
+// The opening frame: the first three letters typed, the search running.
+const TYPED = 3
+const loop = imagesLoop(c.query, TYPED)
+const css = loopCss('rci', loop.length, loop.tracks)
+// Places as drawn (Figma 932:175457): the box Figma lays out, the turned square inside it, the
+// bitmap's crop in it and the marked word in the square's own axes.
+const pictures = [
+  {
+    src: goodMorning,
+    box: { left: 89, top: 135, size: 344 },
+    size: 344,
+    turn: 0,
+    crop: { left: 0, top: 0.06, width: 100, height: 167.8 },
+    mark: { left: 81, top: 70, width: 80, height: 24, color: '#feed8c', turn: 0 },
+  },
+  {
+    src: vibes,
+    box: { left: 302, top: 186, size: 258.515 },
+    size: 239.246,
+    turn: 4.82,
+    crop: { left: 0, top: -62.9, width: 100, height: 177.72 },
+    mark: {
+      left: 32.63,
+      top: 118.72,
+      width: 76.417,
+      height: 19.849,
+      color: '#feed8c',
+      turn: -0.13,
+    },
+  },
+  {
+    src: wallet,
+    box: { left: -24, top: 265, size: 235.61 },
+    size: 224.414,
+    turn: -2.94,
+    crop: { left: -24.22, top: -0.8, width: 149.21, height: 111.91 },
+    mark: { left: 66.59, top: 88.32, width: 32.23, height: 10.481, color: '#ffd900', turn: -0.2 },
+  },
+]
+---
+
+<div class="rc rci" style={`--still:-${loop.still.toFixed(3)}s`} aria-hidden="true">
+  <div class="rc-silk rci-bg">
+    <Image class="rc-tex rci-tex" src={texture} alt="" quality={55} widths={[521, 1042]} sizes="521px" loading="lazy" />
+    <div class="rc-dots"></div>
+  </div>
+  <div class="rc-field rci-field">
+    <Search class="rc-icon" size={16} stroke-width={1.5} />
+    <span class="rc-input"><Typed text={c.query} /></span>
+    <span class="rc-esc rc-hold"></span>
+    <X class="rc-icon rc-close rci-close" size={16} stroke-width={1.5} />
+  </div>
+  <div class="rc-list rci-notes" data-k="notes">
+    <div class="rc-sk" data-k="sk">
+      <i class="rc-bar" style="left:24px;top:21px;width:46px;height:10px;opacity:.7"></i>
+      {
+        [40, 103, 166].map((y, i) => (
+          <div data-k={i ? `sk${i + 1}` : undefined}>
+            <i class="rc-bar rc-bar-icon" style={`left:26px;top:${y + 23.5}px`} />
+            <i class="rc-bar" style={`left:54px;top:${y + 18}px;width:56px;height:14px`} />
+            <i class="rc-bar" style={`left:54px;top:${y + 37}px;width:292px;height:10px;opacity:.7`} />
+          </div>
+        ))
+      }
+    </div>
+    <div class="rci-res" data-k="res">
+      <p class="rc-group">{d.notes}</p>
+      {
+        c.hits.map((hit) => (
+          <div class="rc-row">
+            <FileText class="rc-icon rc-icon-dark" size={16} stroke-width={1.5} />
+            <div class="rc-text">
+              <p class="rc-title">{hit.title}</p>
+              <p class="rc-desc">{hit.text}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+  {
+    pictures.map((p, i) => (
+      <div
+        class="rci-slot"
+        style={`left:${p.box.left}px;top:${p.box.top}px;width:${p.box.size}px;height:${p.box.size}px`}
+      >
+        <div class="rci-pic" data-k={`img${i}`}>
+          <div
+            class="rci-frame"
+            style={`width:${p.size}px;height:${p.size}px${p.turn ? `;transform:rotate(${p.turn}deg)` : ''}`}
+          >
+            <Image
+              class="rci-bitmap"
+              src={p.src}
+              alt=""
+              widths={[400, 736]}
+              sizes={`${Math.round((p.size * p.crop.width) / 100)}px`}
+              loading="lazy"
+              style={`left:${p.crop.left}%;top:${p.crop.top}%;width:${p.crop.width}%;height:${p.crop.height}%`}
+            />
+            <i
+              class="rci-mark"
+              style={`left:${p.mark.left}px;top:${p.mark.top}px;width:${p.mark.width}px;height:${p.mark.height}px${p.mark.turn ? `;rotate:${p.mark.turn}deg` : ''}`}
+            >
+              <i data-k={`mark${i}`} style={`background:${p.mark.color}`} />
+            </i>
+          </div>
+        </div>
+      </div>
+    ))
+  }
+</div>
+<Fragment set:html={`<style>${css}</style>`} />

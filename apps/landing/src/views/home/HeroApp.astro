@@ -1,0 +1,320 @@
+---
+import ArrowLeft from '@lucide/astro/icons/arrow-left'
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import ArrowUp from '@lucide/astro/icons/arrow-up'
+import ArrowUpRight from '@lucide/astro/icons/arrow-up-right'
+import Bell from '@lucide/astro/icons/bell'
+import CalendarDays from '@lucide/astro/icons/calendar-days'
+import Check from '@lucide/astro/icons/check'
+import CheckCheck from '@lucide/astro/icons/check-check'
+import ChevronDown from '@lucide/astro/icons/chevron-down'
+import ChevronRight from '@lucide/astro/icons/chevron-right'
+import CloudCheck from '@lucide/astro/icons/cloud-check'
+import Ellipsis from '@lucide/astro/icons/ellipsis'
+import FileText from '@lucide/astro/icons/file-text'
+import Folder from '@lucide/astro/icons/folder'
+import FolderInput from '@lucide/astro/icons/folder-input'
+import FolderPlus from '@lucide/astro/icons/folder-plus'
+import House from '@lucide/astro/icons/house'
+import Link2 from '@lucide/astro/icons/link-2'
+import MessageCircle from '@lucide/astro/icons/message-circle'
+import Mic from '@lucide/astro/icons/mic'
+import PanelLeftClose from '@lucide/astro/icons/panel-left-close'
+import PinOff from '@lucide/astro/icons/pin-off'
+import Plus from '@lucide/astro/icons/plus'
+import Search from '@lucide/astro/icons/search'
+import Settings from '@lucide/astro/icons/settings'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import SquarePen from '@lucide/astro/icons/square-pen'
+import Trash from '@lucide/astro/icons/trash'
+import Users from '@lucide/astro/icons/users'
+import WandSparkles from '@lucide/astro/icons/wand-sparkles'
+import X from '@lucide/astro/icons/x'
+import word from '../../assets/landing/header-word.svg?raw'
+import { type Lang, t } from '../../i18n'
+import '../../styles/hero-app.css'
+
+/**
+ * The app under the hero, live (scripts/hero): Sofia and Ben edit a shared trip note while Alex
+ * asks the assistant and adds its checklist. The markup is the loop's first frame, so the page
+ * shows it as is before the script runs, without it, and with reduced motion. Demo notes only.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const d = t(lang)
+const c = d.heroApp
+const a = c.assistant
+const sb = c.sidebar
+const localNames = c.people
+const icon = { size: 16, 'stroke-width': 1.5 }
+const small = { size: 14, 'stroke-width': 1.5 }
+const nav = [
+  { Icon: House, label: sb.home, count: 24 },
+  { Icon: CalendarDays, label: sb.today },
+  { Icon: Link2, label: sb.links, count: 6 },
+  { Icon: WandSparkles, label: sb.tidy, count: 3 },
+]
+const folders = [
+  { label: sb.work, count: 12, more: true },
+  { label: sb.projects, count: 5, sub: true },
+  { label: sb.meetings, count: 7, sub: true },
+  { label: sb.personal, count: 8 },
+  { label: sb.ideas, count: 4 },
+  { label: sb.travel, count: 9, more: true, shared: true },
+  { label: sb.trip, count: 6, sub: true, shared: true, on: true },
+  { label: sb.weekend, count: 3, sub: true },
+]
+const typedSection = (id: 'wb' | 'sp' | 'bd') => id
+---
+
+<div class="ha" data-hero-app role="img" aria-label={d.intro.shotAlt}>
+  <aside class="ha-side">
+    <div class="ha-side-head">
+      <span class="ha-logo" set:html={word} />
+      <span class="ha-btn"><SquarePen {...icon} /></span>
+      <span class="ha-btn"><PanelLeftClose {...icon} /></span>
+    </div>
+    <div class="ha-search">
+      <Search {...small} />
+      <span>{sb.search}</span>
+      <kbd>⌘K</kbd>
+    </div>
+    <div class="ha-nav">
+      {
+        nav.map(({ Icon, label, count }) => (
+          <div class="ha-item">
+            <Icon {...icon} class="ha-item-icon" />
+            <span class="ha-item-label">{label}</span>
+            {count !== undefined && <span class="ha-count">{count}</span>}
+          </div>
+        ))
+      }
+      <div class="ha-folders">
+        <div class="ha-section">
+          <span>{sb.folders}</span>
+          <FolderPlus {...small} />
+        </div>
+        {
+          folders.map((f) => (
+            <div class:list={['ha-item', f.sub && 'ha-sub', f.on && 'ha-on']}>
+              <Folder {...icon} class="ha-item-icon" />
+              <span class="ha-item-label">{f.label}</span>
+              {f.shared && <Users {...small} class="ha-shared" />}
+              <span class="ha-count">{f.count}</span>
+              {f.more ? <ChevronRight {...small} class="ha-more" /> : <i class="ha-more" />}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div class="ha-side-foot">
+      <span class="ha-btn"><CloudCheck {...small} /></span>
+      <span class="ha-btn"><Settings {...icon} /></span>
+    </div>
+  </aside>
+
+  <main class="ha-main">
+    <div class="ha-bar">
+      <span class="ha-row"
+        ><span class="ha-btn"><ArrowLeft {...icon} /></span><span class="ha-btn ha-dim"><ArrowRight {...icon} /></span></span
+      >
+      <span class="ha-place">{c.title}<ChevronDown {...small} class="ha-dim" /></span>
+      <span class="ha-row"
+        ><span class="ha-btn"><Bell {...icon} /></span><span class="ha-btn ha-on"><MessageCircle {...icon} /></span></span
+      >
+    </div>
+    <div class="ha-note-head">
+      <span class="ha-crumbs">
+        <span class="ha-crumb"><Folder {...icon} />{sb.trip}</span>
+        <ChevronRight {...small} class="ha-dim" />
+        <span class="ha-crumb-note">{c.title}</span>
+      </span>
+      <span class="ha-edited" data-h="edited">{c.edited[0]}</span>
+      <span class="ha-row">
+        {[Mic, Sparkles, PinOff, FolderInput, Link2, Trash].map((Icon) => <span class="ha-btn"><Icon {...icon} /></span>)}
+      </span>
+    </div>
+    <div class="ha-view" data-h="view">
+      <div class="ha-doc" data-h="doc">
+        <div class="ha-shared-bar">
+          <Users {...icon} />
+          <span>{c.shared}</span>
+          <span class="ha-people">
+            <span style="background:#22a355">{localNames.alex[0]}</span>
+            <span style="background:#ec4870">{localNames.sofia[0]}</span>
+            <span style="background:#14beaf">{localNames.ben[0]}</span>
+          </span>
+        </div>
+        <h2 class="ha-title">{c.title}</h2>
+        <p class="ha-subtitle">{c.subtitle}</p>
+        <p class="ha-p">{c.lead}<span data-h="s-intro">{c.intro}</span></p>
+        <section class="ha-block">
+          <h3 class="ha-h">{c.before}</h3>
+          <div>
+            {
+              c.tasks.map((task, i) => (
+                <div class="ha-task">
+                  <span class="ha-box" data-done={i < 2 ? '1' : undefined} data-h={i === 2 ? 'check0' : i === 3 ? 'check1' : undefined}>
+                    <Check size={12} stroke-width={3} style={i < 2 ? undefined : 'opacity:0'} />
+                  </span>
+                  <span class="ha-task-text" style={i < 2 ? 'color:var(--ha-muted)' : undefined}>{task}</span>
+                </div>
+              ))
+            }
+          </div>
+        </section>
+        <section class="ha-block ha-block-tight">
+          <h3 class="ha-h">{c.route}</h3>
+          <ol class="ha-stops">
+            {
+              c.stops.map((s, i) => (
+                <li>
+                  <span class="ha-num">{i + 1}.</span>
+                  <span>
+                    <strong>{s.place}</strong> — {i === 0 ? s.text : <span data-h={`s-${['', 'gc', 'vik', 'rk'][i]}`}>{s.text}</span>}
+                  </span>
+                </li>
+              ))
+            }
+          </ol>
+        </section>
+        <section class="ha-insert" data-h="insert" style="display:none">
+          <div class="ha-block" data-h="insert-in">
+            <h3 class="ha-h">{c.checklist.title}</h3>
+            <div>
+              {
+                a.items.map((item, i) => (
+                  <div class="ha-task">
+                    <span class="ha-box" />
+                    <span class="ha-task-text">{i === 0 ? <span data-h="s-ai1">{item}</span> : item}</span>
+                  </div>
+                ))
+              }
+            </div>
+            <p class="ha-source">{c.checklist.source} <span class="ha-link">{a.sources[1]?.title}</span></p>
+          </div>
+        </section>
+        <p class="ha-p">{c.footer.before}<span class="ha-link">{c.footer.link}</span>{c.footer.after}</p>
+        {
+          (['wb', 'sp', 'bd'] as const).map((id) => (
+            <section class="ha-block ha-block-tight">
+              <h3 class="ha-h ha-typed" data-h={typedSection(id)} style="display:none">
+                <span data-h={`s-${id}H`} />
+              </h3>
+              <p class="ha-p ha-typed" data-h={`${id}-p`} style="display:none">
+                <span data-h={`s-${id}P`} />
+              </p>
+            </section>
+          ))
+        }
+      </div>
+    </div>
+  </main>
+
+  <aside class="ha-assistant">
+    <div class="ha-as-head">
+      <span class="ha-as-side"><span class="ha-btn"><Ellipsis {...icon} /></span></span>
+      <span class="ha-as-title">{a.title}</span>
+      <span class="ha-as-side ha-end"
+        ><span class="ha-btn"><Trash {...icon} /></span><span class="ha-btn"><X {...icon} /></span></span
+      >
+    </div>
+    <div class="ha-messages" data-h="messages">
+      <div class="ha-conv" data-h="conv">
+        {
+          [0, 1].map((i) => (
+            <>
+              <p class="ha-ask" data-h={`ask${i}`} style="display:none">
+                {i === 0 ? a.q1 : a.q2}
+              </p>
+              <div class="ha-answer" data-h={`ans${i}`} style="display:none">
+                <div class="ha-status">
+                  <span data-h={`busy${i}`}>
+                    <svg data-h={`spin${i}`} viewBox="0 0 14 14" fill="none" width="14" height="14">
+                      <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5" />
+                      <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="9 26" />
+                    </svg>
+                    {i === 0 ? a.searching : a.preparing}
+                  </span>
+                  <span data-h={`done${i}`}>
+                    <CheckCheck {...small} />
+                    {i === 0 ? a.found : a.ready}
+                  </span>
+                </div>
+                {i === 0 ? (
+                  <>
+                    <p class="ha-as-text" data-h="a1p1" style="display:none" />
+                    <div class="ha-results" data-h="a1cards" style="display:none">
+                      {a.sources.map((s, k) => (
+                        <div class="ha-result" data-h={`a1c${k}`}>
+                          <FileText {...icon} />
+                          <span>
+                            <b>{s.title}</b>
+                            <small>{s.meta}</small>
+                          </span>
+                          <ArrowUpRight {...icon} />
+                        </div>
+                      ))}
+                    </div>
+                    <p class="ha-as-text" data-h="a1p2" style="display:none" />
+                  </>
+                ) : (
+                  <>
+                    <p class="ha-as-text" data-h="a2intro" style="display:none" />
+                    <ul class="ha-bullets" data-h="a2list" style="display:none">
+                      {[0, 1, 2].map((k) => (
+                        <li data-h={`a2li${k}`} style="display:none" />
+                      ))}
+                    </ul>
+                    <div class="ha-results" data-h="a2cards" style="display:none">
+                      <div class="ha-result" data-h="a2c0">
+                        <FileText {...icon} />
+                        <span>
+                          <b>{a.sources[1]?.title}</b>
+                          <small>{a.sources[1]?.meta}</small>
+                        </span>
+                        <ArrowUpRight {...icon} />
+                      </div>
+                    </div>
+                    <div class="ha-actions" data-h="a2actions" style="display:none">
+                      <span class="ha-add" data-h="add">
+                        <span class="ha-stack">
+                          <Plus {...icon} data-h="add-plus" />
+                          <CheckCheck {...icon} data-h="add-check" style="opacity:0" />
+                        </span>
+                        <span class="ha-stack">
+                          <span data-h="add-label">{a.add}</span>
+                          <span data-h="added-label" style="opacity:0">{a.added}</span>
+                        </span>
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          ))
+        }
+      </div>
+    </div>
+    <div class="ha-composer">
+      <span class="ha-context"><FileText {...icon} /><span>{c.title}</span><ChevronDown {...icon} /></span>
+      <div class="ha-field">
+        <span class="ha-input">
+          <span class="ha-ph" data-h="input-ph" style="opacity:0">{a.placeholder}</span>
+          <span class="ha-input-line" data-h="input"
+            ><span><span data-h="input-text">{a.q1}</span><i data-h="input-caret"></i></span></span
+          >
+        </span>
+        <span class="ha-btn"><Mic {...icon} /></span>
+        <span class="ha-send" data-h="send"><ArrowUp {...icon} /></span>
+      </div>
+    </div>
+  </aside>
+  {(['sofia', 'ben'] as const).map((who) => <span hidden data-name={who}>{localNames[who]}</span>)}
+</div>
+<script type="application/json" id="hero-app-copy" set:html={JSON.stringify(c).replace(/</g, '\\u003c')} />
+<script>
+  import '../../scripts/hero/main'
+</script>

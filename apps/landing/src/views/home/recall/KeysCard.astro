@@ -1,0 +1,85 @@
+---
+import { Image } from 'astro:assets'
+import Command from '@lucide/astro/icons/command'
+import FileText from '@lucide/astro/icons/file-text'
+import Search from '@lucide/astro/icons/search'
+import X from '@lucide/astro/icons/x'
+import photo from '../../../assets/landing/recall/sofa.jpg'
+import { type Lang, t } from '../../../i18n'
+import { loopCss } from '../../../lib/anim'
+import Typed from './Typed.astro'
+import { KEY_WIDTHS, keysLoop } from './timelines'
+
+/** Search in a keystroke: ⌘ K over a photo, then the search opens and finds notes. */
+interface Props {
+  lang: Lang
+}
+const d = t(Astro.props.lang).landing.recall.demo
+const c = d.keys
+const loop = keysLoop(c.query)
+const css = loopCss('rck', loop.length, loop.tracks)
+---
+
+<div class="rc rck" style={`--still:-${loop.still.toFixed(3)}s`} aria-hidden="true">
+  <div class="rck-photo" data-k="photo">
+    <Image class="rck-img" src={photo} alt="" widths={[1008, 1199]} sizes="1008px" loading="lazy" />
+  </div>
+  <div class="rck-keys">
+    {
+      KEY_WIDTHS.map((w, i) => (
+        <div class="rck-key" style={`width:${w}px`} data-k={`key${i}`}>
+          <i class="rck-wave" data-k={`wave${i}`} />
+          <div class="rck-press" data-k={`press${i}`}>
+            <div class="rck-face" data-k={`face${i}`}>
+              <i class="rck-shade" data-k={`shade${i}`} />
+              {i === 0 ? (
+                <>
+                  <Command class="rck-cmd" size={18} stroke-width={1.5} />
+                  <span class="rck-label">{c.key}</span>
+                </>
+              ) : (
+                <span class="rck-k">K</span>
+              )}
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <div class="rc-field rck-field" data-k="input">
+    <Search class="rc-icon" size={16} stroke-width={1.5} />
+    <span class="rc-input">
+      <span class="rc-ph rck-ph" data-k="ph">{d.search}</span>
+      <Typed text={c.query} />
+    </span>
+    <span class="rc-esc" data-k="esc">{d.esc}</span>
+    <X class="rc-icon rc-close" size={16} stroke-width={1.5} data-k="close" />
+  </div>
+  <div class="rc-list rck-panel" data-k="panel">
+    <div class="rc-sk">
+      <div data-k="sk0"><i class="rc-bar" style="left:24px;top:21px;width:46px;height:10px;opacity:.7"></i></div>
+      {
+        [40, 103, 166].map((y, i) => (
+          <div data-k={`sk${i + 1}`}>
+            <i class="rc-bar rc-bar-icon" style={`left:26px;top:${y + 23.5}px`} />
+            <i class="rc-bar" style={`left:54px;top:${y + 18}px;width:56px;height:14px`} />
+            <i class="rc-bar" style={`left:54px;top:${y + 37}px;width:292px;height:10px;opacity:.7`} />
+          </div>
+        ))
+      }
+    </div>
+    <p class="rc-group" data-k="res0">{d.notes}</p>
+    {
+      c.hits.map((hit, i) => (
+        <div class="rc-row" data-k={`res${i + 1}`}>
+          <FileText class="rc-icon rc-icon-dark" size={16} stroke-width={1.5} />
+          <div class="rc-text">
+            <p class="rc-title">{hit.title}</p>
+            <p class="rc-desc">{hit.text}</p>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>
+<Fragment set:html={`<style>${css}</style>`} />

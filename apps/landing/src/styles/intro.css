@@ -112,11 +112,6 @@
   outline: 1px solid rgb(0 0 0 / 0.06);
   outline-offset: -1px;
 }
-.intro-app img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
 
 @media (min-width: 1069px) {
   .intro {
@@ -177,13 +172,6 @@
     max-width: none;
     margin: 0;
     border-radius: calc(14 * var(--u));
-  }
-  .intro-app picture,
-  .intro-app img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: top;
   }
 }
 

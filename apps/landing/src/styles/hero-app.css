@@ -1,0 +1,767 @@
+/*
+ * The live app under the hero (HeroApp.astro, scripts/hero). Drawn at 1407 × 705 design px and
+ * scaled to .intro-app's width, so the text wraps the same at every screen size and nothing in it
+ * can move the page: the box has a fixed ratio and contains its own layout and paint.
+ * The app keeps its own light colours (it pictures the app), whatever the page around it does.
+ */
+
+.intro-app {
+  position: relative;
+  aspect-ratio: 1407 / 705;
+  container-type: inline-size;
+  contain: strict;
+  background: #fdfcfb;
+}
+.ha {
+  --ha-bg: #fdfcfb;
+  --ha-side: #f8f6f4;
+  --ha-line: #f2f0ec;
+  --ha-accent: #ebe9e6;
+  --ha-fg: #211f1c;
+  --ha-side-fg: #353230;
+  --ha-muted: #726e6a;
+  --ha-border: #e5e3df;
+  --ha-soft: #f2f0ec;
+  --ha-brand: #ec6100;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: 12px;
+  width: 1407px;
+  height: 705px;
+  padding: 12px;
+  overflow: hidden;
+  background: var(--ha-bg);
+  color: var(--ha-fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  transform: scale(0.88);
+  transform-origin: 0 0;
+}
+/* The box width over the design width, as a number (a length divided by a length). */
+@supports (transform: scale(tan(atan2(1px, 2px)))) {
+  .ha {
+    transform: scale(tan(atan2(100cqw, 1407px)));
+  }
+}
+.ha svg {
+  display: block;
+  flex: none;
+}
+.ha p,
+.ha h2,
+.ha h3,
+.ha ol,
+.ha ul {
+  margin: 0;
+}
+.ha-btn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.ha-btn.ha-on {
+  background: var(--ha-soft);
+}
+.ha-dim {
+  opacity: 0.5;
+}
+.ha-row {
+  display: flex;
+  gap: 2px;
+}
+
+/* Sidebar. */
+.ha-side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 300px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--ha-side);
+}
+.ha-side-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px 12px 12px;
+}
+.ha-logo {
+  margin-right: auto;
+  color: var(--ha-fg);
+}
+.ha-logo svg {
+  width: auto;
+  height: 22px;
+}
+.ha-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px;
+  padding: 7px 8px 7px 9px;
+  border: 1px solid var(--ha-line);
+  border-radius: 8px;
+  background: var(--ha-bg);
+  color: var(--ha-muted);
+  font-size: 13px;
+  line-height: 20px;
+}
+.ha-search > span {
+  flex: 1;
+}
+.ha-search kbd {
+  height: 20px;
+  padding: 0 4px;
+  border: 1px solid var(--ha-border);
+  border-radius: 4px;
+  background: #f5f3f0;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
+}
+.ha-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px 8px 0;
+}
+.ha-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--ha-side-fg);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.ha-item-icon {
+  opacity: 0.7;
+}
+.ha-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ha-folders .ha-item-label {
+  flex: 0 1 auto;
+}
+.ha-shared {
+  margin-right: auto;
+  opacity: 0.6;
+}
+.ha-folders .ha-item:not(:has(.ha-shared)) .ha-item-label {
+  margin-right: auto;
+}
+.ha-count {
+  padding: 0 4px;
+  color: var(--ha-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+.ha-more {
+  width: 24px;
+  opacity: 0.6;
+}
+i.ha-more {
+  height: 1px;
+}
+.ha-sub {
+  padding-left: 24px;
+}
+.ha-item.ha-on {
+  background: var(--ha-accent);
+  color: var(--ha-fg);
+  font-weight: 500;
+}
+.ha-folders {
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+}
+.ha-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 9px 0 10px;
+  color: var(--ha-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.22px;
+  text-transform: uppercase;
+}
+.ha-side-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 8px;
+  border-top: 1px solid var(--ha-line);
+}
+
+/* The note. */
+.ha-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.ha-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 8px;
+}
+.ha-place {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.ha-note-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+.ha-crumbs {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ha-crumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  color: var(--ha-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ha-crumb-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ha-edited {
+  color: var(--ha-muted);
+  white-space: nowrap;
+}
+/* Scrolled lines fade out under the note's header instead of being cut. */
+.ha-view {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 32px 24px 0;
+  -webkit-mask-image: linear-gradient(transparent 0, #000 28px);
+  mask-image: linear-gradient(transparent 0, #000 28px);
+}
+.ha-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ha-shared-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 8px 10px 8px 14px;
+  border: 1px solid var(--ha-line);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  line-height: 20px;
+}
+.ha-shared-bar > span:first-of-type {
+  flex: 1;
+}
+.ha-people {
+  display: flex;
+}
+.ha-people > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: -6px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+}
+.ha-title {
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 38px;
+  letter-spacing: -0.6px;
+}
+.ha-subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 28px;
+}
+.ha-p {
+  font-size: 16px;
+  line-height: 28px;
+  white-space: pre-wrap;
+}
+.ha-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ha-block-tight {
+  gap: 10px;
+}
+.ha-block-tight:not(:has(> :not([style*="none"]))) {
+  display: none;
+}
+.ha-h {
+  min-height: 28px;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 28px;
+  white-space: pre-wrap;
+}
+.ha-task {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+.ha-box {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--ha-muted);
+  border-radius: 5px;
+  background: var(--ha-bg);
+  color: #fff;
+}
+.ha-box[data-done] {
+  border-color: var(--ha-brand);
+  background: var(--ha-brand);
+}
+.ha-task-text {
+  font-size: 16px;
+  line-height: 28px;
+  white-space: pre-wrap;
+}
+.ha-stops {
+  padding: 0 0 0 16px;
+  list-style: none;
+}
+.ha-stops li {
+  display: flex;
+  padding-left: 8px;
+  font-size: 16px;
+  line-height: 28px;
+  white-space: pre-wrap;
+}
+.ha-num {
+  flex: none;
+  width: 22px;
+}
+.ha-stops strong {
+  font-weight: 600;
+}
+.ha-link {
+  color: var(--ha-brand);
+}
+.ha-insert {
+  overflow: hidden;
+}
+.ha-source {
+  color: var(--ha-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* Carets: inline, at their place in the text. Other people's carry their colour and name. */
+.ha-c {
+  position: relative;
+  pointer-events: none;
+}
+.ha-c > i {
+  position: absolute;
+  top: 50%;
+  left: -1px;
+  width: 2px;
+  height: min(1.3em, 24px);
+  border-radius: 1px;
+  background: var(--who);
+  transform: translateY(-50%);
+}
+.ha-c[data-who="alex"] {
+  --who: var(--ha-fg);
+}
+.ha-c[data-who="alex"] > i {
+  width: 1.5px;
+}
+.ha-c[data-who="alex"]:not([data-busy]) > i {
+  animation: ha-blink 1.06s steps(1) infinite;
+}
+@keyframes ha-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.ha-c[data-who="sofia"] {
+  --who: #ec4870;
+}
+.ha-c[data-who="ben"] {
+  --who: #14beaf;
+}
+.ha-c > b {
+  position: absolute;
+  bottom: calc(50% + min(0.65em, 12px));
+  left: -1px;
+  padding: 0 4px;
+  border-radius: 4px 4px 4px 0;
+  background: var(--who);
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 15px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ha-c[data-flag] > b {
+  opacity: 1;
+}
+.ha-c[data-place="upl"] > b {
+  right: -1px;
+  left: auto;
+  border-radius: 4px 4px 0 4px;
+}
+.ha-c[data-place="down"] > b {
+  top: calc(50% + min(0.65em, 12px));
+  bottom: auto;
+  border-radius: 0 4px 4px;
+}
+.ha-c[data-place="side"] > b {
+  top: 50%;
+  bottom: auto;
+  left: 4px;
+  border-radius: 4px;
+  transform: translateY(-50%);
+}
+.ha mark {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--who) 22%, transparent);
+  color: inherit;
+}
+.ha mark[data-who="alex"] {
+  --who: #3b82f6;
+}
+.ha mark[data-who="sofia"] {
+  --who: #ec4870;
+}
+.ha mark[data-who="ben"] {
+  --who: #14beaf;
+}
+
+/* Mouse pointers (scripts/hero): the arrow's tip is the element's origin. */
+.ha-pointers {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  pointer-events: none;
+}
+.ha-pointer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transform-origin: 0 0;
+}
+.ha-pointer > svg {
+  margin: -1.2px 0 0 -1.2px;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.18));
+}
+
+/* Assistant. */
+.ha-assistant {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 340px;
+  overflow: hidden;
+  border: 1px solid var(--ha-border);
+  border-radius: 16px;
+  background: #fff;
+}
+.ha-as-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--ha-border);
+}
+.ha-as-side {
+  display: flex;
+  gap: 4px;
+  width: 60px;
+}
+.ha-end {
+  justify-content: flex-end;
+}
+.ha-as-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: center;
+}
+.ha-messages {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+}
+.ha-conv {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+}
+.ha-ask {
+  max-width: 246px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #f5f3f0;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: right;
+}
+.ha-answer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+.ha-status {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  color: var(--ha-muted);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.ha-status > span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+}
+.ha-as-text {
+  width: 100%;
+  font-size: 14px;
+  line-height: 20px;
+}
+.ha-results {
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.ha-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--ha-border);
+  border-radius: 10px;
+  background: #fff;
+  opacity: 0;
+}
+.ha-result > svg:first-child {
+  margin: 0 4px;
+}
+.ha-result > span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ha-result b {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ha-result small {
+  color: var(--ha-muted);
+  font-size: 12px;
+  line-height: 16px;
+}
+.ha-result > svg:last-child {
+  margin: 0 6px;
+}
+.ha-bullets {
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 20px;
+  list-style: disc;
+}
+.ha-actions {
+  gap: 8px;
+}
+.ha-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--ha-soft);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  opacity: 0;
+}
+.ha-add[data-down] {
+  background: #e6e3de;
+}
+.ha-stack {
+  display: grid;
+}
+.ha-stack > * {
+  grid-area: 1 / 1;
+}
+.ha-composer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+}
+.ha-context {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--ha-border);
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.ha-context > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ha-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 9px 8px 9px 12px;
+  border: 1px solid var(--ha-border);
+  border-radius: 12px;
+}
+.ha-input {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 20px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: pre;
+}
+.ha-ph {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: var(--ha-muted);
+  text-overflow: ellipsis;
+}
+/* Short text starts at the left; longer text shows its end, where the caret is. */
+.ha-input-line {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+/* The caret follows the text inside a line at least as wide as the field. */
+.ha-input-line > span {
+  flex: none;
+  min-width: 100%;
+  padding-right: 3px;
+}
+.ha-input-line i {
+  display: inline-block;
+  width: 1px;
+  height: 17px;
+  margin-left: 1px;
+  vertical-align: -3.5px;
+  background: var(--ha-fg);
+}
+.ha-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: var(--ha-fg);
+  color: #fff;
+}
+.ha-send[data-down] {
+  opacity: 0.72;
+}

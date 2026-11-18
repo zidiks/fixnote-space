@@ -117,6 +117,123 @@ export const en: Dict = {
     sub: 'Everything you need for everyday notes,\nwithout the extra complexity.',
   },
 
+  /** The animated app under the hero (HeroApp.astro, scripts/hero): demo notes only. */
+  heroApp: {
+    people: { alex: 'Alex', sofia: 'Sofia', ben: 'Ben' },
+    sidebar: {
+      search: 'Search',
+      home: 'Home',
+      today: 'Today',
+      links: 'Links',
+      tidy: 'Tidy up',
+      folders: 'Folders',
+      work: 'Work',
+      projects: 'Projects',
+      meetings: 'Meetings',
+      personal: 'Personal',
+      ideas: 'Ideas',
+      travel: 'Travel',
+      trip: 'Iceland 2027',
+      weekend: 'Lisbon weekend',
+    },
+    shared: 'Shared note',
+    edited: [
+      'Edited by Alex · 2 min ago',
+      'Edited by Sofia · just now',
+      'Edited by Sofia and Ben · just now',
+      'Edited by Sofia, Ben, Alex · just now',
+    ],
+    title: 'Iceland trip — September 2027',
+    subtitle: 'Reykjavík · South Coast · Sep 6–12 · 7 days',
+    lead: 'A week together in Iceland. ',
+    intro: 'Keep the route flexible and leave room for weather changes.',
+    introTo: 'Keep the route flexible and choose stays with flexible cancellation.',
+    before: 'Before we go',
+    tasks: [
+      'Book flights to Keflavík',
+      'Check passport expiry dates',
+      'Compare rental cars',
+      'Reserve the first night in Reykjavík',
+      'Download offline maps',
+    ],
+    route: 'Route',
+    stops: [
+      {
+        place: 'Reykjavík',
+        text: 'arrival and an easy first evening.',
+        find: '',
+        to: '',
+        append: '',
+      },
+      {
+        place: 'Golden Circle',
+        text: 'one full day.',
+        find: 'one full day',
+        to: 'one relaxed day with time for stops',
+        append: '',
+      },
+      {
+        place: 'Vík',
+        text: '3 nights as our South Coast base.',
+        find: '3 nights',
+        to: '2 nights',
+        append: ' Leave time for the coast and keep the second afternoon flexible.',
+      },
+      {
+        place: 'Reykjavík',
+        text: 'final night before the flight.',
+        find: 'flight.',
+        to: 'flight, close to the airport bus stop. Keep the last evening free.',
+        append: '',
+      },
+    ],
+    footer: { before: 'Budget and bookings live in ', link: 'Iceland trip budget', after: '.' },
+    weather: {
+      heading: 'Weather backup',
+      text: 'Keep one day flexible so we can adjust the route if the weather changes. Save an indoor option for a rainy afternoon in Reykjavík.',
+      find: 'an indoor option',
+      to: 'a museum or café',
+    },
+    packing: {
+      heading: 'Shared packing',
+      text: 'Bring waterproof layers and a spare charging cable. We can share one camera tripod and keep the packing list in this note.',
+    },
+    booking: {
+      heading: 'Booking details',
+      text: 'Save confirmation numbers and pickup instructions here so everyone can find them.',
+    },
+    checklist: {
+      title: 'Driving checklist',
+      source: 'Source:',
+      insert: ' and save the booking number',
+    },
+    assistant: {
+      title: 'Assistant',
+      placeholder: 'Ask, or ask me to do something…',
+      q1: 'Find my saved notes about stays near Vík and driving in Iceland.',
+      q2: 'Turn the driving note into a short checklist and add it below the route.',
+      searching: 'Looking through your notes…',
+      found: 'Found 3 relevant notes',
+      p1: 'I found three saved notes for this trip: stays near Vík, a driving checklist, and your shared budget.',
+      p2: 'The stays note includes flexible-booking options. The driving checklist covers pickup, offline maps, and checks before each driving day.',
+      preparing: 'Preparing a checklist…',
+      ready: 'Checklist ready',
+      intro: 'Here’s a short checklist based on Iceland driving checklist:',
+      items: [
+        'Confirm the rental pickup details.',
+        'Download offline maps.',
+        'Check road and weather conditions before each driving day.',
+      ],
+      add: 'Add to note',
+      added: 'Added',
+      sources: [
+        { title: 'South Coast stays', meta: 'Travel · Jun 2026' },
+        { title: 'Iceland driving checklist', meta: 'Travel · Aug 2026' },
+        { title: 'Iceland trip budget', meta: 'Travel · Sep 2026' },
+      ],
+    },
+  },
+
   landing: {
     faq: {
       eyebrow: 'FAQ',
@@ -221,6 +338,152 @@ export const en: Dict = {
         title: 'Search in a keystroke',
         text: 'Search your notes with a quick keyboard shortcut.',
         link: 'Explore keyboard shortcuts',
+      },
+      voice: {
+        title: 'Search voice notes',
+        text: 'Find ideas you recorded, even if you never typed them.',
+        link: 'Explore voice notes',
+      },
+      /** What the animated cards show (Recall.astro, views/home/recall): demo notes only. */
+      demo: {
+        search: 'Search',
+        esc: 'Esc',
+        notes: 'Notes',
+        meaning: {
+          query: 'feedback',
+          similar: 'Similar in meaning',
+          // [word] is highlighted as a match.
+          hits: [
+            {
+              title: 'Design [feedback]',
+              text: 'Notes from the team. Reviewed the latest screens',
+            },
+            { title: 'November 12', text: 'Collected [feedback] on the new homepage layout' },
+          ],
+          related: [
+            {
+              title: 'Design review',
+              text: 'Discussed the latest interface updates. The team suggested simplifying the navigation.',
+            },
+            {
+              title: 'Product improvements',
+              text: 'Users find the onboarding confusing. Consider reducing the number of steps.',
+            },
+            {
+              title: 'Meeting notes',
+              text: 'Reviewed the prototype together. Agreed to improve readability and adjust the layout.',
+            },
+          ],
+        },
+        voice: [
+          {
+            phrase: 'launch timeline',
+            notes: [
+              'Launch planning call',
+              'Product launch brainstorm',
+              'Marketing timeline',
+              'Release checklist discussion',
+              'Launch retrospective',
+            ],
+          },
+          {
+            phrase: 'website feedback',
+            notes: [
+              'Homepage review',
+              'Website feedback session',
+              'Navigation improvements',
+              'Landing page discussion',
+              'Design team catch-up',
+            ],
+          },
+          {
+            phrase: 'next sprint priorities',
+            notes: [
+              'Sprint planning call',
+              'Next sprint priorities',
+              'Backlog review',
+              'Engineering team sync',
+              'Product roadmap discussion',
+            ],
+          },
+        ],
+        images: {
+          query: 'morning',
+          hits: [
+            { title: 'App design ideas', text: 'Screenshot attached' },
+            { title: 'Weekend photos', text: 'Photo attached' },
+            { title: 'Wallet app', text: 'Screenshot attached' },
+          ],
+        },
+        languages: {
+          query: 'travel plans',
+          home: 'Home',
+          travel: 'Travel',
+          list: [
+            { title: 'Reading list', text: 'Books and essays to read over the next few weeks.' },
+            {
+              title: 'Desk setup ideas',
+              text: 'Find a desk lamp, tidy up the cables, and add a bookshelf.',
+            },
+            {
+              title: 'Receta de pasta',
+              text: 'Tomates, albahaca y una salsa sencilla para la cena.',
+            },
+            {
+              title: 'Website feedback',
+              text: 'Simplify the navigation and make the main action easier to find.',
+            },
+          ],
+          hits: [
+            {
+              title: 'Weekend in Copenhagen',
+              text: 'Train tickets, hotel check-in, and places to visit on Saturday.',
+            },
+            {
+              title: 'Viaje a Barcelona',
+              text: 'Reservar el hotel, guardar los billetes y preparar el itinerario.',
+            },
+          ],
+          // The open note: the first list note before the search, the second hit after it.
+          before: [
+            {
+              heading: 'Next up',
+              text: 'Start with a short novel and finish the essay collection.',
+            },
+            {
+              heading: 'Recommendations',
+              text: 'Ask friends for a book they would happily read again.',
+            },
+          ],
+          after: [
+            {
+              heading: 'Antes de salir',
+              text: 'Confirmar la reserva del hotel y guardar los billetes en el móvil.',
+            },
+            {
+              heading: 'Durante el viaje',
+              text: 'Visitar el barrio Gótico y dejar tiempo para pasear.',
+            },
+          ],
+        },
+        keys: {
+          query: 'project ideas',
+          key: 'command',
+          hits: [
+            {
+              title: 'Landing page ideas',
+              text: 'A simpler hero, clearer benefits, and a short product demo.',
+            },
+            {
+              title: 'Onboarding improvements',
+              text: 'Reduce setup steps and help new users reach their first note.',
+            },
+            {
+              title: 'Weekend photography',
+              text: 'Try a small photo series about light, texture, and everyday objects.',
+            },
+          ],
+        },
       },
     },
     privacy: {

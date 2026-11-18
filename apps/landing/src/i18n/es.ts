@@ -114,6 +114,126 @@ export const es: Dict = {
     sub: 'Todo lo que necesitas para tus notas de cada día,\nsin complicaciones.',
   },
 
+  heroApp: {
+    people: { alex: 'Álex', sofia: 'Sofía', ben: 'Ben' },
+    sidebar: {
+      search: 'Buscar',
+      home: 'Inicio',
+      today: 'Hoy',
+      links: 'Enlaces',
+      tidy: 'Poner orden',
+      folders: 'Carpetas',
+      work: 'Trabajo',
+      projects: 'Proyectos',
+      meetings: 'Reuniones',
+      personal: 'Personal',
+      ideas: 'Ideas',
+      travel: 'Viajes',
+      trip: 'Islandia 2027',
+      weekend: 'Fin de semana en Lisboa',
+    },
+    shared: 'Nota compartida',
+    edited: [
+      'Editado por Álex · hace 2 min',
+      'Editado por Sofía · ahora',
+      'Editado por Sofía y Ben · ahora',
+      'Editado por Sofía, Ben y Álex · ahora',
+    ],
+    title: 'Viaje a Islandia — septiembre de 2027',
+    subtitle: 'Reikiavik · Costa sur · 6–12 sept. · 7 días',
+    lead: 'Una semana juntos en Islandia. ',
+    intro: 'La ruta es flexible y dejamos margen por el tiempo.',
+    introTo: 'La ruta es flexible y elegimos alojamientos con cancelación gratuita.',
+    before: 'Antes de salir',
+    tasks: [
+      'Reservar vuelos a Keflavík',
+      'Revisar la caducidad de los pasaportes',
+      'Comparar coches de alquiler',
+      'Reservar la primera noche en Reikiavik',
+      'Descargar mapas sin conexión',
+    ],
+    route: 'Ruta',
+    stops: [
+      {
+        place: 'Reikiavik',
+        text: 'llegada y una primera tarde tranquila.',
+        find: '',
+        to: '',
+        append: '',
+      },
+      {
+        place: 'Círculo Dorado',
+        text: 'un día completo.',
+        find: 'un día completo',
+        to: 'un día tranquilo con tiempo para paradas',
+        append: '',
+      },
+      {
+        place: 'Vík',
+        text: '3 noches como base en la costa sur.',
+        find: '3 noches',
+        to: '2 noches',
+        append: ' Dejar tiempo para la costa y la segunda tarde libre.',
+      },
+      {
+        place: 'Reikiavik',
+        text: 'última noche antes del vuelo.',
+        find: 'vuelo.',
+        to: 'vuelo, cerca de la parada del autobús al aeropuerto. La última tarde, libre.',
+        append: '',
+      },
+    ],
+    footer: {
+      before: 'El presupuesto y las reservas están en ',
+      link: 'Presupuesto del viaje',
+      after: '.',
+    },
+    weather: {
+      heading: 'Plan B por el tiempo',
+      text: 'Dejamos un día libre para cambiar la ruta si hace mal tiempo. Guardamos un plan bajo techo para una tarde de lluvia en Reikiavik.',
+      find: 'un plan bajo techo',
+      to: 'un museo o un café',
+    },
+    packing: {
+      heading: 'Equipaje compartido',
+      text: 'Llevar capas impermeables y un cable de carga de repuesto. Podemos compartir un trípode y tener la lista del equipaje en esta nota.',
+    },
+    booking: {
+      heading: 'Datos de las reservas',
+      text: 'Guardar aquí los números de confirmación y las instrucciones de recogida para que todos los encuentren.',
+    },
+    checklist: {
+      title: 'Lista para conducir',
+      source: 'Fuente:',
+      insert: ' y guardar el número de reserva',
+    },
+    assistant: {
+      title: 'Asistente',
+      placeholder: 'Pregunta o pide algo…',
+      q1: 'Busca mis notas sobre alojamientos cerca de Vík y conducir en Islandia.',
+      q2: 'Convierte la nota de conducir en una lista corta y añádela debajo de la ruta.',
+      searching: 'Buscando en tus notas…',
+      found: '3 notas encontradas',
+      p1: 'He encontrado tres notas para este viaje: alojamientos cerca de Vík, una lista para conducir y vuestro presupuesto compartido.',
+      p2: 'La nota de alojamientos incluye opciones con cancelación flexible. La lista para conducir cubre la recogida del coche, los mapas sin conexión y qué revisar antes de cada día al volante.',
+      preparing: 'Preparando la lista…',
+      ready: 'Lista preparada',
+      intro: 'Aquí tienes una lista corta basada en Conducir por Islandia:',
+      items: [
+        'Confirmar la recogida del coche de alquiler.',
+        'Descargar mapas sin conexión.',
+        'Revisar carreteras y tiempo antes de cada día al volante.',
+      ],
+      add: 'Añadir a la nota',
+      added: 'Añadido',
+      sources: [
+        { title: 'Alojamientos en la costa sur', meta: 'Viajes · jun 2026' },
+        { title: 'Conducir por Islandia', meta: 'Viajes · ago 2026' },
+        { title: 'Presupuesto del viaje', meta: 'Viajes · sept 2026' },
+      ],
+    },
+  },
+
   landing: {
     faq: {
       eyebrow: 'FAQ',
@@ -218,6 +338,147 @@ export const es: Dict = {
         title: 'Busca con un atajo',
         text: 'Abre la búsqueda en tus notas con un atajo de teclado.',
         link: 'Descubre los atajos de teclado',
+      },
+      voice: {
+        title: 'Busca en notas de voz',
+        text: 'Encuentra ideas que grabaste aunque nunca las escribieras.',
+        link: 'Descubre las notas de voz',
+      },
+      demo: {
+        search: 'Buscar',
+        esc: 'Esc',
+        notes: 'Notas',
+        meaning: {
+          query: 'opiniones',
+          similar: 'Parecidas en significado',
+          hits: [
+            {
+              title: '[Opiniones] sobre el diseño',
+              text: 'Notas del equipo. Revisamos las últimas pantallas',
+            },
+            { title: '12 de noviembre', text: 'Reunimos [opiniones] sobre la nueva portada' },
+          ],
+          related: [
+            {
+              title: 'Revisión de diseño',
+              text: 'Hablamos de los últimos cambios en la interfaz. El equipo propuso simplificar la navegación.',
+            },
+            {
+              title: 'Mejoras del producto',
+              text: 'A los usuarios les confunde el registro. Conviene reducir el número de pasos.',
+            },
+            {
+              title: 'Notas de la reunión',
+              text: 'Revisamos juntos el prototipo. Acordamos mejorar la legibilidad y ajustar el diseño.',
+            },
+          ],
+        },
+        voice: [
+          {
+            phrase: 'fechas del lanzamiento',
+            notes: [
+              'Llamada sobre el lanzamiento',
+              'Ideas para el lanzamiento',
+              'Calendario de marketing',
+              'Lista de la versión',
+              'Repaso del lanzamiento',
+            ],
+          },
+          {
+            phrase: 'opiniones sobre la web',
+            notes: [
+              'Revisión de la portada',
+              'Opiniones sobre la web',
+              'Mejoras de navegación',
+              'Charla sobre la landing',
+              'Reunión del equipo de diseño',
+            ],
+          },
+          {
+            phrase: 'prioridades del sprint',
+            notes: [
+              'Planificación del sprint',
+              'Prioridades del próximo sprint',
+              'Revisión del backlog',
+              'Reunión de ingeniería',
+              'Hoja de ruta del producto',
+            ],
+          },
+        ],
+        images: {
+          query: 'morning',
+          hits: [
+            { title: 'Ideas de diseño', text: 'Captura adjunta' },
+            { title: 'Fotos del finde', text: 'Foto adjunta' },
+            { title: 'App de cartera', text: 'Captura adjunta' },
+          ],
+        },
+        // Reversed: a Spanish query finds a note in English.
+        languages: {
+          query: 'planes de viaje',
+          home: 'Inicio',
+          travel: 'Viajes',
+          list: [
+            { title: 'Lista de lectura', text: 'Libros y ensayos para las próximas semanas.' },
+            {
+              title: 'Ideas para el escritorio',
+              text: 'Una lámpara, ordenar los cables y añadir una estantería.',
+            },
+            { title: 'Pasta recipe', text: 'Tomatoes, basil, and a simple sauce for dinner.' },
+            {
+              title: 'Opiniones sobre la web',
+              text: 'Simplificar la navegación y que la acción principal se vea mejor.',
+            },
+          ],
+          hits: [
+            {
+              title: 'Fin de semana en Copenhague',
+              text: 'Billetes de tren, el hotel y qué visitar el sábado.',
+            },
+            {
+              title: 'Trip to Barcelona',
+              text: 'Book the hotel, save the tickets, and plan the itinerary.',
+            },
+          ],
+          before: [
+            {
+              heading: 'Lo siguiente',
+              text: 'Empezar con una novela corta y terminar los ensayos.',
+            },
+            {
+              heading: 'Recomendaciones',
+              text: 'Pedir a los amigos un libro que volverían a leer.',
+            },
+          ],
+          after: [
+            {
+              heading: 'Before we leave',
+              text: 'Confirm the hotel booking and save the tickets on the phone.',
+            },
+            {
+              heading: 'During the trip',
+              text: 'Visit the Gothic Quarter and leave time for a walk.',
+            },
+          ],
+        },
+        keys: {
+          query: 'ideas de proyecto',
+          key: 'command',
+          hits: [
+            {
+              title: 'Ideas para la web',
+              text: 'Una portada más simple, ventajas claras y una demo corta.',
+            },
+            {
+              title: 'Mejoras del registro',
+              text: 'Menos pasos para empezar y llegar antes a la primera nota.',
+            },
+            {
+              title: 'Fotografía de fin de semana',
+              text: 'Una pequeña serie sobre la luz, las texturas y los objetos de cada día.',
+            },
+          ],
+        },
       },
     },
     privacy: {

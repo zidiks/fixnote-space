@@ -1,0 +1,163 @@
+---
+import { Image } from 'astro:assets'
+import ArrowLeft from '@lucide/astro/icons/arrow-left'
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import Bell from '@lucide/astro/icons/bell'
+import ChevronDown from '@lucide/astro/icons/chevron-down'
+import ChevronRight from '@lucide/astro/icons/chevron-right'
+import Clock from '@lucide/astro/icons/clock'
+import Folder from '@lucide/astro/icons/folder'
+import FolderPlus from '@lucide/astro/icons/folder-plus'
+import MessageCircle from '@lucide/astro/icons/message-circle'
+import Search from '@lucide/astro/icons/search'
+import SquarePen from '@lucide/astro/icons/square-pen'
+import texture from '../../../assets/landing/recall/dawn-silk.jpg'
+import { type Lang, t } from '../../../i18n'
+import { loopCss } from '../../../lib/anim'
+import Typed from './Typed.astro'
+import { languagesLoop } from './timelines'
+
+/**
+ * Across languages: a query in the page's language finds a note written in another one, which
+ * opens. The app is a 1280-wide fragment cut by the card, as drawn (Figma 942:176454).
+ */
+interface Props {
+  lang: Lang
+}
+const all = t(Astro.props.lang)
+const d = all.landing.recall.demo
+const c = d.languages
+const sb = all.heroApp.sidebar
+const loop = languagesLoop(c.query)
+const css = loopCss('rcl', loop.length, loop.tracks)
+const first = c.list[0]
+const found = c.hits[1]
+// Only the sidebar's right edge shows: counts and the shortcut.
+const counts = ['17', '', '3', '5']
+const folders = [
+  { count: '3', on: true, more: true },
+  { count: '1', sub: true },
+  { count: '2', sub: true },
+  { count: '3' },
+  { count: '2' },
+  { count: '1' },
+  { count: '3', more: true },
+  { count: '1', sub: true },
+]
+---
+
+<div class="rc rc-silk rcl" style={`--still:-${loop.still.toFixed(3)}s`} aria-hidden="true">
+  <Image class="rc-tex rcl-tex" src={texture} alt="" quality={55} widths={[700, 1400]} sizes="700px" loading="lazy" />
+  <div class="rc-dots"></div>
+  <div class="rcl-app">
+    <div class="rcl-side">
+      <div class="rcl-side-head"><span></span><SquarePen size={16} stroke-width={1.5} /></div>
+      <div class="rcl-side-search"><span>{sb.search}</span><kbd>Ctrl+K</kbd></div>
+      <div class="rcl-nav">
+        {counts.map((n) => <div class="rcl-item"><span>{n}</span></div>)}
+        <div class="rcl-item rcl-section"><FolderPlus size={14} stroke-width={1.5} /></div>
+        {
+          folders.map((f) => (
+            <div class:list={['rcl-item', f.on && 'rcl-on']}>
+              <span>{f.count}</span>
+              {f.more ? <ChevronRight size={14} stroke-width={1.5} /> : <i />}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div class="rcl-main">
+      <div class="rcl-bar">
+        <span class="rcl-history"
+          ><ArrowLeft size={16} stroke-width={1.5} /><ArrowRight size={16} stroke-width={1.5} class="rcl-dim" /></span
+        >
+        <span class="rcl-place">
+          <span data-k="before">{first?.title}<ChevronDown size={14} stroke-width={1.5} /></span>
+          <span data-k="after">{found?.title}<ChevronDown size={14} stroke-width={1.5} /></span>
+        </span>
+        <span class="rcl-actions"><Bell size={16} stroke-width={1.5} /><MessageCircle size={16} stroke-width={1.5} /></span>
+      </div>
+      <div class="rcl-content">
+        <div class="rcl-notes">
+          <div class="rcl-head">
+            <Folder size={16} stroke-width={1.5} />
+            <span class="rcl-heading">
+              <span data-k="hlist"><b>{c.home}</b> 37</span>
+              <span data-k="hres"><b>{c.travel}</b> 2</span>
+            </span>
+            <Clock size={15} stroke-width={1.5} />
+            <SquarePen size={16} stroke-width={1.5} />
+          </div>
+          <div class="rcl-search">
+            <Search size={14} stroke-width={1.5} />
+            <span class="rc-input rcl-input">
+              <span class="rc-ph" data-k="ph">{d.search}</span>
+              <Typed text={c.query} />
+            </span>
+            <span class="rcl-focus" data-k="focus"></span>
+          </div>
+          <div class="rcl-list">
+            {
+              c.list.map((n, i) => (
+                <div class:list={['rcl-row', i === 0 && 'rcl-row-on']} data-k={`row${i}`}>
+                  <p class="rc-title">{n.title}</p>
+                  <p class="rcl-desc">{n.text}</p>
+                </div>
+              ))
+            }
+            <div class="rcl-over">
+              {
+                [0, 1].map((i) => (
+                  <div class="rcl-row" data-k={`sk${i}`}>
+                    <div class="rcl-sk">
+                      <i class="rc-bar" style="top:2px;width:56px;height:14px" />
+                      <i class="rc-bar" style="top:26px;width:276px;height:10px;opacity:.7" />
+                      <i class="rc-bar" style="top:46px;width:172px;height:10px;opacity:.7" />
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+            <div class="rcl-over">
+              {
+                c.hits.map((n, i) => (
+                  <div class:list={['rcl-row', i === 1 && 'rcl-row-on']} data-k={`res${i}`}>
+                    <p class="rc-title">{n.title}</p>
+                    <p class="rcl-desc">{n.text}</p>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+        <div class="rcl-page">
+          {
+            [
+              { k: 'before', folder: c.home, note: first, sections: c.before },
+              { k: 'after', folder: c.travel, note: found, sections: c.after },
+            ].map((p) => (
+              <div class="rcl-doc" data-k={p.k}>
+                <span class="rcl-crumb">
+                  <Folder size={16} stroke-width={1.5} />
+                  {p.folder}
+                  <ChevronRight size={14} stroke-width={1.5} class="rcl-dim" />
+                </span>
+                <p class="rcl-h1">{p.note?.title}</p>
+                <p class="rcl-intro">{p.note?.text}</p>
+                <div class="rcl-sections">
+                  {p.sections.map((s) => (
+                    <div>
+                      <p class="rcl-h3">{s.heading}</p>
+                      <p class="rcl-body">{s.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<Fragment set:html={`<style>${css}</style>`} />

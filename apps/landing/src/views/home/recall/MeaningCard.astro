@@ -1,0 +1,81 @@
+---
+import { Image } from 'astro:assets'
+import FileText from '@lucide/astro/icons/file-text'
+import Search from '@lucide/astro/icons/search'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import X from '@lucide/astro/icons/x'
+import texture from '../../../assets/landing/recall/ember-silk.jpg'
+import { type Lang, t } from '../../../i18n'
+import { loopCss } from '../../../lib/anim'
+import { marks } from './marks'
+import Typed from './Typed.astro'
+import { meaningLoop } from './timelines'
+
+/** Search by meaning: a typed word finds notes with it, then notes that mean the same. */
+interface Props {
+  lang: Lang
+}
+const d = t(Astro.props.lang).landing.recall.demo
+const c = d.meaning
+const loop = meaningLoop(c.query)
+const css = loopCss('rcm', loop.length, loop.tracks)
+---
+
+<div class="rc rc-silk rcm" style={`--still:-${loop.still.toFixed(3)}s`} aria-hidden="true">
+  <Image class="rc-tex rcm-tex" src={texture} alt="" quality={55} widths={[700, 1400]} sizes="700px" loading="lazy" />
+  <div class="rc-dots"></div>
+  <div class="rcm-results">
+    <div class="rc-list rcm-notes" data-k="notes">
+      <div class="rc-sk" data-k="sk">
+        <div data-k="sk0"><i class="rc-bar" style="left:24px;top:21px;width:46px;height:10px;opacity:.7"></i></div>
+        {
+          [40, 103].map((y, i) => (
+            <div data-k={`sk${i + 1}`}>
+              <i class="rc-bar rc-bar-icon" style={`left:26px;top:${y + 23.5}px`} />
+              <i class="rc-bar" style={`left:54px;top:${y + 18}px;width:56px;height:14px`} />
+              <i class="rc-bar" style={`left:54px;top:${y + 37}px;width:292px;height:10px;opacity:.7`} />
+            </div>
+          ))
+        }
+      </div>
+      <p class="rc-group" data-k="n0">{d.notes}</p>
+      {
+        c.hits.map((hit, i) => (
+          <div class:list={['rc-row', i === 0 && 'rc-row-on']} data-k={`n${i + 1}`}>
+            <FileText class="rc-icon rc-icon-dark" size={16} stroke-width={1.5} />
+            <div class="rc-text">
+              <p class="rc-title">{marks(hit.title).map((p) => (p.mark ? <mark>{p.text}</mark> : p.text))}</p>
+              <p class="rc-desc">{marks(hit.text).map((p) => (p.mark ? <mark>{p.text}</mark> : p.text))}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+    <div class="rc-list rcm-similar" data-k="similar">
+      <p class="rc-group">{c.similar}</p>
+      {
+        c.related.map((note, i) => (
+          <div class:list={['rc-row', i === 0 && 'rc-row-on']}>
+            <Sparkles class="rc-icon rc-icon-dark" size={16} stroke-width={1.5} />
+            <div class="rc-text">
+              <p class="rc-title">{note.title}</p>
+              <p class="rc-desc rc-desc-wrap">{note.text}</p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+  <div class="rcm-pos" data-k="pos">
+    <div class="rc-field rcm-field" data-k="field">
+      <Search class="rc-icon" size={16} stroke-width={1.5} />
+      <span class="rc-input">
+        <span class="rc-ph" data-k="ph">{d.search}</span>
+        <Typed text={c.query} />
+      </span>
+      <span class="rc-esc" data-k="esc">{d.esc}</span>
+      <X class="rc-icon rc-close" size={16} stroke-width={1.5} data-k="close" />
+    </div>
+  </div>
+</div>
+<Fragment set:html={`<style>${css}</style>`} />

@@ -1,0 +1,79 @@
+---
+import { Image } from 'astro:assets'
+import texture from '../../../assets/landing/recall/orange.jpg'
+import { type Lang, t } from '../../../i18n'
+import { loopCss } from '../../../lib/anim'
+import { voiceLoop } from './timelines'
+
+/**
+ * Search voice notes: three spoken searches. The words show as they are heard, the mic answers
+ * the voice, candidate notes scroll by and the three found ones settle, the best in the middle.
+ * The texture turns once per loop inside the circle (recall.css).
+ */
+interface Props {
+  lang: Lang
+}
+const searches = t(Astro.props.lang).landing.recall.demo.voice
+const loop = voiceLoop(searches.map((s) => s.phrase))
+const css = `${loopCss('rcv', loop.length, loop.tracks)}\n.rcv .rcv-turn{animation-duration:${loop.length}s}`
+const HALOS = [132, 146, 122]
+---
+
+<div class="rc rcv" style={`--still:-${loop.still.toFixed(3)}s`} aria-hidden="true">
+  <div class="rcv-dots"></div>
+  <div class="rcv-orb">
+    <Image class="rcv-turn" src={texture} alt="" quality={55} widths={[521, 1042]} sizes="521px" loading="lazy" />
+  </div>
+  {
+    HALOS.map((size, i) => (
+      <i
+        class="rcv-halo"
+        data-k={`halo${i}`}
+        style={`width:${size}px;height:${size}px;left:${260.5 - size / 2}px;top:${260.5 - size / 2}px`}
+      />
+    ))
+  }
+  <div class="rcv-mic">
+    <i class="rcv-ring"></i>
+    <i class="rcv-plate" data-k="plate"></i>
+    <svg class="rcv-icon" width="81" height="81" viewBox="0 0 81 81" fill="none">
+      <path
+        d="M40.5 49.25V53m0-3.75c2.25 0 4.42-.92 6.01-2.56A8.9 8.9 0 0 0 49 40.5V38m-8.5 11.25c-2.25 0-4.42-.92-6.01-2.56A8.9 8.9 0 0 1 32 40.5V38m8.5-10c2.01 0 3.64 1.68 3.64 3.75v8.75c0 2.07-1.63 3.75-3.64 3.75-2.01 0-3.64-1.68-3.64-3.75v-8.75c0-2.07 1.63-3.75 3.64-3.75Z"
+        stroke="#fff"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </div>
+  <svg class="rcv-bar" data-k="bar" viewBox="0 0 16 16" fill="none">
+    <circle class="rcv-spin" cx="8" cy="8" r="7.25" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="13 33"></circle>
+  </svg>
+  <div class="rcv-results">
+    {
+      searches.map((s, k) => (
+        <>
+          {s.notes.map((title, i) => (
+            <p class="rcv-row" data-k={`r${k}-${i}`}>
+              {title}
+            </p>
+          ))}
+          {s.notes.slice(0, 3).map((title, j) => (
+            <p class="rcv-row" data-k={`f${k}-${j}`}>
+              {title}
+            </p>
+          ))}
+        </>
+      ))
+    }
+  </div>
+  {
+    searches.map((s, k) => (
+      <p class="rcv-said" data-k={`b${k}`}>
+        {[...s.phrase].map((ch, i) => (
+          <span data-k={`b${k}c${i}`}>{ch}</span>
+        ))}
+      </p>
+    ))
+  }
+</div>
+<Fragment set:html={`<style>${css}</style>`} />

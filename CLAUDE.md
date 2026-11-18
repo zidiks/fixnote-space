@@ -308,7 +308,11 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   the app is app.fixnote.space). Its copy
   lives in `apps/landing/src/i18n` (ru is the reference, en/es must match its shape), not in
   `@fixnote/i18n`. Keep pages script-free apart from the small inline scripts in `Base.astro` and
-  `Hero.astro`; only claim what the app does. Analytics (Yandex Metrika, GA4) only on the site and
+  the home sections, and the hero's live app (`HeroApp.astro` + `src/scripts/hero`, one deferred
+  module: the served markup is frame 0, carets are inline in the text, plays only on screen, never
+  with reduced motion); only claim what the app does. The search cards (`views/home/recall`) are CSS
+  keyframes written at build time (`lib/anim.ts`: transform/opacity only, typed letters each with
+  their own caret), paused until on screen. Analytics (Yandex Metrika, GA4) only on the site and
   only after the consent banner (`src/data/analytics.ts`, privacy section `cookies`: change them
   together); the app has none and stays `noindex`. schema.org data comes from `src/lib/schema.ts`
   (fixed `@id`s); each page's Open Graph picture is drawn after the build from its <title> and the

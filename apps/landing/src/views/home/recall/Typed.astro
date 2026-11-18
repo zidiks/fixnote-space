@@ -1,0 +1,16 @@
+---
+/**
+ * A typed query (lib/anim `typing`): one span per letter, and a caret after every letter, so the
+ * caret that shows always sits right after the last letter shown.
+ */
+interface Props {
+  text: string
+  /** The `data-k` prefix of the letters and carets; the whole query is `data-k={k}`. */
+  k?: string
+  class?: string
+}
+const { text, k = 'q', class: className } = Astro.props
+const letters = [...text]
+---
+
+<span class:list={['rc-typed', className]} data-k={k}><span class="rc-at"><i class="rc-caret" data-k={`${k}k0`}></i></span>{letters.map((ch, i) => <span data-k={`${k}c${i}`}>{ch}<i class="rc-caret" data-k={`${k}k${i + 1}`}></i></span>)}</span>
