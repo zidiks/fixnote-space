@@ -199,6 +199,8 @@ export interface McpToolDescription {
   description: string
   inputSchema: ToolParameters
   annotations: {
+    /** The same name again: directories (Claude's) read it from here. */
+    title: string
     readOnlyHint: boolean
     /** Only for changes: whether text already in a note may be replaced. */
     destructiveHint?: boolean
@@ -244,8 +246,13 @@ export function remoteToolList(): McpToolDescription[] {
       description,
       inputSchema: parameters,
       annotations: reads
-        ? { readOnlyHint: true, openWorldHint: false }
-        : { readOnlyHint: false, destructiveHint: REPLACES.includes(name), openWorldHint: false },
+        ? { title: TITLES[name], readOnlyHint: true, openWorldHint: false }
+        : {
+            title: TITLES[name],
+            readOnlyHint: false,
+            destructiveHint: REPLACES.includes(name),
+            openWorldHint: false,
+          },
     }
   })
 }
