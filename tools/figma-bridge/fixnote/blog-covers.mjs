@@ -420,7 +420,7 @@ const saved = (str, tag) => bubble(str, { runs: mark(str, tag, MONO_ORANGE) })
 
 const LANGS = ['en', 'ru', 'es']
 
-// The 19 articles, in blog order. `slug` per language (the post's file name), `t` the cover's words
+// The articles, in blog order. `slug` per language (the post's file name), `t` the cover's words
 // per language: head/sub are [ink line, grey line], the rest is what the art shows.
 const ARTICLES = [
   {
@@ -1435,6 +1435,61 @@ const ARTICLES = [
         { y: 125 },
       ),
   },
+  {
+    // English and Spanish only: the blog has no Russian since the /ru/ pages were retired.
+    slug: { en: 'secure-notes-app-2026', es: 'app-de-notas-segura-2026' },
+    dark: true,
+    tex: 'dusk-silk',
+    t: {
+      en: {
+        head: ['How notes leaked', 'in 2026.'],
+        sub: ['Six real incidents, and what a secure', 'notes app should do about each.'],
+        cta: 'Read the six cases',
+        rows: [
+          ['sparkles', 'Notion · November', 'AI chats exposed at a vendor'],
+          ['link', 'Claude, DeepSeek · July', 'Share links turned up in Google'],
+          ['mic', 'Otter.ai · August', 'A meeting bot that recorded everyone'],
+          ['download', 'Obsidian · April', 'A plugin that installed a trojan'],
+          ['send', 'MCP · all year', 'Security bugs in AI connectors'],
+          ['search', 'Perseus · March', 'Phone malware reading note apps'],
+        ],
+      },
+      es: {
+        head: ['Cómo se filtraron', 'notas en 2026.'],
+        sub: ['Seis casos reales y lo que una app de notas', 'segura debería hacer con cada uno.'],
+        cta: 'Leer los seis casos',
+        rows: [
+          ['sparkles', 'Notion · noviembre', 'Chats de IA expuestos en un proveedor'],
+          ['link', 'Claude, DeepSeek · julio', 'Enlaces compartidos en Google'],
+          ['mic', 'Otter.ai · agosto', 'Un bot de reuniones que grababa a todos'],
+          ['download', 'Obsidian · abril', 'Un plugin que instalaba un troyano'],
+          ['send', 'MCP · todo el año', 'Fallos de seguridad en conectores de IA'],
+          ['search', 'Perseus · marzo', 'Malware de móvil que lee apps de notas'],
+        ],
+      },
+    },
+    art: (s) =>
+      col(
+        [
+          {
+            // Glass over the bright silk, so the grey sublines stay readable.
+            ...panel(
+              s.rows.map(([ic, title, sub]) =>
+                row(ic, title, sub, {
+                  pad: [8, 12],
+                  iconBox: { fill: w(0.14), color: PAPER },
+                  titleFill: PAPER,
+                  subFill: w(0.68),
+                }),
+              ),
+              { fill: { color: DBG, opacity: 0.42 }, gap: 2, pad: [8, 8] },
+            ),
+            effects: [{ type: 'BACKGROUND_BLUR', blur: 24 }],
+          },
+        ],
+        { y: 88 },
+      ),
+  },
 ]
 
 // Each language is its own block of three columns, side by side on the page.
@@ -1443,6 +1498,7 @@ const nodes = []
 for (const lang of LANGS) {
   ARTICLES.forEach((a, i) => {
     const s = a.t[lang]
+    if (!s) return
     const slug = a.slug[lang]
     const dark = Boolean(a.dark)
     const ink = dark ? PAPER : INK
@@ -1556,4 +1612,4 @@ for (const lang of LANGS) {
 
 const out = join(HERE, 'blog-covers.json')
 writeFileSync(out, JSON.stringify({ page: 'Blog covers', nodes }, null, 2))
-console.log(`${ARTICLES.length * LANGS.length} covers → ${out}`)
+console.log(`${nodes.length / 2} covers → ${out}`)

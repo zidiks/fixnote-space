@@ -1033,6 +1033,13 @@
 .prose-note li + li {
   margin-top: 0.4em;
 }
+/* Pictures in an article: rounded like the cover above it (rounded-2xl), never wider than the text. */
+.prose-note img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 1rem;
+}
 .prose-note blockquote {
   border-left: 3px solid var(--color-line);
   padding-left: 1em;
