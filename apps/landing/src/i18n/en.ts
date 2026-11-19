@@ -885,7 +885,7 @@ export const en: Dict = {
 
   consent: {
     title: 'Cookies and analytics',
-    text: 'May we count visits to this site with Yandex Metrica and Google Analytics? They set cookies. They never see your notes or the app.',
+    text: 'May we count visits to this site with Google Analytics? It sets cookies. It never sees your notes or the app.',
     more: 'How we use cookies',
     accept: 'Allow',
     decline: 'No thanks',
@@ -1019,7 +1019,7 @@ export const en: Dict = {
   privacyPage: {
     eyebrow: 'Privacy',
     title: 'Privacy policy',
-    updated: 'Updated October 17, 2026',
+    updated: 'Updated November 19, 2026',
     lead: 'In short: we cannot read your notes, we do not sell data and we show no ads. Below is exactly what data Fixnote has and why.',
     sections: [
       {
@@ -1088,7 +1088,8 @@ export const en: Dict = {
         id: 'cookies',
         text: [
           'There are no ads, analytics or trackers in the app. We do not sell data or share it for advertising.',
-          'On the fixnote.space website, if you allow it in the banner, Yandex Metrica and Google Analytics count visits: which pages people read, where they come from and how many click Download. They set cookies for this. Session recording (Webvisor) is off. Without your consent they are not loaded. You can change your choice with "Cookies" at the bottom of any page. Your notes and anything you do in the app never reach it.',
+          'Cloudflare, which serves the fixnote.space website, counts visits without cookies (Cloudflare Web Analytics): which pages are read, the site people come from, their country and browser. It does not identify you, so it needs no consent. Clicks on Download are counted from the requests to our download links.',
+          'If you allow it in the banner, Google Analytics counts visits too and sets cookies for this. Without your consent it is not loaded. You can change your choice with "Cookies" at the bottom of any page. Your notes and anything you do in the app never reach either of them.',
         ],
       },
       {

@@ -18,11 +18,12 @@ const meter: Meter = {
     }
     return data as Allowance
   },
-  async record(user, tokens, requests) {
+  async record(user, tokens, requests, hard) {
     const { error } = await db.rpc('ai_record', {
       p_user: user,
       p_tokens: tokens,
       p_requests: requests,
+      p_hard: hard,
     })
     if (error) console.error('ai_record failed', error.message)
   },

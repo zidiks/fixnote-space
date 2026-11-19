@@ -38,8 +38,11 @@ export interface Allowance {
 /** The account's AI allowance and what each answer cost (the database in production). */
 export interface Meter {
   allowance(user: string): Promise<Allowance>
-  /** `requests`: 1 for a question, 0 for a step that only brings tool results back. */
-  record(user: string, tokens: number, requests: number): Promise<void>
+  /**
+   * `requests`: 1 for a question, 0 for a step that only brings tool results back. `hard`: the
+   * larger model answered (the daily report counts the levels apart).
+   */
+  record(user: string, tokens: number, requests: number, hard: boolean): Promise<void>
 }
 
 /** No accounting (tests of the proxy itself, or no database). */
@@ -262,7 +265,7 @@ export async function handle(
 
   return new Response(
     metered(upstream.body, raw.length, (tokens) =>
-      meter.record(user, Math.ceil(tokens * (hard ? env.hardWeight : 1)), step ? 0 : 1),
+      meter.record(user, Math.ceil(tokens * (hard ? env.hardWeight : 1)), step ? 0 : 1, hard),
     ),
     {
       status: 200,

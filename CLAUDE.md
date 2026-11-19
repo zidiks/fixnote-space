@@ -304,6 +304,14 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
 - Shared links: the key lives only in the URL fragment; never send it or the plaintext to the
   server. The share page (`SharePage`, `/?s=<id>#<key>`) must not open the local DB or the account.
 - Edge function tests: `deno test -A` in each function folder (deno is not a repo dependency).
+- Metrics: a daily report in Telegram (`functions/metrics-digest`, 09:00 Minsk by pg_cron, once a
+  day by `metrics_claim`; cohorts on Mondays). The bot's /today, /yesterday, /week (its webhook,
+  with `METRICS_WEBHOOK_SECRET`, answered only in the report's chat) claim nothing, so the daily
+  report stays. Counts only, never content, emails or names. SQL in
+  `*_metrics.sql`: `account_days` (note pushes, sessions refreshed by an open app every hour),
+  `plan_events` (trial/paid/renewed/canceled from a trigger on `subscriptions`), `ai_usage.hard_requests`.
+  The site's numbers come from Cloudflare (Web Analytics visits, requests to `/download/*`),
+  downloads from GitHub release counters.
 - Landing and blog: `apps/landing` (Astro, static, fixnote.space: English at the root, `/ru/`, `/es/`;
   the app is app.fixnote.space). Its copy
   lives in `apps/landing/src/i18n` (ru is the reference, en/es must match its shape), not in
@@ -312,9 +320,10 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   module: the served markup is frame 0, carets are inline in the text, plays only on screen, never
   with reduced motion); only claim what the app does. The search cards (`views/home/recall`) are CSS
   keyframes written at build time (`lib/anim.ts`: transform/opacity only, typed letters each with
-  their own caret), paused until on screen. Analytics (Yandex Metrika, GA4) only on the site and
-  only after the consent banner (`src/data/analytics.ts`, privacy section `cookies`: change them
-  together); the app has none and stays `noindex`. schema.org data comes from `src/lib/schema.ts`
+  their own caret), paused until on screen. Analytics only on the site: Cloudflare Web Analytics
+  (no cookies, no banner) and GA4 only after the consent banner (`src/data/analytics.ts`, privacy
+  section `cookies`: change them together); no Yandex Metrika (the audience is the EU and the US);
+  the app has none and stays `noindex`. schema.org data comes from `src/lib/schema.ts`
   (fixed `@id`s); each page's Open Graph picture is drawn after the build from its <title> and the
   `og` prop of `Base` (`og.mjs`), and changed pages go to IndexNow after the deploy
   (`indexnow.mjs`). Blog authors: `src/data/authors.ts`, real people only. SEO plan, keyword

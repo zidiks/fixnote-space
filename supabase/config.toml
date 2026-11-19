@@ -150,6 +150,17 @@ verify_jwt = false
 enabled = true
 verify_jwt = false
 
+# Daily metrics in Telegram (see supabase/functions/metrics-digest), sent once a day by pg_cron.
+# Secrets: `pnpm sb secrets set METRICS_BOT_TOKEN=... METRICS_CHAT_ID=...` (a bot of its own, not
+# the capture bot). Optional: CLOUDFLARE_API_TOKEN (Account Analytics: Read, Zone Analytics: Read)
+# with CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_SITE_TAG (Web Analytics visits) and CLOUDFLARE_ZONE_ID
+# (clicks on /download/*); GITHUB_TOKEN (downloads; works without it while GitHub allows).
+# Commands in the bot (/today, /yesterday, /week; they never take the daily report's place):
+# METRICS_WEBHOOK_SECRET, and the bot's webhook set to this function with the same secret_token.
+[functions.metrics-digest]
+enabled = true
+verify_jwt = false
+
 # Fixed sign-in code of the accounts app reviewers use (no JWT: they are signed out). Secrets:
 # `pnpm sb secrets set REVIEW_ACCOUNTS=review@fixnote.space REVIEW_CODE=<8-10 digits>`
 # (docs/mcp-directories.md, "Reviewer account"). Without them it does nothing.

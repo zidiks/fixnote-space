@@ -4,7 +4,7 @@ import geistLatin from '@fontsource-variable/geist/files/geist-latin-wght-normal
 import Consent from '../components/Consent.astro'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
-import { ANALYTICS, GA4_ID, YANDEX_METRIKA_ID } from '../data/analytics'
+import { ANALYTICS, CLOUDFLARE_BEACON, GA4_ID } from '../data/analytics'
 import { HTML_LANG, LANGS, type Lang, localePath, OG_LOCALE, t } from '../i18n'
 import { ogImagePath, organization, webPage, website } from '../lib/schema'
 import '../styles/global.css'
@@ -124,12 +124,22 @@ const graph = [
     </main>
     <slot name="footer"><Footer lang={lang} alternates={alternates} notes={notes} crumb={crumb} /></slot>
     {
+      CLOUDFLARE_BEACON && (
+        <script
+          is:inline
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={JSON.stringify({ token: CLOUDFLARE_BEACON })}
+        />
+      )
+    }
+    {
       ANALYTICS && (
         <>
           <Consent lang={lang} />
-          <script is:inline define:vars={{ ymId: YANDEX_METRIKA_ID, gaId: GA4_ID }}>
-            // Analytics (src/data/analytics.ts): Yandex Metrika and GA4 load only after "Allow";
-            // "Cookies" in the footer asks again. Downloads and opening the app are goals.
+          <script is:inline define:vars={{ gaId: GA4_ID }}>
+            // Analytics (src/data/analytics.ts): GA4 loads only after "Allow"; "Cookies" in the
+            // footer asks again. Downloads and opening the app are events.
             ;(() => {
               const KEY = 'fixnote.consent'
               const banner = document.getElementById('consent')
@@ -149,19 +159,6 @@ const graph = [
               const load = () => {
                 if (on) return
                 on = true
-                if (ymId) {
-                  window.ym =
-                    window.ym ||
-                    function () {
-                      ;(window.ym.a = window.ym.a || []).push(arguments)
-                    }
-                  window.ym.l = Date.now()
-                  const s = document.createElement('script')
-                  s.async = true
-                  s.src = `https://mc.yandex.ru/metrika/tag.js?id=${ymId}`
-                  document.head.append(s)
-                  window.ym(ymId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: false })
-                }
                 if (gaId) {
                   window.dataLayer = window.dataLayer || []
                   window.gtag = function () {
@@ -177,7 +174,6 @@ const graph = [
               }
               const goal = (name, params) => {
                 if (!on) return
-                if (ymId) window.ym(ymId, 'reachGoal', name, params)
                 if (gaId) window.gtag('event', name, params)
               }
               document.addEventListener('click', (e) => {

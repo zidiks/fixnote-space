@@ -70,7 +70,7 @@ Deno.test('streams the provider answer with the server key and fixed model', asy
 })
 
 Deno.test('"hard" thinks on the larger model, gets its reasoning back and weighs more', async () => {
-  const { m, charged } = meter({ ok: true })
+  const { m, charged, levels } = meter({ ok: true })
   const call = { id: 'c1', type: 'function', function: { name: 'list_folders', arguments: '{}' } }
   const res = await handle(
     post(
@@ -115,6 +115,8 @@ Deno.test('"hard" thinks on the larger model, gets its reasoning back and weighs
   assertEquals(sent[3]?.reasoning_content, 'Count them.')
   // 42 tokens at four times the weight; a step with tool results is no new request.
   assertEquals(charged, [['h1', 168]])
+  // Recorded as the larger model, so the daily report counts the levels apart.
+  assertEquals(levels, [true])
 })
 
 Deno.test('rejects anonymous callers and bad input', async () => {
@@ -188,14 +190,16 @@ Deno.test('maps provider errors without leaking their body', async () => {
 function meter(allowance: Allowance) {
   const charged: [string, number][] = []
   const requests: number[] = []
+  const levels: boolean[] = []
   const m: Meter = {
     allowance: async () => allowance,
-    record: async (user, tokens, count) => {
+    record: async (user, tokens, count, hard) => {
       charged.push([user, tokens])
       requests.push(count)
+      levels.push(hard)
     },
   }
-  return { m, charged, requests }
+  return { m, charged, requests, levels }
 }
 
 Deno.test('charges the tokens the provider reports, once the answer is read', async () => {
