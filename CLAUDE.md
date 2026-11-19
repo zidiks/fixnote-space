@@ -312,9 +312,9 @@ Read docs/CONCEPT.md before larger changes; section 10 lists decisions already m
   `plan_events` (trial/paid/renewed/canceled from a trigger on `subscriptions`), `ai_usage.hard_requests`.
   The site's numbers come from Cloudflare (Web Analytics visits, requests to `/download/*`),
   downloads from GitHub release counters.
-- Landing and blog: `apps/landing` (Astro, static, fixnote.space: English at the root, `/ru/`, `/es/`;
+- Landing and blog: `apps/landing` (Astro, static, fixnote.space: English at the root, Spanish under `/es/`; retired `/ru/` URLs 301 to English in `public/_redirects`;
   the app is app.fixnote.space). Its copy
-  lives in `apps/landing/src/i18n` (ru is the reference, en/es must match its shape), not in
+  lives in `apps/landing/src/i18n` (en is the reference, es must match its shape), not in
   `@fixnote/i18n`. Keep pages script-free apart from the small inline scripts in `Base.astro` and
   the home sections, and the hero's live app (`HeroApp.astro` + `src/scripts/hero`, one deferred
   module: the served markup is frame 0, carets are inline in the text, plays only on screen, never

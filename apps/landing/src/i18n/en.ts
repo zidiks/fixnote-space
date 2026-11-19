@@ -1,6 +1,9 @@
-import type { Dict } from './index'
+import type { Part } from './types'
 
-export const en: Dict = {
+/**
+ * English copy: the reference for es.ts, which must have the same shape (see Dict).
+ */
+export const en = {
   meta: {
     siteName: 'Fixnote',
     home: {
@@ -951,7 +954,12 @@ export const en: Dict = {
 
   securityPage: {
     eyebrow: 'Security',
-    headline: ['Your notes are', '\n', 'readable only by', { text: 'you', tone: 'green' }],
+    headline: [
+      'Your notes are',
+      '\n',
+      'readable only by',
+      { text: 'you', tone: 'green' },
+    ] satisfies Part[],
     lead: 'Fixnote is built so that you don’t have to trust us: encryption happens on your device, and the server stores only what it cannot read.',
     sections: [
       {
@@ -988,7 +996,7 @@ export const en: Dict = {
 
   downloadPage: {
     eyebrow: 'Download',
-    headline: ['Fixnote for', { text: 'your', tone: 'brand' }, 'devices'],
+    headline: ['Fixnote for', { text: 'your', tone: 'brand' }, 'devices'] satisfies Part[],
     lead: 'Pick the installer for your system or open the web version. Once you sign in, notes sync between all your devices.',
     windows: 'What Fixnote does on Windows',
     requirementsTitle: 'System requirements',
@@ -1003,7 +1011,7 @@ export const en: Dict = {
   blogPage: {
     more: 'More articles',
     eyebrow: 'Blog',
-    headline: ['Notes', { text: 'about notes', tone: 'brand' }],
+    headline: ['Notes', { text: 'about notes', tone: 'brand' }] satisfies Part[],
     lead: 'How to write thoughts down so you can find them later, and how Fixnote works inside.',
     read: 'Read',
     minutes: 'min',

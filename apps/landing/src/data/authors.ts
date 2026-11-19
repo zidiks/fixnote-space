@@ -21,8 +21,8 @@ export interface Author {
 export const AUTHORS: Record<string, Author> = {
   // Asked to be shown by first name and role only: no bio, photo or profiles.
   vladimir: {
-    name: { ru: 'Владимир', en: 'Vladimir', es: 'Vladimir' },
-    role: { ru: 'сооснователь Fixnote', en: 'co-founder of Fixnote', es: 'cofundador de Fixnote' },
+    name: { en: 'Vladimir', es: 'Vladimir' },
+    role: { en: 'co-founder of Fixnote', es: 'cofundador de Fixnote' },
   },
 }
 

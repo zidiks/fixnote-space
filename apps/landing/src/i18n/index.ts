@@ -1,19 +1,18 @@
 import { en } from './en'
 import { es } from './es'
-import { ru } from './ru'
 import type { Part, Tone } from './types'
 
 export type { Part, Tone }
 
-/** Published site languages. The Russian dictionary remains an internal translation reference. */
+/** Site languages: English at the root, Spanish under /es/. */
 export const LANGS = ['en', 'es'] as const
-export type Lang = 'en' | 'ru' | 'es'
+export type Lang = (typeof LANGS)[number]
 export const DEFAULT_LANG: Lang = 'en'
 
 /** Names in their own language, for the language switcher. */
-export const LANG_NAMES: Record<Lang, string> = { ru: 'Русский', en: 'English', es: 'Español' }
-export const HTML_LANG: Record<Lang, string> = { ru: 'ru', en: 'en', es: 'es' }
-export const OG_LOCALE: Record<Lang, string> = { ru: 'ru_RU', en: 'en_US', es: 'es_ES' }
+export const LANG_NAMES: Record<Lang, string> = { en: 'English', es: 'Español' }
+export const HTML_LANG: Record<Lang, string> = { en: 'en', es: 'es' }
+export const OG_LOCALE: Record<Lang, string> = { en: 'en_US', es: 'es_ES' }
 
 export const APP_URL = 'https://app.fixnote.space/'
 
@@ -31,7 +30,7 @@ export const DOWNLOADS = {
 } as const
 
 /**
- * The Russian copy's shape with every text widened to string: en and es must match it key for key,
+ * The English copy's shape with every text widened to string: es must match it key for key,
  * so a missing translation fails the build.
  */
 type Widen<T> = T extends Tone
@@ -47,13 +46,13 @@ type Widen<T> = T extends Tone
       : T extends object
         ? { [K in keyof T]: Widen<T[K]> }
         : T
-export type Dict = Widen<typeof ru>
+export type Dict = Widen<typeof en>
 
-const DICTS: Record<Lang, Dict> = { ru, en, es }
+const DICTS: Record<Lang, Dict> = { en, es }
 
 export const t = (lang: Lang): Dict => DICTS[lang]
 
-/** A site path in the given language: English at the root, the others under /ru/ and /es/. */
+/** A site path in the given language: English at the root, Spanish under /es/. */
 export function localePath(lang: Lang, path = '/'): string {
   const clean = path.startsWith('/') ? path : `/${path}`
   return lang === DEFAULT_LANG ? clean : `/${lang}${clean}`
@@ -66,5 +65,4 @@ export function splitPath(pathname: string): { lang: Lang; path: string } {
   return { lang: DEFAULT_LANG, path: pathname || '/' }
 }
 
-export const isLang = (value: string | undefined): value is Lang =>
-  value === 'en' || value === 'es' || value === 'ru'
+export const isLang = (value: string | undefined): value is Lang => value === 'en' || value === 'es'

@@ -8,12 +8,11 @@ export interface Release {
 }
 
 export const RELEASES: readonly Release[] = [
-  { version: '0.1.32', date: '2026-10-09', notes: { ru: [], en: [], es: [] } },
+  { version: '0.1.32', date: '2026-10-09', notes: { en: [], es: [] } },
   {
     version: '0.1.31',
     date: '2026-10-02',
     notes: {
-      ru: ['Пока Pro оплачен, оплату за него повторно открыть нельзя.'],
       en: ['While Pro is paid for, the app no longer opens a second checkout.'],
       es: ['Mientras Pro está pagado, la app ya no abre un segundo pago.'],
     },
@@ -22,9 +21,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.30',
     date: '2026-10-02',
     notes: {
-      ru: [
-        'В настройках появился раздел «Подписка и оплата»: история платежей, чеки, переход на годовой план и отмена.',
-      ],
       en: [
         'Settings now has a Billing section with your payments, receipts, a switch to yearly and cancelling.',
       ],
@@ -37,10 +33,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.29',
     date: '2026-10-02',
     notes: {
-      ru: [
-        'Синхронизация обращается к серверу намного реже: изменения с других устройств приходят сразу сами.',
-        'Общая заметка, сохранённая с неверным ключом, теперь чинится сама.',
-      ],
       en: [
         'Sync talks to the server far less often, because changes from other devices now arrive on their own.',
         'A shared note saved with the wrong key now repairs itself.',
@@ -55,11 +47,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.28',
     date: '2026-10-01',
     notes: {
-      ru: [
-        'После оплаты на сайте браузер возвращает вас в приложение для компьютера.',
-        'При первом запуске приложение коротко показывает, с чего начать.',
-        'Pro можно оплатить криптовалютой.',
-      ],
       en: [
         'After paying on the site, the browser takes you back to the desktop app.',
         'On first launch a short welcome shows where to start.',
@@ -76,12 +63,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.27',
     date: '2026-10-01',
     notes: {
-      ru: [
-        'Несколько заметок можно выбрать долгим нажатием или с Ctrl и разом закрепить, перенести, разобрать или удалить.',
-        'Время заметки меняется только вместе с её текстом и сохраняется при синхронизации.',
-        'Итоги встреч на русском языке стали точнее.',
-        'Все правки ИИ можно отклонить одной кнопкой.',
-      ],
       en: [
         'Pick several notes with a long press or Ctrl-click, then pin, move, tidy up or delete them at once.',
         "A note's time changes only with its text and stays the same through sync.",
@@ -100,10 +81,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.26',
     date: '2026-10-01',
     notes: {
-      ru: [
-        'Повторный запуск открывает уже работающий Fixnote, а не вторую копию.',
-        'Из значка в трее можно создать заметку, начать голосовую, открыть заметку дня и поиск.',
-      ],
       en: [
         'Launching Fixnote again brings up the running app instead of a second copy.',
         'The tray icon creates a note, starts a voice note, opens today’s note and search.',
@@ -118,11 +95,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.25',
     date: '2026-09-30',
     notes: {
-      ru: [
-        'Итоги созвонов работают на macOS 14.2 и новее.',
-        'Закрытое окно прячется в трей или строку меню, и Fixnote продолжает работать.',
-        'В настройках видно, сколько места занимает каждая модель на устройстве.',
-      ],
       en: [
         'Call summaries work on macOS 14.2 and later.',
         'Closing the window hides Fixnote to the tray or menu bar, and it keeps running.',
@@ -139,10 +111,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.24',
     date: '2026-09-30',
     notes: {
-      ru: [
-        'Fixnote записывает созвон на Windows и делает из него заметку с итогами.',
-        'Веб-версия удобна на телефоне: кнопка «Назад», раскладка под узкий экран, клавиатура iOS и значок на главном экране.',
-      ],
       en: [
         'Fixnote records a call on Windows and turns it into a note with a summary.',
         'The web app works well on phones: the back button, layouts for narrow screens, the iOS keyboard and a home screen icon.',
@@ -157,7 +125,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.23',
     date: '2026-09-30',
     notes: {
-      ru: ['Текст заметки, открытой по ссылке, можно выделить и скопировать.'],
       en: ['Text in a note opened from a share link can be selected and copied.'],
       es: ['El texto de una nota abierta desde un enlace se puede seleccionar y copiar.'],
     },
@@ -166,11 +133,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.22',
     date: '2026-09-29',
     notes: {
-      ru: [
-        'Приложение открывается без вспышек и сразу в нужной теме.',
-        'Свёрнутые папки остаются свёрнутыми после перезапуска.',
-        'Fixnote AI видит список папок и может глубже подумать над сложным вопросом.',
-      ],
       en: [
         'The app opens without flashes and in the right theme straight away.',
         'Folded folders stay folded after a restart.',
@@ -187,10 +149,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.21',
     date: '2026-09-29',
     notes: {
-      ru: [
-        'Диктовка стала быстрее, и голос никогда не покидает устройство.',
-        'Правки, которые делает подключённый по MCP ассистент, сразу видны в открытой общей заметке.',
-      ],
       en: [
         'Dictation is faster, and your voice never leaves the device.',
         'Edits made by an assistant connected over MCP show up at once in an open shared note.',
@@ -205,10 +163,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.20',
     date: '2026-09-29',
     notes: {
-      ru: [
-        'На Mac можно перенести заметки из Apple Notes вместе с папками.',
-        'Поле ввода в чате с ассистентом растёт вместе с текстом.',
-      ],
       en: [
         'On a Mac you can bring your notes over from Apple Notes, folders included.',
         'The assistant chat box grows with your text.',
@@ -223,11 +177,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.19',
     date: '2026-09-29',
     notes: {
-      ru: [
-        'Fixnote читает текст на картинках прямо на устройстве, и его находит поиск.',
-        'Правка ИИ в открытой заметке впечатывается на месте, её видно по ходу.',
-        'Fixnote AI работает и в общих заметках.',
-      ],
       en: [
         'Fixnote reads the text in images on your device, and search finds it.',
         'An AI edit to an open note is typed in place, so you watch it happen.',
@@ -244,11 +193,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.18',
     date: '2026-09-29',
     notes: {
-      ru: [
-        'Ассистент сам ищет, создаёт и правит заметки, помнит разговор и даёт отменить все свои изменения сразу.',
-        'Модели, которые работают на устройстве, собраны в Настройки → Дополнительно: размер, загрузка и удаление.',
-        'Голосовые сообщения можно отправлять ассистенту в чат.',
-      ],
       en: [
         'The assistant finds, creates and edits notes itself, remembers the conversation and can undo all its changes at once.',
         'On-device models are listed in Settings → Advanced with their size, download and remove.',
@@ -265,9 +209,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.17',
     date: '2026-09-29',
     notes: {
-      ru: [
-        'Заметки устройства принадлежат одному аккаунту, а пробный Pro включается по вашему желанию.',
-      ],
       en: ["A device's notes belong to one account, and the Pro trial starts when you choose."],
       es: [
         'Las notas de un dispositivo pertenecen a una cuenta, y la prueba de Pro empieza cuando tú quieras.',
@@ -278,7 +219,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.16',
     date: '2026-09-29',
     notes: {
-      ru: ['При выходе из аккаунта Fixnote спрашивает, что делать с заметками на устройстве.'],
       en: ['Signing out asks what to do with the notes on the device.'],
       es: ['Al cerrar sesión, Fixnote pregunta qué hacer con las notas del dispositivo.'],
     },
@@ -287,7 +227,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.15',
     date: '2026-09-29',
     notes: {
-      ru: ['Pro можно оплатить и во время беты.'],
       en: ['Pro can be paid for during the beta too.'],
       es: ['Pro también se puede pagar durante la beta.'],
     },
@@ -296,10 +235,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.14',
     date: '2026-09-28',
     notes: {
-      ru: [
-        'В общие заметки можно добавлять файлы и картинки.',
-        'Заметки можно смотреть карточками, списком или компактно и сортировать.',
-      ],
       en: [
         'Shared notes can hold files and images.',
         'Notes can be shown as cards, a list or a compact list, and sorted.',
@@ -314,11 +249,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.13',
     date: '2026-09-28',
     notes: {
-      ru: [
-        'Появился Pro: 7 дней бесплатно, оплата в приложении.',
-        'Ассистенты по MCP видят картинки и файлы заметок.',
-        'Фраза восстановления показывается только после кода из письма.',
-      ],
       en: [
         'Pro arrived, with a 7-day trial and payment in the app.',
         'Assistants connected over MCP see the images and files in notes.',
@@ -335,7 +265,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.12',
     date: '2026-09-28',
     notes: {
-      ru: ['У каждого человека в общей заметке свой цвет.'],
       en: ['Each person in a shared note gets a colour of their own.'],
       es: ['Cada persona en una nota compartida tiene su propio color.'],
     },
@@ -344,10 +273,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.11',
     date: '2026-09-28',
     notes: {
-      ru: [
-        'Кнопки, которые ждут сервер, показывают индикатор загрузки.',
-        'Подключения к Telegram и ассистентам собраны в разделе «Интеграции».',
-      ],
       en: [
         'Buttons that wait for the server show a spinner.',
         'Telegram and assistant connections live in a new Integrations section.',
@@ -362,11 +287,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.10',
     date: '2026-09-28',
     notes: {
-      ru: [
-        'Целыми папками можно делиться так же, как заметками.',
-        'Приглашение нужно принять, и через 30 дней оно истекает.',
-        'В общей заметке видно курсоры других людей.',
-      ],
       en: [
         'Whole folders can be shared just like notes.',
         'An invitation has to be accepted and expires after 30 days.',
@@ -383,10 +303,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.9',
     date: '2026-09-28',
     notes: {
-      ru: [
-        'Заметкой можно поделиться с человеком по почте и редактировать её вместе в реальном времени.',
-        'В узком окне Fixnote перестраивается под ширину.',
-      ],
       en: [
         'Share a note with someone by email and edit it together in real time.',
         'In a narrow window Fixnote rearranges itself to fit.',
@@ -401,7 +317,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.8',
     date: '2026-09-27',
     notes: {
-      ru: ['Папка показывает и заметки из своих вложенных папок.'],
       en: ['A folder also shows the notes in its subfolders.'],
       es: ['Una carpeta muestra también las notas de sus subcarpetas.'],
     },
@@ -410,10 +325,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.7',
     date: '2026-09-27',
     notes: {
-      ru: [
-        'Если одну заметку изменили на двух устройствах, Fixnote сохраняет обе версии и даёт их сравнить.',
-        'Две заметки дня за одну дату объединяются в одну.',
-      ],
       en: [
         'When one note changes on two devices, Fixnote keeps both versions and lets you compare them.',
         'Two daily notes for the same date are merged into one.',
@@ -428,7 +339,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.6',
     date: '2026-09-27',
     notes: {
-      ru: ['Таблицы видны в превью карточек.'],
       en: ['Tables show in note card previews.'],
       es: ['Las tablas se ven en la vista previa de las tarjetas.'],
     },
@@ -437,11 +347,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.5',
     date: '2026-09-27',
     notes: {
-      ru: [
-        'В заметках появились таблицы.',
-        'Новую заметку и папку можно создать сочетанием клавиш.',
-        'Fixnote подключается к Codex по MCP.',
-      ],
       en: [
         'Notes can hold tables.',
         'Keyboard shortcuts create a new note and a new folder.',
@@ -458,10 +363,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.4',
     date: '2026-09-27',
     notes: {
-      ru: [
-        'Ассистенты по MCP видят, какие задачи отмечены.',
-        'Ссылки, присланные боту в Telegram, становятся карточками.',
-      ],
       en: [
         'Assistants connected over MCP see which tasks are checked.',
         'Links sent to the Telegram bot become bookmark cards.',
@@ -476,7 +377,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.3',
     date: '2026-09-27',
     notes: {
-      ru: ['Поиск по смыслу больше не зависает.', 'На Mac файлы можно перетаскивать в окно.'],
       en: [
         'Search by meaning no longer gets stuck.',
         'On a Mac you can drop files onto the window.',
@@ -491,11 +391,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.2',
     date: '2026-09-27',
     notes: {
-      ru: [
-        'Повторяющиеся задачи сами появляются в заметке дня.',
-        'Можно выбрать, вносит ли ИИ правки сразу или после вашего согласия.',
-        'Файл, брошенный на окно, попадает в открытую заметку или в новую.',
-      ],
       en: [
         'Repeating tasks appear in the daily note on their own.',
         'You choose whether the AI applies edits at once or after you accept them.',
@@ -512,11 +407,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.1',
     date: '2026-09-27',
     notes: {
-      ru: [
-        'Приложение для компьютера обновляется само.',
-        'Заметки можно закреплять, а в текст вставлять картинки.',
-        'Ассистенты по MCP могут править, переносить и удалять заметки, а вы решаете, какие папки им видны.',
-      ],
       en: [
         'The desktop app updates itself.',
         'Notes can be pinned, and images can be pasted into text.',
@@ -533,7 +423,6 @@ export const RELEASES: readonly Release[] = [
     version: '0.1.0',
     date: '2026-09-26',
     notes: {
-      ru: ['Первая версия Fixnote для Windows, macOS и браузера.'],
       en: ['The first version of Fixnote for Windows, macOS and the browser.'],
       es: ['La primera versión de Fixnote para Windows, macOS y el navegador.'],
     },

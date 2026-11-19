@@ -1,7 +1,7 @@
 import type { Author } from '../data/authors'
 import { RELEASES } from '../data/releases'
 import { SOCIAL } from '../data/social'
-import { HTML_LANG, type Lang, localePath } from '../i18n'
+import { HTML_LANG, LANGS, type Lang, localePath } from '../i18n'
 
 /**
  * schema.org data shared by every page. The organization, the site and the app have fixed `@id`s,
@@ -64,7 +64,7 @@ export const app = (lang: Lang, description: string, image: string) => ({
   downloadUrl: new URL(localePath(lang, '/download/'), SITE).href,
   installUrl: 'https://app.fixnote.space/',
   image,
-  inLanguage: ['en', 'ru', 'es'],
+  inLanguage: [...LANGS],
   publisher: { '@id': ORG_ID },
   offers: [
     { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD' },
