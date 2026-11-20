@@ -1,6 +1,6 @@
 # Fixnote
 
-Private personal notes with an assistant that helps you remember. Local-first, end-to-end encrypted,
+Private-first personal notes with an assistant that helps you remember. Local-first, end-to-end encrypted,
 voice input, chat over your notes, MCP. Desktop (Tauri, Windows first) and web from one codebase.
 
 - Product and architecture concept: [docs/CONCEPT.md](docs/CONCEPT.md)
