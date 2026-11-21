@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
+import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import { defineConfig, type Plugin } from 'vite'
 
 // Hosted builds (Cloudflare) have no .env: use the public values of .env.example unless the
@@ -37,7 +38,21 @@ function dropBundledOrt(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), dropBundledOrt()],
+  plugins: [
+    react(),
+    babel({
+      include: /[\\/](?:apps[\\/]web|packages[\\/](?:ui|i18n))[\\/]src[\\/].*\.[jt]sx?(?:\?|$)/,
+      presets: [reactCompilerPreset()],
+      // Babel's filename globs do not match Windows backslashes. Explicit parser overrides also
+      // cover source-only workspace packages before Vite strips their TypeScript.
+      overrides: [
+        { include: /\.ts(?:\?|$)/, parserOpts: { plugins: ['typescript'] } },
+        { include: /\.[jt]sx(?:\?|$)/, parserOpts: { plugins: ['typescript', 'jsx'] } },
+      ],
+    }),
+    tailwindcss(),
+    dropBundledOrt(),
+  ],
   envDir: '../..',
   clearScreen: false,
   server: {

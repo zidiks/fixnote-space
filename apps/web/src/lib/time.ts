@@ -7,9 +7,32 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ['minute', 60],
 ]
 
+// Constructing Intl formatters for every visible card dominated list renders in the CPU profile.
+// Only the most recently used interface language is retained; a language change rebuilds them.
+let cached:
+  | {
+      lang: string | undefined
+      relative: Intl.RelativeTimeFormat
+      time: Intl.DateTimeFormat
+      date: Intl.DateTimeFormat
+      year: Intl.DateTimeFormat
+    }
+  | undefined
+function formatters(lang: string | undefined) {
+  if (!cached || cached.lang !== lang)
+    cached = {
+      lang,
+      relative: new Intl.RelativeTimeFormat(lang, { numeric: 'auto' }),
+      time: new Intl.DateTimeFormat(lang, { timeStyle: 'short' }),
+      date: new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short' }),
+      year: new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'short', year: 'numeric' }),
+    }
+  return cached
+}
+
 /** "5 minutes ago" style, in the interface language. */
 export function formatRelative(ts: number, lang: string | undefined, now = Date.now()): string {
-  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' })
+  const rtf = formatters(lang).relative
   const diff = Math.round((ts - now) / 1000)
   for (const [unit, seconds] of UNITS) {
     if (Math.abs(diff) >= seconds) return rtf.format(Math.round(diff / seconds), unit)
@@ -21,12 +44,9 @@ export function formatRelative(ts: number, lang: string | undefined, now = Date.
 export function formatCardDate(ts: number, lang: string | undefined, now = new Date()): string {
   const d = new Date(ts)
   const sameDay = d.toDateString() === now.toDateString()
-  if (sameDay) return new Intl.DateTimeFormat(lang, { timeStyle: 'short' }).format(d)
-  const opts: Intl.DateTimeFormatOptions =
-    d.getFullYear() === now.getFullYear()
-      ? { day: 'numeric', month: 'short' }
-      : { day: 'numeric', month: 'short', year: 'numeric' }
-  return new Intl.DateTimeFormat(lang, opts).format(d)
+  const f = formatters(lang)
+  if (sameDay) return f.time.format(d)
+  return (d.getFullYear() === now.getFullYear() ? f.date : f.year).format(d)
 }
 
 export function startOfDay(d = new Date()): number {

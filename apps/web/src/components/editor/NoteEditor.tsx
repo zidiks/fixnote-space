@@ -12,6 +12,7 @@ import { Extension, getMarkRange } from '@tiptap/core'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { Placeholder } from '@tiptap/extensions'
+import type { Node as PmNode } from '@tiptap/pm/model'
 import { type Editor, EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import { updateYFragment } from '@tiptap/y-tiptap'
 import {
@@ -356,9 +357,12 @@ export function NoteEditor({
   onLeave?: (markdown: string) => void
 }) {
   const { t } = useTranslation()
-  const pending = useRef<string | null>(null)
+  // Keep immutable document snapshots while typing; serialize only at the save boundary.
+  const pending = useRef<PmNode | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const latest = useRef(note.content)
+  const latest = useRef<string | PmNode>(note.content)
+  const saves = useRef<Promise<unknown>>(Promise.resolve())
+  const saving = useRef(0)
   /** The stored text the current edit started from. */
   const base = useRef(note.content)
   const editorRef = useRef<Editor | null>(null)
@@ -415,20 +419,41 @@ export function NoteEditor({
 
   const flush = useRef(async () => {
     clearTimeout(timer.current)
-    const markdown = pending.current
-    if (markdown === null) return
+    const doc = pending.current
+    const manager = editorRef.current?.markdown
+    if (doc === null || !manager) return
+    const markdown = manager.serialize(doc.toJSON())
+    if (latest.current === doc) latest.current = markdown
     pending.current = null
-    callbacks.current.onStateChange?.('saving')
-    const saved = await callbacks.current.onSave(markdown, base.current)
-    base.current = saved.content
-    // The save merged in a change from another device: show it, unless the user kept typing.
-    // (Live, the room is what the editor shows; the database follows it.)
-    if (!liveRef.current && pending.current === null && saved.content !== markdown)
-      replaceContent(saved.content)
-    if (pending.current === null) callbacks.current.onStateChange?.('saved')
+    saving.current++
+    // A slow save may overlap the next pause/blur. Queue writes so each starts from the result
+    // of the preceding save, and an older response never replaces newer typing.
+    const write = saves.current
+      .then(async () => {
+        callbacks.current.onStateChange?.('saving')
+        const saved = await callbacks.current.onSave(markdown, base.current)
+        base.current = saved.content
+        if (
+          !liveRef.current &&
+          saving.current === 1 &&
+          pending.current === null &&
+          latest.current === markdown &&
+          saved.content !== markdown
+        )
+          replaceContent(saved.content)
+        if (saving.current === 1 && pending.current === null)
+          callbacks.current.onStateChange?.('saved')
+      })
+      .finally(() => {
+        saving.current--
+      })
+    saves.current = write.catch(() => undefined)
+    await write
   }).current
 
   const editor = useEditor({
+    // Toolbar state uses useEditorState; typing need not render the whole editor's React tree.
+    shouldRerenderOnTransaction: false,
     extensions: [
       ...noteSchema({
         // Live, undo is Yjs's own (only this device's changes are undone).
@@ -547,9 +572,8 @@ export function NoteEditor({
       },
     },
     onUpdate: ({ editor: e }) => {
-      const markdown = e.getMarkdown()
-      latest.current = markdown
-      pending.current = markdown
+      latest.current = e.state.doc
+      pending.current = e.state.doc
       clearTimeout(timer.current)
       timer.current = setTimeout(() => void flush(), SAVE_DELAY)
     },
@@ -721,7 +745,7 @@ export function NoteEditor({
           return true
         }
         // Unsaved typing: the save merges the change in, as with any other.
-        if (pending.current !== null) return false
+        if (pending.current !== null || saving.current > 0) return false
         const range = changedRange(e.state.doc, next)
         base.current = after
         latest.current = after
@@ -746,10 +770,16 @@ export function NoteEditor({
   // room is the source: the stored text is what the leading device wrote from it. A change made
   // outside the editor (MCP, Telegram) comes in with a save, here at once when nothing is typed.)
   useEffect(() => {
+    if (saving.current > 0) return
     const lv = liveRef.current
     if (lv) {
       base.current = note.content
-      if (!lv.readOnly && pending.current === null && note.content !== latest.current)
+      if (
+        !lv.readOnly &&
+        pending.current === null &&
+        typeof latest.current === 'string' &&
+        note.content !== latest.current
+      )
         void lv.persist(latest.current)
       return
     }
@@ -765,7 +795,10 @@ export function NoteEditor({
       setTimeout(() => {
         if (mounted.get(note.id)) return
         mounted.delete(note.id)
-        callbacks.current.onLeave?.(latest.current)
+        const value = latest.current
+        const markdown =
+          typeof value === 'string' ? value : editorRef.current?.markdown?.serialize(value.toJSON())
+        if (markdown !== undefined) callbacks.current.onLeave?.(markdown)
       }, 0)
     }
   }, [note.id])

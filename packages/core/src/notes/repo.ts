@@ -25,6 +25,41 @@ import {
 
 type Tx = Pick<SqlDriver, 'execute' | 'query'>
 
+interface FolderRow extends SqlRow {
+  id: string
+  parent_id: string | null
+  name: string
+  sort: number
+  note_count: number
+  shared_role: string | null
+}
+
+const FOLDER_COLUMNS = `f.id, f.parent_id, f.name, f.sort,
+  (SELECT count(*) FROM notes n WHERE n.folder_id = f.id AND n.deleted_at IS NULL) AS note_count,
+  (SELECT s.role FROM shared_folders s WHERE s.folder_id = f.id) AS shared_role`
+
+function foldersFromRows(rows: FolderRow[]): Folder[] {
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  // The nearest shared ancestor decides access, including unshared children of a shared folder.
+  const access = (id: string): Folder['access'] => {
+    const seen = new Set<string>()
+    for (let at = byId.get(id); at && !seen.has(at.id); at = byId.get(at.parent_id ?? '')) {
+      seen.add(at.id)
+      if (at.shared_role) return at.shared_role as Folder['access']
+    }
+    return null
+  }
+  return rows.map((r) => ({
+    id: r.id,
+    parentId: r.parent_id,
+    name: r.name,
+    sort: Number(r.sort),
+    noteCount: Number(r.note_count),
+    shared: (r.shared_role as Folder['shared']) ?? null,
+    access: access(r.id),
+  }))
+}
+
 export interface RepoOptions {
   now?: () => number
   newId?: () => string
@@ -209,9 +244,10 @@ export class NotesRepo {
   async updateContent(
     id: string,
     content: string,
-    opts: { base?: string; editedAt?: number } & SharingWrite = {},
+    opts: { base?: string; editedAt?: number; onConflictCopy?: () => void } & SharingWrite = {},
   ): Promise<Note> {
     if (!opts.fromSharing) await this.assertWritableNote(id)
+    let conflictCopy = false
     await this.db.transaction(async (tx) => {
       const [row] = await tx.query<{ content: string; folder_id: string | null }>(
         'SELECT content, folder_id FROM notes WHERE id = ? AND deleted_at IS NULL',
@@ -222,7 +258,10 @@ export class NotesRepo {
       if (opts.base !== undefined && row.content !== opts.base && row.content !== content) {
         const merged = merge3(content, opts.base, row.content)
         if (merged !== null) next = merged
-        else await this.insertConflictCopy(tx, row.content, row.folder_id)
+        else {
+          await this.insertConflictCopy(tx, row.content, row.folder_id)
+          conflictCopy = true
+        }
       }
       if (next === row.content) return
       await tx.execute(
@@ -238,6 +277,7 @@ export class NotesRepo {
           [opts.editedAt, opts.editedAt, id],
         )
     })
+    if (conflictCopy) opts.onConflictCopy?.()
     return this.getNoteOrThrow(id)
   }
 
@@ -506,6 +546,32 @@ export class NotesRepo {
     }
   }
 
+  /** The sidebar and list header share one query, and one IPC round trip on desktop. */
+  async navigation(): Promise<{ counts: Counts; folders: Folder[] }> {
+    const rows = await this.db.query<
+      FolderRow & { all: number; inbox: number; daily: number; links: number }
+    >(
+      `SELECT ${FOLDER_COLUMNS}, totals.* FROM (
+         SELECT count(*) AS "all", coalesce(sum(n.folder_id IS NULL), 0) AS inbox,
+                coalesce(sum(n.type = 'daily'), 0) AS daily,
+                coalesce(sum(${LINK_SQL}), 0) AS links
+           FROM notes n WHERE n.deleted_at IS NULL
+       ) totals LEFT JOIN folders f ON f.deleted_at IS NULL
+       ORDER BY f.sort, f.name COLLATE NOCASE`,
+    )
+    const row = rows[0]
+    return {
+      counts: {
+        all: Number(row?.all ?? 0),
+        inbox: Number(row?.inbox ?? 0),
+        daily: Number(row?.daily ?? 0),
+        links: Number(row?.links ?? 0),
+      },
+      // A LEFT JOIN still returns the aggregate row when there are no folders.
+      folders: foldersFromRows(rows.filter((r) => r.id !== null)),
+    }
+  }
+
   /** Folders that hold saved links, with how many (the topics of the Links list). */
   async linkFolders(): Promise<{ folderId: string | null; count: number }[]> {
     const rows = await this.db.query<{ folder_id: string | null; cnt: number }>(
@@ -519,39 +585,12 @@ export class NotesRepo {
   // ── Folders ────────────────────────────────────────────────────────────────
 
   async listFolders(): Promise<Folder[]> {
-    const rows = await this.db.query<{
-      id: string
-      parent_id: string | null
-      name: string
-      sort: number
-      note_count: number
-      shared_role: string | null
-    }>(
-      `SELECT f.id, f.parent_id, f.name, f.sort,
-              (SELECT count(*) FROM notes n WHERE n.folder_id = f.id AND n.deleted_at IS NULL) AS note_count,
-              (SELECT s.role FROM shared_folders s WHERE s.folder_id = f.id) AS shared_role
+    const rows = await this.db.query<FolderRow>(
+      `SELECT ${FOLDER_COLUMNS}
          FROM folders f WHERE f.deleted_at IS NULL
         ORDER BY f.sort, f.name COLLATE NOCASE`,
     )
-    const byId = new Map(rows.map((r) => [r.id, r]))
-    // The nearest shared folder above (or itself) decides what may be done in a subfolder.
-    const access = (id: string): Folder['access'] => {
-      const seen = new Set<string>()
-      for (let at = byId.get(id); at && !seen.has(at.id); at = byId.get(at.parent_id ?? '')) {
-        seen.add(at.id)
-        if (at.shared_role) return at.shared_role as Folder['access']
-      }
-      return null
-    }
-    return rows.map((r) => ({
-      id: r.id,
-      parentId: r.parent_id,
-      name: r.name,
-      sort: Number(r.sort),
-      noteCount: Number(r.note_count),
-      shared: (r.shared_role as Folder['shared']) ?? null,
-      access: access(r.id),
-    }))
+    return foldersFromRows(rows)
   }
 
   async createFolder(name: string, parentId: string | null = null): Promise<Folder> {

@@ -28,6 +28,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
+import { memo } from 'react'
 import { useUi } from '../app/store'
 import { attachmentObjectUrl } from '../lib/attachments'
 import { useDb } from '../lib/db'
@@ -225,7 +226,7 @@ function SelectMark({ selected, className }: { selected: boolean; className?: st
 }
 
 /** Cards view: a card with the first image, the title and a long excerpt. */
-export function NoteCard({ note, inFolder, date = 'edited' }: ItemProps) {
+function NoteCardView({ note, inFolder, date = 'edited' }: ItemProps) {
   const { t, i18n } = useTranslation()
   const marks = useMarks(note, inFolder)
   const press = useNotePress(note)
@@ -276,7 +277,7 @@ export function NoteCard({ note, inFolder, date = 'edited' }: ItemProps) {
 }
 
 /** List view: a row with the title, two lines of the text, the date and a thumbnail. */
-export function NoteRow({ note, inFolder, date = 'edited' }: ItemProps) {
+function NoteRowView({ note, inFolder, date = 'edited' }: ItemProps) {
   const { t, i18n } = useTranslation()
   const marks = useMarks(note, inFolder)
   const press = useNotePress(note)
@@ -322,7 +323,7 @@ export function NoteRow({ note, inFolder, date = 'edited' }: ItemProps) {
 }
 
 /** Compact view: one line per note, for long lists. */
-export function NoteLine({ note, inFolder, date = 'edited' }: ItemProps) {
+function NoteLineView({ note, inFolder, date = 'edited' }: ItemProps) {
   const { t, i18n } = useTranslation()
   const marks = useMarks(note, inFolder)
   const press = useNotePress(note)
@@ -372,7 +373,7 @@ export function NoteLine({ note, inFolder, date = 'edited' }: ItemProps) {
  * The notes layout's middle column: a compact card with the title, two lines of the text (or the
  * search match), the date, marks and a small thumbnail. `active`: the note open beside it.
  */
-export function NoteSnippet({
+function NoteSnippetView({
   note,
   inFolder,
   date = 'edited',
@@ -427,3 +428,10 @@ export function NoteSnippet({
     </NoteMenu>
   )
 }
+
+// Card hooks use refs for pointer gestures, which can make the compiler skip these functions.
+// Explicit boundaries keep a selection change from rendering every other loaded note.
+export const NoteCard = memo(NoteCardView)
+export const NoteRow = memo(NoteRowView)
+export const NoteLine = memo(NoteLineView)
+export const NoteSnippet = memo(NoteSnippetView)

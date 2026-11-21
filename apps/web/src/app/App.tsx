@@ -2,7 +2,7 @@ import { parseConnectLink } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { isApple, TooltipProvider } from '@fixnote/ui'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
+import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react'
 import { Toaster } from 'sonner'
 import { CallBar } from '../components/CallBar'
 import { CardPaymentDialog } from '../components/CardPaymentDialog'
@@ -82,7 +82,7 @@ function OpenNote({ id }: { id: string }) {
 
 /** The assistant layout: one content area for Home, a folder, Tidy or the open note. */
 function Content() {
-  const route = useUi((s) => s.route)
+  const route = useDeferredValue(useUi((s) => s.route))
   switch (route.kind) {
     case 'home':
     case 'overview':
@@ -102,14 +102,21 @@ function Content() {
  * one of them at a time, list then note, and Back goes from the note to the list.
  */
 function NotesContent({ onNewNote }: { onNewNote: () => void }) {
-  const route = useUi((s) => s.route)
-  const back = useUi((s) => s.back)
+  // Zustand is an external store: startTransition around navigate() cannot defer its subscribers.
+  // Defer the content snapshot instead, while controls and the route itself update immediately.
+  const currentRoute = useUi((s) => s.route)
+  const currentBack = useUi((s) => s.back)
+  const currentId = useOpenNoteId()
+  const snapshot = useMemo(
+    () => ({ route: currentRoute, back: currentBack, openId: currentId }),
+    [currentRoute, currentBack, currentId],
+  )
+  const { route, back, openId } = useDeferredValue(snapshot)
   const narrow = useUi((s) => s.narrow)
   // Everything right of the sidebar: the bar for picked notes is centred over it.
   const area = useRef<HTMLDivElement>(null)
   const list = listOf(route, back)
   // With no note picked, the list's first note is open beside it (not on a phone).
-  const openId = useOpenNoteId()
   const setShownNote = useUi((s) => s.setShownNote)
   const key = listKey(list)
   const onFirst = useCallback(

@@ -44,6 +44,7 @@ import {
   useInvalidateNotes,
   useMoveNote,
   useNote,
+  useSavedNote,
   useSetPinned,
 } from '../lib/queries'
 import { useShortcutLabel } from '../lib/shortcuts'
@@ -63,6 +64,7 @@ export function NoteView({ id }: { id: string }) {
   const { tidy, audit } = useDb()
   const qc = useQueryClient()
   const invalidate = useInvalidateNotes()
+  const savedNote = useSavedNote()
   const navigate = useUi((s) => s.navigate)
   const note = useNote(id, { fresh: true })
   const folders = useFolders().data ?? []
@@ -325,20 +327,27 @@ export function NoteView({ id }: { id: string }) {
               // View only: what shows here are the others' edits; sync writes them to the note.
               if (n.readOnly) return n
               let saved: Note
+              let conflictCopy = false
               try {
                 if (shared.live) {
                   // A shared note: its document goes to the others (the Markdown is this device's
                   // copy), saved with it in one step.
                   await shared.live.persist(markdown)
                   saved = (await repo.getNote(n.id)) ?? n
-                } else saved = await repo.updateContent(n.id, markdown, { base })
+                } else
+                  saved = await repo.updateContent(n.id, markdown, {
+                    base,
+                    onConflictCopy: () => {
+                      conflictCopy = true
+                    },
+                  })
               } catch (err) {
                 // Made view only while open (the last save of the editor being closed).
                 if (err instanceof ReadOnlyError) return n
                 throw err
               }
-              qc.setQueryData(keys.note(n.id), saved)
-              void invalidate()
+              savedNote(n, saved)
+              if (conflictCopy) void invalidate()
               return saved
             }}
             onLeave={(markdown) => {

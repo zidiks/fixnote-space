@@ -13,6 +13,7 @@ import { NoteSnippet } from './NoteCard'
 import { useGroupLabel, ViewMenu } from './NoteGrid'
 import { SelectionBar } from './SelectionBar'
 import { Snippet } from './Spotlight'
+import { VirtualList } from './VirtualList'
 
 /**
  * The middle column of the notes layout: the notes of the list picked in the sidebar (Home,
@@ -230,35 +231,37 @@ function Notes({
 
   if (list.pending) return <Hint>{t('common.loading')}</Hint>
   if (list.empty) return <Hint>{empty}</Hint>
-  const item = (n: NoteSummary) => (
-    <li key={n.id}>
-      <NoteSnippet note={n} inFolder={inFolder} date={list.date} active={n.id === activeId} />
-    </li>
-  )
+  const rows: ({ key: string; title: string; pinned?: boolean } | NoteSummary)[] = []
+  if (list.pinned.length)
+    rows.push({ key: 'pinned', title: t('pin.section'), pinned: true }, ...list.pinned)
+  for (const section of list.groups) {
+    if (section.group) rows.push({ key: section.key, title: label(section.group) })
+    rows.push(...section.notes)
+  }
   return (
     <>
-      {list.pinned.length ? (
-        <section aria-label={t('pin.section')}>
-          <h2 className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-xs font-semibold text-muted-foreground">
-            <Pin className="size-3" />
-            {t('pin.section')}
-          </h2>
-          <ul className="space-y-0.5">{list.pinned.map(item)}</ul>
-        </section>
-      ) : null}
-      {list.groups.map((section) => (
-        <section
-          key={section.key}
-          aria-label={section.group ? label(section.group) : t('view.allNotes')}
-        >
-          {section.group ? (
-            <h2 className="px-3 pt-3 pb-1 text-xs font-semibold text-muted-foreground">
-              {label(section.group)}
+      <VirtualList
+        items={rows}
+        itemKey={(row) => ('id' in row ? row.id : `header:${row.key}`)}
+        estimate={(row) => ('id' in row ? 132 : 32)}
+        render={(row) =>
+          'id' in row ? (
+            <div className="pb-0.5">
+              <NoteSnippet
+                note={row}
+                inFolder={inFolder}
+                date={list.date}
+                active={row.id === activeId}
+              />
+            </div>
+          ) : (
+            <h2 className="flex items-center gap-1.5 px-3 pt-3 pb-1 text-xs font-semibold text-muted-foreground">
+              {row.pinned ? <Pin className="size-3" /> : null}
+              {row.title}
             </h2>
-          ) : null}
-          <ul className="space-y-0.5">{section.notes.map(item)}</ul>
-        </section>
-      ))}
+          )
+        }
+      />
       <div ref={list.sentinel} aria-hidden className="h-px" />
       {list.loadingMore ? <Hint>{t('common.loading')}</Hint> : null}
       <SelectionBar notes={list.pickable} />
@@ -286,18 +289,21 @@ function SearchResults({
   if (!hits.length) return <Hint>{t('layout.noResults')}</Hint>
   return (
     <>
-      <ul className="space-y-0.5 pt-1">
-        {hits.map((h) => (
-          <li key={h.note.id}>
+      <VirtualList
+        items={hits}
+        itemKey={(hit) => hit.note.id}
+        estimate={() => 132}
+        render={(h) => (
+          <div className="pb-0.5">
             <NoteSnippet
               note={h.note}
               inFolder={inFolder}
               active={h.note.id === activeId}
               excerpt={h.snippet ? <Snippet text={h.snippet} /> : undefined}
             />
-          </li>
-        ))}
-      </ul>
+          </div>
+        )}
+      />
       <SelectionBar notes={notes} />
     </>
   )

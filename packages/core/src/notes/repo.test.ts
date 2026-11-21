@@ -76,7 +76,14 @@ describe('notes', () => {
   it('keeps the other version as a conflict copy when both changed the same line', async () => {
     const note = await repo.createNote({ content: 'meet on Monday' })
     await db.execute('UPDATE notes SET content = ? WHERE id = ?', ['meet on Friday', note.id])
-    const saved = await repo.updateContent(note.id, 'meet on Tuesday', { base: 'meet on Monday' })
+    let copies = 0
+    const saved = await repo.updateContent(note.id, 'meet on Tuesday', {
+      base: 'meet on Monday',
+      onConflictCopy: () => {
+        copies++
+      },
+    })
+    expect(copies).toBe(1)
     expect(saved.content).toBe('meet on Tuesday')
     const copy = (await repo.listNotes()).items.find((n) => n.id !== note.id)
     expect((await repo.getNote(copy?.id ?? ''))?.content).toMatch(
@@ -92,6 +99,18 @@ describe('notes', () => {
     expect(await repo.search('gone')).toEqual([])
     await repo.restoreNote(note.id)
     expect((await repo.getNote(note.id))?.title).toBe('gone #x')
+  })
+
+  it('keeps both complete versions when a transcript merge exceeds the work budget', async () => {
+    const middle = 'Repeated transcript line.\n\n'.repeat(2000)
+    const base = `start\n${middle}\nend`
+    const local = `local\n${middle}\nlocal end`
+    const remote = `remote\n${middle}\nremote end`
+    const note = await repo.createNote({ content: base })
+    await db.execute('UPDATE notes SET content = ? WHERE id = ?', [remote, note.id])
+    expect((await repo.updateContent(note.id, local, { base })).content).toBe(local)
+    const copy = (await repo.listNotes()).items.find((n) => n.id !== note.id)
+    expect((await repo.getNote(copy?.id ?? ''))?.content.endsWith(remote)).toBe(true)
   })
 })
 
@@ -258,6 +277,45 @@ describe('daily notes', () => {
 })
 
 describe('folders', () => {
+  it('reads navigation in one query, including an empty library and no remaining folders', async () => {
+    expect(await repo.navigation()).toEqual({
+      counts: { all: 0, inbox: 0, daily: 0, links: 0 },
+      folders: [],
+    })
+    const folder = await repo.createFolder('Work')
+    await repo.createNote({ content: '# Work note', folderId: folder.id })
+    await repo.createNote({ content: '# Link\nhttps://example.com' })
+    await repo.getOrCreateDaily('2026-04-30', () => '# Today')
+    const deleted = await repo.createNote({ content: 'Deleted' })
+    await repo.deleteNote(deleted.id)
+    let queries = 0
+    const counted = new NotesRepo({
+      ...db,
+      query: (...args) => {
+        queries++
+        return db.query(...args)
+      },
+    })
+    const navigation = await counted.navigation()
+    expect(queries).toBe(1)
+    expect(navigation).toEqual({ counts: await repo.counts(), folders: await repo.listFolders() })
+    await repo.deleteFolder(folder.id)
+    expect(await repo.navigation()).toEqual({ counts: await repo.counts(), folders: [] })
+  })
+
+  it('keeps inherited access when reading navigation', async () => {
+    const parent = await repo.createFolder('Shared')
+    const child = await repo.createFolder('Inside', parent.id)
+    await db.execute(
+      `INSERT INTO shared_folders (folder_id, shared_id, role, owner_id, folder_key)
+      VALUES (?, ?, ?, ?, ?)`,
+      [parent.id, 'shared', 'view', 'owner', 'test-key'],
+    )
+    const navigation = await repo.navigation()
+    expect(navigation.folders).toEqual(await repo.listFolders())
+    expect(navigation.folders.find((f) => f.id === child.id)?.access).toBe('view')
+  })
+
   it('lists with counts and renames', async () => {
     const f = await repo.createFolder('  Books ')
     await repo.createNote({ content: 'Story', folderId: f.id })

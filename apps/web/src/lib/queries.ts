@@ -13,6 +13,7 @@ import { requestSync, sharedContext } from './account/account'
 import { findSimilar, notifyNotesChanged, useAssistant } from './assistant/assistant'
 import { useRepo } from './db'
 import { navBack } from './nav-history'
+import { cacheSavedNote } from './saved-note'
 
 export const keys = {
   notes: ['notes'] as const,
@@ -20,8 +21,7 @@ export const keys = {
   note: (id: string) => ['notes', 'one', id] as const,
   search: (q: string, filter?: NoteFilter) => ['notes', 'search', q, filter ?? null] as const,
   similar: (q: string) => ['notes', 'similar', q] as const,
-  counts: ['counts'] as const,
-  folders: ['folders'] as const,
+  navigation: ['navigation'] as const,
 }
 
 const PAGE = 30
@@ -62,7 +62,11 @@ export function useNote(id: string, opts: { enabled?: boolean; fresh?: boolean }
 
 export function useCounts() {
   const repo = useRepo()
-  return useQuery({ queryKey: keys.counts, queryFn: () => repo.counts() })
+  return useQuery({
+    queryKey: keys.navigation,
+    queryFn: () => repo.navigation(),
+    select: (data) => data.counts,
+  })
 }
 
 /** Folders that hold saved links, most first: the topics of the Links list. */
@@ -73,7 +77,11 @@ export function useLinkFolders() {
 
 export function useFolders() {
   const repo = useRepo()
-  return useQuery({ queryKey: keys.folders, queryFn: () => repo.listFolders() })
+  return useQuery({
+    queryKey: keys.navigation,
+    queryFn: () => repo.navigation(),
+    select: (data) => data.folders,
+  })
 }
 
 /** Full-text search; with `filter`, only among those notes (a list of the notes layout). */
@@ -81,7 +89,7 @@ export function useSearch(q: string, filter?: NoteFilter, limit = 20) {
   const repo = useRepo()
   const query = q.trim()
   return useQuery({
-    queryKey: keys.search(query, filter),
+    queryKey: [...keys.search(query, filter), limit],
     queryFn: () => repo.search(query, { limit, ...(filter ? { filter } : {}) }),
     enabled: query.length > 0,
     placeholderData: keepPreviousData,
@@ -116,9 +124,17 @@ export function useInvalidateNotes() {
     notifyNotesChanged()
     return Promise.all([
       qc.invalidateQueries({ queryKey: keys.notes }),
-      qc.invalidateQueries({ queryKey: keys.counts }),
-      qc.invalidateQueries({ queryKey: keys.folders }),
+      qc.invalidateQueries({ queryKey: keys.navigation }),
     ])
+  }
+}
+
+export function useSavedNote() {
+  const qc = useQueryClient()
+  return (before: Note, saved: Note) => {
+    cacheSavedNote(qc, before, saved)
+    requestSync()
+    notifyNotesChanged()
   }
 }
 

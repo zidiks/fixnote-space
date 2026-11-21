@@ -7,6 +7,7 @@ dist/
 .env.*.local
 .DS_Store
 coverage/
+.cache/profile-ui/
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
 supabase/.temp/
