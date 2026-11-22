@@ -605,6 +605,14 @@ export function stop() {
   controller?.abort()
 }
 
+export async function refreshAfterProtection(noteId?: string) {
+  stop()
+  indexer?.invalidate(noteId)
+  if (chat) set({ messages: await chat.recent() })
+  await loadAssistantMemory()
+  notifyNotesChanged()
+}
+
 export async function clearChat() {
   stop()
   const recordings = (await chat?.clear()) ?? []

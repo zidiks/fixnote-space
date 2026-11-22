@@ -4,6 +4,7 @@ import { prepareDatabase } from '../db/migrate'
 import { MCP_ACCESS_KEY, MCP_SCOPE_KEY } from '../mcp'
 import { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
+import { protectedReference } from '../privacy/reference'
 import { createMemoryDriver } from '../testing/memory-driver'
 import {
   CHANGE_LIMIT,
@@ -50,6 +51,31 @@ beforeEach(async () => {
 })
 
 describe('RemoteExecutor', () => {
+  it('shows a placeholder and allows nearby edits without overwriting the reference', async () => {
+    await setKv(MCP_ACCESS_KEY, 'write')
+    const reference = protectedReference({ audience: 'personal', fragmentId: crypto.randomUUID() })
+    const note = await repo.createNote({
+      content: ['# Account', '', reference, '', 'Active'].join('\n'),
+    })
+
+    const got = await exec.run(call('get_note', { id: note.id }))
+    expect(text(got)).toContain('[protected fragment]')
+    expect(text(got)).not.toContain(reference)
+    const update = await exec.run(call('update_note', { id: note.id, content: 'Replacement' }))
+    expect(update.isError).toBe(true)
+    const overlap = await exec.run(
+      call('edit_note', { id: note.id, find: reference, replace: 'x' }),
+    )
+    expect(overlap.isError).toBe(true)
+    const outside = await exec.run(
+      call('edit_note', { id: note.id, find: 'Active', replace: 'Inactive' }),
+    )
+    expect(outside.isError).toBeUndefined()
+    expect((await repo.getNote(note.id))?.content).toBe(
+      ['# Account', '', reference, '', 'Inactive'].join('\n'),
+    )
+  })
+
   it('reads notes when Remote access is on', async () => {
     const n = await repo.createNote({ content: '# Trip\n\nTickets to Lisbon' })
     const found = await exec.run(call('search_notes', { query: 'Lisbon' }))

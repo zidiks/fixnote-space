@@ -1,6 +1,7 @@
 import { ImageTexts } from '../attachments/image-text'
 import { transliterate } from '../notes/translit'
 import type { SqlDriver } from '../platform'
+import { containsProtectedReference, redactProtectedReferences } from '../privacy/reference'
 import { chunkNote } from './chunk'
 import type { Indexer } from './indexer'
 import type { ChatScope } from './scope'
@@ -217,7 +218,7 @@ export async function retrieve(
           noteId: note.id,
           title: note.title,
           ord: 0,
-          text: note.content,
+          text: redactProtectedReferences(note.content),
           updatedAt: Number(note.updated_at),
           via: { keyword: true, semantic: false },
           score: 1,
@@ -298,7 +299,16 @@ export async function retrieve(
       scored.sort((a, b) => b.sim - a.sim)
       const top = scored.slice(0, 40)
       await loadNotes([...new Set(top.map((t) => t.noteId))])
-      for (const [rank, t] of top.entries()) add(t.noteId, t.ord, t.text, rank, 'semantic')
+      const current = new Map<string, ReturnType<typeof chunkNote>>()
+      for (const [rank, t] of top.entries()) {
+        const note = notes.get(t.noteId)
+        if (note && containsProtectedReference(note.content)) {
+          const chunks = current.get(note.id) ?? chunkNote(note.content)
+          current.set(note.id, chunks)
+          if (chunks[t.ord]?.text !== t.text) continue
+        }
+        add(t.noteId, t.ord, t.text, rank, 'semantic')
+      }
     } catch {
       // Model unavailable (offline first run, blocked download): keyword results still answer.
     }

@@ -1,6 +1,8 @@
 import { ImageTexts } from '../attachments/image-text'
 import { LINK_SQL, linkUrlOf } from '../links/note'
 import type { SqlDriver, SqlRow, SqlValue } from '../platform'
+import { containsProtectedReference } from '../privacy/reference'
+import { type ProtectionChange, receivedProtection, scrubProtectedCopies } from '../privacy/scrub'
 import { merge3, unionLines } from '../sync/merge'
 import { addTasks } from './daily'
 import { deriveExcerpt, deriveTitle, taskProgress, toPlainText } from './markdown'
@@ -244,7 +246,14 @@ export class NotesRepo {
   async updateContent(
     id: string,
     content: string,
-    opts: { base?: string; editedAt?: number; onConflictCopy?: () => void } & SharingWrite = {},
+    opts: {
+      base?: string
+      editedAt?: number
+      onConflictCopy?: () => void
+      protect?: ProtectionChange
+      protectedSharedState?: { sharedId: string; state: Uint8Array }
+      fromAgent?: boolean
+    } & SharingWrite = {},
   ): Promise<Note> {
     if (!opts.fromSharing) await this.assertWritableNote(id)
     let conflictCopy = false
@@ -254,6 +263,12 @@ export class NotesRepo {
         [id],
       )
       if (!row) return
+      if (
+        row.content !== opts.base &&
+        (opts.protect || (opts.fromAgent && containsProtectedReference(row.content)))
+      ) {
+        throw new Error('The note changed. Read it again before saving.')
+      }
       let next = content
       if (opts.base !== undefined && row.content !== opts.base && row.content !== content) {
         const merged = merge3(content, opts.base, row.content)
@@ -269,6 +284,20 @@ export class NotesRepo {
           WHERE id = ?`,
         [next, deriveTitle(next), toPlainText(next), this.now(), id],
       )
+      if (opts.protect) await scrubProtectedCopies(tx, id, opts.protect)
+      else if (opts.fromSharing && containsProtectedReference(next)) {
+        for (const protection of receivedProtection(row.content, next)) {
+          await scrubProtectedCopies(tx, id, protection, false)
+        }
+      }
+      if (opts.protectedSharedState) {
+        const { sharedId, state } = opts.protectedSharedState
+        const result = await tx.execute(
+          "UPDATE shared_docs SET state = ?, projected = ?, dirty = 1 WHERE shared_id = ? AND role IN ('owner', 'edit')",
+          [state, next, sharedId],
+        )
+        if (!result.rowsAffected) throw new ReadOnlyError()
+      }
       // Set after the text, so the trigger (which fills in edited_at when a writer leaves it as it
       // was) cannot take it back to now. A note is not made after its text was written.
       if (opts.editedAt !== undefined && next === content)

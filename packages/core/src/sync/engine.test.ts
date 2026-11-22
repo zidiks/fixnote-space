@@ -9,6 +9,7 @@ import {
 import { prepareDatabase } from '../db/migrate'
 import { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
+import { protectedReference } from '../privacy/reference'
 import { createMemoryDriver } from '../testing/memory-driver'
 import { MemoryRemote } from '../testing/memory-remote'
 import { SyncEngine } from './engine'
@@ -24,7 +25,10 @@ interface Device {
   engine: SyncEngine
 }
 
-async function device(name: string): Promise<Device> {
+async function device(
+  name: string,
+  readProtectedValues?: () => Promise<readonly string[]>,
+): Promise<Device> {
   const db = await createMemoryDriver()
   await prepareDatabase(db)
   let seq = 0
@@ -32,7 +36,11 @@ async function device(name: string): Promise<Device> {
   return {
     db,
     repo: new NotesRepo(db, opts),
-    engine: new SyncEngine(db, remote, keys, { ...opts, conflictHeading: () => 'CONFLICT' }),
+    engine: new SyncEngine(db, remote, keys, {
+      ...opts,
+      conflictHeading: () => 'CONFLICT',
+      readProtectedValues,
+    }),
   }
 }
 
@@ -56,6 +64,38 @@ describe('merge3', () => {
 })
 
 describe('SyncEngine', () => {
+  it('merges an offline edit into a newly protected note without keeping its old clear text', async () => {
+    const value = 'synthetic-password-content'
+    const fragmentId = crypto.randomUUID()
+    const reference = protectedReference({ fragmentId, audience: 'personal' })
+    const readProtected = async () => [value]
+    const owner = await device('owner', readProtected)
+    const offline = await device('offline', readProtected)
+    const base = `# Account\n\nPassword: ${value}\n\nOriginal footer`
+    const note = await owner.repo.createNote({ content: base })
+    await owner.engine.sync()
+    await offline.engine.sync()
+    await offline.repo.updateContent(note.id, base.replace('Original footer', 'Offline footer'))
+    await offline.db.execute(
+      "INSERT INTO chat_messages (id, kind, content, scope, created_at) VALUES ('example', 'assistant', ?, '{}', 100)",
+      [value],
+    )
+    await owner.repo.updateContent(note.id, base.replace(value, reference), {
+      base,
+      protect: { fragmentId, reference, values: [value] },
+    })
+    await owner.engine.sync()
+    await offline.engine.sync()
+    const saved = await offline.repo.getNote(note.id)
+    expect(saved?.content).toContain(reference)
+    expect(saved?.content).toContain('Offline footer')
+    expect(saved?.content).not.toContain(value)
+    const copy = await offline.db.query('SELECT content, base_content FROM notes')
+    const history = await offline.db.query('SELECT content FROM chat_messages')
+    expect(JSON.stringify(copy)).not.toContain(value)
+    expect(JSON.stringify(history)).not.toContain(value)
+  })
+
   it('moves notes and folders between devices, encrypted on the way', async () => {
     const a = await device('a')
     const b = await device('b')

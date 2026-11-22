@@ -1,6 +1,7 @@
 import sodium from 'libsodium-wrappers'
 import { attachmentIds } from '../attachments'
 import { openShare, sealShare } from '../crypto'
+import { redactProtectedReferences } from '../privacy/reference'
 
 /**
  * A shared note: a copy of one note, with its images, sealed with the link's key. Later edits do
@@ -45,7 +46,14 @@ export async function buildSharedNote(
       ),
     }
   }
-  return { v: 1, title: note.title, content: note.content, sharedAt: now, files, omitted }
+  return {
+    v: 1,
+    title: redactProtectedReferences(note.title),
+    content: redactProtectedReferences(note.content),
+    sharedAt: now,
+    files,
+    omitted,
+  }
 }
 
 export function encodeShare(linkKey: string, shareId: string, note: SharedNote): string {

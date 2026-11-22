@@ -146,6 +146,41 @@ export function decryptFolderName(keys: AccountKeys, folderId: string, sealed: s
   return sodium.to_string(open(keys.folderKey, sealed, `folder:${folderId}`, `folder ${folderId}`))
 }
 
+export interface ProtectedFragmentIdentity {
+  readonly noteId: string
+  readonly fragmentId: string
+  readonly audience: 'personal' | 'members'
+}
+
+function fragmentAssociatedData(fragment: ProtectedFragmentIdentity): string {
+  return JSON.stringify([
+    'fixnote/protected-fragment/v1',
+    fragment.noteId,
+    fragment.fragmentId,
+    fragment.audience,
+  ])
+}
+
+/** Seal before persisting. The caller selects a personal key or the shared note's key. */
+export function sealProtectedFragment(
+  key: Uint8Array,
+  fragment: ProtectedFragmentIdentity,
+  markdown: string,
+): string {
+  return seal(key, sodium.from_string(markdown), fragmentAssociatedData(fragment))
+}
+
+/** The expected identity comes from the current note and reference, never from the payload. */
+export function openProtectedFragment(
+  key: Uint8Array,
+  fragment: ProtectedFragmentIdentity,
+  ciphertext: string,
+): string {
+  return sodium.to_string(
+    open(key, ciphertext, fragmentAssociatedData(fragment), 'protected fragment'),
+  )
+}
+
 // ── Attachments ──────────────────────────────────────────────────────────────
 
 const ATTACHMENT_VERSION = 1

@@ -1,4 +1,5 @@
 /** Plain-text helpers over note Markdown. Pure functions; no Markdown parser dependency. */
+import { redactProtectedReferences } from '../privacy/reference'
 
 const FENCE = /^(```|~~~)[^\n]*\n[\s\S]*?^\1[^\n]*$/gm
 
@@ -62,7 +63,7 @@ function stripBlock(line: string, tasks: boolean): string {
 }
 
 function plainLines(markdown: string, tasks = false): string[] {
-  return markdown
+  return redactProtectedReferences(markdown)
     .replace(FENCE, '')
     .split('\n')
     .filter((l) => !TABLE_RULE.test(l))

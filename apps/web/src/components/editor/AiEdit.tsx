@@ -1,5 +1,10 @@
 import type { EditAction } from '@fixnote/ai'
-import { type DiffPart, diffWords } from '@fixnote/core'
+import {
+  containsProtectedReference,
+  type DiffPart,
+  diffWords,
+  redactProtectedReferences,
+} from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import {
   Button,
@@ -105,6 +110,10 @@ export function useAiEdit(
       const s = sessionRef.current
       const range = editor ? getAiRange(editor) : null
       if (!editor || !s || !range) return
+      if (containsProtectedReference(s.original) || rangeMarkdown(editor, range) !== s.original) {
+        update({ phase: { kind: 'error', message: t('privacy.editOutside') } })
+        return
+      }
       controller.current?.abort()
       const ctrl = new AbortController()
       controller.current = ctrl
@@ -117,11 +126,11 @@ export function useAiEdit(
             instruction,
             text: s.original,
             noteTitle,
-            before: doc.textBetween(Math.max(0, range.from - CONTEXT_CHARS), range.from, '\n'),
-            after: doc.textBetween(
-              range.to,
-              Math.min(doc.content.size, range.to + CONTEXT_CHARS),
-              '\n',
+            before: redactProtectedReferences(
+              doc.textBetween(Math.max(0, range.from - CONTEXT_CHARS), range.from, '\n'),
+            ),
+            after: redactProtectedReferences(
+              doc.textBetween(range.to, Math.min(doc.content.size, range.to + CONTEXT_CHARS), '\n'),
             ),
           },
           {
@@ -193,6 +202,10 @@ export function useAiEdit(
       const range = getAiRange(editor)
       if (!range || rangeMarkdown(editor, range) !== s.original) {
         update({ phase: { kind: 'error', message: t('ai.changed') } })
+        return
+      }
+      if (containsProtectedReference(s.original) || containsProtectedReference(s.phase.proposal)) {
+        update({ phase: { kind: 'error', message: t('privacy.editOutside') } })
         return
       }
       const before = editor.getMarkdown()

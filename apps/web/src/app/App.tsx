@@ -53,6 +53,7 @@ import { applyFontMode, applyTheme, listOf, useUi } from './store'
 
 // The editor (Tiptap/ProseMirror) is the heaviest part of the bundle; load it on first open.
 const NoteView = lazy(() => import('../components/NoteView').then((m) => ({ default: m.NoteView })))
+const PrivacyLibrary = lazy(() => import('../components/editor/PrivacyLibrary'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -376,6 +377,9 @@ export function App() {
             <AccountProvider>
               <AssistantProvider>
                 <AppShell />
+                <Suspense fallback={null}>
+                  <PrivacyLibrary />
+                </Suspense>
               </AssistantProvider>
             </AccountProvider>
           </DbProvider>

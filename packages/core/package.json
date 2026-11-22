@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./models": "./src/models.ts",
+    "./privacy/detect": "./src/privacy/detect.ts",
     "./remote-mcp": "./src/remote-mcp/protocol.ts",
     "./remote-mcp/headless": "./src/remote-mcp/headless.ts",
     "./speech": "./src/speech/index.ts",

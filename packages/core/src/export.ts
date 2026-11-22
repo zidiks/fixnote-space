@@ -1,5 +1,6 @@
 import { attachmentIds } from './attachments'
 import type { SqlDriver, SqlRow } from './platform'
+import { redactProtectedReferences } from './privacy/reference'
 
 export interface ExportFile {
   path: string
@@ -62,10 +63,15 @@ export async function buildExport(
   const folders = await db.query<{ id: string; parent_id: string | null; name: string }>(
     'SELECT id, parent_id, name FROM folders WHERE deleted_at IS NULL',
   )
-  const notes = await db.query<Row>(
+  const rows = await db.query<Row>(
     `SELECT id, folder_id, type, daily_date, title, content, created_at, edited_at AS updated_at
        FROM notes WHERE deleted_at IS NULL ORDER BY created_at, id`,
   )
+  const notes = rows.map((n) => ({
+    ...n,
+    title: redactProtectedReferences(n.title),
+    content: redactProtectedReferences(n.content),
+  }))
 
   const byId = new Map(folders.map((f) => [f.id, f]))
   const pathCache = new Map<string, string>()

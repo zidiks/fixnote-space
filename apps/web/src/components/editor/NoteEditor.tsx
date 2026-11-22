@@ -1,4 +1,15 @@
-import { attachmentIdFromUrl, type Note, noteTasks, type Recurrence } from '@fixnote/core'
+import {
+  attachmentIdFromUrl,
+  containsProtectedReference,
+  type Note,
+  noteTasks,
+  type ProtectedReference,
+  type ProtectionChange,
+  parseProtectedReference,
+  protectedReference,
+  type Recurrence,
+  redactProtectedReferences,
+} from '@fixnote/core'
 import { i18n, useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -12,9 +23,9 @@ import { Extension, getMarkRange } from '@tiptap/core'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCaret from '@tiptap/extension-collaboration-caret'
 import { Placeholder } from '@tiptap/extensions'
-import type { Node as PmNode } from '@tiptap/pm/model'
+import { Fragment, type Node as PmNode, Slice } from '@tiptap/pm/model'
 import { type Editor, EditorContent, useEditor, useEditorState } from '@tiptap/react'
-import { updateYFragment } from '@tiptap/y-tiptap'
+import { updateYFragment, yUndoPluginKey } from '@tiptap/y-tiptap'
 import {
   Bold,
   Clipboard,
@@ -29,6 +40,7 @@ import {
   Repeat,
   ScanText,
   Scissors,
+  Shield,
   Sparkles,
   Strikethrough,
   TextSelect,
@@ -36,8 +48,10 @@ import {
 } from 'lucide-react'
 import { type Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import * as Y from 'yjs'
 import { useAccount } from '../../lib/account/account'
-import { providerLabel } from '../../lib/assistant/assistant'
+import { providerLabel, refreshAfterProtection, stop } from '../../lib/assistant/assistant'
+import { useLlm } from '../../lib/assistant/llm'
 import { registerOpenNote } from '../../lib/assistant/open-notes'
 import {
   attachmentObjectUrl,
@@ -50,6 +64,12 @@ import { AI_FIELD, aiIn } from '../../lib/collab/people'
 import { useDb } from '../../lib/db'
 import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
+import {
+  discardProtectedFragment,
+  loadProtectedFragment,
+  protectedFragmentSaved,
+  stageProtectedFragment,
+} from '../../lib/privacy'
 import { type AiEditHandle, AiEditLayer, useAiEdit } from './AiEdit'
 
 export interface NoteEditorHandle {
@@ -63,13 +83,17 @@ export interface NoteEditorHandle {
   insertDropped(markdown: string, at: { x: number; y: number } | null): void
 }
 
-import { AiRangeExtension } from './ai-range'
+import { AiRangeExtension, rangeMarkdown } from './ai-range'
 import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
 import { combo } from './combo'
 import { ImageTextDialog } from './ImageTextDialog'
 import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
+import { PrivacyHighlight, PrivacyReview } from './PrivacyReview'
+import { ProtectedValueDialog } from './ProtectedValueDialog'
+import type { ScanRange } from './privacy-scan'
+import { ProtectedDisplay } from './protected-display'
 import { RepeatDialog } from './RepeatDialog'
 import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
 import { RemoteFade } from './remote-fade'
@@ -101,7 +125,17 @@ const SAVE_DELAY = 400
 
 function selectedText(editor: Editor) {
   const { from, to } = editor.state.selection
-  return editor.state.doc.textBetween(from, to, '\n')
+  return redactProtectedReferences(editor.state.doc.textBetween(from, to, '\n'))
+}
+
+function redactClipboard(fragment: Fragment): Fragment {
+  const children: PmNode[] = []
+  fragment.forEach((node) => {
+    if (node.isText && node.text && containsProtectedReference(node.text))
+      children.push(node.type.schema.text(redactProtectedReferences(node.text), node.marks))
+    else children.push(node.isLeaf ? node : node.copy(redactClipboard(node.content)))
+  })
+  return Fragment.fromArray(children)
 }
 
 /** Editor right-click menu: clipboard, formatting and blocks, like a native text view. */
@@ -112,6 +146,7 @@ function EditorMenu({
   onRepeat,
   onRemove,
   onImageText,
+  onProtect,
   readOnly,
 }: {
   editor: Editor
@@ -119,6 +154,7 @@ function EditorMenu({
   readOnly: boolean
   onAskAi: () => void
   onInsertImage: () => void
+  onProtect: () => void
   /** Set when the menu was opened on a task of a daily note. */
   onRepeat?: () => void
   /** Set when the menu was opened on an attached file or an image. */
@@ -273,6 +309,12 @@ function EditorMenu({
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
+      {!readOnly && hasSelection ? (
+        <ContextMenuItem onSelect={onProtect}>
+          <Shield />
+          {t('privacy.protect')}
+        </ContextMenuItem>
+      ) : null}
       {items.map((it, i) =>
         it === 'sep' ? (
           // biome-ignore lint/suspicious/noArrayIndexKey: static list
@@ -337,6 +379,7 @@ export function NoteEditor({
   onStateChange,
   onLeave,
   onRepeat,
+  onProtected,
   live,
   ref,
 }: {
@@ -351,7 +394,8 @@ export function NoteEditor({
   /** Lets the note header open the AI popover for the whole note. */
   ref?: Ref<NoteEditorHandle>
   /** Persists `markdown`, an edit that started from `base`; resolves with what was stored. */
-  onSave: (markdown: string, base: string) => Promise<Note>
+  onSave: (markdown: string, base: string, protect?: ProtectionChange) => Promise<Note>
+  onProtected: () => void
   onStateChange?: (state: SaveState) => void
   /** Called on unmount with the final Markdown. */
   onLeave?: (markdown: string) => void
@@ -376,9 +420,17 @@ export function NoteEditor({
   const noteRef = useRef(note)
   noteRef.current = note
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
+  const stopInlineAi = useRef<() => void>(() => undefined)
   const platform = usePlatform()
   const loadPreview = useLoadPreview()
-  const { attachments, audit } = useDb()
+  const { attachments, audit, driver, repo } = useDb()
+  const [manualPrivacy, setManualPrivacy] = useState<ScanRange | null>(null)
+  const [protectedEdit, setProtectedEdit] = useState<{
+    ref: ProtectedReference
+    from: number
+    text: string
+  } | null>(null)
+  const protecting = useRef(false)
   const images = useRef(attachments)
   images.current = attachments
   const links = useRef({
@@ -463,6 +515,17 @@ export function NoteEditor({
       }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       AiRangeExtension,
+      PrivacyHighlight,
+      ProtectedDisplay.configure({
+        canEdit: () => !readOnlyRef.current,
+        edit: (ref, from, text) => setProtectedEdit({ ref, from, text }),
+        load: (ref) =>
+          loadProtectedFragment(
+            ref,
+            noteRef.current.sharedId ?? undefined,
+            !useLlm.getState().localOnly,
+          ),
+      }),
       AiTyping.configure({
         // A shared note: the assistant's text types in for everyone in it.
         aiWriting: () =>
@@ -516,6 +579,14 @@ export function NoteEditor({
     },
     autofocus: note.content.trim() ? false : 'end',
     editorProps: {
+      transformCopied: (slice) =>
+        new Slice(redactClipboard(slice.content), slice.openStart, slice.openEnd),
+      clipboardTextSerializer: (_slice, view) => {
+        const { from, to } = view.state.selection
+        const text = view.state.doc.textBetween(from, to, '\n\n')
+        // The default Tiptap serializer reads the original selection from the view.
+        return containsProtectedReference(text) ? redactProtectedReferences(text) : ''
+      },
       attributes: {
         class: 'fixnote-editor',
         spellcheck: 'true',
@@ -572,6 +643,7 @@ export function NoteEditor({
       },
     },
     onUpdate: ({ editor: e }) => {
+      if (protecting.current) return
       latest.current = e.state.doc
       pending.current = e.state.doc
       clearTimeout(timer.current)
@@ -580,6 +652,102 @@ export function NoteEditor({
     onBlur: () => void flush(),
   })
   editorRef.current = editor
+
+  const protect = async (
+    range: ScanRange,
+    audience: ProtectedReference['audience'],
+    edit?: { reference: string; text: string },
+  ) => {
+    const e = editorRef.current
+    if (!e || e.isDestroyed || !e.isEditable || protecting.current) throw new Error('Cannot edit')
+    if (audience === 'members' && !live) throw new Error('Missing shared note')
+    const original = e.state.doc
+    const previousValue = original.textBetween(range.from, range.to, '\n')
+    const clear = edit?.text ?? previousValue
+    const selected = edit ? edit.text : rangeMarkdown(e, range)
+    if (
+      !clear.trim() ||
+      (edit ? previousValue !== edit.reference : containsProtectedReference(selected))
+    )
+      throw new Error('Invalid selection')
+    // Crypto and the save are asynchronous. Keep the captured range tied to this exact document.
+    e.setEditable(false, false)
+    stop()
+    stopInlineAi.current()
+    let ref: ProtectedReference | undefined
+    let savingReference = false
+    try {
+      await flush()
+      await saves.current
+      if (e.isDestroyed || e.state.doc !== original) throw new Error('Note changed')
+      ref = await stageProtectedFragment(
+        driver,
+        { text: clear, markdown: selected },
+        audience,
+        live?.sharedId,
+      )
+      if (e.isDestroyed || e.state.doc !== original) throw new Error('Note changed')
+      const tr = e.state.tr
+        .replaceWith(range.from, range.to, e.schema.text(protectedReference(ref)))
+        .setMeta('privacyReferenceChange', true)
+        .setMeta('addToHistory', false)
+        .setMeta('preventUpdate', true)
+      const markdown = e.markdown?.serialize(tr.doc.toJSON())
+      if (!markdown?.includes(protectedReference(ref)))
+        throw new Error('Invalid fragment reference')
+      const change = {
+        fragmentId: ref.fragmentId,
+        reference: protectedReference(ref),
+        values: edit ? [] : [clear, selected],
+        retiredShared: (() => {
+          const old = edit ? parseProtectedReference(edit.reference) : null
+          return old?.audience === 'members' && live && edit && !markdown.includes(edit.reference)
+            ? { fragmentId: old.fragmentId, sharedId: live.sharedId }
+            : undefined
+        })(),
+      }
+      const previous = base.current
+      protecting.current = true
+      savingReference = true
+      if (live) {
+        // Clone first, then save and apply the reference-bearing Yjs update after the commit.
+        const draft = new Y.Doc()
+        try {
+          Y.applyUpdate(draft, Y.encodeStateAsUpdate(live.session.doc))
+          updateYFragment(draft, draft.getXmlFragment(LIVE_FIELD), tr.doc, {
+            mapping: new Map(),
+            isOMark: new Map(),
+          })
+          yUndoPluginKey.getState(e.state)?.undoManager.clear()
+          await live.persistProtection(markdown, Y.encodeStateAsUpdate(draft), previous, change)
+          yUndoPluginKey.getState(e.state)?.undoManager.clear()
+          const saved = await repo.getNote(note.id)
+          if (saved) base.current = saved.content
+          onProtected()
+        } finally {
+          draft.destroy()
+        }
+      } else {
+        const saved = await callbacks.current.onSave(markdown, previous, change)
+        base.current = saved.content
+        pending.current = null
+        latest.current = saved.content
+        if (!e.isDestroyed) e.view.dispatch(tr)
+        onProtected()
+      }
+      latest.current = base.current
+      pending.current = null
+      protectedFragmentSaved()
+      void refreshAfterProtection(note.id)
+    } catch (error) {
+      if (ref && !savingReference)
+        await discardProtectedFragment(driver, ref).catch(() => undefined)
+      throw error
+    } finally {
+      protecting.current = false
+      if (!e.isDestroyed && !readOnlyRef.current) e.setEditable(true, false)
+    }
+  }
 
   const insertImages = async (files: File[], at?: number) => {
     for (const file of files) {
@@ -624,6 +792,7 @@ export function NoteEditor({
       [audit, t],
     ),
   )
+  stopInlineAi.current = ai.close
   openAi.current = (target, action) => {
     if (readOnlyRef.current) toast(i18n.t('people.viewOnly'))
     else ai.open(target, action)
@@ -843,6 +1012,10 @@ export function NoteEditor({
             readOnly={readOnly}
             onAskAi={() => ai.open('selection')}
             onInsertImage={() => fileInput.current?.click()}
+            onProtect={() => {
+              const { from, to } = editor.state.selection
+              setManualPrivacy({ from, to })
+            }}
             onRemove={
               menuAttachment
                 ? {
@@ -897,6 +1070,28 @@ export function NoteEditor({
         />
       ) : null}
       {editor ? <AiEditLayer editor={editor} ai={ai} /> : null}
+      {editor && !readOnly ? (
+        <PrivacyReview
+          editor={editor}
+          noteId={note.id}
+          shared={Boolean(live)}
+          manual={manualPrivacy}
+          onProtect={protect}
+        />
+      ) : null}
+      {protectedEdit && !readOnly ? (
+        <ProtectedValueDialog
+          value={protectedEdit.text}
+          audience={protectedEdit.ref.audience}
+          shared={Boolean(live)}
+          onClose={() => setProtectedEdit(null)}
+          onSave={(text, audience) => {
+            const reference = protectedReference(protectedEdit.ref)
+            const from = protectedEdit.from
+            return protect({ from, to: from + reference.length }, audience, { text, reference })
+          }}
+        />
+      ) : null}
       {editor && linkPaste ? (
         <LinkPasteMenu
           editor={editor}

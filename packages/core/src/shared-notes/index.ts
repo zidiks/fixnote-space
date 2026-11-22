@@ -19,6 +19,8 @@ import {
 import { deriveTitle } from '../notes/markdown'
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver, SqlRow } from '../platform'
+import { containsProtectedReference } from '../privacy/reference'
+import type { ProtectionChange } from '../privacy/scrub'
 import {
   applyLayout,
   EMPTY_LAYOUT,
@@ -285,6 +287,19 @@ const RANK: Record<SharedRole, number> = { owner: 0, edit: 1, view: 2 }
 const stronger = (a: SharedRole, b: SharedRole) => (RANK[a] <= RANK[b] ? a : b)
 const merge = (a: Uint8Array | null, b: Uint8Array) => (a ? Y.mergeUpdates([a, b]) : b)
 
+function compactProtectedState(state: Uint8Array, markdown: string): Uint8Array {
+  if (!containsProtectedReference(markdown)) return state
+  // mergeUpdates retains deleted structs. Applying to a fresh GC-enabled doc removes
+  // their content while keeping the clock and delete set that live peers need.
+  const doc = new Y.Doc()
+  try {
+    Y.applyUpdate(doc, state)
+    return Y.encodeStateAsUpdate(doc)
+  } finally {
+    doc.destroy()
+  }
+}
+
 export class SharedNotes {
   private readonly db: SqlDriver
   private readonly repo: NotesRepo
@@ -293,6 +308,10 @@ export class SharedNotes {
   private readonly projector: DocProjector
   private readonly userId: string
   private readonly now: () => number
+  private readonly detachProtected?: (
+    sharedId: string,
+    content: string,
+  ) => Promise<Record<string, string>>
   /** State writes one at a time (the editor and sync both merge into the same row). */
   private queue: Promise<unknown> = Promise.resolve()
   /** One sync at a time (accepting runs one too); a second one waits for the first. */
@@ -306,6 +325,7 @@ export class SharedNotes {
     projector: DocProjector
     userId: string
     now?: () => number
+    detachProtected?: (sharedId: string, content: string) => Promise<Record<string, string>>
   }) {
     this.db = opts.db
     this.repo = opts.repo
@@ -314,6 +334,7 @@ export class SharedNotes {
     this.projector = opts.projector
     this.userId = opts.userId
     this.now = opts.now ?? Date.now
+    this.detachProtected = opts.detachProtected
   }
 
   private locked<T>(fn: () => Promise<T>): Promise<T> {
@@ -412,6 +433,16 @@ export class SharedNotes {
     return row ? toDoc(row) : null
   }
 
+  async putProtectedFragment(sharedId: string, fragmentId: string, ciphertext: Uint8Array) {
+    const doc = await this.doc(sharedId)
+    if (!doc || !canEdit(doc.role)) throw new Error('Cannot edit this shared note')
+    await this.remote.putFile(sharedId, fragmentId, ciphertext)
+  }
+
+  async getProtectedFragment(sharedId: string, fragmentId: string) {
+    return (await this.doc(sharedId)) ? this.remote.getFile(sharedId, fragmentId) : null
+  }
+
   /** The shared folder behind a local folder, if it is one. */
   async folder(localFolderId: string): Promise<SharedFolder | null> {
     const [row] = await this.db.query<FolderRow>(
@@ -504,6 +535,7 @@ export class SharedNotes {
 
   /** The owner stops sharing: the others lose the note, the owner keeps it as a personal note. */
   async unshare(sharedId: string): Promise<void> {
+    await this.prepareProtectedDetach(sharedId)
     await this.remote.unshare(sharedId)
     await this.drop(sharedId, 'keep')
   }
@@ -643,6 +675,7 @@ export class SharedNotes {
 
   /** The owner stops sharing a folder: the others lose it, the owner keeps folder and notes. */
   async unshareFolder(folderId: string): Promise<void> {
+    await this.prepareFolderProtectedDetach(folderId)
     await this.remote.unshareFolder(folderId)
     await this.sync()
   }
@@ -660,21 +693,31 @@ export class SharedNotes {
     sharedId: string,
     update: Uint8Array,
     markdown: string,
-    opts: { taken?: boolean } = {},
+    opts: { taken?: boolean; protect?: ProtectionChange; base?: string } = {},
   ): Promise<Uint8Array | null> {
     return this.locked(async () => {
       const doc = await this.doc(sharedId)
       // A viewer's copy comes from the server only (sync pulls it). That also keeps out edits an
       // editor made just before losing the right to edit, which were dropped then.
-      if (!doc || !canEdit(doc.role)) return null
+      if (!doc || !canEdit(doc.role)) {
+        if (opts.protect) throw new Error('Cannot edit this shared note')
+        return null
+      }
       const outside = opts.taken ? null : await this.absorbOutsideEdits(doc)
-      const state = merge(outside ?? doc.state, update)
-      const text = outside ? this.projector.toMarkdown(state) : markdown
-      await this.repo.updateContent(doc.noteId, text)
-      await this.db.execute(
-        'UPDATE shared_docs SET state = ?, projected = ?, dirty = 1 WHERE shared_id = ?',
-        [state, text, sharedId],
-      )
+      const combined = merge(outside ?? doc.state, update)
+      const text = outside ? this.projector.toMarkdown(combined) : markdown
+      const state = compactProtectedState(combined, text)
+      await this.repo.updateContent(doc.noteId, text, {
+        ...(opts.protect
+          ? { protect: opts.protect, base: opts.base, protectedSharedState: { sharedId, state } }
+          : {}),
+      })
+      if (!opts.protect) {
+        await this.db.execute(
+          'UPDATE shared_docs SET state = ?, projected = ?, dirty = 1 WHERE shared_id = ?',
+          [state, text, sharedId],
+        )
+      }
       return outside ? state : null
     })
   }
@@ -981,8 +1024,10 @@ export class SharedNotes {
     )
     // Deleted here (and its undo has run out): the owner stops sharing it, a member leaves.
     if (!local || (local.deleted_at !== null && local.deleted_at <= this.now() - DELETE_GRACE_MS)) {
-      if (own) await this.remote.unshareFolder(f.folderId)
-      else await this.remote.removeFolderMember(f.folderId, this.userId)
+      if (own) {
+        await this.prepareFolderProtectedDetach(f.folderId)
+        await this.remote.unshareFolder(f.folderId)
+      } else await this.remote.removeFolderMember(f.folderId, this.userId)
       await this.dropFolder(row)
       report.folders++
       return 'gone'
@@ -1038,6 +1083,7 @@ export class SharedNotes {
       } else if (!d.folder_id || !subtree.has(d.folder_id)) {
         // Moved out by the owner: members lose it. (An editor cannot take a note out.)
         if (!own) continue
+        await this.prepareProtectedDetach(d.shared_id)
         await this.remote.removeFromFolder(d.shared_id)
         await this.drop(d.shared_id, 'keep')
       }
@@ -1196,10 +1242,53 @@ export class SharedNotes {
   }
 
   /** Forgets a shared note locally: keeps its note as a personal one, or deletes it. */
+  private async prepareProtectedDetach(sharedId: string) {
+    if (!this.detachProtected) return
+    const doc = await this.doc(sharedId)
+    const note = doc ? await this.repo.getNote(doc.noteId) : null
+    if (!note?.content.includes('⟦fixnote-private:v1:members:')) return
+    const refs = await this.detachProtected(sharedId, note.content)
+    await this.db.execute(
+      'INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+      [`privacy.detach.${sharedId}`, JSON.stringify(refs)],
+    )
+  }
+
+  private async prepareFolderProtectedDetach(folderId: string) {
+    const docs = await this.db.query<{ shared_id: string }>(
+      'SELECT shared_id FROM shared_docs WHERE folder_shared_id = ? AND created_by = ?',
+      [folderId, this.userId],
+    )
+    for (const doc of docs) await this.prepareProtectedDetach(doc.shared_id)
+  }
+
   private async drop(sharedId: string, note: 'keep' | 'delete') {
     await this.locked(async () => {
       const doc = await this.doc(sharedId)
       if (!doc) return
+      if (note === 'keep') {
+        const key = `privacy.detach.${sharedId}`
+        const [handoff] = await this.db.query<{ value: string }>(
+          'SELECT value FROM kv WHERE key = ?',
+          [key],
+        )
+        if (handoff) {
+          const own = await this.repo.getNote(doc.noteId)
+          if (own) {
+            let content = own.content
+            for (const [from, to] of Object.entries(
+              JSON.parse(handoff.value) as Record<string, string>,
+            )) {
+              content = content.replaceAll(from, to)
+            }
+            await this.repo.updateContent(doc.noteId, content, {
+              base: own.content,
+              fromSharing: true,
+            })
+          }
+          await this.db.execute('DELETE FROM kv WHERE key = ?', [key])
+        }
+      }
       await this.db.execute('DELETE FROM shared_docs WHERE shared_id = ?', [sharedId])
       if (note === 'keep') {
         // Back in the personal sync, with the text it has now.
@@ -1253,6 +1342,7 @@ export class SharedNotes {
       }
       if (!state) return false
       const markdown = await this.writeNote(doc.noteId, state, editedAt, Boolean(absorbed))
+      state = compactProtectedState(state, markdown)
       await this.db.execute(
         `UPDATE shared_docs SET state = ?, server_version = ?, projected = ?,
                 dirty = CASE WHEN ? THEN 1 ELSE dirty END
@@ -1385,6 +1475,7 @@ export class SharedNotes {
         if (!state) return true
         // Someone saved while this device was saving: both edits are recent, theirs just now.
         const markdown = await this.writeNote(now.noteId, state, this.now(), true)
+        state = compactProtectedState(state, markdown)
         await this.db.execute(
           'UPDATE shared_docs SET state = ?, server_version = ?, projected = ?, dirty = 1 WHERE shared_id = ?',
           [state, res.version, markdown, sharedId],

@@ -1,4 +1,4 @@
-import { CollabSession, noteKeyBytes } from '@fixnote/core'
+import { CollabSession, noteKeyBytes, type ProtectionChange } from '@fixnote/core'
 import * as Y from 'yjs'
 import { requestSync, sharedContext } from '../account/account'
 import { assignColors, colorFor, type LiveUser } from './people'
@@ -19,6 +19,12 @@ export interface LiveEditing {
    * into the document. `taken`: the editor already shows the note's text (the assistant's change).
    */
   persist(markdown: string, opts?: { taken?: boolean }): Promise<void>
+  persistProtection(
+    markdown: string,
+    state: Uint8Array,
+    base: string,
+    protect: ProtectionChange,
+  ): Promise<void>
   /**
    * Takes in the stored document after sync brought the server's copy. A viewer cannot ask the
    * room for what it missed (it may not send), so this is how it catches up; for editors it is a
@@ -83,6 +89,12 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
       if (outside) Y.applyUpdate(doc, outside, 'stored')
       // People in the note get each keystroke live; the server copy can wait for a pause.
       requestSync(SAVE_PAUSE)
+    },
+    persistProtection: async (markdown, state, base, protect) => {
+      await ctx.shared.saveDoc(sharedId, state, markdown, { taken: true, base, protect })
+      // Apply only after the vault and note are durable. This update contains references only.
+      Y.applyUpdate(doc, state, 'privacy')
+      requestSync()
     },
     refresh: async () => {
       const now = await ctx.shared.doc(sharedId)

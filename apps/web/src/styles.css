@@ -764,3 +764,46 @@
     background: none;
   }
 }
+.fixnote-privacy-candidate {
+  background: color-mix(in srgb, var(--color-foreground) 9%, transparent);
+  box-shadow: inset 0 -1px var(--color-muted-foreground);
+  border-radius: 3px;
+  box-decoration-break: clone;
+}
+
+.fixnote-private-reference {
+  display: none;
+}
+
+.fixnote-protected-fragment {
+  display: inline;
+  padding: 0.15em 0.4em;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--color-success) 10%, var(--color-background));
+  -webkit-user-select: none;
+  user-select: none;
+  box-decoration-break: clone;
+}
+
+.fixnote-protected-label {
+  margin-inline-end: 0.55em;
+  color: var(--color-success);
+  font-size: 0.74em;
+  white-space: nowrap;
+}
+
+.fixnote-protected-value {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fixnote-protected-copy {
+  margin-inline-start: 0.55em;
+  color: var(--color-muted-foreground);
+  font-size: 0.74em;
+  cursor: pointer;
+}
+
+.fixnote-protected-copy:hover {
+  color: var(--color-foreground);
+}

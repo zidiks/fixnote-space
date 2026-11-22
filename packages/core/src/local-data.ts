@@ -11,6 +11,7 @@ export async function unsyncedChanges(db: SqlDriver): Promise<number> {
     `SELECT (SELECT count(*) FROM notes WHERE dirty = 1 AND shared_id IS NULL)
           + (SELECT count(*) FROM folders WHERE dirty = 1 AND shared_id IS NULL)
           + (SELECT count(*) FROM attachments WHERE uploaded = 0)
+          + (SELECT count(*) FROM kv WHERE key LIKE 'privacy.fragment.%' AND json_extract(value, '$.pending') = 1)
           + (SELECT count(*) FROM shared_docs WHERE dirty = 1) AS n`,
   )
   return Number(row?.n ?? 0)
@@ -25,6 +26,9 @@ export async function unsyncedChanges(db: SqlDriver): Promise<number> {
  */
 export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise<void> {
   const files = await db.query<{ id: string }>('SELECT id FROM attachments')
+  const protectedFiles = await db.query<{ key: string }>(
+    "SELECT key FROM kv WHERE key LIKE 'privacy.fragment.%'",
+  )
   const recordings = await voiceKeys(db)
   await db.transaction(async (tx) => {
     for (const table of [
@@ -44,11 +48,15 @@ export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise
     ])
       await tx.execute(`DELETE FROM ${table}`)
     await tx.execute(
-      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key LIKE 'mcp.remote%' OR key IN (?, ?, ?, ?)`,
+      `DELETE FROM kv WHERE key LIKE 'sync.%' OR key LIKE 'capture.%' OR key LIKE 'mcp.remote%' OR key LIKE 'privacy.%' OR key IN (?, ?, ?, ?)`,
       // What the assistant knows about the user is about this account, not the device.
       ['mcp.scope', CHAT_SUMMARY_KEY, CHAT_CLEARED_KEY, ASSISTANT_MEMORY_KEY],
     )
   })
   for (const { id } of files) await blobs.delete(`att/${id}`).catch(() => undefined)
+  for (const { key } of protectedFiles) {
+    const id = key.slice('privacy.fragment.'.length)
+    if (/^[0-9a-f-]{36}$/.test(id)) await blobs.delete(`protected/${id}`).catch(() => undefined)
+  }
   for (const key of recordings) await blobs.delete(key).catch(() => undefined)
 }

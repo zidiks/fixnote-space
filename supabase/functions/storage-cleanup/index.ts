@@ -26,7 +26,8 @@ const store: CleanupStore = {
     for (let offset = 0; ; offset += PAGE) {
       const { data, error } = await bucket().list(userId, { limit: PAGE, offset })
       if (error) throw error
-      paths.push(...data.map((f) => `${userId}/${f.name}`))
+      // Protected passages follow their notes' retention. Only list actual top-level files.
+      paths.push(...data.filter((f) => f.id).map((f) => `${userId}/${f.name}`))
       if (data.length < PAGE) return paths
     }
   },

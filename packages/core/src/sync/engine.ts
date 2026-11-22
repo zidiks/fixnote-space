@@ -9,6 +9,12 @@ import { mergeDailyNotes } from '../notes/daily'
 import { deriveTitle, toPlainText } from '../notes/markdown'
 import type { NoteType } from '../notes/types'
 import type { SqlDriver, SqlRow } from '../platform'
+import {
+  type ProtectedReference,
+  parseProtectedReference,
+  protectedReferenceMatches,
+} from '../privacy/reference'
+import { scrubProtectedCopies } from '../privacy/scrub'
 import { merge3 } from './merge'
 import type { RemoteFolder, RemoteNote, SyncRemote, SyncReport } from './types'
 
@@ -60,6 +66,7 @@ export interface SyncEngineOptions {
   newId?: () => string
   /** First line of a conflict copy, e.g. "Conflict copy · 25 Sep 2026, 10:15". */
   conflictHeading?: (at: number) => string
+  readProtectedValues?: (ref: ProtectedReference) => Promise<readonly string[]>
 }
 
 async function getCursor(tx: Tx, key: string): Promise<number> {
@@ -87,6 +94,7 @@ export class SyncEngine {
   private readonly now: () => number
   private readonly newId: () => string
   private readonly conflictHeading: (at: number) => string
+  private readonly readProtectedValues: SyncEngineOptions['readProtectedValues']
 
   constructor(
     private readonly db: SqlDriver,
@@ -98,6 +106,7 @@ export class SyncEngine {
     this.newId = opts.newId ?? (() => crypto.randomUUID())
     this.conflictHeading =
       opts.conflictHeading ?? ((at) => `Conflict copy · ${new Date(at).toISOString().slice(0, 16)}`)
+    this.readProtectedValues = opts.readProtectedValues
   }
 
   /**
@@ -200,10 +209,11 @@ export class SyncEngine {
     if (local && r.version <= local.sync_version) return
     // A note shared since: its text now lives in the shared note; the personal copy is left as is.
     if (local?.shared_id) return
-    const theirs = decryptNote(this.keys, r.id, {
+    const incoming = decryptNote(this.keys, r.id, {
       wrappedKey: r.wrappedKey,
       ciphertext: r.ciphertext,
     })
+    const theirs = local ? await this.protectMergedVersions(tx, local, incoming) : incoming
     report.pulled++
 
     const folderId = await this.existingFolder(tx, r.folderId)
@@ -253,7 +263,7 @@ export class SyncEngine {
       : { folderId, deletedAt: r.deletedAt, updatedAt: Math.max(r.updatedAt, local.updated_at) }
 
     let content = theirs
-    let dirty = localMetaWins ? 1 : 0
+    let dirty = localMetaWins || incoming !== theirs ? 1 : 0
     // The pin is merged on its own: the latest pin change wins, whoever edited the text.
     const localPinWins =
       local.dirty === 1 && Number(local.pin_updated_at ?? 0) > Number(r.pinUpdatedAt ?? 0)
@@ -330,6 +340,33 @@ export class SyncEngine {
     // happens to equal the old one looks like: set it again after the text.
     if (content !== local.content && editedAt === localEdited)
       await tx.execute('UPDATE notes SET edited_at = ? WHERE id = ?', [editedAt, r.id])
+  }
+
+  /** A peer may have edited an old copy while this passage was being protected. */
+  private async protectMergedVersions(tx: Tx, local: LocalNote, incoming: string) {
+    if (!this.readProtectedValues) return incoming
+    const current = new Set(protectedReferenceMatches(local.content).map((match) => match[0]))
+    const remote = new Set(protectedReferenceMatches(incoming).map((match) => match[0]))
+    for (const reference of new Set([...current, ...remote])) {
+      if (current.has(reference) && remote.has(reference)) continue
+      const ref = parseProtectedReference(reference)
+      if (!ref || ref.audience !== 'personal') continue
+      const values = await this.readProtectedValues(ref)
+      if (!values.length) continue
+      const protect = (source: string) => {
+        if (source.includes(reference)) return source
+        let result = source
+        for (const value of values) if (value) result = result.replaceAll(value, reference)
+        return result
+      }
+      local.content = protect(local.content)
+      if (local.base_content !== null) local.base_content = protect(local.base_content)
+      incoming = protect(incoming)
+      if (!current.has(reference)) {
+        await scrubProtectedCopies(tx, local.id, { ...ref, reference, values }, false)
+      }
+    }
+    return incoming
   }
 
   /** A folder id if it exists locally; otherwise null (the note shows in Inbox until it arrives). */

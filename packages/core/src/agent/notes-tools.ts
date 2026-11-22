@@ -7,10 +7,17 @@ import { type McpScope, scopeFolderIds } from '../mcp'
 import type { NotesRepo } from '../notes/repo'
 import type { Folder, Note } from '../notes/types'
 import type { SqlDriver } from '../platform'
+import { protectedReferenceMatches, redactProtectedReferences } from '../privacy/reference'
 import type { ToolLevel } from './tool-specs'
 
 /** A tool was refused by the user's settings; the message says where to change them. */
 export class AccessError extends Error {}
+
+function assertNoProtectedReferences(content: string) {
+  if (protectedReferenceMatches(content).length) {
+    throw new AccessError('Protected fragments can only be changed in the note editor.')
+  }
+}
 
 /**
  * Who may do what: the MCP server reads the user's settings on every call; the assistant chat
@@ -221,7 +228,7 @@ export class NoteTools {
       n.pinnedAt ? 'pinned: yes' : '',
       `created: ${iso(n.createdAt)}, edited: ${iso(n.updatedAt)}`,
       await this.attachmentList(n),
-      `\n${n.content}`,
+      `\n${redactProtectedReferences(n.content)}`,
     ]
       .filter(Boolean)
       .join('\n')
@@ -301,6 +308,7 @@ export class NoteTools {
           : `[${safe}](${attachmentUrl(info.id)} "${fileSize(bytes.length)}")`
         await this.repo.updateContent(id, `${note.content.trimEnd()}\n\n${md}`, {
           base: note.content,
+          fromAgent: true,
         })
         return {}
       },
@@ -410,6 +418,7 @@ export class NoteTools {
   async create(content: string, folder?: string): Promise<string> {
     await this.need('write')
     if (!content.trim()) throw new Error('The note is empty.')
+    assertNoProtectedReferences(content)
     const folderId = this.target(await this.reach(), folder)
     const { result } = await this.track(
       this.meta('create', `Created a note: ${firstLine(content)}`),
@@ -426,9 +435,11 @@ export class NoteTools {
     await this.need('write')
     const note = await this.visibleNote(await this.reach(), id)
     if (!content.trim()) throw new Error('Nothing to append.')
+    assertNoProtectedReferences(content)
     await this.track(this.meta('append', `Added to "${title(note)}"`), [id], async () => {
       await this.repo.updateContent(id, `${note.content.trimEnd()}\n\n${content.trim()}`, {
         base: note.content,
+        fromAgent: true,
       })
       return {}
     })
@@ -440,8 +451,14 @@ export class NoteTools {
     await this.need('write')
     const note = await this.visibleNote(await this.reach(), id)
     if (!content.trim()) throw new Error('The new text is empty. To remove the note, delete it.')
+    if (protectedReferenceMatches(note.content).length) {
+      throw new AccessError(
+        'This note contains protected fragments. Use edit_note on regular text.',
+      )
+    }
+    assertNoProtectedReferences(content)
     await this.track(this.meta('update', `Rewrote "${title(note)}"`), [id], async () => {
-      await this.repo.updateContent(id, content, { base: note.content })
+      await this.repo.updateContent(id, content, { base: note.content, fromAgent: true })
       return {}
     })
     return `Updated "${title(note)}".`
@@ -461,10 +478,17 @@ export class NoteTools {
     if (note.content.indexOf(find, at + 1) >= 0) {
       throw new Error('The text to replace occurs more than once. Include more of it.')
     }
+    const refs = protectedReferenceMatches(note.content)
+    if (refs.some((m) => at < m.index + m[0].length && at + find.length > m.index)) {
+      throw new AccessError('The edit overlaps a protected fragment. Edit only regular text.')
+    }
     const next = note.content.slice(0, at) + replace + note.content.slice(at + find.length)
+    if (protectedReferenceMatches(next).length !== refs.length) {
+      throw new AccessError('Protected fragments can only be changed in the note editor.')
+    }
     if (!next.trim()) throw new Error('The note would be empty. To remove the note, delete it.')
     await this.track(this.meta('update', `Edited "${title(note)}"`), [id], async () => {
-      await this.repo.updateContent(id, next, { base: note.content })
+      await this.repo.updateContent(id, next, { base: note.content, fromAgent: true })
       return {}
     })
     return `Edited "${title(note)}".`
@@ -475,6 +499,7 @@ export class NoteTools {
     const reach = await this.reach()
     const note = await this.visibleNote(reach, id)
     const folderId = this.target(reach, folder)
+    if (folderId !== note.folderId) assertNoProtectedReferences(note.content)
     const where = this.folderPath(reach, folderId)
     await this.track(this.meta('move', `Moved "${title(note)}" to ${where}`), [id], async () => {
       await this.repo.moveNote(id, folderId)
@@ -486,6 +511,7 @@ export class NoteTools {
   async remove(id: string): Promise<string> {
     await this.need('full')
     const note = await this.visibleNote(await this.reach(), id)
+    assertNoProtectedReferences(note.content)
     await this.track(this.meta('delete', `Deleted "${title(note)}"`), [id], async () => {
       await this.repo.deleteNote(id)
       return {}
@@ -536,10 +562,15 @@ export class NoteTools {
     await this.need('full')
     const f = this.folderRef(await this.reach(), folder)
     const subtree = await this.repo.folderSubtree(f.id)
-    const notes = await this.db.query<{ id: string }>(
-      `SELECT id FROM notes WHERE deleted_at IS NULL AND folder_id IN (${subtree.map(() => '?').join(',')})`,
+    const notes = await this.db.query<{ id: string; protected: number }>(
+      `SELECT id, instr(content, '⟦fixnote-private:v1:') AS protected
+         FROM notes WHERE deleted_at IS NULL AND folder_id IN (${subtree.map(() => '?').join(',')})`,
       subtree,
     )
+    if (notes.some((n) => n.protected))
+      throw new AccessError(
+        'This folder contains protected passages. Change its sharing in Fixnote.',
+      )
     await this.track(
       this.meta('folder', `Deleted the folder "${f.name}"`),
       notes.map((n) => n.id),
@@ -554,6 +585,7 @@ export class NoteTools {
 
   /** The daily note of `date` (YYYY-MM-DD, default today); with `append`, adds to it first. */
   async daily(date?: string, append?: string): Promise<string> {
+    if (append) assertNoProtectedReferences(append)
     const day = date ?? localDate()
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error('Use a date like 2026-09-25.')
     const reach = await this.reach()
@@ -569,6 +601,7 @@ export class NoteTools {
           const note = existing ?? (await this.repo.getOrCreateDaily(day, () => `# ${day}`))
           await this.repo.updateContent(note.id, `${note.content.trimEnd()}\n\n${append.trim()}`, {
             base: note.content,
+            fromAgent: true,
           })
           return { id: note.id, created: existing ? [] : [note.id] }
         },

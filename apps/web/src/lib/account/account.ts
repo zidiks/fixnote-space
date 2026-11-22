@@ -36,6 +36,12 @@ import { create } from 'zustand'
 import { conflictHeading } from '../conflict'
 import { paid, paymentPending, paymentStarted, showPaymentDialog } from '../payment'
 import { isProRequired, toPlanInfo, usePlan } from '../plan'
+import {
+  clearProtectedDeviceKey,
+  detachProtectedFragments,
+  loadProtectedValues,
+  syncProtectedFragments,
+} from '../privacy'
 import { projector } from '../shared/projector'
 import type { AccountBackend, PairingRequest, Session } from './backend'
 
@@ -121,6 +127,7 @@ let deps: Deps | null = null
 let keys: AccountKeys | null = null
 let session: Session | null = null
 let engine: SyncEngine | null = null
+let privacyRevision = '0'
 let shared: SharedNotes | null = null
 let stopWatching: (() => void) | null = null
 let debounce: ReturnType<typeof setTimeout> | undefined
@@ -281,7 +288,10 @@ async function becomeReady(k: AccountKeys) {
     await kvSet(OWNER_EMAIL, session.email)
     set({ ownerEmail: session.email })
   }
-  engine = new SyncEngine(need().db, backend().remote, k, { conflictHeading })
+  engine = new SyncEngine(need().db, backend().remote, k, {
+    conflictHeading,
+    readProtectedValues: loadProtectedValues,
+  })
   shared = session
     ? new SharedNotes({
         db: need().db,
@@ -290,6 +300,8 @@ async function becomeReady(k: AccountKeys) {
         remote: backend().shared(session.userId),
         projector,
         userId: session.userId,
+        detachProtected: (sharedId, content) =>
+          detachProtectedFragments(need().db, sharedId, content),
       })
     : null
   backend().requireSession?.(Boolean(session))
@@ -503,6 +515,7 @@ export async function unsyncedLocalChanges(): Promise<number> {
  */
 export async function unbindDevice() {
   await forgetLocalNotes(need().db, need().blobs)
+  await clearProtectedDeviceKey()
   await kvDelete(OWNER)
   await kvDelete(OWNER_EMAIL)
   location.reload()
@@ -663,6 +676,8 @@ export async function runSync() {
   // On Free this device only downloads; the server would refuse its changes anyway.
   const push = usePlan.getState().info?.plan !== 'free'
   try {
+    // A stale room permission or a missing file must not stop the membership pull.
+    await syncProtectedFragments(need().db, push).catch(() => undefined)
     const report = await e.sync({ push })
     // Notes shared with other people: their own channel, merged as Yjs documents.
     const sharedReport = shared ? await shared.sync() : null
@@ -680,6 +695,14 @@ export async function runSync() {
           sharedReport.pulled ||
           invitesChanged,
       )
+    }
+    const [privacy] = await need().db.query<{ value: string }>(
+      "SELECT value FROM kv WHERE key = 'privacy.revision'",
+    )
+    if (privacy && privacy.value !== privacyRevision) {
+      privacyRevision = privacy.value
+      const { refreshAfterProtection } = await import('../assistant/assistant')
+      await refreshAfterProtection().catch(() => undefined)
     }
     await refreshPairingRequests().catch(() => undefined)
     // Images go after the notes that use them; another device fetches them when shown.

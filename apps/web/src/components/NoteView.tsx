@@ -74,6 +74,7 @@ export function NoteView({ id }: { id: string }) {
   const deleteWithUndo = useDeleteWithUndo()
   const setPinned = useSetPinned()
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [privacyRevision, setPrivacyRevision] = useState(0)
   const editor = useRef<NoteEditorHandle>(null)
   const voice = useVoice((s) => s.status)
   const aiRequest = useUi((s) => s.aiRequest)
@@ -312,18 +313,22 @@ export function NoteView({ id }: { id: string }) {
         ) : (
           <NoteEditor
             // Opening a shared note's live document builds the editor anew (its content source changes).
-            key={`${n.id}:${shared.live ? 'live' : 'solo'}`}
+            key={`${n.id}:${shared.live ? 'live' : 'solo'}:${privacyRevision}`}
             ref={editor}
             note={n}
             live={shared.live ?? undefined}
             onStateChange={setSaveState}
+            onProtected={() => {
+              if (!shared.live) setPrivacyRevision((revision) => revision + 1)
+              else void invalidate()
+            }}
             onRepeat={async (task, rule) => {
               // The days after this one that exist already follow the new rule too.
               const changed = await repo.applyRecurrence(n.dailyDate as string, task, rule)
               for (const c of changed) qc.setQueryData(keys.note(c.id), c)
               if (changed.length) void invalidate()
             }}
-            onSave={async (markdown, base) => {
+            onSave={async (markdown, base, protect) => {
               // View only: what shows here are the others' edits; sync writes them to the note.
               if (n.readOnly) return n
               let saved: Note
@@ -337,13 +342,14 @@ export function NoteView({ id }: { id: string }) {
                 } else
                   saved = await repo.updateContent(n.id, markdown, {
                     base,
+                    ...(protect ? { protect } : {}),
                     onConflictCopy: () => {
                       conflictCopy = true
                     },
                   })
               } catch (err) {
                 // Made view only while open (the last save of the editor being closed).
-                if (err instanceof ReadOnlyError) return n
+                if (err instanceof ReadOnlyError && !protect) return n
                 throw err
               }
               savedNote(n, saved)

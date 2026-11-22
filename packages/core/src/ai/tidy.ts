@@ -1,6 +1,7 @@
 import { deriveExcerpt, toPlainText } from '../notes/markdown'
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver } from '../platform'
+import { containsProtectedReference } from '../privacy/reference'
 import type { AuditLog } from './audit'
 
 /** One proposed change, waiting for Accept or Reject. */
@@ -313,7 +314,12 @@ export class Tidy {
       return action.changes.length ? action.id : null
     }
     const other = await this.repo.getNote(s.otherId)
-    if (!other) return null
+    if (
+      !other ||
+      containsProtectedReference(note.content) ||
+      containsProtectedReference(other.content)
+    )
+      return null
     const { action } = await this.audit.track(
       { kind: 'tidy.merge', summary: labels.merge(title, other.title), provider },
       [s.noteId, s.otherId],

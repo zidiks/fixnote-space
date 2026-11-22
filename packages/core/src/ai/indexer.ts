@@ -23,6 +23,11 @@ export class Indexer {
     private readonly embedder: Embedder,
   ) {}
 
+  invalidate(noteId?: string) {
+    if (noteId) this.cache?.delete(noteId)
+    else this.cache = null
+  }
+
   /** Clears everything if the embedding model or the passages changed since the last run. */
   async prepare(): Promise<void> {
     const [row] = await this.db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
@@ -79,7 +84,12 @@ export class Indexer {
             )
           ).map(normalize)
         : []
-      await this.db.transaction(async (tx) => {
+      const written = await this.db.transaction(async (tx) => {
+        const [current] = await tx.query<{ content: string }>(
+          'SELECT content FROM notes WHERE id = ? AND deleted_at IS NULL',
+          [row.id],
+        )
+        if (current?.content !== row.content) return false
         await tx.execute('DELETE FROM chunks WHERE note_id = ?', [row.id])
         for (const [i, c] of chunks.entries()) {
           await tx.execute(
@@ -93,7 +103,9 @@ export class Indexer {
           hash,
           row.id,
         ])
+        return true
       })
+      if (!written) continue
       this.cache?.set(
         row.id,
         chunks.map((c, i) => ({
