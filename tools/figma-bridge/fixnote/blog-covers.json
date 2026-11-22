@@ -73,10 +73,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -123,10 +120,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -137,10 +131,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -210,10 +201,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -275,10 +263,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -349,10 +334,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -467,10 +449,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -550,10 +529,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#211F1C",
               "children": [
@@ -578,10 +554,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -606,10 +579,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -727,10 +697,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -785,10 +752,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": "#211F1C",
                       "children": [
@@ -813,10 +777,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -855,10 +816,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -981,10 +939,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -1053,10 +1008,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#211F1C",
               "children": [
@@ -1081,10 +1033,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -1202,10 +1151,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -1260,10 +1206,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": "#211F1C",
                       "children": [
@@ -1296,10 +1239,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -1329,10 +1269,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -1455,10 +1392,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -1505,10 +1439,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -1519,10 +1450,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -1584,10 +1512,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -1649,10 +1574,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -1802,10 +1724,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -1852,10 +1771,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -1866,10 +1782,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -1931,10 +1844,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -1994,10 +1904,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -2023,10 +1930,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -2086,10 +1990,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -2124,10 +2025,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -2250,10 +2148,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -2308,10 +2203,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": {
                         "color": "#FFFFFF",
@@ -2339,10 +2231,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -2372,12 +2261,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    0,
-                    10,
-                    0,
-                    18
-                  ],
+                  "pad": [0, 10, 0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -2407,10 +2291,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -2552,10 +2433,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -2603,10 +2481,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -2637,10 +2512,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -2665,10 +2537,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -2679,10 +2548,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -2744,10 +2610,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -2818,10 +2681,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -2944,10 +2804,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -2994,10 +2851,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -3008,10 +2862,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -3081,10 +2932,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -3154,10 +3002,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -3228,10 +3073,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -3346,10 +3188,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -3397,10 +3236,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -3460,10 +3296,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -3489,10 +3322,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -3552,10 +3382,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -3581,10 +3408,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -3644,10 +3468,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -3759,10 +3580,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -3809,10 +3627,7 @@
                   "name": "Link card",
                   "layout": "col",
                   "gap": 14,
-                  "pad": [
-                    18,
-                    20
-                  ],
+                  "pad": [18, 20],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -3860,10 +3675,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -3887,10 +3699,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -3917,10 +3726,7 @@
                   "name": "Revoke",
                   "layout": "row",
                   "align": "center",
-                  "pad": [
-                    0,
-                    20
-                  ],
+                  "pad": [0, 20],
                   "h": 44,
                   "radius": 999,
                   "fill": "#211F1C",
@@ -4030,10 +3836,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -4141,10 +3944,7 @@
                   "type": "FRAME",
                   "name": "Words",
                   "layout": "col",
-                  "pad": [
-                    16,
-                    18
-                  ],
+                  "pad": [16, 18],
                   "radius": 16,
                   "w": 506,
                   "fill": {
@@ -4181,10 +3981,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -4219,10 +4016,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -4337,10 +4131,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -4387,10 +4178,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -4401,10 +4189,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -4485,10 +4270,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -4548,10 +4330,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -4586,10 +4365,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -4704,10 +4480,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -4754,10 +4527,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -4768,10 +4538,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -4851,10 +4618,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -4927,10 +4691,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -5091,10 +4852,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -5142,10 +4900,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -5176,10 +4931,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -5204,10 +4956,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -5218,10 +4967,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -5300,10 +5046,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -5418,10 +5161,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -5468,10 +5208,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 4,
-                  "pad": [
-                    12,
-                    12
-                  ],
+                  "pad": [12, 12],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -5482,10 +5219,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -5494,10 +5228,7 @@
                           "name": "Kbd / Ctrl K",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -5535,10 +5266,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -5547,10 +5275,7 @@
                           "name": "Kbd / Ctrl N",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -5588,10 +5313,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -5600,10 +5322,7 @@
                           "name": "Kbd / Ctrl Shift D",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -5650,10 +5369,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -5768,10 +5484,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -5819,10 +5532,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -5853,10 +5563,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -5881,10 +5588,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -5895,10 +5599,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -5960,10 +5661,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -6025,10 +5723,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -6178,10 +5873,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -6289,10 +5981,7 @@
                   "type": "FRAME",
                   "name": "Ciphertext",
                   "layout": "col",
-                  "pad": [
-                    16,
-                    18
-                  ],
+                  "pad": [16, 18],
                   "radius": 16,
                   "w": 506,
                   "fill": {
@@ -6329,10 +6018,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -6367,10 +6053,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -6485,10 +6168,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -6535,10 +6215,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 2,
-                  "pad": [
-                    8,
-                    8
-                  ],
+                  "pad": [8, 8],
                   "radius": 19,
                   "w": 506,
                   "fill": {
@@ -6552,10 +6229,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -6623,10 +6297,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -6694,10 +6365,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -6765,10 +6433,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -6836,10 +6501,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -6907,10 +6569,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -7072,10 +6731,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -7122,10 +6778,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -7136,10 +6789,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -7209,10 +6859,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -7274,10 +6921,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -7348,10 +6992,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -7466,10 +7107,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -7549,10 +7187,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#211F1C",
               "children": [
@@ -7577,10 +7212,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -7605,10 +7237,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -7726,10 +7355,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -7784,10 +7410,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": "#211F1C",
                       "children": [
@@ -7812,10 +7435,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -7854,10 +7474,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -7980,10 +7597,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -8052,10 +7666,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#211F1C",
               "children": [
@@ -8080,10 +7691,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -8201,10 +7809,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -8259,10 +7864,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": "#211F1C",
                       "children": [
@@ -8295,10 +7897,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -8328,10 +7927,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -8454,10 +8050,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -8504,10 +8097,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -8518,10 +8108,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -8583,10 +8170,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -8648,10 +8232,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -8801,10 +8382,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -8851,10 +8429,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -8865,10 +8440,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -8930,10 +8502,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -8993,10 +8562,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -9022,10 +8588,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -9085,10 +8648,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -9123,10 +8683,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -9249,10 +8806,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -9307,10 +8861,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": {
                         "color": "#FFFFFF",
@@ -9338,10 +8889,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -9371,12 +8919,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    0,
-                    10,
-                    0,
-                    18
-                  ],
+                  "pad": [0, 10, 0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -9406,10 +8949,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -9551,10 +9091,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -9602,10 +9139,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -9636,10 +9170,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -9664,10 +9195,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -9678,10 +9206,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -9743,10 +9268,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -9817,10 +9339,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -9943,10 +9462,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -9993,10 +9509,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -10007,10 +9520,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -10080,10 +9590,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -10153,10 +9660,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -10227,10 +9731,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -10345,10 +9846,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -10396,10 +9894,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -10459,10 +9954,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -10488,10 +9980,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -10551,10 +10040,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -10580,10 +10066,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -10643,10 +10126,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -10758,10 +10238,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -10808,10 +10285,7 @@
                   "name": "Link card",
                   "layout": "col",
                   "gap": 14,
-                  "pad": [
-                    18,
-                    20
-                  ],
+                  "pad": [18, 20],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -10859,10 +10333,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -10886,10 +10357,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -10916,10 +10384,7 @@
                   "name": "Revoke",
                   "layout": "row",
                   "align": "center",
-                  "pad": [
-                    0,
-                    20
-                  ],
+                  "pad": [0, 20],
                   "h": 44,
                   "radius": 999,
                   "fill": "#211F1C",
@@ -11029,10 +10494,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -11140,10 +10602,7 @@
                   "type": "FRAME",
                   "name": "Words",
                   "layout": "col",
-                  "pad": [
-                    16,
-                    18
-                  ],
+                  "pad": [16, 18],
                   "radius": 16,
                   "w": 506,
                   "fill": {
@@ -11180,10 +10639,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -11218,10 +10674,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -11336,10 +10789,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -11386,10 +10836,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -11400,10 +10847,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -11484,10 +10928,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -11547,10 +10988,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -11585,10 +11023,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -11703,10 +11138,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -11753,10 +11185,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -11767,10 +11196,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -11850,10 +11276,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -11926,10 +11349,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -12090,10 +11510,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -12141,10 +11558,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -12175,10 +11589,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -12203,10 +11614,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -12217,10 +11625,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -12299,10 +11704,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -12417,10 +11819,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -12467,10 +11866,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 4,
-                  "pad": [
-                    12,
-                    12
-                  ],
+                  "pad": [12, 12],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -12481,10 +11877,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -12493,10 +11886,7 @@
                           "name": "Kbd / Ctrl K",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -12534,10 +11924,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -12546,10 +11933,7 @@
                           "name": "Kbd / Ctrl N",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -12587,10 +11971,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -12599,10 +11980,7 @@
                           "name": "Kbd / Ctrl Shift D",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -12649,10 +12027,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -12767,10 +12142,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -12818,10 +12190,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -12852,10 +12221,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -12880,10 +12246,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -12894,10 +12257,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -12959,10 +12319,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -13024,10 +12381,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -13177,10 +12531,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -13288,10 +12639,7 @@
                   "type": "FRAME",
                   "name": "Ciphertext",
                   "layout": "col",
-                  "pad": [
-                    16,
-                    18
-                  ],
+                  "pad": [16, 18],
                   "radius": 16,
                   "w": 506,
                   "fill": {
@@ -13328,10 +12676,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -13366,10 +12711,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -13484,10 +12826,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -13534,10 +12873,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -13548,10 +12884,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -13621,10 +12954,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -13686,10 +13016,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -13760,10 +13087,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -13878,10 +13202,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -13961,10 +13282,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#211F1C",
               "children": [
@@ -13989,10 +13307,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -14017,10 +13332,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -14138,10 +13450,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -14196,10 +13505,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": "#211F1C",
                       "children": [
@@ -14224,10 +13530,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -14266,10 +13569,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -14392,10 +13692,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -14464,10 +13761,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#211F1C",
               "children": [
@@ -14492,10 +13786,7 @@
               "layout": "row",
               "align": "center",
               "gap": 10,
-              "pad": [
-                14,
-                19
-              ],
+              "pad": [14, 19],
               "radius": 19,
               "fill": "#FFFFFF",
               "children": [
@@ -14613,10 +13904,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -14671,10 +13959,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": "#211F1C",
                       "children": [
@@ -14707,10 +13992,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -14740,10 +14022,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -14866,10 +14145,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -14916,10 +14192,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -14930,10 +14203,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -14995,10 +14265,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -15060,10 +14327,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -15213,10 +14477,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -15263,10 +14524,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -15277,10 +14535,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -15342,10 +14597,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -15405,10 +14657,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -15434,10 +14683,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -15497,10 +14743,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -15535,10 +14778,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -15661,10 +14901,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -15719,10 +14956,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 10,
-                      "pad": [
-                        14,
-                        19
-                      ],
+                      "pad": [14, 19],
                       "radius": 19,
                       "fill": {
                         "color": "#FFFFFF",
@@ -15750,10 +14984,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    14,
-                    19
-                  ],
+                  "pad": [14, 19],
                   "radius": 19,
                   "fill": "#FFFFFF",
                   "children": [
@@ -15783,12 +15014,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 10,
-                  "pad": [
-                    0,
-                    10,
-                    0,
-                    18
-                  ],
+                  "pad": [0, 10, 0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -15818,10 +15044,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -15963,10 +15186,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -16014,10 +15234,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -16048,10 +15265,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -16076,10 +15290,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -16090,10 +15301,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -16155,10 +15363,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -16229,10 +15434,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -16355,10 +15557,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -16405,10 +15604,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -16419,10 +15615,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -16492,10 +15685,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -16565,10 +15755,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -16639,10 +15826,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -16757,10 +15941,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -16808,10 +15989,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -16871,10 +16049,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -16900,10 +16075,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -16963,10 +16135,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -16992,10 +16161,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    14,
-                    14
-                  ],
+                  "pad": [14, 14],
                   "radius": 16,
                   "w": "fill",
                   "fill": "#FFFFFF",
@@ -17055,10 +16221,7 @@
                       "name": "Button",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 30,
                       "radius": 999,
                       "fill": "#211F1C",
@@ -17170,10 +16333,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -17220,10 +16380,7 @@
                   "name": "Link card",
                   "layout": "col",
                   "gap": 14,
-                  "pad": [
-                    18,
-                    20
-                  ],
+                  "pad": [18, 20],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -17271,10 +16428,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -17298,10 +16452,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -17328,10 +16479,7 @@
                   "name": "Revoke",
                   "layout": "row",
                   "align": "center",
-                  "pad": [
-                    0,
-                    20
-                  ],
+                  "pad": [0, 20],
                   "h": 44,
                   "radius": 999,
                   "fill": "#211F1C",
@@ -17441,10 +16589,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -17552,10 +16697,7 @@
                   "type": "FRAME",
                   "name": "Words",
                   "layout": "col",
-                  "pad": [
-                    16,
-                    18
-                  ],
+                  "pad": [16, 18],
                   "radius": 16,
                   "w": 506,
                   "fill": {
@@ -17592,10 +16734,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -17630,10 +16769,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -17748,10 +16884,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -17798,10 +16931,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -17812,10 +16942,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -17896,10 +17023,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -17959,10 +17083,7 @@
                           "layout": "row",
                           "align": "center",
                           "gap": 8,
-                          "pad": [
-                            0,
-                            14
-                          ],
+                          "pad": [0, 14],
                           "h": 34,
                           "radius": 999,
                           "fill": "#F5F3F0",
@@ -17997,10 +17118,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -18115,10 +17233,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -18165,10 +17280,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -18179,10 +17291,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -18262,10 +17371,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -18338,10 +17444,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -18502,10 +17605,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -18553,10 +17653,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -18587,10 +17684,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -18615,10 +17709,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -18629,10 +17720,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -18711,10 +17799,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -18829,10 +17914,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -18879,10 +17961,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 4,
-                  "pad": [
-                    12,
-                    12
-                  ],
+                  "pad": [12, 12],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -18893,10 +17972,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -18905,10 +17981,7 @@
                           "name": "Kbd / Ctrl K",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -18946,10 +18019,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -18958,10 +18028,7 @@
                           "name": "Kbd / Ctrl N",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -18999,10 +18066,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        8
-                      ],
+                      "pad": [8, 8],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -19011,10 +18075,7 @@
                           "name": "Kbd / Ctrl Shift D",
                           "layout": "row",
                           "align": "center",
-                          "pad": [
-                            0,
-                            10
-                          ],
+                          "pad": [0, 10],
                           "h": 34,
                           "radius": 8,
                           "fill": "#F5F3F0",
@@ -19061,10 +18122,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -19179,10 +18237,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#211F1C",
           "children": [
@@ -19230,10 +18285,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 12,
-                  "pad": [
-                    0,
-                    18
-                  ],
+                  "pad": [0, 18],
                   "h": 54,
                   "radius": 19,
                   "w": 506,
@@ -19264,10 +18316,7 @@
                       "name": "Kbd",
                       "layout": "row",
                       "align": "center",
-                      "pad": [
-                        0,
-                        10
-                      ],
+                      "pad": [0, 10],
                       "h": 30,
                       "radius": 8,
                       "fill": "#F5F3F0",
@@ -19292,10 +18341,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 6,
-                  "pad": [
-                    10,
-                    10
-                  ],
+                  "pad": [10, 10],
                   "radius": 19,
                   "w": 506,
                   "fill": "#FFFFFF",
@@ -19306,10 +18352,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -19371,10 +18414,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -19436,10 +18476,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        12,
-                        14
-                      ],
+                      "pad": [12, 14],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -19589,10 +18626,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -19700,10 +18734,7 @@
                   "type": "FRAME",
                   "name": "Ciphertext",
                   "layout": "col",
-                  "pad": [
-                    16,
-                    18
-                  ],
+                  "pad": [16, 18],
                   "radius": 16,
                   "w": 506,
                   "fill": {
@@ -19740,10 +18771,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -19778,10 +18806,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 8,
-                      "pad": [
-                        0,
-                        14
-                      ],
+                      "pad": [0, 14],
                       "h": 34,
                       "radius": 999,
                       "fill": {
@@ -19896,10 +18921,7 @@
           "h": 51,
           "layout": "row",
           "align": "center",
-          "pad": [
-            0,
-            25.5
-          ],
+          "pad": [0, 25.5],
           "radius": 999,
           "fill": "#FDFCFB",
           "children": [
@@ -19946,10 +18968,7 @@
                   "name": "Panel",
                   "layout": "col",
                   "gap": 2,
-                  "pad": [
-                    8,
-                    8
-                  ],
+                  "pad": [8, 8],
                   "radius": 19,
                   "w": 506,
                   "fill": {
@@ -19963,10 +18982,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -20034,10 +19050,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -20105,10 +19118,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -20176,10 +19186,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -20247,10 +19254,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [
@@ -20318,10 +19322,7 @@
                       "layout": "row",
                       "align": "center",
                       "gap": 12,
-                      "pad": [
-                        8,
-                        12
-                      ],
+                      "pad": [8, 12],
                       "radius": 16,
                       "w": "fill",
                       "children": [

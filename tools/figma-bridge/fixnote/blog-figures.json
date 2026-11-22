@@ -17,10 +17,7 @@
       },
       "layout": "col",
       "gap": 28,
-      "pad": [
-        40,
-        44
-      ],
+      "pad": [40, 44],
       "children": [
         {
           "type": "TEXT",
@@ -46,10 +43,7 @@
               "name": "Card / Your laptop",
               "layout": "col",
               "gap": 14,
-              "pad": [
-                24,
-                24
-              ],
+              "pad": [24, 24],
               "radius": 22,
               "w": "fill",
               "h": "fill",
@@ -127,10 +121,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 8,
-                  "pad": [
-                    0,
-                    16
-                  ],
+                  "pad": [0, 16],
                   "h": 40,
                   "radius": 999,
                   "fill": {
@@ -188,10 +179,7 @@
               "name": "Card / Our server",
               "layout": "col",
               "gap": 14,
-              "pad": [
-                24,
-                24
-              ],
+              "pad": [24, 24],
               "radius": 22,
               "w": "fill",
               "h": "fill",
@@ -283,10 +271,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 8,
-                  "pad": [
-                    0,
-                    16
-                  ],
+                  "pad": [0, 16],
                   "h": 40,
                   "radius": 999,
                   "fill": {
@@ -344,10 +329,7 @@
               "name": "Card / Your phone",
               "layout": "col",
               "gap": 14,
-              "pad": [
-                24,
-                24
-              ],
+              "pad": [24, 24],
               "radius": 22,
               "w": "fill",
               "h": "fill",
@@ -425,10 +407,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 8,
-                  "pad": [
-                    0,
-                    16
-                  ],
+                  "pad": [0, 16],
                   "h": 40,
                   "radius": 999,
                   "fill": {
@@ -493,10 +472,7 @@
       },
       "layout": "col",
       "gap": 28,
-      "pad": [
-        40,
-        44
-      ],
+      "pad": [40, 44],
       "children": [
         {
           "type": "TEXT",
@@ -522,10 +498,7 @@
               "name": "Card / Tu portátil",
               "layout": "col",
               "gap": 14,
-              "pad": [
-                24,
-                24
-              ],
+              "pad": [24, 24],
               "radius": 22,
               "w": "fill",
               "h": "fill",
@@ -603,10 +576,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 8,
-                  "pad": [
-                    0,
-                    16
-                  ],
+                  "pad": [0, 16],
                   "h": 40,
                   "radius": 999,
                   "fill": {
@@ -664,10 +634,7 @@
               "name": "Card / Nuestro servidor",
               "layout": "col",
               "gap": 14,
-              "pad": [
-                24,
-                24
-              ],
+              "pad": [24, 24],
               "radius": 22,
               "w": "fill",
               "h": "fill",
@@ -759,10 +726,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 8,
-                  "pad": [
-                    0,
-                    16
-                  ],
+                  "pad": [0, 16],
                   "h": 40,
                   "radius": 999,
                   "fill": {
@@ -820,10 +784,7 @@
               "name": "Card / Tu móvil",
               "layout": "col",
               "gap": 14,
-              "pad": [
-                24,
-                24
-              ],
+              "pad": [24, 24],
               "radius": 22,
               "w": "fill",
               "h": "fill",
@@ -901,10 +862,7 @@
                   "layout": "row",
                   "align": "center",
                   "gap": 8,
-                  "pad": [
-                    0,
-                    16
-                  ],
+                  "pad": [0, 16],
                   "h": 40,
                   "radius": 999,
                   "fill": {
