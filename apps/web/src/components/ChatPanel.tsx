@@ -20,6 +20,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@fixnote/ui'
+import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
 import {
   ArrowUp,
   Check,
@@ -35,6 +36,7 @@ import {
 } from 'lucide-react'
 import {
   type KeyboardEvent,
+  type RefObject,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -127,7 +129,18 @@ function Sources({ citations }: { citations: StoredCitation[] }) {
 }
 
 /** The answer itself: typed in smoothly while it streams, at once from history. */
-function Answer({ m }: { m: ChatEntry }) {
+type MessageControls = {
+  changesOpen: boolean
+  onChangesToggle: () => void
+  onActivity: (active: boolean) => void
+}
+
+function Answer({
+  m,
+  changesOpen,
+  onChangesToggle,
+  onActivity,
+}: { m: ChatEntry } & MessageControls) {
   const { t } = useTranslation()
   const navigate = useUi((s) => s.navigate)
   const activity = useAssistant((s) => s.activity)
@@ -153,7 +166,7 @@ function Answer({ m }: { m: ChatEntry }) {
         />
       )}
       {streaming ? <AgentActivity /> : null}
-      <AnswerChanges m={m} />
+      <AnswerChanges m={m} open={changesOpen} onToggle={onChangesToggle} onActivity={onActivity} />
       {m.status === 'done' && !typing ? <AnswerFooter m={m} /> : null}
     </>
   )
@@ -183,7 +196,16 @@ function AnswerFooter({ m }: { m: ChatEntry }) {
   )
 }
 
-function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
+function Message({
+  m,
+  onRetry,
+  voicePositions,
+  ...controls
+}: {
+  m: ChatEntry
+  onRetry: () => void
+  voicePositions: RefObject<Map<string, number>>
+} & MessageControls) {
   const { t } = useTranslation()
   const label = useScopeLabel()
   const error = useAssistant((s) => s.error)
@@ -202,7 +224,15 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
     )
   }
   if (m.kind === 'user') {
-    if (m.voice) return <VoiceMessage voice={m.voice} transcript={m.content} />
+    if (m.voice)
+      return (
+        <VoiceMessage
+          voice={m.voice}
+          transcript={m.content}
+          positions={voicePositions}
+          onActivity={controls.onActivity}
+        />
+      )
     return (
       <div
         data-selectable
@@ -214,7 +244,7 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
   }
   return (
     <div className="max-w-full">
-      <Answer m={m} />
+      <Answer m={m} {...controls} />
       {m.status === 'stopped' ? (
         <p className="mt-1 text-[11px] text-muted-foreground">{t('chat.stopped')}</p>
       ) : null}
@@ -239,6 +269,112 @@ function Message({ m, onRetry }: { m: ChatEntry; onRetry: () => void }) {
           </Button>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+function ChatHistory({
+  messages,
+  onRetry,
+}: {
+  messages: ChatEntry[]
+  onRetry: (entry: ChatEntry) => void
+}) {
+  const scroll = useRef<HTMLDivElement>(null)
+  const voicePositions = useRef(new Map<string, number>())
+  const [focused, setFocused] = useState<string | null>(null)
+  const [activeRows, setActiveRows] = useState(new Set<string>())
+  const [openChanges, setOpenChanges] = useState(new Set<string>())
+  const retained = useMemo(
+    () =>
+      focused === null && !activeRows.size
+        ? []
+        : messages.flatMap((m, index) => (m.id === focused || activeRows.has(m.id) ? [index] : [])),
+    [activeRows, focused, messages],
+  )
+  const virtual = useVirtualizer({
+    count: messages.length,
+    getScrollElement: () => scroll.current,
+    getItemKey: (index) => (messages[index] as ChatEntry).id,
+    estimateSize: (index) => (messages[index]?.kind === 'divider' ? 24 : 64),
+    gap: 16,
+    paddingStart: 16,
+    paddingEnd: 16,
+    overscan: 5,
+    anchorTo: 'end',
+    followOnAppend: true,
+    scrollEndThreshold: 24,
+    rangeExtractor: (range) => {
+      const indices = defaultRangeExtractor(range)
+      for (const index of retained) if (!indices.includes(index)) indices.push(index)
+      return indices.sort((a, b) => a - b)
+    },
+  })
+
+  // The history mounts once there are messages.
+  useLayoutEffect(() => {
+    virtual.scrollToEnd()
+  }, [virtual])
+
+  // Sending a question goes to the new answer. While it grows, the virtualizer
+  // follows it only when already at the bottom.
+  const previous = useRef(messages)
+  useLayoutEffect(() => {
+    const before = previous.current
+    previous.current = messages
+    if (
+      messages.length > before.length &&
+      messages[before.length - 1]?.id === before.at(-1)?.id &&
+      messages.slice(before.length).some((m) => m.kind === 'user')
+    )
+      virtual.scrollToEnd()
+  }, [messages, virtual])
+
+  return (
+    <div ref={scroll} data-chat-history className="min-h-0 flex-1 overflow-y-auto px-4">
+      <div className="relative" style={{ height: virtual.getTotalSize(), overflowAnchor: 'none' }}>
+        {virtual.getVirtualItems().map((row) => {
+          const m = messages[row.index] as ChatEntry
+          return (
+            <div
+              key={row.key}
+              data-index={row.index}
+              data-chat-message-id={m.id}
+              ref={virtual.measureElement}
+              className="absolute inset-x-0 top-0 flow-root"
+              style={{ transform: `translateY(${row.start}px)` }}
+              onFocusCapture={() => setFocused(m.id)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget))
+                  setFocused((id) => (id === m.id ? null : id))
+              }}
+            >
+              <Message
+                m={m}
+                onRetry={() => onRetry(m)}
+                voicePositions={voicePositions}
+                changesOpen={openChanges.has(m.id)}
+                onChangesToggle={() =>
+                  setOpenChanges((ids) => {
+                    const next = new Set(ids)
+                    if (!next.delete(m.id)) next.add(m.id)
+                    return next
+                  })
+                }
+                onActivity={(active) =>
+                  setActiveRows((ids) => {
+                    if (ids.has(m.id) === active) return ids
+                    const next = new Set(ids)
+                    if (active) next.add(m.id)
+                    else next.delete(m.id)
+                    return next
+                  })
+                }
+              />
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -365,7 +501,6 @@ export function ChatPanel() {
   const label = useScopeLabel()
   const scope: ChatScope = scopeMode === 'all' ? { kind: 'all' } : routeScope
   const [confirmClear, setConfirmClear] = useState(false)
-  const list = useRef<HTMLDivElement>(null)
   const input = useRef<HTMLTextAreaElement>(null)
   const busy = status === 'thinking' || status === 'answering'
   const last = messages.at(-1)
@@ -410,34 +545,6 @@ export function ChatPanel() {
     el.style.height = `${Math.min(el.scrollHeight, max)}px`
     el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden'
   }, [draft])
-
-  // The thread follows what is being written while it is scrolled to the bottom; scrolling up
-  // reads in peace until the bottom is reached again. A new question always brings it down.
-  const stick = useRef(true)
-  const thread = useRef<HTMLDivElement>(null)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new message re-attaches and sticks
-  useLayoutEffect(() => {
-    const el = list.current
-    const content = thread.current
-    stick.current = true
-    if (!el) return
-    el.scrollTop = el.scrollHeight
-    if (!content) return
-    const follow = new ResizeObserver(() => {
-      if (stick.current) el.scrollTop = el.scrollHeight
-    })
-    follow.observe(content)
-    return () => follow.disconnect()
-  }, [messages.length])
-  // Only a move up lets go: text that grew since the last frame must not count as scrolling away.
-  const lastTop = useRef(0)
-  const onScroll = () => {
-    const el = list.current
-    if (!el) return
-    if (el.scrollTop < lastTop.current - 1) stick.current = false
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < 24) stick.current = true
-    lastTop.current = el.scrollTop
-  }
 
   const send = () => {
     const q = draft.trim()
@@ -512,20 +619,14 @@ export function ChatPanel() {
       </header>
       <IndexStatus />
 
-      <div ref={list} onScroll={onScroll} className="flex-1 overflow-y-auto px-4 py-4">
-        {messages.length ? (
-          <div ref={thread} className="space-y-4">
-            {messages.map((m) => (
-              <Message key={m.id} m={m} onRetry={() => retry(m)} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
-            <AssistantAvatar size={48} />
-            <p className="text-sm text-muted-foreground">{t('chat.empty')}</p>
-          </div>
-        )}
-      </div>
+      {messages.length ? (
+        <ChatHistory messages={messages} onRetry={retry} />
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-8 py-4 text-center">
+          <AssistantAvatar size={48} />
+          <p className="text-sm text-muted-foreground">{t('chat.empty')}</p>
+        </div>
+      )}
 
       <div className="border-t p-3">
         {needsAccount && phase === 'disabled' ? (

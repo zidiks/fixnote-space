@@ -309,6 +309,7 @@ const ru: LocaleResource = {
     autoBody: 'Всё применяется сразу, включая «Навести порядок».',
   },
   privacy: {
+    copyBlock: 'Скопировать блок',
     edit: 'Изменить',
     editTitle: 'Изменить защищённый текст',
     save: 'Сохранить',
@@ -969,6 +970,7 @@ const ru: LocaleResource = {
     emptyToday: 'Сегодня ещё ничего не менялось.',
   },
   settings: {
+    offlineMode: 'Офлайн-режим',
     title: 'Настройки',
     general: 'Общие',
     account: 'Аккаунт и синхронизация',

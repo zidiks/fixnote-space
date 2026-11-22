@@ -306,6 +306,7 @@ const en = {
     autoBody: 'Everything applies right away, Tidy up included.',
   },
   privacy: {
+    copyBlock: 'Copy block',
     edit: 'Edit',
     editTitle: 'Edit protected text',
     save: 'Save',
@@ -962,6 +963,7 @@ const en = {
     emptyToday: 'Nothing edited today yet.',
   },
   settings: {
+    offlineMode: 'Offline mode',
     title: 'Settings',
     general: 'General',
     account: 'Account & sync',

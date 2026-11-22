@@ -308,6 +308,7 @@ const es: LocaleResource = {
     autoBody: 'Todo se aplica al instante, incluido Poner orden.',
   },
   privacy: {
+    copyBlock: 'Copiar bloque',
     edit: 'Editar',
     editTitle: 'Editar texto protegido',
     save: 'Guardar',
@@ -971,6 +972,7 @@ const es: LocaleResource = {
     emptyToday: 'Hoy aún no has editado nada.',
   },
   settings: {
+    offlineMode: 'Modo sin conexión',
     title: 'Ajustes',
     general: 'General',
     account: 'Cuenta y sincronización',

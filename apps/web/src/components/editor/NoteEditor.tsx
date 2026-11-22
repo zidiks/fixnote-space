@@ -94,6 +94,7 @@ import { PrivacyHighlight, PrivacyReview } from './PrivacyReview'
 import { ProtectedValueDialog } from './ProtectedValueDialog'
 import type { ScanRange } from './privacy-scan'
 import { ProtectedDisplay } from './protected-display'
+import { protectedRangeText } from './protected-text'
 import { RepeatDialog } from './RepeatDialog'
 import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
 import { RemoteFade } from './remote-fade'
@@ -662,7 +663,7 @@ export function NoteEditor({
     if (!e || e.isDestroyed || !e.isEditable || protecting.current) throw new Error('Cannot edit')
     if (audience === 'members' && !live) throw new Error('Missing shared note')
     const original = e.state.doc
-    const previousValue = original.textBetween(range.from, range.to, '\n')
+    const previousValue = protectedRangeText(original, range)
     const clear = edit?.text ?? previousValue
     const selected = edit ? edit.text : rangeMarkdown(e, range)
     if (

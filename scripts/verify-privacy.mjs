@@ -279,6 +279,63 @@ try {
     .waitFor()
   const revised = await snapshot()
   assert.ok(!revised.includes('revised-fixture-value'))
+  const multiline = await page.evaluate(async () => {
+    const { repo } = await (await window.privacyTestImport('/src/lib/db.tsx')).openDb()
+    const { useUi } = await window.privacyTestImport('/src/app/store.ts')
+    const { id } = await repo.createNote({ content: '# Multiple lines' })
+    useUi.getState().navigate({ kind: 'note', id })
+    return id
+  })
+  const editor = page.locator('.tiptap')
+  await page.waitForFunction(() =>
+    document.querySelector('.tiptap')?.editor.getMarkdown().startsWith('# Multiple lines'),
+  )
+  await editor.evaluate((el) => {
+    const e = el.editor
+    e.commands.setContent({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'fixture-user' },
+            { type: 'hardBreak' },
+            { type: 'text', text: 'fixture-code' },
+          ],
+        },
+        { type: 'paragraph', content: [{ type: 'text', text: 'fixture-comment' }] },
+      ],
+    })
+    e.commands.selectAll()
+  })
+  await editor.dispatchEvent('contextmenu', { button: 2, bubbles: true })
+  await page.getByRole('menuitem', { name: 'Protect', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Protect', exact: true }).click()
+  const protectedBlock = page.locator('.fixnote-protected-fragment.is-multiline')
+  await protectedBlock.waitFor()
+  assert.equal(await protectedBlock.count(), 1)
+  assert.equal(await protectedBlock.locator('.fixnote-protected-label svg').count(), 1)
+  const expectedBlock = 'fixture-user\nfixture-code\nfixture-comment'
+  assert.equal(
+    await protectedBlock.locator('.fixnote-protected-value').textContent(),
+    expectedBlock,
+  )
+  assert.ok(
+    await protectedBlock.evaluate((el) => {
+      const header = el.querySelector('.fixnote-protected-header').getBoundingClientRect()
+      const body = el.querySelector('.fixnote-protected-value').getBoundingClientRect()
+      return header.bottom < body.top
+    }),
+  )
+  await protectedBlock.getByRole('button', { name: 'Copy block' }).click()
+  const copiedBlock = await page.evaluate(() => navigator.clipboard.readText())
+  assert.equal(copiedBlock.replaceAll('\r\n', '\n'), expectedBlock)
+  const storedBlock = await page.evaluate(async (id) => {
+    const { repo } = await (await window.privacyTestImport('/src/lib/db.tsx')).openDb()
+    return (await repo.getNote(id)).content
+  }, multiline)
+  assert.ok(storedBlock.includes('⟦fixnote-private:v1:personal:'))
+  assert.ok(!storedBlock.includes('fixture-code'))
   assert.deepEqual(errors, [])
   assert.deepEqual(remote, [])
   console.log('PASS: local scan, protection, reopen, and ciphertext-only personal/shared sync.')

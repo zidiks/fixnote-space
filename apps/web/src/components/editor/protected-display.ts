@@ -15,6 +15,28 @@ interface ProtectedDisplayOptions {
 }
 const key = new PluginKey<DecorationSet>('protectedDisplay')
 
+function lockIcon() {
+  const ns = 'http://www.w3.org/2000/svg'
+  const icon = document.createElementNS(ns, 'svg')
+  icon.setAttribute('viewBox', '0 0 24 24')
+  icon.setAttribute('fill', 'none')
+  icon.setAttribute('stroke', 'currentColor')
+  icon.setAttribute('stroke-width', '2')
+  icon.setAttribute('stroke-linecap', 'round')
+  icon.setAttribute('stroke-linejoin', 'round')
+  icon.setAttribute('aria-hidden', 'true')
+  const shackle = document.createElementNS(ns, 'path')
+  shackle.setAttribute('d', 'M7 11V7a5 5 0 0 1 10 0v4')
+  const body = document.createElementNS(ns, 'rect')
+  body.setAttribute('x', '4')
+  body.setAttribute('y', '11')
+  body.setAttribute('width', '16')
+  body.setAttribute('height', '10')
+  body.setAttribute('rx', '2')
+  icon.append(shackle, body)
+  return icon
+}
+
 /** The reference stays ordinary text in Markdown and Yjs so older clients keep it. */
 function decorations(
   doc: PmNode,
@@ -47,7 +69,7 @@ function decorations(
             block.contentEditable = 'false'
             const label = document.createElement('span')
             label.className = 'fixnote-protected-label'
-            label.textContent = '🔒 ' + i18n.t('privacy.protected')
+            label.append(lockIcon(), i18n.t('privacy.protected'))
             const body = document.createElement('span')
             body.className = 'fixnote-protected-value'
             block.append(label, body)
@@ -55,11 +77,21 @@ function decorations(
               (text) => {
                 body.textContent = text ?? i18n.t('privacy.unavailable')
                 if (text === null) return
+                const multiline = /[\r\n]/.test(text)
+                const actions = document.createElement('span')
+                actions.className = 'fixnote-protected-actions'
+                if (multiline) {
+                  block.classList.add('is-multiline')
+                  const header = document.createElement('span')
+                  header.className = 'fixnote-protected-header'
+                  header.append(label, actions)
+                  block.prepend(header)
+                } else block.append(actions)
                 const copy = document.createElement('button')
                 copy.type = 'button'
                 copy.className = 'fixnote-protected-copy'
-                copy.textContent = i18n.t('menu.copy')
-                copy.title = i18n.t('privacy.copy')
+                copy.textContent = i18n.t(multiline ? 'privacy.copyBlock' : 'menu.copy')
+                copy.title = i18n.t(multiline ? 'privacy.copyBlock' : 'privacy.copy')
                 copy.addEventListener('click', (event) => {
                   event.stopPropagation()
                   void navigator.clipboard
@@ -69,7 +101,7 @@ function decorations(
                     })
                     .catch(() => undefined)
                 })
-                block.append(copy)
+                actions.append(copy)
                 if (options.edit && options.canEdit()) {
                   const edit = document.createElement('button')
                   edit.type = 'button'
@@ -80,7 +112,7 @@ function decorations(
                     const at = getPos()
                     if (at !== undefined && options.canEdit()) options.edit?.(ref, at, text)
                   })
-                  block.append(edit)
+                  actions.append(edit)
                 }
               },
               () => {

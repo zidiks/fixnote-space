@@ -2,10 +2,26 @@ import { detectSecrets } from '@fixnote/core/privacy/detect'
 import { describe, expect, it } from 'vitest'
 import { schemaEditor } from './headless'
 import { changedScanRange, scanContext, scanNoteRange } from './privacy-scan'
+import { protectedRangeText } from './protected-text'
 
 const scan = async (value: string) => detectSecrets(value)
 
 describe('privacy scan ranges', () => {
+  it('preserves soft and paragraph breaks in the protected text', () => {
+    const { schema } = schemaEditor()
+    const paragraph = (text: string) => schema.node('paragraph', null, schema.text(text))
+    const doc = schema.node('doc', null, [
+      schema.node('paragraph', null, [
+        schema.text('first'),
+        schema.node('hardBreak'),
+        schema.text('second'),
+      ]),
+      schema.node('paragraph'),
+      paragraph('last'),
+    ])
+    expect(protectedRangeText(doc, { from: 0, to: doc.content.size })).toBe('first\nsecond\n\nlast')
+  })
+
   it('maps findings back through formatted text and multiple paragraphs', async () => {
     const e = schemaEditor()
     const doc = e.schema.nodeFromJSON({

@@ -147,7 +147,7 @@ function SyncIndicator() {
     return (
       <button
         type="button"
-        onClick={() => openSettings('ai')}
+        onClick={() => openSettings('general')}
         className="flex items-center gap-1.5 rounded-md px-1.5 py-1 hover:bg-sidebar-accent hover:text-foreground pointer-coarse:py-2"
       >
         <HardDrive className="size-3.5" />

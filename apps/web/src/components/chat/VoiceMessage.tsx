@@ -2,7 +2,7 @@ import type { VoiceClip } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { cn } from '@fixnote/ui'
 import { Pause, Play } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { type RefObject, useEffect, useRef, useState } from 'react'
 import { usePlatform } from '../../lib/platform'
 import { typedAudio } from '../../lib/voice/audio-type'
 
@@ -15,46 +15,77 @@ const clock = (ms: number) => {
  * A question asked by voice, like a voice message in a messenger: play it back, see where it is,
  * and read what was heard under it. The recording lives only on this device.
  */
-export function VoiceMessage({ voice, transcript }: { voice: VoiceClip; transcript: string }) {
+export function VoiceMessage({
+  voice,
+  transcript,
+  positions,
+  onActivity,
+}: {
+  voice: VoiceClip
+  transcript: string
+  positions: RefObject<Map<string, number>>
+  onActivity: (active: boolean) => void
+}) {
   const { t } = useTranslation()
   const platform = usePlatform()
   const audio = useRef<HTMLAudioElement | null>(null)
+  const mounted = useRef(false)
+  const loading = useRef(false)
   const [playing, setPlaying] = useState(false)
-  const [at, setAt] = useState(0)
+  const [at, setAt] = useState(() => positions.current.get(voice.key) ?? 0)
   const [missing, setMissing] = useState(false)
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
       const a = audio.current
       if (!a) return
       a.pause()
       URL.revokeObjectURL(a.src)
-    },
-    [],
-  )
+    }
+  }, [])
 
   const toggle = async () => {
+    if (loading.current) return
     let a = audio.current
     if (!a) {
-      const blob = await platform.blobs.get(voice.key).catch(() => null)
+      loading.current = true
+      onActivity(true)
+      const blob = await platform.blobs
+        .get(voice.key)
+        .then((blob) => blob && typedAudio(blob))
+        .catch(() => null)
+      loading.current = false
+      if (!mounted.current) return
       if (!blob) {
         setMissing(true)
+        onActivity(false)
         return
       }
-      a = new Audio(URL.createObjectURL(await typedAudio(blob)))
+      a = new Audio(URL.createObjectURL(blob))
+      a.currentTime = at / 1000
       a.ontimeupdate = () => setAt((a?.currentTime ?? 0) * 1000)
       a.onended = () => {
         setPlaying(false)
         setAt(0)
+        positions.current.delete(voice.key)
+        onActivity(false)
       }
       audio.current = a
     }
     if (a.paused) {
+      onActivity(true)
       await a.play().catch(() => setMissing(true))
       setPlaying(!a.paused)
+      if (a.paused) onActivity(false)
     } else {
       a.pause()
+      const pausedAt = a.currentTime * 1000
+      positions.current.set(voice.key, pausedAt)
+      setAt(pausedAt)
       setPlaying(false)
+      onActivity(false)
     }
   }
 

@@ -24,9 +24,18 @@ export function AgentActivity() {
 }
 
 /** "Changes: 3 · Undo all" under an answer, with the list of changes on click. */
-export function AnswerChanges({ m }: { m: ChatEntry }) {
+export function AnswerChanges({
+  m,
+  open,
+  onToggle,
+  onActivity,
+}: {
+  m: ChatEntry
+  open: boolean
+  onToggle: () => void
+  onActivity: (active: boolean) => void
+}) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const actions = m.actions
   if (!actions?.items.length) return null
@@ -34,10 +43,12 @@ export function AnswerChanges({ m }: { m: ChatEntry }) {
 
   const undo = async () => {
     setBusy(true)
+    onActivity(true)
     try {
       if ((await undoAnswer(m.id)) === 'changed') toast(t('audit.changed'))
     } finally {
       setBusy(false)
+      onActivity(false)
     }
   }
 
@@ -46,7 +57,7 @@ export function AnswerChanges({ m }: { m: ChatEntry }) {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => setOpen((o) => !o)}
+          onClick={onToggle}
           aria-expanded={open}
           className="flex min-w-0 flex-1 items-center gap-1 text-left text-muted-foreground hover:text-foreground"
         >

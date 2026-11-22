@@ -17,7 +17,6 @@ import {
   type ProviderSettings,
   saveApiKey,
   saveProvider,
-  setLocalOnly,
   useLlm,
 } from '../../lib/assistant/llm'
 import { usePlatform } from '../../lib/platform'
@@ -331,23 +330,6 @@ export function ProviderSection() {
             </span>
           ) : null}
         </div>
-      ) : null}
-
-      {desktop ? (
-        <label className="flex max-w-xl cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-2.5">
-          <input
-            type="checkbox"
-            checked={localOnly}
-            onChange={(e) => void setLocalOnly(e.target.checked)}
-            className="mt-1 accent-brand"
-          />
-          <span className="space-y-0.5">
-            <span className="block text-sm font-medium">{t('aiProvider.localOnly')}</span>
-            <span className="block text-xs text-muted-foreground">
-              {t('aiProvider.localOnlyBody')}
-            </span>
-          </span>
-        </label>
       ) : null}
     </div>
   )

@@ -9,9 +9,11 @@ import {
 } from '@fixnote/i18n'
 import { Logo, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { WifiOff } from 'lucide-react'
 import { useState } from 'react'
 import { FONT_MODES, type FontMode, type Theme, useUi } from '../../app/store'
 import { APP_ICON, appIconOf, setAppIcon } from '../../lib/app-icon'
+import { setLocalOnly, useLlm } from '../../lib/assistant/llm'
 import { captureToDaily, VOICE_TO_DAILY } from '../../lib/daily'
 import { useDb } from '../../lib/db'
 import { kvStore } from '../../lib/kv'
@@ -38,6 +40,7 @@ export function GeneralSection() {
 
   return (
     <div className="space-y-5">
+      {platform.kind === 'desktop' ? <OfflineModeSetting /> : null}
       <div className="grid grid-cols-[minmax(0,160px)_minmax(0,1fr)] items-center gap-3">
         <label htmlFor="settings-language" className="text-sm text-muted-foreground">
           {t('settings.language')}
@@ -117,6 +120,40 @@ export function GeneralSection() {
       </label>
       <UpdatesSection />
     </div>
+  )
+}
+
+function OfflineModeSetting() {
+  const { t } = useTranslation()
+  const enabled = useLlm((s) => s.localOnly)
+  return (
+    <label className="flex w-full max-w-xl cursor-pointer items-start gap-3 rounded-lg border bg-card px-3.5 py-3 transition-colors hover:bg-accent/50">
+      <WifiOff className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <span className="min-w-0 flex-1">
+        <span id="offline-mode-label" className="block text-sm font-semibold">
+          {t('settings.offlineMode')}
+        </span>
+        <span id="offline-mode-description" className="mt-0.5 block text-xs text-muted-foreground">
+          {t('aiProvider.localOnlyBody')}
+        </span>
+      </span>
+      <span className="shrink-0">
+        <input
+          className="peer sr-only"
+          type="checkbox"
+          role="switch"
+          aria-checked={enabled}
+          aria-labelledby="offline-mode-label"
+          aria-describedby="offline-mode-description"
+          checked={enabled}
+          onChange={(e) => void setLocalOnly(e.target.checked)}
+        />
+        <span
+          aria-hidden="true"
+          className="relative block h-5 w-9 rounded-full border bg-muted transition-colors after:absolute after:inset-y-0 after:left-0.5 after:m-auto after:size-3.5 after:rounded-full after:bg-foreground after:transition-transform peer-checked:border-brand peer-checked:bg-brand/25 peer-checked:after:translate-x-4 peer-checked:after:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background"
+        />
+      </span>
+    </label>
   )
 }
 

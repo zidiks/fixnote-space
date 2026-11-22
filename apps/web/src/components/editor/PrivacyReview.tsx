@@ -24,6 +24,7 @@ import {
   scanContext,
   scanNoteRange,
 } from './privacy-scan'
+import { protectedRangeText } from './protected-text'
 
 const REVIEW_META = 'fixnote.privacy.review'
 
@@ -182,7 +183,7 @@ export function PrivacyReview({
       if (!current()) return
       const next: Finding[] = []
       for (const hit of hits) {
-        const hash = await secretFingerprint(hit.kind, doc.textBetween(hit.from, hit.to, '\n'))
+        const hash = await secretFingerprint(hit.kind, protectedRangeText(doc, hit))
         if (!current()) return
         if (!dismissed.get(noteId)?.has(hash)) next.push({ hit, fingerprint: hash })
       }

@@ -1,5 +1,17 @@
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual'
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import { type ReactNode, useLayoutEffect, useMemo, useRef, useState } from 'react'
+
+function RowContent<T>({
+  item,
+  index,
+  render,
+}: {
+  item: T
+  index: number
+  render: (item: T, index: number) => ReactNode
+}) {
+  return useMemo(() => render(item, index), [item, index, render])
+}
 
 /** Variable-height rows share the surrounding scroll container, including its header offset. */
 export function VirtualList<T>({
@@ -8,12 +20,16 @@ export function VirtualList<T>({
   estimate,
   render,
   className,
+  keepKey,
+  fixedSize = false,
 }: {
   items: T[]
   itemKey: (item: T) => string
   estimate: (item: T) => number
   render: (item: T, index: number) => ReactNode
   className?: string
+  keepKey?: string | null
+  fixedSize?: boolean
 }) {
   const root = useRef<HTMLUListElement>(null)
   const [scroll, setScroll] = useState<HTMLElement | null>(null)
@@ -35,12 +51,19 @@ export function VirtualList<T>({
         )
     }
     measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(scroller)
-    if (root.current) observer.observe(root.current)
-    return () => observer.disconnect()
+    const resize = new ResizeObserver(measure)
+    resize.observe(scroller)
+    if (root.current) resize.observe(root.current)
+    // Navigation entries above the list can appear without changing either observed size.
+    const children = new MutationObserver(measure)
+    children.observe(scroller, { childList: true })
+    return () => {
+      resize.disconnect()
+      children.disconnect()
+    }
   }, [])
   const heldIndex = held === null ? -1 : items.findIndex((item) => itemKey(item) === held)
+  const keptIndex = keepKey == null ? -1 : items.findIndex((item) => itemKey(item) === keepKey)
   const virtual = useVirtualizer({
     count: items.length,
     getScrollElement: () => scroll,
@@ -52,6 +75,7 @@ export function VirtualList<T>({
       const indices = defaultRangeExtractor(range)
       // Keep the focus/context-menu/drag source alive when it leaves the viewport.
       if (heldIndex >= 0 && !indices.includes(heldIndex)) indices.push(heldIndex)
+      if (keptIndex >= 0 && !indices.includes(keptIndex)) indices.push(keptIndex)
       return indices.sort((a, b) => a - b)
     },
   })
@@ -67,7 +91,7 @@ export function VirtualList<T>({
           key={row.key}
           data-index={row.index}
           data-virtual-key={row.key}
-          ref={virtual.measureElement}
+          ref={fixedSize ? undefined : virtual.measureElement}
           aria-posinset={row.index + 1}
           aria-setsize={items.length}
           style={{
@@ -83,6 +107,7 @@ export function VirtualList<T>({
           onKeyDown={(event) => {
             if (!event.currentTarget.contains(event.target as Node)) return
             if (event.altKey || event.ctrlKey || event.metaKey) return
+            if (event.target instanceof HTMLInputElement) return
             const tab = event.key === 'Tab'
             if (event.shiftKey && !tab) return
             const direction = tab
@@ -96,7 +121,9 @@ export function VirtualList<T>({
                   : 0
             if (!direction && event.key !== 'Home' && event.key !== 'End') return
             if (tab) {
-              const buttons = [...event.currentTarget.querySelectorAll('button')]
+              const buttons = [
+                ...event.currentTarget.querySelectorAll('button:not(:disabled)'),
+              ].filter((button) => button.getClientRects().length)
               if (event.target !== buttons[direction > 0 ? buttons.length - 1 : 0]) return
               // Leave native Tab alone when its next row is already mounted.
               if (root.current?.querySelector(`[data-index="${row.index + direction}"]`)) return
@@ -129,7 +156,7 @@ export function VirtualList<T>({
             focus()
           }}
         >
-          {render(items[row.index] as T, row.index)}
+          <RowContent item={items[row.index] as T} index={row.index} render={render} />
         </li>
       ))}
     </ul>

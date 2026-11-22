@@ -786,10 +786,19 @@
 }
 
 .fixnote-protected-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   margin-inline-end: 0.55em;
   color: var(--color-success);
   font-size: 0.74em;
   white-space: nowrap;
+}
+
+.fixnote-protected-label > svg {
+  width: 1em;
+  height: 1em;
+  flex: none;
 }
 
 .fixnote-protected-value {
@@ -797,8 +806,38 @@
   overflow-wrap: anywhere;
 }
 
-.fixnote-protected-copy {
+.fixnote-protected-actions {
+  display: inline-flex;
+  gap: 0.55em;
   margin-inline-start: 0.55em;
+  vertical-align: baseline;
+}
+
+.fixnote-protected-fragment.is-multiline {
+  display: inline-grid;
+  width: fit-content;
+  max-width: 100%;
+  gap: 0.45em;
+  padding: 0.55em 0.7em;
+  vertical-align: top;
+  border-radius: 0.55rem;
+}
+
+.fixnote-protected-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25em 1em;
+  padding-block-end: 0.35em;
+  border-block-end: 1px solid color-mix(in srgb, var(--color-success) 20%, transparent);
+}
+
+.fixnote-protected-header :is(.fixnote-protected-label, .fixnote-protected-actions) {
+  margin-inline: 0;
+}
+
+.fixnote-protected-copy {
   color: var(--color-muted-foreground);
   font-size: 0.74em;
   cursor: pointer;

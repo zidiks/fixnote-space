@@ -36,14 +36,23 @@ import { useListRoute } from '../lib/layout'
 import { draggedNoteIds, isNoteDrag, moveNotes } from '../lib/note-drag'
 import { useFolderMutations, useFolders, useInvalidateNotes } from '../lib/queries'
 import { endSelection } from '../lib/selection'
+import { FolderShareDialog } from './FolderShareDialog'
+import { VirtualList } from './VirtualList'
 
 /** Holding dragged notes over a folded folder this long unfolds it. */
 const UNFOLD_MS = 700
+const FOLDER_ROW_PX = 38
 
 /** Whether the folder can be deleted (or left) from here. */
 const deletable = (f: Folder) => !(f.access === 'view' && !f.shared)
 
-import { FolderShareDialog } from './FolderShareDialog'
+type FolderRow =
+  | { key: string; kind: 'folder'; folder: Folder; depth: number }
+  | { key: string; kind: 'input'; parentId: string | null; depth: number }
+
+const EMPTY_FOLDERS: Folder[] = []
+const folderKey = (id: string) => `folder:${id}`
+const inputKey = (parentId: string | null) => `input:${parentId ?? 'root'}`
 
 function NameInput({
   initial = '',
@@ -56,14 +65,17 @@ function NameInput({
 }) {
   const { t } = useTranslation()
   const [value, setValue] = useState(initial)
-  let settled = false
+  const settled = useRef(false)
   const finish = (name: string | null) => {
-    if (settled) return
-    settled = true
+    if (settled.current) return
+    settled.current = true
     onDone(name?.trim() ? name.trim() : null)
   }
   return (
-    <div className="flex h-9.5 items-center gap-2.5 pr-2" style={{ paddingLeft: 10 + depth * 14 }}>
+    <div
+      className="flex items-center gap-2.5 pr-2"
+      style={{ height: FOLDER_ROW_PX, paddingLeft: 10 + depth * 14 }}
+    >
       <FolderIcon className="size-4 shrink-0 opacity-70" />
       <input
         // biome-ignore lint/a11y/noAutofocus: the input appears in response to an explicit action
@@ -85,13 +97,14 @@ function NameInput({
 
 export function SidebarFolders() {
   const { t } = useTranslation()
-  const folders = useFolders().data ?? []
+  const folders = useFolders().data ?? EMPTY_FOLDERS
   const { create, rename, remove } = useFolderMutations()
   // The folder listed: on screen, or (notes layout) beside the open note.
   const list = useListRoute()
   const navigate = useUi((s) => s.navigate)
   const [creatingIn, setCreatingIn] = useState<string | null | undefined>(undefined)
   const [renaming, setRenaming] = useState<string | null>(null)
+  const [menu, setMenu] = useState<{ id: string; kind: 'context' | 'dropdown' } | null>(null)
   // A menu item that opens a name field: the field appears only once the menu has closed and
   // let go of focus, or the menu pulls focus back to its trigger and the field closes at once.
   const pendingEdit = useRef<(() => void) | null>(null)
@@ -210,165 +223,184 @@ export function SidebarFolders() {
     return map
   }, [folders])
 
-  const renderLevel = (parentId: string | null, depth: number): React.ReactNode => (
-    <>
-      {(children.get(parentId) ?? []).map((f) => {
-        const kids = children.get(f.id)?.length ?? 0
-        const open = !collapsed.has(f.id)
-        const active = list?.kind === 'folder' && list.id === f.id
-        return (
-          <div key={f.id}>
-            {renaming === f.id ? (
-              <NameInput
-                initial={f.name}
-                depth={depth}
-                onDone={(name) => {
-                  setRenaming(null)
-                  if (name && name !== f.name) rename.mutate({ id: f.id, name })
-                }}
-              />
-            ) : (
-              <ContextMenu>
-                <ContextMenuTrigger asChild>
-                  <div
-                    data-folder-id={f.id}
-                    {...dropTarget(f, kids, open)}
-                    className={cn(
-                      'group flex h-9.5 items-center rounded-sm pr-1 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
-                      active && 'bg-sidebar-accent font-medium text-foreground',
-                      dropOn === f.id &&
-                        'bg-brand/10 text-foreground ring-2 ring-brand/40 ring-inset',
-                    )}
-                    // Same left edge as Inbox and tags; subfolders step in. The expand arrow
-                    // sits on the right, so a folder without subfolders has no gap before it.
-                    style={{ paddingLeft: 10 + depth * 14 }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => navigate({ kind: 'folder', id: f.id })}
-                      onDoubleClick={() => f.access !== 'view' && setRenaming(f.id)}
-                      className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left pointer-coarse:py-2"
-                    >
-                      <FolderIcon className="size-4 shrink-0 opacity-70" />
-                      <span className="truncate">{f.name}</span>
-                      {f.shared ? (
-                        <Users
-                          className="size-3.5 shrink-0 text-muted-foreground"
-                          aria-label={t('people.sharedFolder')}
-                        />
-                      ) : null}
-                    </button>
-                    {kids ? (
-                      <button
-                        type="button"
-                        aria-label={f.name}
-                        aria-expanded={open}
-                        onClick={() => toggle(f.id)}
-                        className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground pointer-coarse:size-8"
-                      >
-                        <ChevronRight
-                          className={cn('size-3.5 transition-transform', open && 'rotate-90')}
-                        />
-                      </button>
-                    ) : null}
-                    <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden pointer-coarse:hidden">
-                      {totals.get(f.id) || ''}
-                    </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          className="hidden size-6 group-hover:inline-flex data-[state=open]:inline-flex pointer-coarse:inline-flex pointer-coarse:size-8"
-                          aria-label={t('sidebar.folderActions')}
-                        >
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" onCloseAutoFocus={keepFocus}>
-                        {f.access === 'view' ? null : (
-                          <>
-                            <DropdownMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
-                              <FolderPlus />
-                              {t('sidebar.newSubfolder')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
-                              <Pencil />
-                              {t('common.rename')}
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {/* A subfolder of a shared folder goes with it, not on its own. */}
-                        {canShare && (f.shared || !f.access) ? (
-                          <DropdownMenuItem onSelect={() => setSharing(f)}>
-                            <Users />
-                            {t('people.shareFolder')}
-                          </DropdownMenuItem>
-                        ) : null}
-                        <DropdownMenuSeparator />
-                        {f.access === 'view' && !f.shared ? null : (
-                          <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
-                            {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
-                            {f.shared === 'edit' || f.shared === 'view'
-                              ? t('people.leaveFolder')
-                              : t('common.delete')}
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent onCloseAutoFocus={keepFocus}>
+  const rows = useMemo(() => {
+    const visible: FolderRow[] = []
+    const append = (parentId: string | null, depth: number) => {
+      for (const folder of children.get(parentId) ?? EMPTY_FOLDERS) {
+        visible.push({ key: folderKey(folder.id), kind: 'folder', folder, depth })
+        if (!collapsed.has(folder.id)) append(folder.id, depth + 1)
+        if (creatingIn === folder.id)
+          visible.push({
+            key: inputKey(folder.id),
+            kind: 'input',
+            parentId: folder.id,
+            depth: depth + 1,
+          })
+      }
+    }
+    append(null, 0)
+    if (creatingIn === null)
+      visible.push({ key: inputKey(null), kind: 'input', parentId: null, depth: 0 })
+    return visible
+  }, [children, collapsed, creatingIn])
+
+  const renderRow = (row: FolderRow) => {
+    const { depth } = row
+    if (row.kind === 'input') {
+      const { parentId } = row
+      return (
+        <NameInput
+          depth={depth}
+          onDone={(name) => {
+            setCreatingIn(undefined)
+            if (name) {
+              if (parentId && collapsed.has(parentId)) toggle(parentId)
+              create.mutate(parentId ? { name, parentId } : { name })
+            }
+          }}
+        />
+      )
+    }
+    const f = row.folder
+    const kids = children.get(f.id)?.length ?? 0
+    const open = !collapsed.has(f.id)
+    const active = list?.kind === 'folder' && list.id === f.id
+    return renaming === f.id ? (
+      <NameInput
+        initial={f.name}
+        depth={depth}
+        onDone={(name) => {
+          setRenaming(null)
+          if (name && name !== f.name) rename.mutate({ id: f.id, name })
+        }}
+      />
+    ) : (
+      <ContextMenu onOpenChange={(open) => open && setMenu({ id: f.id, kind: 'context' })}>
+        <ContextMenuTrigger asChild>
+          <div
+            data-folder-id={f.id}
+            {...dropTarget(f, kids, open)}
+            className={cn(
+              'group flex items-center rounded-sm pr-1 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
+              active && 'bg-sidebar-accent font-medium text-foreground',
+              dropOn === f.id && 'bg-brand/10 text-foreground ring-2 ring-brand/40 ring-inset',
+            )}
+            // Same left edge as Inbox and tags; subfolders step in. The expand arrow
+            // sits on the right, so a folder without subfolders has no gap before it.
+            style={{ height: FOLDER_ROW_PX, paddingLeft: 10 + depth * 14 }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate({ kind: 'folder', id: f.id })}
+              onDoubleClick={() => f.access !== 'view' && setRenaming(f.id)}
+              className="flex min-w-0 flex-1 items-center gap-2.5 py-1 text-left pointer-coarse:py-2"
+            >
+              <FolderIcon className="size-4 shrink-0 opacity-70" />
+              <span className="truncate">{f.name}</span>
+              {f.shared ? (
+                <Users
+                  className="size-3.5 shrink-0 text-muted-foreground"
+                  aria-label={t('people.sharedFolder')}
+                />
+              ) : null}
+            </button>
+            {kids ? (
+              <button
+                type="button"
+                aria-label={f.name}
+                aria-expanded={open}
+                onClick={() => toggle(f.id)}
+                className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground pointer-coarse:size-8"
+              >
+                <ChevronRight
+                  className={cn('size-3.5 transition-transform', open && 'rotate-90')}
+                />
+              </button>
+            ) : null}
+            <span className="px-1 text-xs text-muted-foreground tabular-nums group-hover:hidden pointer-coarse:hidden">
+              {totals.get(f.id) || ''}
+            </span>
+            <DropdownMenu onOpenChange={(open) => open && setMenu({ id: f.id, kind: 'dropdown' })}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="hidden size-6 group-hover:inline-flex data-[state=open]:inline-flex pointer-coarse:inline-flex pointer-coarse:size-8"
+                  aria-label={t('sidebar.folderActions')}
+                >
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              {menu?.id === f.id && menu.kind === 'dropdown' ? (
+                <DropdownMenuContent align="start" onCloseAutoFocus={keepFocus}>
                   {f.access === 'view' ? null : (
                     <>
-                      <ContextMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
+                      <DropdownMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
                         <FolderPlus />
                         {t('sidebar.newSubfolder')}
-                      </ContextMenuItem>
-                      <ContextMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
                         <Pencil />
                         {t('common.rename')}
-                      </ContextMenuItem>
+                      </DropdownMenuItem>
                     </>
                   )}
                   {/* A subfolder of a shared folder goes with it, not on its own. */}
                   {canShare && (f.shared || !f.access) ? (
-                    <ContextMenuItem onSelect={() => setSharing(f)}>
+                    <DropdownMenuItem onSelect={() => setSharing(f)}>
                       <Users />
                       {t('people.shareFolder')}
-                    </ContextMenuItem>
+                    </DropdownMenuItem>
                   ) : null}
-                  <ContextMenuSeparator />
+                  <DropdownMenuSeparator />
                   {f.access === 'view' && !f.shared ? null : (
-                    <ContextMenuItem destructive onSelect={() => setConfirm(f)}>
+                    <DropdownMenuItem destructive onSelect={() => setConfirm(f)}>
                       {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
                       {f.shared === 'edit' || f.shared === 'view'
                         ? t('people.leaveFolder')
                         : t('common.delete')}
-                    </ContextMenuItem>
+                    </DropdownMenuItem>
                   )}
-                </ContextMenuContent>
-              </ContextMenu>
-            )}
-            {open ? renderLevel(f.id, depth + 1) : null}
-            {creatingIn === f.id ? (
-              <NameInput
-                depth={depth + 1}
-                onDone={(name) => {
-                  setCreatingIn(undefined)
-                  if (name) {
-                    // The new subfolder shows: its parent unfolds.
-                    if (collapsed.has(f.id)) toggle(f.id)
-                    create.mutate({ name, parentId: f.id })
-                  }
-                }}
-              />
-            ) : null}
+                </DropdownMenuContent>
+              ) : null}
+            </DropdownMenu>
           </div>
-        )
-      })}
-    </>
-  )
+        </ContextMenuTrigger>
+        {menu?.id === f.id && menu.kind === 'context' ? (
+          <ContextMenuContent onCloseAutoFocus={keepFocus}>
+            {f.access === 'view' ? null : (
+              <>
+                <ContextMenuItem onSelect={startEdit(() => setCreatingIn(f.id))}>
+                  <FolderPlus />
+                  {t('sidebar.newSubfolder')}
+                </ContextMenuItem>
+                <ContextMenuItem onSelect={startEdit(() => setRenaming(f.id))}>
+                  <Pencil />
+                  {t('common.rename')}
+                </ContextMenuItem>
+              </>
+            )}
+            {/* A subfolder of a shared folder goes with it, not on its own. */}
+            {canShare && (f.shared || !f.access) ? (
+              <ContextMenuItem onSelect={() => setSharing(f)}>
+                <Users />
+                {t('people.shareFolder')}
+              </ContextMenuItem>
+            ) : null}
+            <ContextMenuSeparator />
+            {f.access === 'view' && !f.shared ? null : (
+              <ContextMenuItem destructive onSelect={() => setConfirm(f)}>
+                {f.shared === 'edit' || f.shared === 'view' ? <LogOut /> : <Trash2 />}
+                {f.shared === 'edit' || f.shared === 'view'
+                  ? t('people.leaveFolder')
+                  : t('common.delete')}
+              </ContextMenuItem>
+            )}
+          </ContextMenuContent>
+        ) : null}
+      </ContextMenu>
+    )
+  }
 
   return (
     <div className="mt-5">
@@ -386,14 +418,16 @@ export function SidebarFolders() {
           <FolderPlus />
         </Button>
       </div>
-      {renderLevel(null, 0)}
-      {creatingIn === null ? (
-        <NameInput
-          depth={0}
-          onDone={(name) => {
-            setCreatingIn(undefined)
-            if (name) create.mutate({ name })
-          }}
+      {rows.length ? (
+        <VirtualList
+          items={rows}
+          itemKey={(row) => row.key}
+          estimate={() => FOLDER_ROW_PX}
+          fixedSize
+          render={renderRow}
+          keepKey={
+            creatingIn !== undefined ? inputKey(creatingIn) : renaming ? folderKey(renaming) : null
+          }
         />
       ) : null}
       {!folders.length && creatingIn !== null ? (
