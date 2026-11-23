@@ -338,6 +338,131 @@
   border: 0;
   padding: 0;
 }
+.fixnote-code-block {
+  position: relative;
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.fixnote-code-block > pre {
+  margin: 0;
+  background: none;
+  border-radius: 0;
+  padding: 0.35em 1.1em 0.9em;
+}
+.fixnote-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.45rem 0 0.95rem;
+  user-select: none;
+  font-family: var(--font-sans);
+}
+.fixnote-code-lang {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-muted-foreground);
+  text-transform: lowercase;
+}
+.fixnote-code-copy {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 6px;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    color 120ms;
+}
+.fixnote-code-copy:hover {
+  background: var(--color-accent);
+  color: var(--color-foreground);
+}
+.fixnote-code-copy.is-copied {
+  color: var(--color-success);
+}
+.fixnote-code-copy > svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+/* Syntax highlighting tokens inside code blocks (warm light & dark palettes). */
+:root {
+  --code-comment: #7c7770;
+  --code-keyword: #a83279;
+  --code-string: #1f7a4c;
+  --code-number: #b45309;
+  --code-title: #2563eb;
+  --code-attr: #9a5b13;
+  --code-builtin: #0e7490;
+  --code-deletion: #dc2626;
+  --code-addition: #15803d;
+}
+.dark {
+  --code-comment: #858079;
+  --code-keyword: #e082c4;
+  --code-string: #76d19a;
+  --code-number: #f0a868;
+  --code-title: #7eb6ff;
+  --code-attr: #e5c07b;
+  --code-builtin: #67d1e6;
+  --code-deletion: #f87171;
+  --code-addition: #6ee7b7;
+}
+.fixnote-editor .hljs-comment,
+.fixnote-editor .hljs-quote {
+  color: var(--code-comment);
+  font-style: italic;
+}
+.fixnote-editor .hljs-keyword,
+.fixnote-editor .hljs-selector-tag,
+.fixnote-editor .hljs-meta-keyword,
+.fixnote-editor .hljs-doctag,
+.fixnote-editor .hljs-template-tag {
+  color: var(--code-keyword);
+}
+.fixnote-editor .hljs-string,
+.fixnote-editor .hljs-regexp,
+.fixnote-editor .hljs-template-variable {
+  color: var(--code-string);
+}
+.fixnote-editor .hljs-number,
+.fixnote-editor .hljs-literal,
+.fixnote-editor .hljs-symbol,
+.fixnote-editor .hljs-bullet {
+  color: var(--code-number);
+}
+.fixnote-editor .hljs-title,
+.fixnote-editor .hljs-section,
+.fixnote-editor .hljs-name {
+  color: var(--code-title);
+}
+.fixnote-editor .hljs-attr,
+.fixnote-editor .hljs-attribute,
+.fixnote-editor .hljs-variable,
+.fixnote-editor .hljs-property,
+.fixnote-editor .hljs-params {
+  color: var(--code-attr);
+}
+.fixnote-editor .hljs-built_in,
+.fixnote-editor .hljs-type,
+.fixnote-editor .hljs-class,
+.fixnote-editor .hljs-meta {
+  color: var(--code-builtin);
+}
+.fixnote-editor .hljs-deletion {
+  color: var(--code-deletion);
+}
+.fixnote-editor .hljs-addition {
+  color: var(--code-addition);
+}
 .fixnote-editor hr {
   border: 0;
   border-top: 1px solid var(--color-border);
@@ -777,72 +902,64 @@
 
 .fixnote-protected-fragment {
   display: inline;
-  padding: 0.15em 0.4em;
-  border-radius: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 24%, transparent);
   background: color-mix(in srgb, var(--color-success) 10%, var(--color-background));
-  -webkit-user-select: none;
-  user-select: none;
   box-decoration-break: clone;
+  transition: border-color 120ms;
+}
+
+.fixnote-protected-fragment:focus-within {
+  border-color: color-mix(in srgb, var(--color-success) 55%, transparent);
 }
 
 .fixnote-protected-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.3em;
-  margin-inline-end: 0.55em;
+  margin-inline-end: 0.35em;
   color: var(--color-success);
-  font-size: 0.74em;
-  white-space: nowrap;
+  vertical-align: -0.14em;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: text;
 }
 
 .fixnote-protected-label > svg {
-  width: 1em;
-  height: 1em;
+  width: 0.95em;
+  height: 0.95em;
   flex: none;
 }
 
 .fixnote-protected-value {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-
-.fixnote-protected-actions {
-  display: inline-flex;
-  gap: 0.55em;
-  margin-inline-start: 0.55em;
-  vertical-align: baseline;
+  user-select: text;
+  -webkit-user-select: text;
+  outline: none;
+  cursor: text;
 }
 
 .fixnote-protected-fragment.is-multiline {
-  display: inline-grid;
-  width: fit-content;
-  max-width: 100%;
-  gap: 0.45em;
-  padding: 0.55em 0.7em;
-  vertical-align: top;
-  border-radius: 0.55rem;
-}
-
-.fixnote-protected-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.25em 1em;
-  padding-block-end: 0.35em;
-  border-block-end: 1px solid color-mix(in srgb, var(--color-success) 20%, transparent);
+  align-items: flex-start;
+  gap: 0.55em;
+  margin: 0.4em 0;
+  padding: 0.75em 1em;
+  border-radius: 10px;
+  line-height: 1.6;
 }
 
-.fixnote-protected-header :is(.fixnote-protected-label, .fixnote-protected-actions) {
-  margin-inline: 0;
+.fixnote-protected-fragment.is-multiline > .fixnote-protected-label {
+  margin-inline-end: 0;
+  margin-top: 0.32em;
+  flex: none;
 }
 
-.fixnote-protected-copy {
-  color: var(--color-muted-foreground);
-  font-size: 0.74em;
-  cursor: pointer;
-}
-
-.fixnote-protected-copy:hover {
-  color: var(--color-foreground);
+.fixnote-protected-fragment.is-multiline > .fixnote-protected-value {
+  display: block;
+  flex: 1;
+  min-width: 0;
 }

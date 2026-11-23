@@ -5,6 +5,7 @@ import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
 import { AttachmentImage } from './attachment-image'
 import { Callout } from './callout'
+import { NoteCodeBlock } from './code-block'
 import { NoteDetails, NoteDetailsContent, NoteDetailsSummary } from './details'
 import { ImageAwareParagraph } from './paragraph'
 
@@ -25,6 +26,7 @@ export function noteSchema(
   return [
     StarterKit.configure({
       ...(opts.live ? { undoRedo: false as const } : {}),
+      codeBlock: false,
       paragraph: false,
       heading: { levels: [1, 2, 3] },
       link: opts.readOnly
@@ -43,6 +45,7 @@ export function noteSchema(
           },
     }),
     ImageAwareParagraph,
+    NoteCodeBlock,
     TaskList,
     TaskItem.configure({ nested: true }),
     // Markdown (GFM) tables, read and written as `| a | b |`.

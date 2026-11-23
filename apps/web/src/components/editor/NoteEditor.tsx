@@ -91,7 +91,6 @@ import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
 import { PrivacyHighlight, PrivacyReview } from './PrivacyReview'
-import { ProtectedValueDialog } from './ProtectedValueDialog'
 import type { ScanRange } from './privacy-scan'
 import { ProtectedDisplay } from './protected-display'
 import { protectedRangeText } from './protected-text'
@@ -426,11 +425,13 @@ export function NoteEditor({
   const loadPreview = useLoadPreview()
   const { attachments, audit, driver, repo } = useDb()
   const [manualPrivacy, setManualPrivacy] = useState<ScanRange | null>(null)
-  const [protectedEdit, setProtectedEdit] = useState<{
-    ref: ProtectedReference
-    from: number
-    text: string
-  } | null>(null)
+  const protectRef = useRef<
+    (
+      range: ScanRange,
+      audience: ProtectedReference['audience'],
+      edit?: { reference: string; text: string },
+    ) => Promise<void>
+  >(async () => undefined)
   const protecting = useRef(false)
   const images = useRef(attachments)
   images.current = attachments
@@ -519,7 +520,13 @@ export function NoteEditor({
       PrivacyHighlight,
       ProtectedDisplay.configure({
         canEdit: () => !readOnlyRef.current,
-        edit: (ref, from, text) => setProtectedEdit({ ref, from, text }),
+        save: (ref, from, text) => {
+          const reference = protectedReference(ref)
+          return protectRef.current({ from, to: from + reference.length }, ref.audience, {
+            text,
+            reference,
+          })
+        },
         load: (ref) =>
           loadProtectedFragment(
             ref,
@@ -749,6 +756,7 @@ export function NoteEditor({
       if (!e.isDestroyed && !readOnlyRef.current) e.setEditable(true, false)
     }
   }
+  protectRef.current = protect
 
   const insertImages = async (files: File[], at?: number) => {
     for (const file of files) {
@@ -1078,19 +1086,6 @@ export function NoteEditor({
           shared={Boolean(live)}
           manual={manualPrivacy}
           onProtect={protect}
-        />
-      ) : null}
-      {protectedEdit && !readOnly ? (
-        <ProtectedValueDialog
-          value={protectedEdit.text}
-          audience={protectedEdit.ref.audience}
-          shared={Boolean(live)}
-          onClose={() => setProtectedEdit(null)}
-          onSave={(text, audience) => {
-            const reference = protectedReference(protectedEdit.ref)
-            const from = protectedEdit.from
-            return protect({ from, to: from + reference.length }, audience, { text, reference })
-          }}
         />
       ) : null}
       {editor && linkPaste ? (
