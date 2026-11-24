@@ -1333,6 +1333,8 @@ const en = {
     notifReply: 'replied to a comment',
     notifComment: 'left a comment',
     you: 'You',
+    moreReplies: '+{{count}} more',
+    allComments: 'All comments',
   },
   outline: {
     collapse: 'Collapse list',

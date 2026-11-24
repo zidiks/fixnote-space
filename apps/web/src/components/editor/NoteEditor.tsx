@@ -90,7 +90,7 @@ export interface NoteEditorHandle {
 
 import { AiRangeExtension, rangeMarkdown } from './ai-range'
 import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
-import { CommentsPanel } from './CommentsPanel'
+import { CommentsLayer } from './CommentsPanel'
 import { CollapsibleLists } from './collapsible-lists'
 import { combo } from './combo'
 import { CommentsHighlight } from './comments-highlight'
@@ -455,6 +455,7 @@ export function NoteEditor({
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
   const stopInlineAi = useRef<() => void>(() => undefined)
   const selectCommentRef = useRef<(threadId: string) => void>(() => undefined)
+  const hoverCommentRef = useRef<(threadId: string | null) => void>(() => undefined)
   const startCommentRef = useRef<() => void>(() => undefined)
   const toggleCommentsRef = useRef<() => void>(() => undefined)
   const platform = usePlatform()
@@ -605,6 +606,7 @@ export function NoteEditor({
         : []),
       CommentsHighlight.configure({
         onSelectThread: (threadId) => selectCommentRef.current(threadId),
+        onHoverThread: (threadId) => hoverCommentRef.current(threadId),
       }),
       CollapsibleLists.configure({ noteId: note.id }),
       Extension.create({
@@ -860,8 +862,9 @@ export function NoteEditor({
     onOpenCountChange: onCommentCount,
   })
   selectCommentRef.current = comments.selectThread
+  hoverCommentRef.current = comments.handleHoverThread
   startCommentRef.current = comments.startDraft
-  toggleCommentsRef.current = comments.toggleOpen
+  toggleCommentsRef.current = comments.toggleOverview
 
   useImperativeHandle(
     ref,
@@ -1179,20 +1182,26 @@ export function NoteEditor({
           editor={editor}
           ai={ai}
           onComment={!readOnly ? comments.startDraft : undefined}
+          hideBubble={Boolean(comments.draft || comments.activeThreadId)}
         />
       ) : null}
-      <CommentsPanel
-        open={comments.open}
+      <CommentsLayer
+        overviewOpen={comments.overviewOpen}
         readOnly={readOnly}
         isShared={Boolean(live)}
-        currentUserId={comments.currentUserId}
+        currentUser={comments.currentUser}
         threads={comments.threads}
         activeThreadId={comments.activeThreadId}
+        hoveredThreadId={comments.hoveredThreadId}
         unreadThreadIds={comments.unreadThreadIds}
         orphanThreadIds={comments.orphanThreadIds}
         collaborators={comments.collaborators}
         draft={comments.draft}
-        onClose={comments.close}
+        getThreadAnchorRect={comments.getThreadAnchorRect}
+        getDraftAnchorRect={comments.getDraftAnchorRect}
+        onCloseOverview={comments.closeOverview}
+        onOpenOverview={comments.openOverview}
+        onClosePopover={comments.closePopover}
         onSelectThread={comments.selectThread}
         onCreateThread={comments.createThread}
         onCancelDraft={comments.cancelDraft}

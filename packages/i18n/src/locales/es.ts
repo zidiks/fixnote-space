@@ -1346,6 +1346,8 @@ const es: LocaleResource = {
     notifReply: 'respondió a un comentario',
     notifComment: 'dejó un comentario',
     you: 'Tú',
+    moreReplies: '+{{count}} más',
+    allComments: 'Todos los comentarios',
   },
   outline: {
     collapse: 'Contraer lista',

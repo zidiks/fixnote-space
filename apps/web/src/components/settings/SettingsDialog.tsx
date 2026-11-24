@@ -48,9 +48,9 @@ export function SettingsDialog() {
         data-back-layer
         aria-describedby={undefined}
         className={cn(
-          'top-[8%] flex h-[min(680px,84dvh)] max-h-[84dvh] w-[min(980px,calc(100vw-3rem))] max-w-none overflow-hidden p-0',
+          'top-1/2 left-1/2 flex h-[min(700px,84dvh)] max-h-[84dvh] w-[min(980px,calc(100vw-3rem))] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-hidden p-0',
           // A phone: the whole screen, sections as a row of tabs above.
-          'max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:flex-col max-sm:rounded-none max-sm:border-0 max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)]',
+          'max-sm:inset-0 max-sm:top-0 max-sm:left-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none max-sm:border-0 max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)]',
         )}
       >
         <nav

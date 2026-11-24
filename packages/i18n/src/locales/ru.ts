@@ -1342,6 +1342,8 @@ const ru: LocaleResource = {
     notifReply: 'ответил(а) на комментарий',
     notifComment: 'оставил(а) комментарий',
     you: 'Вы',
+    moreReplies: 'Ещё ответов: {{count}}',
+    allComments: 'Все комментарии',
   },
   outline: {
     collapse: 'Свернуть список',

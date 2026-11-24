@@ -24,13 +24,18 @@ import {
 } from '../../lib/comments/store'
 import { useDb } from '../../lib/db'
 import {
+  type AnchorRect,
   type CapturedAnchor,
   type CommentHighlightRange,
   captureSelectionAnchor,
+  getRangeRect,
   resolveThreadRange,
   scrollToComment,
   setCommentHighlights,
 } from './comments-highlight'
+
+const HOVER_OPEN_DELAY = 120
+const HOVER_CLOSE_DELAY = 90
 
 export function useNoteComments({
   editor,
@@ -49,13 +54,19 @@ export function useNoteComments({
   const accountEmail = useAccount((s) => s.email)
   const repo = useMemo(() => new CommentsRepo(driver), [driver])
   const [threads, setThreads] = useState<CommentThread[]>([])
-  const [open, setOpen] = useState(false)
+  /** All-comments overview popover (opened from the note header button). */
+  const [overviewOpen, setOverviewOpen] = useState(false)
+  /** Thread currently opened in the anchored Figma-style popover. */
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  /** Thread currently hovered in the editor (shows compact preview card). */
+  const [hoveredThreadId, setHoveredThreadId] = useState<string | null>(null)
+  /** New comment draft anchored to a selected range. */
   const [draft, setDraft] = useState<CapturedAnchor | null>(null)
   const [collaborators, setCollaborators] = useState<SharedMember[]>([])
   const [orphanThreadIds, setOrphanThreadIds] = useState<Set<string>>(() => new Set())
   const [threadOffsets, setThreadOffsets] = useState<Map<string, number>>(() => new Map())
   const rangesRef = useRef<Map<string, { from: number; to: number }>>(new Map())
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const allEvents = useCommentAlerts((s) => s.events)
   const unreadThreadIds = useMemo(() => {
@@ -72,6 +83,8 @@ export function useNoteComments({
     const ctx = sharedContext()
     return { id: ctx?.userId ?? 'local', email: ctx?.email ?? accountEmail }
   }, [accountEmail, live])
+
+  const anyUiOpen = overviewOpen || activeThreadId !== null || draft !== null
 
   // Load & subscribe to comment threads.
   useEffect(() => {
@@ -92,13 +105,13 @@ export function useNoteComments({
     }
   }, [live, note.id, repo])
 
-  // Load collaborators for @mention autocomplete on shared notes when the panel opens.
+  // Load collaborators for @mention autocomplete on shared notes when any comment UI opens.
   useEffect(() => {
     if (!live) {
       setCollaborators([])
       return
     }
-    if (!open) return
+    if (!anyUiOpen) return
     const ctx = sharedContext()
     if (!ctx) return
     let cancelled = false
@@ -111,7 +124,7 @@ export function useNoteComments({
     return () => {
       cancelled = true
     }
-  }, [live, open])
+  }, [anyUiOpen, live])
 
   // Report open thread count to the note header.
   const openCount = useMemo(() => threads.filter((t) => t.status === 'open').length, [threads])
@@ -119,7 +132,7 @@ export function useNoteComments({
     onOpenCountChange?.(openCount)
   }, [onOpenCountChange, openCount])
 
-  // Resolve and apply ProseMirror highlight decorations for threads.
+  // Resolve and apply ProseMirror highlight decorations + inline pins.
   const syncHighlights = useCallback(() => {
     if (!editor || editor.isDestroyed) return
     const nextMap = new Map<string, { from: number; to: number }>()
@@ -134,12 +147,18 @@ export function useNoteComments({
       }
       nextMap.set(thread.id, resolved)
       nextOffsets.set(thread.id, resolved.from)
+      const firstMsg = thread.messages[0]
       if (thread.status === 'open' || thread.id === activeThreadId) {
         ranges.push({
           id: thread.id,
           from: resolved.from,
           to: resolved.to,
-          active: thread.id === activeThreadId && open,
+          active: thread.id === activeThreadId,
+          hovered: thread.id === hoveredThreadId,
+          unread: unreadThreadIds.has(thread.id),
+          count: thread.messages.length,
+          authorId: firstMsg?.authorId ?? 'local',
+          authorEmail: firstMsg?.authorEmail ?? '',
         })
       }
     }
@@ -147,13 +166,13 @@ export function useNoteComments({
     setThreadOffsets(nextOffsets)
     setOrphanThreadIds(nextOrphans)
     setCommentHighlights(editor, ranges)
-  }, [activeThreadId, editor, live, open, threads])
+  }, [activeThreadId, editor, hoveredThreadId, live, threads, unreadThreadIds])
 
   useEffect(() => {
     syncHighlights()
   }, [syncHighlights])
 
-  // Re-resolve when the document finishes syncing or changes substantially.
+  // Re-resolve when the document changes.
   useEffect(() => {
     if (!editor || editor.isDestroyed) return
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -168,12 +187,32 @@ export function useNoteComments({
     }
   }, [editor, syncHighlights])
 
+  useEffect(() => () => clearTimeout(hoverTimerRef.current), [])
+
+  const handleHoverThread = useCallback((threadId: string | null) => {
+    clearTimeout(hoverTimerRef.current)
+    if (threadId) {
+      hoverTimerRef.current = setTimeout(() => setHoveredThreadId(threadId), HOVER_OPEN_DELAY)
+    } else {
+      hoverTimerRef.current = setTimeout(() => setHoveredThreadId(null), HOVER_CLOSE_DELAY)
+    }
+  }, [])
+
   const selectThread = useCallback(
     (threadId: string) => {
-      setOpen(true)
-      setActiveThreadId(threadId)
+      clearTimeout(hoverTimerRef.current)
+      setHoveredThreadId(null)
+      setDraft(null)
       const range = rangesRef.current.get(threadId)
-      if (editor && range) scrollToComment(editor, range)
+      if (range && editor) {
+        setOverviewOpen(false)
+        setActiveThreadId(threadId)
+        scrollToComment(editor, range)
+      } else {
+        // Orphaned thread (text deleted): keep it accessible inside the overview popover.
+        setActiveThreadId(threadId)
+        setOverviewOpen(true)
+      }
       if (note.sharedId && unreadThreadIds.has(threadId)) {
         void markCommentsRead(sharedContext()?.shared ?? null, note.sharedId, threadId)
       }
@@ -183,8 +222,7 @@ export function useNoteComments({
 
   // Handle incoming jump requests from the Bell notifications popover.
   useEffect(() => {
-    const unregister = registerCommentOpener(note.id, (threadId) => selectThread(threadId))
-    return unregister
+    return registerCommentOpener(note.id, (threadId) => selectThread(threadId))
   }, [note.id, selectThread])
 
   useEffect(() => {
@@ -195,33 +233,56 @@ export function useNoteComments({
 
   const startDraft = useCallback(() => {
     if (!editor || editor.isDestroyed || readOnly) return
+    clearTimeout(hoverTimerRef.current)
+    setHoveredThreadId(null)
     const { from, to } = editor.state.selection
     if (from === to) {
-      setOpen(true)
+      setOverviewOpen(true)
       return
     }
     const anchor = captureSelectionAnchor(editor, { from, to }, live)
     if (!anchor) return
-    setDraft(anchor)
+    // Collapse the text selection so the selection BubbleMenu doesn't overlap the comment popover.
+    editor.commands.setTextSelection(to)
+    setOverviewOpen(false)
     setActiveThreadId(null)
-    setOpen(true)
+    setDraft(anchor)
   }, [editor, live, readOnly])
 
-  const toggleOpen = useCallback(() => {
-    setOpen((prev) => {
+  const toggleOverview = useCallback(() => {
+    clearTimeout(hoverTimerRef.current)
+    setHoveredThreadId(null)
+    setDraft(null)
+    setOverviewOpen((prev) => {
       const next = !prev
-      if (!next) setDraft(null)
+      if (next) setActiveThreadId(null)
       return next
     })
   }, [])
 
-  const openPanel = useCallback(
-    (threadId?: string) => {
-      if (threadId) selectThread(threadId)
-      else setOpen(true)
+  const closePopover = useCallback(() => {
+    setActiveThreadId(null)
+    setDraft(null)
+  }, [])
+
+  const closeOverview = useCallback(() => {
+    setOverviewOpen(false)
+  }, [])
+
+  const getThreadAnchorRect = useCallback(
+    (threadId: string): AnchorRect | null => {
+      if (!editor || editor.isDestroyed) return null
+      const range = rangesRef.current.get(threadId)
+      if (!range) return null
+      return getRangeRect(editor, range, threadId)
     },
-    [selectThread],
+    [editor],
   )
+
+  const getDraftAnchorRect = useCallback((): AnchorRect | null => {
+    if (!editor || editor.isDestroyed || !draft) return null
+    return getRangeRect(editor, { from: draft.editorFrom, to: draft.editorTo })
+  }, [draft, editor])
 
   const createThread = useCallback(
     async (body: string, mentions: CommentMention[]) => {
@@ -306,6 +367,9 @@ export function useNoteComments({
   const setStatus = useCallback(
     async (threadId: string, status: 'open' | 'resolved') => {
       if (readOnly) return
+      if (status === 'resolved' && activeThreadId === threadId && !overviewOpen) {
+        setActiveThreadId(null)
+      }
       if (live && editor && !editor.isDestroyed) {
         setYCommentStatus(live.session.doc, threadId, status)
         await live.persist(editor.getMarkdown(), { immediate: true })
@@ -317,18 +381,20 @@ export function useNoteComments({
       await repo.save(note.id, updated)
       setThreads((prev) => prev.map((th) => (th.id === threadId ? updated : th)))
     },
-    [editor, live, note.id, readOnly, repo, threads],
+    [activeThreadId, editor, live, note.id, overviewOpen, readOnly, repo, threads],
   )
 
   const deleteMessage = useCallback(
     async (threadId: string, messageId: string) => {
       if (readOnly) return
+      const existing = threads.find((th) => th.id === threadId)
+      const deletingLast = existing ? existing.messages.length <= 1 : false
+      if (deletingLast && activeThreadId === threadId) setActiveThreadId(null)
       if (live && editor && !editor.isDestroyed) {
         deleteYCommentMessage(live.session.doc, threadId, messageId)
         await live.persist(editor.getMarkdown(), { immediate: true })
         return
       }
-      const existing = threads.find((th) => th.id === threadId)
       if (!existing) return
       const remaining = existing.messages.filter((m) => m.id !== messageId)
       if (!remaining.length) {
@@ -344,10 +410,10 @@ export function useNoteComments({
         setThreads((prev) => prev.map((th) => (th.id === threadId ? updated : th)))
       }
     },
-    [editor, live, note.id, readOnly, repo, threads],
+    [activeThreadId, editor, live, note.id, readOnly, repo, threads],
   )
 
-  // Sort threads by document position so the side panel follows the reading order of the note.
+  // Sort threads by document position so navigation & overview follow the reading order.
   const orderedThreads = useMemo(() => {
     return [...threads].sort((a, b) => {
       const ra = threadOffsets.get(a.id)
@@ -360,21 +426,27 @@ export function useNoteComments({
   }, [threads, threadOffsets])
 
   return {
-    open,
+    overviewOpen,
     threads: orderedThreads,
     activeThreadId,
+    hoveredThreadId,
     unreadThreadIds,
     orphanThreadIds,
     collaborators,
-    currentUserId: currentUser.id,
+    currentUser,
     draft,
-    openPanel,
-    toggleOpen,
-    close: () => {
-      setOpen(false)
+    getThreadAnchorRect,
+    getDraftAnchorRect,
+    toggleOverview,
+    openOverview: () => {
       setDraft(null)
+      setActiveThreadId(null)
+      setOverviewOpen(true)
     },
+    closeOverview,
+    closePopover,
     selectThread,
+    handleHoverThread,
     startDraft,
     cancelDraft: () => setDraft(null),
     createThread: (body: string, mentions: CommentMention[]) => void createThread(body, mentions),

@@ -541,10 +541,12 @@ export function AiEditLayer({
   editor,
   ai,
   onComment,
+  hideBubble = false,
 }: {
   editor: Editor
   ai: AiEdit
   onComment?: () => void
+  hideBubble?: boolean
 }) {
   const { t } = useTranslation()
   const repo = useRepo()
@@ -552,7 +554,7 @@ export function AiEditLayer({
   const navigate = useUi((s) => s.navigate)
   const s = ai.session
   const activeRef = useRef(false)
-  activeRef.current = s !== null
+  activeRef.current = s !== null || hideBubble
 
   const newNote = async () => {
     const content = s?.original.trim()
