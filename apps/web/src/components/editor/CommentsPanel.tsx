@@ -21,34 +21,23 @@ import {
 import { createPortal } from 'react-dom'
 import { colorFor, initials, onColor } from '../../lib/collab/people'
 import { formatRelative } from '../../lib/time'
-import type { AnchorRect, CapturedAnchor } from './comments-highlight'
+import { type AnchorRect, type CapturedAnchor, findScrollParent } from './comments-highlight'
 
 const VIEWPORT_MARGIN = 12
 const POPOVER_GAP = 10
 
-interface Placed {
-  left: number
-  top: number
-}
+type PlacementMode =
+  | { kind: 'below' }
+  | { kind: 'above' }
+  /** Tall fragment (e.g. a large code block) where neither below nor above fits in view. */
+  | { kind: 'pinned'; offsetFromTop: number }
 
-function clampPosition(anchor: AnchorRect, width: number, height: number): Placed {
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const left = Math.max(VIEWPORT_MARGIN, Math.min(anchor.left, vw - width - VIEWPORT_MARGIN))
-  const below = anchor.bottom + POPOVER_GAP
-  const above = anchor.top - POPOVER_GAP - height
-  let top: number
-  if (below + height <= vh - VIEWPORT_MARGIN) {
-    top = below
-  } else if (above >= VIEWPORT_MARGIN) {
-    top = above
-  } else {
-    top = Math.max(VIEWPORT_MARGIN, Math.min(below, vh - height - VIEWPORT_MARGIN))
-  }
-  return { left, top }
-}
-
-/** Floating portal container anchored to a text fragment, strictly clamped inside the viewport. */
+/**
+ * Popover anchored to a text fragment inside the editor's scroll container (`position: absolute`).
+ * Living in the same scroll layer as the text gives 0ms compositor-locked scroll tracking, and
+ * locking the vertical placement mode on mount prevents flipping between above/below on large
+ * selections (such as multi-line code blocks) while typing or scrolling.
+ */
 function AnchoredCard({
   getAnchor,
   interactive,
@@ -63,38 +52,99 @@ function AnchoredCard({
   onClose?: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState<Placed | null>(() => {
-    const anchor = getAnchor()
-    if (!anchor) return null
-    return clampPosition(anchor, Math.min(360, window.innerWidth - 24), 220)
-  })
+  const getAnchorRef = useRef(getAnchor)
+  getAnchorRef.current = getAnchor
+  const modeRef = useRef<PlacementMode | null>(null)
 
   const place = useCallback(() => {
     const el = ref.current
-    const anchor = getAnchor()
+    const anchor = getAnchorRef.current()
     if (!el || !anchor) return
+    const container = el.offsetParent as HTMLElement | null
+    if (!container) return
+    const cr = container.getBoundingClientRect()
+    const scroller = findScrollParent(container)
+    const sr = scroller
+      ? scroller.getBoundingClientRect()
+      : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight }
+    const visLeft = Math.max(sr.left, 0)
+    const visRight = Math.min(sr.right, window.innerWidth)
+    const visTop = Math.max(sr.top, 0)
+    const visBottom = Math.min(sr.bottom, window.innerHeight)
+
     const width = el.offsetWidth || 340
     const height = el.offsetHeight || 160
-    const next = clampPosition(anchor, width, height)
-    setPos((prev) =>
-      prev && Math.abs(prev.left - next.left) < 1 && Math.abs(prev.top - next.top) < 1
-        ? prev
-        : next,
-    )
-  }, [getAnchor])
+
+    const maxViewLeft = Math.max(visLeft + VIEWPORT_MARGIN, visRight - width - VIEWPORT_MARGIN)
+    const viewLeft = Math.max(visLeft + VIEWPORT_MARGIN, Math.min(anchor.left, maxViewLeft))
+    const x = Math.round(viewLeft - cr.left)
+
+    const anchorDocTop = anchor.top - cr.top
+    const anchorDocBottom = anchor.bottom - cr.top
+
+    if (!modeRef.current) {
+      const belowViewY = anchor.bottom + POPOVER_GAP
+      const aboveViewY = anchor.top - POPOVER_GAP - height
+      const topInView = anchor.top >= visTop - 4 && anchor.top <= visBottom
+      const bottomInView = anchor.bottom >= visTop && anchor.bottom <= visBottom + 4
+      const fullyOffscreen =
+        !topInView && !bottomInView && (anchor.bottom < visTop || anchor.top > visBottom)
+
+      if (bottomInView && belowViewY + height <= visBottom - VIEWPORT_MARGIN) {
+        modeRef.current = { kind: 'below' }
+      } else if (topInView && aboveViewY >= visTop + VIEWPORT_MARGIN) {
+        modeRef.current = { kind: 'above' }
+      } else if (fullyOffscreen) {
+        // Off-screen thread currently being scrolled into view from the overview/bell.
+        modeRef.current = { kind: 'below' }
+      } else {
+        // Tall fragment (e.g. large code block) where neither below nor above fits cleanly.
+        // Anchor once inside the visible portion and keep it locked in document coordinates.
+        const maxViewY = Math.max(visTop + VIEWPORT_MARGIN, visBottom - height - VIEWPORT_MARGIN)
+        let viewY: number
+        if (bottomInView) {
+          viewY = Math.max(visTop + VIEWPORT_MARGIN, Math.min(belowViewY, maxViewY))
+        } else if (topInView) {
+          viewY = Math.max(visTop + VIEWPORT_MARGIN, Math.min(anchor.top + POPOVER_GAP, maxViewY))
+        } else {
+          viewY = Math.max(
+            visTop + VIEWPORT_MARGIN,
+            Math.min(visTop + Math.round((visBottom - visTop - height) * 0.35), maxViewY),
+          )
+        }
+        modeRef.current = { kind: 'pinned', offsetFromTop: viewY - cr.top - anchorDocTop }
+      }
+    }
+
+    const mode = modeRef.current
+    const docY =
+      mode.kind === 'below'
+        ? anchorDocBottom + POPOVER_GAP
+        : mode.kind === 'above'
+          ? anchorDocTop - POPOVER_GAP - height
+          : anchorDocTop + mode.offsetFromTop
+
+    el.style.transform = `translate3d(${x}px, ${Math.round(docY)}px, 0)`
+    el.style.visibility = 'visible'
+  }, [])
 
   useLayoutEffect(() => {
     place()
     const el = ref.current
     if (!el) return
+    const container = el.offsetParent as HTMLElement | null
+    const scroller = findScrollParent(container)
     const ro = new ResizeObserver(place)
     ro.observe(el)
+    if (container) ro.observe(container)
+    if (scroller) ro.observe(scroller)
     window.addEventListener('resize', place)
-    window.addEventListener('scroll', place, true)
+    // Inner scrollers (e.g. horizontal scroll inside a wide <pre> code block) shift anchor.left.
+    container?.addEventListener('scroll', place, { capture: true, passive: true })
     return () => {
       ro.disconnect()
       window.removeEventListener('resize', place)
-      window.removeEventListener('scroll', place, true)
+      container?.removeEventListener('scroll', place, true)
     }
   }, [place])
 
@@ -121,24 +171,24 @@ function AnchoredCard({
     }
   }, [interactive, onClose])
 
-  return createPortal(
+  return (
     <div
       ref={ref}
-      style={{
-        left: pos ? pos.left : -9999,
-        top: pos ? pos.top : -9999,
-        visibility: pos ? 'visible' : 'hidden',
-      }}
+      style={{ top: 0, left: 0, visibility: 'hidden' }}
       className={cn(
-        'fixed z-40 rounded-2xl border bg-popover text-popover-foreground shadow-float',
-        pos && 'animate-in fade-in-0 duration-120 ease-out',
+        'absolute z-40 cursor-default select-auto will-change-transform',
         !interactive && 'pointer-events-none',
-        className,
       )}
     >
-      {children}
-    </div>,
-    document.body,
+      <div
+        className={cn(
+          'rounded-2xl border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 duration-120 ease-out',
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </div>
   )
 }
 
@@ -228,6 +278,11 @@ function InlineComposer({
       )
       .slice(0, 6)
   }, [allEmails, collaborators, mentionTrigger])
+
+  // Focus after the anchored popover has been positioned, without scroll-jumping the editor.
+  useEffect(() => {
+    if (autoFocus) ref.current?.focus({ preventScroll: true })
+  }, [autoFocus])
 
   // Auto-grow textarea height smoothly up to 4 lines without jumping layout.
   useLayoutEffect(() => {
@@ -340,8 +395,6 @@ function InlineComposer({
         </span>
         <textarea
           ref={ref}
-          // biome-ignore lint/a11y/noAutofocus: explicit user action to compose or reply
-          autoFocus={autoFocus}
           rows={1}
           value={value}
           placeholder={placeholder}
@@ -596,6 +649,7 @@ export function CommentsLayer({
       {/* 1. Compact Figma-style hover preview card */}
       {hoveredThread ? (
         <AnchoredCard
+          key={hoveredThread.id}
           getAnchor={() => getThreadAnchorRect(hoveredThread.id)}
           interactive={false}
           className="w-[min(300px,calc(100vw-24px))] px-3.5 py-3"
@@ -652,6 +706,7 @@ export function CommentsLayer({
       {/* 2. Anchored "Add comment" popover next to the selected fragment */}
       {draft && !readOnly ? (
         <AnchoredCard
+          key={`${draft.editorFrom}-${draft.editorTo}`}
           getAnchor={getDraftAnchorRect}
           interactive
           onClose={onCancelDraft}

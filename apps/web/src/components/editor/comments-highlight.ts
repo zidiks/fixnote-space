@@ -73,9 +73,13 @@ export function captureSelectionAnchor(
   const contextBefore = beforeText.slice(-40)
   const contextAfter = afterText.slice(0, 40)
 
-  const hit = findQuoteRange(proj.text, quoteRaw, { contextBefore, contextAfter })
+  const MAX_QUOTE_LEN = 4000
+  const quote = quoteRaw.slice(0, MAX_QUOTE_LEN)
+  const hit = findQuoteRange(proj.text, quote, { contextBefore, contextAfter })
   const from = hit ? hit.from : 0
-  const to = hit ? hit.to : quoteRaw.length
+  const to = hit ? hit.to : quote.length
+  const effectiveAfter =
+    quoteRaw.length > MAX_QUOTE_LEN && hit ? proj.text.slice(hit.to, hit.to + 40) : contextAfter
 
   let anchorFrom: string | undefined
   let anchorTo: string | undefined
@@ -98,9 +102,9 @@ export function captureSelectionAnchor(
   }
 
   return {
-    quote: quoteRaw.slice(0, 500),
+    quote,
     contextBefore,
-    contextAfter,
+    contextAfter: effectiveAfter,
     from,
     to,
     editorFrom: range.from,
@@ -159,6 +163,17 @@ export function resolveThreadRange(
   return { from, to: last + 1 }
 }
 
+/** Nearest vertical scrolling ancestor of `el`, or null when scrolling happens on the window. */
+export function findScrollParent(el: Element | null): HTMLElement | null {
+  let parent = el?.parentElement ?? null
+  while (parent) {
+    const { overflowY } = getComputedStyle(parent)
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') return parent
+    parent = parent.parentElement
+  }
+  return null
+}
+
 /** Viewport bounding box of a ProseMirror range (works for inline spans and multi-line blocks). */
 export function getRangeRect(
   editor: Editor,
@@ -187,11 +202,16 @@ export function getRangeRect(
     }
   }
   try {
-    const max = editor.state.doc.content.size
-    const from = Math.max(0, Math.min(range.from, max))
-    const to = Math.max(from, Math.min(range.to, max))
-    const start = editor.view.coordsAtPos(from)
-    const end = editor.view.coordsAtPos(to)
+    const { doc } = editor.state
+    const max = doc.content.size
+    let from = Math.max(0, Math.min(range.from, max))
+    let to = Math.max(from, Math.min(range.to, max))
+    // Trim leading/trailing newlines inside multi-line code blocks so end coords stay on the last
+    // selected line instead of landing on the following line or block boundary.
+    while (from < to - 1 && doc.textBetween(from, from + 1) === '\n') from++
+    while (to > from + 1 && doc.textBetween(to - 1, to) === '\n') to--
+    const start = editor.view.coordsAtPos(from, 1)
+    const end = editor.view.coordsAtPos(to, -1)
     return {
       left: Math.min(start.left, end.left),
       right: Math.max(start.right, end.right),
@@ -203,16 +223,34 @@ export function getRangeRect(
   }
 }
 
-/** Scrolls the editor viewport to a comment highlight only when it is outside the visible area. */
-export function scrollToComment(editor: Editor, range: { from: number; to: number }) {
+/** Scrolls the editor viewport to a comment highlight only when it is completely outside view. */
+export function scrollToComment(
+  editor: Editor,
+  range: { from: number; to: number },
+  threadId?: string,
+) {
   if (editor.isDestroyed) return
   try {
-    const dom = editor.view.domAtPos(range.from)
-    const el = dom.node instanceof Element ? dom.node : dom.node.parentElement
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const inView = rect.top >= 72 && rect.bottom <= window.innerHeight - 120
-    if (!inView) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const rect = getRangeRect(editor, range, threadId)
+    if (!rect) return
+    const scroller = findScrollParent(editor.view.dom)
+    const sr = scroller
+      ? scroller.getBoundingClientRect()
+      : { top: 0, bottom: window.innerHeight, height: window.innerHeight }
+    const visTop = Math.max(sr.top, 0) + 48
+    const visBottom = Math.min(sr.bottom, window.innerHeight) - 80
+    // If any part of the commented range is already on screen (common for large code blocks),
+    // keep the current scroll position instead of yanking the viewport.
+    if (rect.bottom >= visTop && rect.top <= visBottom) return
+    if (scroller) {
+      const targetTop = scroller.scrollTop + (rect.top - sr.top) - Math.min(180, sr.height * 0.28)
+      scroller.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' })
+    } else {
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + rect.top - 180),
+        behavior: 'smooth',
+      })
+    }
   } catch {
     // Ignore out-of-range positions if the document just changed.
   }

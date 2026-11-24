@@ -12,6 +12,7 @@ import { LinksBar } from './LinksBar'
 import { NoteSnippet } from './NoteCard'
 import { useGroupLabel, ViewMenu } from './NoteGrid'
 import { SelectionBar } from './SelectionBar'
+import { SlidingHoverIndicator, SlidingIndicator } from './SlidingIndicator'
 import { Snippet } from './Spotlight'
 import { VirtualList } from './VirtualList'
 
@@ -39,11 +40,19 @@ export function NoteColumn({
   const navigate = useUi((s) => s.navigate)
   const width = useUi((s) => s.listWidth)
   const columnRef = useRef<HTMLElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const [listScrolled, setListScrolled] = useState(false)
   const folders = useFolders().data
   const counts = useCounts().data
   const createNote = useCreateNote()
   const [q, setQ] = useState('')
   const query = useDeferredValue(q).trim()
+  // Sync scroll-fade state when switching between search results and the main list.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-check scrollTop whenever query switches list mode
+  useEffect(() => {
+    setListScrolled((scrollRef.current?.scrollTop ?? 0) > 1)
+  }, [query])
   // Today starts when the list is opened; it does not shrink at midnight while on screen.
   const midnight = useMemo(() => startOfDay(), [])
   const filter = useMemo(() => listFilter(list, midnight), [list, midnight])
@@ -95,7 +104,7 @@ export function NoteColumn({
       )}
       style={wide ? undefined : { width }}
     >
-      <header className="space-y-2 px-3 pt-3 pb-2">
+      <header className="space-y-2 px-3 pt-3 pb-1">
         <div className="flex h-7 items-center gap-2">
           <Icon className="size-4 shrink-0 text-muted-foreground" />
           <h1 className="truncate text-[15px] font-semibold tracking-tight">{title}</h1>
@@ -172,34 +181,58 @@ export function NoteColumn({
           </div>
         ) : null}
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-24">
-        {query ? (
-          <SearchResults
-            query={query}
-            filter={filter}
-            inFolder={folderId(list)}
-            activeId={activeId}
-          />
-        ) : (
-          <Notes
-            filter={filter}
-            pinnedFirst={list.kind !== 'today'}
-            inFolder={folderId(list)}
-            activeId={activeId}
-            onFirst={onFirst}
-            empty={
-              list.kind === 'folder'
-                ? t('list.emptyFolder')
-                : list.kind === 'links'
-                  ? t('links.empty')
-                  : list.kind === 'today'
-                    ? t('layout.emptyToday')
-                    : list.filter === 'inbox'
-                      ? t('home.emptyFiltered')
-                      : t('home.empty.title')
-            }
-          />
+      <div
+        ref={scrollRef}
+        onScroll={(e) => {
+          const next = e.currentTarget.scrollTop > 1
+          setListScrolled((prev) => (prev === next ? prev : next))
+        }}
+        className={cn(
+          'min-h-0 flex-1 overflow-y-auto px-1.5 pt-1 pb-24',
+          listScrolled && 'fx-scroll-fade-top',
         )}
+      >
+        <div ref={listRef} className="relative">
+          <SlidingHoverIndicator
+            container={listRef}
+            itemSelector="[data-note-id]"
+            activeKey={activeId ?? null}
+            className="rounded-lg bg-accent/70"
+          />
+          <SlidingIndicator
+            container={listRef}
+            activeKey={activeId ?? null}
+            observeMutations
+            className="rounded-lg bg-accent"
+          />
+          {query ? (
+            <SearchResults
+              query={query}
+              filter={filter}
+              inFolder={folderId(list)}
+              activeId={activeId}
+            />
+          ) : (
+            <Notes
+              filter={filter}
+              pinnedFirst={list.kind !== 'today'}
+              inFolder={folderId(list)}
+              activeId={activeId}
+              onFirst={onFirst}
+              empty={
+                list.kind === 'folder'
+                  ? t('list.emptyFolder')
+                  : list.kind === 'links'
+                    ? t('links.empty')
+                    : list.kind === 'today'
+                      ? t('layout.emptyToday')
+                      : list.filter === 'inbox'
+                        ? t('home.emptyFiltered')
+                        : t('home.empty.title')
+              }
+            />
+          )}
+        </div>
       </div>
       {wide ? null : <Resizer target={columnRef} />}
     </section>
@@ -246,6 +279,7 @@ function Notes({
         items={rows}
         itemKey={(row) => ('id' in row ? row.id : `header:${row.key}`)}
         estimate={(row) => ('id' in row ? 132 : 32)}
+        className="relative z-[1]"
         render={(row) =>
           'id' in row ? (
             <div className="pb-0.5">
@@ -295,6 +329,7 @@ function SearchResults({
         items={hits}
         itemKey={(hit) => hit.note.id}
         estimate={() => 132}
+        className="relative z-[1]"
         render={(h) => (
           <div className="pb-0.5">
             <NoteSnippet

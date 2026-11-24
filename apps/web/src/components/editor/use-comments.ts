@@ -207,7 +207,7 @@ export function useNoteComments({
       if (range && editor) {
         setOverviewOpen(false)
         setActiveThreadId(threadId)
-        scrollToComment(editor, range)
+        scrollToComment(editor, range, threadId)
       } else {
         // Orphaned thread (text deleted): keep it accessible inside the overview popover.
         setActiveThreadId(threadId)
@@ -313,6 +313,9 @@ export function useNoteComments({
           },
         ],
       }
+      // Seed the range immediately so the thread popover anchors on its very first frame
+      // before syncHighlights' effect dispatches highlight decorations.
+      rangesRef.current.set(thread.id, { from: anchor.editorFrom, to: anchor.editorTo })
       if (live && editor && !editor.isDestroyed) {
         addYCommentThread(live.session.doc, thread)
         setActiveThreadId(thread.id)

@@ -37,6 +37,7 @@ import { useDb } from '../lib/db'
 import { useDeleteWithUndo, useFolders, useMoveNote, useSetPinned } from '../lib/queries'
 import { useNotePress } from '../lib/selection'
 import { formatCardDate } from '../lib/time'
+import { SLIDING_INDICATOR } from './SlidingIndicator'
 
 /** The note's first image: attachments resolve to a local object URL, web images load as is. */
 function useCoverUrl(src: string): string | null {
@@ -413,8 +414,10 @@ function NoteSnippetView({
         type="button"
         {...press.props}
         aria-current={active ? 'page' : undefined}
+        data-active={active ? 'true' : undefined}
         className={cn(
-          'flex w-full gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-accent aria-[current=page]:bg-accent data-[selected]:bg-brand/10',
+          'relative flex w-full gap-3 rounded-lg px-4 py-3 text-left transition-colors data-[selected]:bg-brand/10',
+          !SLIDING_INDICATOR && 'hover:bg-accent aria-[current=page]:bg-accent',
           itemClass,
         )}
       >
