@@ -2,8 +2,8 @@ import { type NoteFilter, type NoteSummary, subtreeCounts } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button, chipVariants, cn, Tooltip, TooltipContent, TooltipTrigger } from '@fixnote/ui'
 import { CalendarDays, Folder, House, Link2, Pin, Search, SquarePen, X } from 'lucide-react'
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { LIST_WIDTH, type ListRoute, useUi } from '../app/store'
+import { type RefObject, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { clampListWidth, LIST_WIDTH, type ListRoute, useUi } from '../app/store'
 import { listFilter } from '../lib/layout'
 import { useNoteList } from '../lib/note-list'
 import { useCounts, useCreateNote, useFolders, useSearch } from '../lib/queries'
@@ -38,6 +38,7 @@ export function NoteColumn({
   const { t } = useTranslation()
   const navigate = useUi((s) => s.navigate)
   const width = useUi((s) => s.listWidth)
+  const columnRef = useRef<HTMLElement>(null)
   const folders = useFolders().data
   const counts = useCounts().data
   const createNote = useCreateNote()
@@ -86,9 +87,10 @@ export function NoteColumn({
 
   return (
     <section
+      ref={columnRef}
       aria-label={title}
       className={cn(
-        'relative flex h-full min-h-0 flex-col bg-background',
+        'relative flex h-full min-h-0 flex-col bg-background [contain:layout_style]',
         wide ? 'min-w-0 flex-1' : 'shrink-0 border-r',
       )}
       style={wide ? undefined : { width }}
@@ -199,7 +201,7 @@ export function NoteColumn({
           />
         )}
       </div>
-      {wide ? null : <Resizer />}
+      {wide ? null : <Resizer target={columnRef} />}
     </section>
   )
 }
@@ -313,15 +315,42 @@ function Hint({ children }: { children: React.ReactNode }) {
   return <p className="px-3 py-4 text-sm text-muted-foreground">{children}</p>
 }
 
-/** The column's right edge: drag (or arrow keys) to change its width; double-click resets it. */
-function Resizer() {
+/**
+ * The column's right edge: drag (or arrow keys) to change its width; double-click resets it.
+ * Updates the DOM width at VSync via rAF during drag and commits to the store once on release,
+ * avoiding React re-renders and localStorage writes on every high-rate pointermove event.
+ */
+function Resizer({ target }: { target: RefObject<HTMLElement | null> }) {
   const { t } = useTranslation()
   const width = useUi((s) => s.listWidth)
   const setWidth = useUi((s) => s.setListWidth)
-  const drag = useRef<{ x: number; w: number } | null>(null)
+  const sepRef = useRef<HTMLDivElement>(null)
+  const drag = useRef<{ x: number; w: number; next: number; raf: number } | null>(null)
+
+  useEffect(
+    () => () => {
+      if (drag.current?.raf) cancelAnimationFrame(drag.current.raf)
+      delete document.documentElement.dataset.resizing
+    },
+    [],
+  )
+
+  const finishDrag = (commit: boolean) => {
+    const d = drag.current
+    if (!d) return
+    drag.current = null
+    if (d.raf) cancelAnimationFrame(d.raf)
+    delete document.documentElement.dataset.resizing
+    const finalWidth = commit ? d.next : d.w
+    if (target.current) target.current.style.width = `${finalWidth}px`
+    sepRef.current?.setAttribute('aria-valuenow', String(finalWidth))
+    if (commit && finalWidth !== d.w) setWidth(finalWidth)
+  }
+
   return (
     // biome-ignore lint/a11y/useSemanticElements: a focusable separator is the ARIA pattern for a splitter.
     <div
+      ref={sepRef}
       role="separator"
       aria-orientation="vertical"
       aria-label={t('layout.resize')}
@@ -333,18 +362,23 @@ function Resizer() {
         if (e.button !== 0) return
         e.preventDefault()
         e.currentTarget.setPointerCapture(e.pointerId)
-        drag.current = { x: e.clientX, w: width }
+        drag.current = { x: e.clientX, w: width, next: width, raf: 0 }
+        document.documentElement.dataset.resizing = 'col'
       }}
       onPointerMove={(e) => {
         const d = drag.current
-        if (d) setWidth(d.w + e.clientX - d.x)
+        if (!d) return
+        d.next = clampListWidth(d.w + e.clientX - d.x)
+        if (!d.raf) {
+          d.raf = requestAnimationFrame(() => {
+            d.raf = 0
+            if (target.current) target.current.style.width = `${d.next}px`
+            sepRef.current?.setAttribute('aria-valuenow', String(d.next))
+          })
+        }
       }}
-      onPointerUp={() => {
-        drag.current = null
-      }}
-      onPointerCancel={() => {
-        drag.current = null
-      }}
+      onPointerUp={() => finishDrag(true)}
+      onPointerCancel={() => finishDrag(false)}
       onDoubleClick={() => setWidth(LIST_WIDTH.initial)}
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft') setWidth(width - 16)

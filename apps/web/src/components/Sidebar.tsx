@@ -16,6 +16,7 @@ import {
   Settings,
   WandSparkles,
 } from 'lucide-react'
+import { useRef } from 'react'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
@@ -26,6 +27,7 @@ import { useCounts, useOpenDaily } from '../lib/queries'
 import { useShortcutLabel } from '../lib/shortcuts'
 import { ProCard } from './ProCard'
 import { SidebarFolders } from './SidebarFolders'
+import { SLIDING_INDICATOR, SlidingIndicator } from './SlidingIndicator'
 
 function NavItem({
   icon: Icon,
@@ -45,9 +47,11 @@ function NavItem({
       type="button"
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
+      data-active={active ? 'true' : undefined}
       className={cn(
-        'flex h-9.5 w-full items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-sidebar-foreground transition-colors hover:bg-sidebar-accent',
-        active && 'bg-sidebar-accent font-medium text-foreground',
+        'relative z-[1] flex h-9.5 w-full items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70',
+        active && 'font-medium text-foreground',
+        active && !SLIDING_INDICATOR && 'bg-sidebar-accent',
       )}
     >
       <Icon className="size-4 opacity-70" />
@@ -57,8 +61,9 @@ function NavItem({
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ drawer = false }: { drawer?: boolean }) {
   const { t } = useTranslation()
+  const navGroup = useRef<HTMLDivElement>(null)
   const searchKeys = useShortcutLabel('search')
   const setSpotlightOpen = useUi((s) => s.setSpotlightOpen)
   const route = useUi((s) => s.route)
@@ -70,6 +75,22 @@ export function Sidebar() {
   // The list on screen, or (notes layout) the one beside the open note.
   const list = useListRoute()
   const whole = route.kind === 'overview' || route.kind === 'tidy'
+  const homeActive = layout === 'notes' ? list?.kind === 'home' && !whole : route.kind === 'home'
+  const todayActive = layout === 'notes' && list?.kind === 'today' && !whole
+  const linksActive = layout === 'notes' ? list?.kind === 'links' && !whole : route.kind === 'links'
+  const overviewActive = layout === 'notes' && route.kind === 'overview'
+  const tidyActive = route.kind === 'tidy'
+  const activeNav = homeActive
+    ? 'home'
+    : todayActive
+      ? 'today'
+      : linksActive
+        ? 'links'
+        : overviewActive
+          ? 'overview'
+          : tidyActive
+            ? 'tidy'
+            : null
   // Today: the daily note; in the notes layout also what was edited today, listed beside it.
   const today = () =>
     openDaily.mutate(undefined, {
@@ -79,7 +100,12 @@ export function Sidebar() {
       },
     })
   return (
-    <aside className="flex h-full w-[300px] shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1">
+    <aside
+      className={cn(
+        'flex h-full w-[300px] shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar pt-1 [contain:layout_style]',
+        !drawer && 'fx-mac-sidebar',
+      )}
+    >
       <div className="px-2">
         <button
           type="button"
@@ -93,41 +119,48 @@ export function Sidebar() {
       </div>
 
       <nav className="mt-3 flex-1 overflow-y-auto px-2">
-        <NavItem
-          icon={House}
-          label={t('nav.home')}
-          count={counts?.all}
-          active={layout === 'notes' ? list?.kind === 'home' && !whole : route.kind === 'home'}
-          onClick={() => navigate({ kind: 'home' })}
-        />
-        <NavItem
-          icon={CalendarDays}
-          label={t('sidebar.daily')}
-          active={layout === 'notes' && list?.kind === 'today' && !whole}
-          onClick={today}
-        />
-        <NavItem
-          icon={Link2}
-          label={t('links.nav')}
-          count={counts?.links}
-          active={layout === 'notes' ? list?.kind === 'links' && !whole : route.kind === 'links'}
-          onClick={() => navigate({ kind: 'links' })}
-        />
-        {layout === 'notes' ? (
-          <NavItem
-            icon={LayoutDashboard}
-            label={t('layout.overview')}
-            active={route.kind === 'overview'}
-            onClick={() => navigate({ kind: 'overview' })}
+        <div ref={navGroup} className="relative">
+          <SlidingIndicator
+            container={navGroup}
+            activeKey={activeNav}
+            className="rounded-sm bg-sidebar-accent"
           />
-        ) : null}
-        <NavItem
-          icon={WandSparkles}
-          label={t('tidy.nav')}
-          count={tidyPending || undefined}
-          active={route.kind === 'tidy'}
-          onClick={() => navigate({ kind: 'tidy' })}
-        />
+          <NavItem
+            icon={House}
+            label={t('nav.home')}
+            count={counts?.all}
+            active={homeActive}
+            onClick={() => navigate({ kind: 'home' })}
+          />
+          <NavItem
+            icon={CalendarDays}
+            label={t('sidebar.daily')}
+            active={todayActive}
+            onClick={today}
+          />
+          <NavItem
+            icon={Link2}
+            label={t('links.nav')}
+            count={counts?.links}
+            active={linksActive}
+            onClick={() => navigate({ kind: 'links' })}
+          />
+          {layout === 'notes' ? (
+            <NavItem
+              icon={LayoutDashboard}
+              label={t('layout.overview')}
+              active={overviewActive}
+              onClick={() => navigate({ kind: 'overview' })}
+            />
+          ) : null}
+          <NavItem
+            icon={WandSparkles}
+            label={t('tidy.nav')}
+            count={tidyPending || undefined}
+            active={tidyActive}
+            onClick={() => navigate({ kind: 'tidy' })}
+          />
+        </div>
         <SidebarFolders />
       </nav>
 

@@ -125,7 +125,7 @@ function NotesContent({ onNewNote }: { onNewNote: () => void }) {
     [key, setShownNote],
   )
   const whole = (node: React.ReactNode) => (
-    <main className="relative flex min-w-0 flex-1 flex-col">
+    <main className="relative flex min-w-0 flex-1 flex-col bg-background [contain:layout_style]">
       <div className="flex-1 overflow-y-auto">{node}</div>
     </main>
   )
@@ -287,6 +287,14 @@ function AppShell() {
   }, [theme])
 
   useEffect(() => {
+    if (isApple) document.documentElement.dataset.apple = 'true'
+    if (platform.chrome === 'mac-overlay') document.documentElement.dataset.macVibrancy = 'true'
+    return () => {
+      delete document.documentElement.dataset.macVibrancy
+    }
+  }, [platform.chrome])
+
+  useEffect(() => {
     document.documentElement.lang = i18n.resolvedLanguage ?? 'en'
   }, [i18n.resolvedLanguage])
 
@@ -306,14 +314,14 @@ function AppShell() {
                 onClick={ui.toggleSidebar}
               />
               <div className="absolute inset-y-0 left-0 z-40 shadow-xl">
-                <Sidebar />
+                <Sidebar drawer />
               </div>
             </>
           ) : null}
           {layout === 'notes' ? (
             <NotesContent onNewNote={newNote} />
           ) : (
-            <main className="relative flex min-w-0 flex-1 flex-col">
+            <main className="relative flex min-w-0 flex-1 flex-col bg-background [contain:layout_style]">
               <div className="flex-1 overflow-y-auto">
                 <Content />
               </div>

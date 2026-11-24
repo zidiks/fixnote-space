@@ -69,7 +69,7 @@ export function VirtualList<T>({
     getScrollElement: () => scroll,
     getItemKey: (i) => itemKey(items[i] as T),
     estimateSize: (i) => estimate(items[i] as T),
-    overscan: 5,
+    overscan: 8,
     scrollMargin: margin,
     rangeExtractor: (range) => {
       const indices = defaultRangeExtractor(range)
@@ -99,7 +99,8 @@ export function VirtualList<T>({
             top: 0,
             left: 0,
             width: '100%',
-            transform: `translateY(${row.start - margin}px)`,
+            contain: 'layout style',
+            transform: `translate3d(0, ${row.start - margin}px, 0)`,
           }}
           onFocusCapture={() => setHeld(String(row.key))}
           onPointerDownCapture={() => setHeld(String(row.key))}

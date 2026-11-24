@@ -237,7 +237,7 @@ function NoteCardView({ note, inFolder, date = 'edited' }: ItemProps) {
       <button
         type="button"
         {...press.props}
-        className="group relative flex h-full min-h-32 w-full flex-col overflow-hidden rounded-lg border bg-card p-5 text-left shadow-xs transition-shadow outline-none [-webkit-touch-callout:none] hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring/40 data-[selected]:border-brand data-[selected]:ring-2 data-[selected]:ring-brand/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
+        className="group relative flex h-full min-h-32 w-full flex-col rounded-lg border bg-card p-5 text-left shadow-xs outline-none [-webkit-touch-callout:none] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-float after:opacity-0 after:transition-opacity after:duration-150 after:ease-[var(--ease-apple)] hover:after:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/40 data-[selected]:border-brand data-[selected]:ring-2 data-[selected]:ring-brand/40 data-[state=open]:ring-2 data-[state=open]:ring-ring/40"
       >
         {press.selecting ? (
           <SelectMark selected={press.selected} className="absolute top-3 right-3 z-10" />

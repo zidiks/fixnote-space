@@ -3,7 +3,7 @@ import type * as React from 'react'
 import { cn } from '../lib/utils'
 
 const surface =
-  'z-50 rounded-lg border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-95'
+  'z-50 rounded-lg border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-[0.97] duration-[var(--duration-spring-fast)] ease-[var(--ease-apple)]'
 
 export const Popover = PopoverPrimitive.Root
 export const PopoverTrigger = PopoverPrimitive.Trigger
@@ -19,7 +19,11 @@ export function PopoverContent({
       <PopoverPrimitive.Content
         align={align}
         sideOffset={sideOffset}
-        className={cn(surface, 'w-80 p-1 outline-none', className)}
+        className={cn(
+          surface,
+          'origin-(--radix-popover-content-transform-origin) w-80 p-1 outline-none',
+          className,
+        )}
         {...props}
       />
     </PopoverPrimitive.Portal>
@@ -45,7 +49,11 @@ export function HoverCardContent({
     <HoverCardPrimitive.Portal>
       <HoverCardPrimitive.Content
         sideOffset={sideOffset}
-        className={cn(surface, 'px-3 py-2 text-sm outline-none', className)}
+        className={cn(
+          surface,
+          'origin-(--radix-hover-card-content-transform-origin) px-3 py-2 text-sm outline-none',
+          className,
+        )}
         {...props}
       />
     </HoverCardPrimitive.Portal>

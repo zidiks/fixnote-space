@@ -300,7 +300,7 @@ function ChatHistory({
     gap: 16,
     paddingStart: 16,
     paddingEnd: 16,
-    overscan: 5,
+    overscan: 8,
     anchorTo: 'end',
     followOnAppend: true,
     scrollEndThreshold: 24,
@@ -342,7 +342,10 @@ function ChatHistory({
               data-chat-message-id={m.id}
               ref={virtual.measureElement}
               className="absolute inset-x-0 top-0 flow-root"
-              style={{ transform: `translateY(${row.start}px)` }}
+              style={{
+                contain: 'layout style',
+                transform: `translate3d(0, ${row.start}px, 0)`,
+              }}
               onFocusCapture={() => setFocused(m.id)}
               onBlurCapture={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget))
@@ -741,7 +744,7 @@ export function ChatPanel() {
 
   // The panel runs the full height of the window, so on Windows it carries the caption buttons.
   return (
-    <div {...drag} className="flex h-full shrink-0 flex-col max-sm:w-full">
+    <div {...drag} className="flex h-full shrink-0 flex-col bg-background max-sm:w-full">
       {platform.window ? (
         <div {...drag} className="flex h-11 shrink-0 justify-end">
           <WindowControls controls={platform.window} />

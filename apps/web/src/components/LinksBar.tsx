@@ -12,7 +12,7 @@ import {
 } from '@fixnote/ui'
 import { useQueryClient } from '@tanstack/react-query'
 import { Folder, FolderPlus, Link2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { type ListRoute, useUi } from '../app/store'
 import { notifyNotesChanged } from '../lib/assistant/assistant'
@@ -20,6 +20,7 @@ import { useDb } from '../lib/db'
 import { errorMessage } from '../lib/errors'
 import { type LinkSaveDeps, moveLink, saveLinkWithToast, useLinkMove } from '../lib/link-save'
 import { useCounts, useFolders, useLinkFolders } from '../lib/queries'
+import { SLIDING_INDICATOR, SlidingIndicator } from './SlidingIndicator'
 
 /** What saving and moving links need, from the app's database and query cache. */
 function useLinkDeps(): LinkSaveDeps {
@@ -45,19 +46,31 @@ function useLinkDeps(): LinkSaveDeps {
  */
 export function LinksBar({ list }: { list: Extract<ListRoute, { kind: 'links' }> }) {
   const { t } = useTranslation()
+  const chipsRef = useRef<HTMLDivElement>(null)
   const navigate = useUi((s) => s.navigate)
   const folders = useFolders().data ?? []
   const topics = useLinkFolders().data ?? []
   const total = useCounts().data?.links
-  const chip = (on: boolean) => chipVariants({ selected: on })
+  const chip = (on: boolean) =>
+    cn(
+      chipVariants({ selected: on }),
+      'relative z-[1]',
+      on && SLIDING_INDICATOR && 'border-transparent',
+    )
   return (
     <div className="space-y-2">
       <AddLink />
       {topics.length > 1 || list.folder ? (
-        <div className="flex gap-1 overflow-x-auto pb-0.5">
+        <div ref={chipsRef} className="relative flex gap-1 overflow-x-auto pb-0.5">
+          <SlidingIndicator
+            container={chipsRef}
+            activeKey={list.folder ?? '__all__'}
+            className="rounded-full border border-border"
+          />
           <button
             type="button"
             aria-pressed={!list.folder}
+            data-active={!list.folder ? 'true' : undefined}
             className={chip(!list.folder)}
             onClick={() => navigate({ kind: 'links' }, { replace: true })}
           >
@@ -74,6 +87,7 @@ export function LinksBar({ list }: { list: Extract<ListRoute, { kind: 'links' }>
                 key={folderId}
                 type="button"
                 aria-pressed={on}
+                data-active={on ? 'true' : undefined}
                 title={path.join(' ▸ ')}
                 className={chip(on)}
                 onClick={() => navigate({ kind: 'links', folder: folderId }, { replace: true })}

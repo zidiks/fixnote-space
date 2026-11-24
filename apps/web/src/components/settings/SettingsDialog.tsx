@@ -11,8 +11,10 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import { useRef } from 'react'
 import { type SettingsSection, useUi } from '../../app/store'
 import { useBackLayer } from '../../lib/nav-history'
+import { SLIDING_INDICATOR, SlidingIndicator } from '../SlidingIndicator'
 import { AccountSection } from './AccountSection'
 import { AdvancedSection } from './AdvancedSection'
 import { AiSection } from './AiSection'
@@ -35,6 +37,7 @@ const SECTIONS: { id: SettingsSection; icon: typeof Settings2 }[] = [
 
 export function SettingsDialog() {
   const { t } = useTranslation()
+  const navRef = useRef<HTMLElement>(null)
   const section = useUi((s) => s.settings)
   const open = useUi((s) => s.openSettings)
   useBackLayer(section !== null, () => open(null))
@@ -50,10 +53,18 @@ export function SettingsDialog() {
           'max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:flex-col max-sm:rounded-none max-sm:border-0 max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)]',
         )}
       >
-        <nav className="flex w-44 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2 max-sm:w-full max-sm:flex-row max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b max-sm:pr-12 sm:w-60">
+        <nav
+          ref={navRef}
+          className="relative flex w-44 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2 max-sm:w-full max-sm:flex-row max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b max-sm:pr-12 sm:w-60"
+        >
           <DialogTitle className="px-2.5 pt-1.5 pb-3 text-sm font-semibold max-sm:sr-only">
             {t('settings.title')}
           </DialogTitle>
+          <SlidingIndicator
+            container={navRef}
+            activeKey={section}
+            className="rounded-md bg-sidebar-accent"
+          />
           {SECTIONS.map(({ id, icon: Icon }) => (
             <button
               key={id}
@@ -64,9 +75,11 @@ export function SettingsDialog() {
                 e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })
               }}
               aria-current={section === id ? 'page' : undefined}
+              data-active={section === id ? 'true' : undefined}
               className={cn(
-                'flex min-h-8 items-center gap-2.5 rounded-md px-2.5 py-1 text-left text-[13.5px] leading-tight text-sidebar-foreground hover:bg-sidebar-accent max-sm:min-h-9 max-sm:shrink-0 max-sm:whitespace-nowrap',
-                section === id && 'bg-sidebar-accent font-medium text-foreground',
+                'relative z-[1] flex min-h-8 items-center gap-2.5 rounded-md px-2.5 py-1 text-left text-[13.5px] leading-tight text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 max-sm:min-h-9 max-sm:shrink-0 max-sm:whitespace-nowrap',
+                section === id && 'font-medium text-foreground',
+                section === id && !SLIDING_INDICATOR && 'bg-sidebar-accent',
               )}
             >
               <Icon className="size-4 shrink-0 opacity-70" />

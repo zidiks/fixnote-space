@@ -1,6 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "title": "Fixnote",
@@ -11,6 +12,11 @@
         "center": true,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
+        "transparent": true,
+        "windowEffects": {
+          "effects": ["sidebar"],
+          "state": "followsWindowActiveState"
+        },
         "dragDropEnabled": false
       }
     ]

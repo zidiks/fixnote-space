@@ -32,14 +32,14 @@ export function ConfirmDialog({
   return (
     <Primitive.Root open={open} onOpenChange={onOpenChange}>
       <Primitive.Portal>
-        <Primitive.Overlay className="fixed inset-0 z-50 bg-scrim animate-in fade-in-0" />
+        <Primitive.Overlay className="fixed inset-0 z-50 bg-scrim animate-in fade-in-0 duration-[var(--duration-spring-fast)] ease-[var(--ease-apple)]" />
         <Primitive.Content
           onOpenAutoFocus={(e) => {
             if (!focusConfirm) return
             e.preventDefault()
             action.current?.focus()
           }}
-          className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-popover p-6 text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-95"
+          className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-lg border bg-popover p-6 text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-[0.97] duration-[var(--duration-spring)] ease-[var(--ease-apple)]"
         >
           <Primitive.Title className="text-lg font-semibold">{title}</Primitive.Title>
           {description ? (

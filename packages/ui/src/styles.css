@@ -50,6 +50,75 @@
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.04);
   --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.1), 0 1px 2px rgb(0 0 0 / 0.1);
   --shadow-float: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -6px rgb(0 0 0 / 0.12);
+
+  /* Fallback for macOS < 14.2 / Safari < 17.2; upgraded to CSS linear() springs below. */
+  --ease-apple: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring-tactile: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-spring-fast: 150ms;
+  --duration-spring: 200ms;
+}
+
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    /* Critically-damped spring (zeta = 1.0, omega = 22): Apple-like snappy settle, no overshoot. */
+    --ease-apple: linear(
+      0,
+      0.0357,
+      0.1184,
+      0.2218,
+      0.33,
+      0.434,
+      0.5289,
+      0.6126,
+      0.6846,
+      0.7455,
+      0.7963,
+      0.8381,
+      0.8724,
+      0.9001,
+      0.9224,
+      0.9403,
+      0.9546,
+      0.9659,
+      0.9749,
+      0.982,
+      0.9875,
+      0.9919,
+      0.9953,
+      0.9979,
+      1
+    );
+    /* Subtle tactile spring (zeta = 0.78, ~1.9% overshoot): pure transform micro-interactions. */
+    --spring-tactile: linear(
+      0,
+      0.0445,
+      0.1498,
+      0.2831,
+      0.4222,
+      0.5535,
+      0.6692,
+      0.7661,
+      0.8436,
+      0.9032,
+      0.947,
+      0.9778,
+      0.9981,
+      1.0105,
+      1.0171,
+      1.0197,
+      1.0196,
+      1.018,
+      1.0155,
+      1.0127,
+      1.01,
+      1.0076,
+      1.0055,
+      1.0038,
+      1
+    );
+    --duration-spring-fast: 240ms;
+    --duration-spring: 300ms;
+  }
 }
 
 .dark {

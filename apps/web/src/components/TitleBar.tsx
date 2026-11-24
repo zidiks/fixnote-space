@@ -157,7 +157,9 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         {...drag}
         className={cn(
           'flex shrink-0 items-center gap-0.5 pr-2 pl-3',
-          docked && 'w-[300px] border-r border-sidebar-border bg-sidebar',
+          docked
+            ? 'w-[300px] border-r border-sidebar-border bg-sidebar fx-mac-sidebar'
+            : 'bg-background',
           platform.chrome === 'mac-overlay' && 'pl-[78px]',
         )}
       >
@@ -194,7 +196,10 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         </Tip>
       </div>
 
-      <div {...drag} className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center px-2">
+      <div
+        {...drag}
+        className="grid min-w-0 flex-1 grid-cols-[1fr_auto_1fr] items-center bg-background px-2"
+      >
         <div {...drag} className="flex items-center gap-0.5">
           <Tip label={t('nav.back')} hint={keys.back}>
             <Button

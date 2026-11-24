@@ -39,7 +39,7 @@ export function SelectContent({
         position={position}
         sideOffset={4}
         className={cn(
-          'z-50 min-w-(--radix-select-trigger-width) overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-95',
+          'origin-(--radix-select-content-transform-origin) z-50 min-w-(--radix-select-trigger-width) overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-[0.97] duration-[var(--duration-spring-fast)] ease-[var(--ease-apple)]',
           className,
         )}
         {...props}
