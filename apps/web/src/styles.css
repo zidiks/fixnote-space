@@ -244,6 +244,130 @@
   color: var(--color-muted-foreground);
   text-decoration: line-through;
 }
+
+/* Collapsible nested lists (`collapsible-lists.ts`): outliner chevron, hidden branch & guides. */
+.fixnote-editor li > ul,
+.fixnote-editor li > ol,
+.fixnote-editor li > div > ul,
+.fixnote-editor li > div > ol {
+  position: relative;
+}
+.fixnote-editor li > ul::before,
+.fixnote-editor li > ol::before,
+.fixnote-editor li > div > ul::before,
+.fixnote-editor li > div > ol::before {
+  content: "";
+  position: absolute;
+  left: -0.72em;
+  top: 0.25em;
+  bottom: 0.25em;
+  width: 1px;
+  background: var(--color-border);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.fixnote-editor ul[data-type="taskList"] > li > div > ul::before,
+.fixnote-editor ul[data-type="taskList"] > li > div > ol::before {
+  left: -1.08em;
+}
+.fixnote-editor li.fixnote-foldable {
+  position: relative;
+}
+.fixnote-editor li.fixnote-foldable.is-folded > ul,
+.fixnote-editor li.fixnote-foldable.is-folded > ol,
+.fixnote-editor li.fixnote-foldable.is-folded > div > ul,
+.fixnote-editor li.fixnote-foldable.is-folded > div > ol {
+  display: none;
+}
+.fixnote-editor .fixnote-fold-btn {
+  position: absolute;
+  top: 0;
+  left: -2.15em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25em;
+  height: 1.75em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  opacity: 0;
+  user-select: none;
+  transition:
+    opacity 120ms var(--ease-apple),
+    color 120ms var(--ease-apple);
+}
+.fixnote-editor .fixnote-fold-btn::before {
+  content: "";
+  width: 0.38em;
+  height: 0.38em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.08em) rotate(45deg);
+  transition: transform var(--duration-spring-fast) var(--ease-apple);
+}
+.fixnote-editor li.fixnote-foldable.is-folded > .fixnote-fold-btn::before,
+.fixnote-editor li.fixnote-foldable.is-folded > :where(div) > .fixnote-fold-btn::before {
+  transform: translateX(-0.08em) rotate(-45deg);
+}
+.fixnote-editor ol > :where(li.fixnote-foldable) > .fixnote-fold-btn {
+  left: -2.35em;
+}
+.fixnote-editor ul[data-type="taskList"] > :where(li.fixnote-foldable > div) > .fixnote-fold-btn {
+  left: -1.35em;
+}
+.fixnote-editor
+  li.fixnote-foldable:hover:not(:where(:has(li.fixnote-foldable:hover)))
+  > .fixnote-fold-btn,
+.fixnote-editor
+  li.fixnote-foldable:hover:not(:where(:has(li.fixnote-foldable:hover)))
+  > :where(div)
+  > .fixnote-fold-btn {
+  opacity: 0.7;
+}
+.fixnote-editor li.fixnote-foldable.is-folded > .fixnote-fold-btn,
+.fixnote-editor li.fixnote-foldable.is-folded > :where(div) > .fixnote-fold-btn {
+  opacity: 0.9;
+  color: var(--color-brand);
+}
+.fixnote-editor li.fixnote-foldable > .fixnote-fold-btn:hover,
+.fixnote-editor li.fixnote-foldable > :where(div) > .fixnote-fold-btn:hover {
+  opacity: 1;
+  color: var(--color-foreground);
+}
+@media (pointer: coarse) {
+  .fixnote-editor .fixnote-fold-btn {
+    opacity: 0.55;
+  }
+}
+.fixnote-editor .fixnote-fold-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: 0.45em;
+  padding: 0 0.42em;
+  height: 1.35em;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-muted);
+  color: var(--color-muted-foreground);
+  font-size: 0.72em;
+  font-weight: 500;
+  line-height: 1;
+  vertical-align: 0.08em;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 120ms var(--ease-apple),
+    color 120ms var(--ease-apple),
+    border-color 120ms var(--ease-apple);
+}
+.fixnote-editor .fixnote-fold-pill:hover {
+  background: var(--color-accent);
+  color: var(--color-foreground);
+  border-color: color-mix(in oklab, var(--color-brand) 40%, var(--color-border));
+}
 /* A folded section (`details.ts`): a chevron, the title, and the body when open. */
 .fixnote-editor [data-type="details"] {
   display: flex;

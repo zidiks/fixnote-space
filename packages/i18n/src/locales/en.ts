@@ -1334,6 +1334,11 @@ const en = {
     notifComment: 'left a comment',
     you: 'You',
   },
+  outline: {
+    collapse: 'Collapse list',
+    expand: 'Expand list',
+    hiddenItems: 'Hidden items: {{count}}',
+  },
 } as const
 
 export default en

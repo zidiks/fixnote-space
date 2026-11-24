@@ -1343,6 +1343,11 @@ const ru: LocaleResource = {
     notifComment: 'оставил(а) комментарий',
     you: 'Вы',
   },
+  outline: {
+    collapse: 'Свернуть список',
+    expand: 'Развернуть список',
+    hiddenItems: 'Скрыто пунктов: {{count}}',
+  },
 }
 
 export default ru

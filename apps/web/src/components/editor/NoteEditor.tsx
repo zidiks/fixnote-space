@@ -91,6 +91,7 @@ export interface NoteEditorHandle {
 import { AiRangeExtension, rangeMarkdown } from './ai-range'
 import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
 import { CommentsPanel } from './CommentsPanel'
+import { CollapsibleLists } from './collapsible-lists'
 import { combo } from './combo'
 import { CommentsHighlight } from './comments-highlight'
 import { ImageTextDialog } from './ImageTextDialog'
@@ -605,6 +606,7 @@ export function NoteEditor({
       CommentsHighlight.configure({
         onSelectThread: (threadId) => selectCommentRef.current(threadId),
       }),
+      CollapsibleLists.configure({ noteId: note.id }),
       Extension.create({
         name: 'aiShortcut',
         addKeyboardShortcuts: () => ({

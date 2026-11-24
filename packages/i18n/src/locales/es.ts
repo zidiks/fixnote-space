@@ -1347,6 +1347,11 @@ const es: LocaleResource = {
     notifComment: 'dejó un comentario',
     you: 'Tú',
   },
+  outline: {
+    collapse: 'Contraer lista',
+    expand: 'Expandir lista',
+    hiddenItems: 'Elementos ocultos: {{count}}',
+  },
 }
 
 export default es
