@@ -202,6 +202,27 @@ export function offlineText(err: unknown): string | null {
   return network ? i18n.t('aiProvider.unavailable.offline') : null
 }
 
+/** Translates local ONNX out-of-memory errors (`std::bad_alloc` / `FIXNOTE_LOCAL_LLM_OOM`). */
+export function localOomText(err: unknown): string | null {
+  const message = err instanceof Error ? err.message : String(err ?? '')
+  if (
+    /FIXNOTE_LOCAL_LLM_OOM|bad_alloc|out of memory|cannot allocate|allocation failed/i.test(message)
+  ) {
+    return i18n.t('deviceModels.outOfMemory')
+  }
+  return null
+}
+
+/** True when the current request will actually run on a downloaded on-device model. */
+export function isUsingDeviceModel(): boolean {
+  const { settings: s, localOnly, deviceModels } = useLlm.getState()
+  if (s.kind === 'device') return true
+  if (!deviceModels.length) return false
+  if (localOnly && s.kind !== 'ollama') return true
+  if (typeof navigator !== 'undefined' && !navigator.onLine && !runsHere(s)) return true
+  return false
+}
+
 const trimSlash = (url: string) => url.trim().replace(/\/+$/, '')
 
 export function baseUrlOf(s: ProviderSettings): string {
@@ -341,8 +362,8 @@ export async function removeDeviceModel(key: LocalLlmKey) {
     )
 }
 
-/** A small model takes a short prompt; its answers stay short too. */
-export const DEVICE_WINDOW = 8192
+/** A small on-device ONNX model stays fast and avoids WASM/WebGPU OOM with a compact window. */
+export const DEVICE_WINDOW = 4096
 
 /** What a chat may send and get back, in tokens. */
 export interface ContextLimits {
@@ -386,6 +407,9 @@ export function modelWindow(s: ProviderSettings): number {
 /** How much the current model takes and gives, for the chat (configurable in Settings → AI). */
 export function contextLimits(): ContextLimits {
   const { settings: s, level } = useLlm.getState()
+  if (isUsingDeviceModel()) {
+    return { window: DEVICE_WINDOW, prompt: 3072, answer: 1024 }
+  }
   if (s.kind === 'fixnote') {
     return { window: FIXNOTE_WINDOW, prompt: FIXNOTE_CHAT_TOKENS, answer: FIXNOTE_ANSWER[level] }
   }

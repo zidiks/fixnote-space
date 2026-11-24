@@ -1076,6 +1076,8 @@ const es: LocaleResource = {
     },
     pick: 'Modelo',
     installMore: 'Instalar un modelo en este dispositivo…',
+    outOfMemory:
+      'No hay suficiente memoria en este dispositivo para este modelo local. Prueba el modelo Ligero (Qwen3 0.6B), una nota más corta o Fixnote AI.',
   },
   models: {
     language: 'Modelos de lenguaje',

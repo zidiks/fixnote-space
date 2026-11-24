@@ -37,7 +37,7 @@ import { useUi } from '../../app/store'
 import { unavailableText } from '../../lib/assistant/assistant'
 import { proposeEdit } from '../../lib/assistant/edit'
 import type { LlmUnavailable } from '../../lib/assistant/llm'
-import { offlineText, useLlm } from '../../lib/assistant/llm'
+import { localOomText, offlineText, useLlm } from '../../lib/assistant/llm'
 import { useRepo } from '../../lib/db'
 import { aiRefusalText } from '../../lib/plan'
 import { useInvalidateNotes } from '../../lib/queries'
@@ -166,6 +166,7 @@ export function useAiEdit(
             kind: 'error',
             message:
               aiRefusalText(err) ??
+              localOomText(err) ??
               offlineText(err) ??
               t('ai.error', { message: err instanceof Error ? err.message : String(err) }),
           },

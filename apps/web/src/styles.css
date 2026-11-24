@@ -1133,6 +1133,12 @@
   min-width: 0;
 }
 
+/* Soft vertical top fade when sidebar content scrolls under the search box (works on vibrancy too). */
+.fx-scroll-fade-top {
+  mask-image: linear-gradient(to bottom, transparent 0, black 22px, black 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 22px, black 100%);
+}
+
 /* Fragment comment highlight & inline Figma-style pin (comments-highlight.ts). */
 .fixnote-comment-mark {
   background: color-mix(in oklab, var(--color-brand) 20%, transparent);

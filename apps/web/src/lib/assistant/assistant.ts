@@ -52,8 +52,10 @@ import { pastTurns } from './history'
 import {
   type ContextLimits,
   contextLimits,
+  isUsingDeviceModel,
   type LlmUnavailable,
   llm as llmRoute,
+  localOomText,
   offlineText,
   providerLabel,
   useLlm,
@@ -223,6 +225,7 @@ function patchMessage(id: string, patch: Partial<ChatEntry>) {
 
 const errorText = (err: unknown) =>
   aiRefusalText(err) ??
+  localOomText(err) ??
   offlineText(err) ??
   (err instanceof ChatError ? err.message : err instanceof Error ? err.message : String(err))
 
@@ -324,9 +327,10 @@ async function fitContext(
 async function measureContext() {
   const mem = await memory()
   const { settings, level } = useLlm.getState()
+  const onDevice = isUsingDeviceModel()
   const tokens =
     SYSTEM_TOKENS +
-    TOOLS_TOKENS +
+    (onDevice ? 0 : TOOLS_TOKENS) +
     estimateTokens(useAssistant.getState().memoryText) +
     (mem.summary ? estimateTokens(mem.summary) : 0) +
     messagesTokens(
@@ -440,14 +444,15 @@ export async function ask(
   })
   try {
     const limits = contextLimits()
+    const onDevice = route.url === 'local://chat'
     // "Think harder" (Settings → AI) is for Fixnote AI; other models are what the person chose.
     const { settings, level } = useLlm.getState()
-    const hard = settings.kind === 'fixnote' && level === 'hard'
+    const hard = settings.kind === 'fixnote' && level === 'hard' && !onDevice
     // A follow-up ("and what else was there?") is searched as the question it stands for; notes
     // mix languages, so the same short call adds translations and synonyms. Best effort: on
-    // failure or timeout it is the question as typed.
+    // failure or timeout it is the question as typed. On-device models skip the extra roundtrip.
     const plan =
-      scope.kind === 'note'
+      scope.kind === 'note' || onDevice
         ? { query: question, keywords: [], search: true }
         : await planSearch(
             llm,
@@ -460,9 +465,11 @@ export async function ask(
     const followUp = !plan.search && mem.turns.length > 0
     const fragments = await retrieve(d.db, semantic(), plan.query, scope, {
       extraKeywords: plan.keywords,
-      limit: followUp ? 3 : limits.prompt < 16_000 ? 4 : 8,
+      limit: followUp ? 3 : onDevice ? 3 : limits.prompt < 16_000 ? 4 : 8,
       // The open note is given whole when it fits comfortably.
-      wholeNoteChars: Math.min(20_000, Math.floor(limits.prompt * 3 * 0.3)),
+      wholeNoteChars: onDevice
+        ? Math.min(4500, Math.floor(limits.prompt * 2.5 * 0.45))
+        : Math.min(20_000, Math.floor(limits.prompt * 3 * 0.3)),
     })
     const found = new Map<string, { n: number; noteId: string; title: string }>()
     for (const [i, f] of fragments.entries()) {
@@ -484,7 +491,7 @@ export async function ask(
       followUp,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }
-    const fixed = messagesTokens(buildAgentMessages(base)) + TOOLS_TOKENS
+    const fixed = messagesTokens(buildAgentMessages(base)) + (onDevice ? 0 : TOOLS_TOKENS)
     const fit = await fitContext(llm, mem, fixed, limits, hard)
     const input: AgentInput = {
       ...base,

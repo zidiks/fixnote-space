@@ -8,7 +8,7 @@ import {
 } from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button, cn } from '@fixnote/ui'
-import { ArrowUp, AtSign, Check, List, MessageSquare, RotateCcw, Trash2, X } from 'lucide-react'
+import { ArrowUp, Check, List, MessageSquare, RotateCcw, Trash2, X } from 'lucide-react'
 import {
   type ReactNode,
   useCallback,
@@ -407,12 +407,6 @@ function InlineComposer({
           <ArrowUp className="size-4" />
         </button>
       </div>
-      {collaborators.length > 0 ? (
-        <div className="mt-1 flex items-center gap-1 pl-9 text-[11px] text-muted-foreground/80">
-          <AtSign className="size-3" />
-          <span>{t('comments.mentionHint')}</span>
-        </div>
-      ) : null}
     </div>
   )
 }

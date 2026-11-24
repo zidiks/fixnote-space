@@ -1066,6 +1066,8 @@ const en = {
     },
     pick: 'Model',
     installMore: 'Install a model on this device…',
+    outOfMemory:
+      'Not enough memory on this device for this local model. Try the Light model (Qwen3 0.6B), a shorter note, or Fixnote AI.',
   },
   models: {
     language: 'Language models',

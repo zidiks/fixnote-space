@@ -16,7 +16,7 @@ import {
   Settings,
   WandSparkles,
 } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
@@ -64,6 +64,7 @@ function NavItem({
 export function Sidebar({ drawer = false }: { drawer?: boolean }) {
   const { t } = useTranslation()
   const navGroup = useRef<HTMLDivElement>(null)
+  const [navScrolled, setNavScrolled] = useState(false)
   const searchKeys = useShortcutLabel('search')
   const setSpotlightOpen = useUi((s) => s.setSpotlightOpen)
   const route = useUi((s) => s.route)
@@ -118,7 +119,13 @@ export function Sidebar({ drawer = false }: { drawer?: boolean }) {
         </button>
       </div>
 
-      <nav className="mt-3 flex-1 overflow-y-auto px-2">
+      <nav
+        onScroll={(e) => {
+          const next = e.currentTarget.scrollTop > 1
+          setNavScrolled((prev) => (prev === next ? prev : next))
+        }}
+        className={cn('mt-1 flex-1 overflow-y-auto px-2 pt-2', navScrolled && 'fx-scroll-fade-top')}
+      >
         <div ref={navGroup} className="relative">
           <SlidingIndicator
             container={navGroup}
