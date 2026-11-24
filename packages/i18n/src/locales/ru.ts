@@ -88,6 +88,7 @@ const ru: LocaleResource = {
   },
   daily: {
     carry: 'В заметке за {{date}} не закрыто задач: {{count}}.',
+    carryMany: 'За прошлые дни ({{days}}) не закрыто задач: {{count}}.',
     carryMove: 'Перенести сюда',
     carryDismiss: 'Не надо',
     carried: 'Перенесено задач: {{count}}',

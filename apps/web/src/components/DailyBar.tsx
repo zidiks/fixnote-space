@@ -1,13 +1,23 @@
-import { addTasks, type Note, openTasks, withoutTasks } from '@fixnote/core'
+import {
+  addTasks,
+  type DailyTask,
+  mergeTaskItems,
+  type Note,
+  openTaskItems,
+  withoutTasks,
+} from '@fixnote/core'
 import { useTranslation } from '@fixnote/i18n'
 import { Button } from '@fixnote/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, ListTodo } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { useDb, useRepo } from '../lib/db'
 import { kvStore } from '../lib/kv'
 import { addDays, keys, localDate, useInvalidateNotes, useOpenDaily } from '../lib/queries'
+
+const CARRY_LOOKBACK_DAYS = 30
 
 const dayLabel = (date: string, lang: string | undefined) =>
   new Intl.DateTimeFormat(lang, { weekday: 'short', day: 'numeric', month: 'short' }).format(
@@ -89,8 +99,9 @@ export function DailyBar({ note }: { note: Note }) {
 }
 
 /**
- * Offers, once per day, to move the previous daily note's unfinished tasks into today's. Both notes
- * change through the repo, so sync and an open editor pick it up; Undo puts them back.
+ * Offers, once per day, to move unfinished tasks from recent earlier daily notes into today's,
+ * preserving nested checklist hierarchy. All notes change through the repo, so sync and an open
+ * editor pick it up; Undo puts them back.
  */
 function CarryOver({ today, previousId }: { today: Note; previousId: string }) {
   const { t, i18n } = useTranslation()
@@ -98,14 +109,20 @@ function CarryOver({ today, previousId }: { today: Note; previousId: string }) {
   const { driver } = useDb()
   const qc = useQueryClient()
   const invalidate = useInvalidateNotes()
-  const key = `daily.carry.${today.dailyDate}`
+  const [moving, setMoving] = useState(false)
+  const todayDate = today.dailyDate as string
+  const key = `daily.carry.${todayDate}`
   const offer = useQuery({
-    queryKey: ['daily-carry', today.dailyDate, previousId],
+    queryKey: ['daily-carry', todayDate, previousId],
     queryFn: async () => {
       if (await kvStore(driver).get(key)) return null
-      const prev = await repo.getNote(previousId)
-      const tasks = prev ? openTasks(prev.content) : []
-      return prev && tasks.length ? { date: prev.dailyDate as string, tasks } : null
+      const sources = await repo.earlierDailyWithOpenTasks(todayDate, {
+        since: addDays(todayDate, -CARRY_LOOKBACK_DAYS),
+        limit: CARRY_LOOKBACK_DAYS,
+      })
+      if (!sources.length) return null
+      const count = mergeTaskItems(...sources.map((s) => s.tasks)).length
+      return count ? { sources, count } : null
     },
     staleTime: 0,
   })
@@ -119,64 +136,108 @@ function CarryOver({ today, previousId }: { today: Note; previousId: string }) {
   }
 
   const move = async () => {
-    const [cur, prev] = await Promise.all([repo.getNote(today.id), repo.getNote(previousId)])
-    if (!cur || !prev) return
-    const tasks = openTasks(prev.content)
-    const had = new Set(openTasks(cur.content))
-    const added = tasks.filter((x) => !had.has(x))
-    const savedToday = await repo.updateContent(cur.id, addTasks(cur.content, tasks), {
-      base: cur.content,
-    })
-    const savedPrev = await repo.updateContent(prev.id, withoutTasks(prev.content, tasks), {
-      base: prev.content,
-    })
-    await kvStore(driver).set(key, 'moved')
-    await refresh(savedToday, savedPrev)
-    toast(t('daily.carried', { count: tasks.length }), {
-      action: {
-        label: t('common.undo'),
-        onClick: () =>
-          void (async () => {
-            const [c, p] = await Promise.all([repo.getNote(today.id), repo.getNote(previousId)])
-            if (!c || !p) return
-            // Untouched since the move: the exact old text; edited meanwhile: just the tasks.
-            const back = await Promise.all([
-              repo.updateContent(
-                c.id,
-                c.content === savedToday.content ? cur.content : withoutTasks(c.content, added),
-                { base: c.content },
-              ),
-              repo.updateContent(
-                p.id,
-                p.content === savedPrev.content ? prev.content : addTasks(p.content, tasks),
-                { base: p.content },
-              ),
-            ])
-            await driver.execute('DELETE FROM kv WHERE key = ?', [key])
-            await refresh(...back)
-          })(),
-      },
-    })
+    if (moving) return
+    setMoving(true)
+    try {
+      const [cur, ...loadedSources] = await Promise.all([
+        repo.getNote(today.id),
+        ...data.sources.map((s) => repo.getNote(s.id)),
+      ])
+      if (!cur) return
+      const entries: { before: Note; tasks: DailyTask[] }[] = []
+      for (const src of loadedSources) {
+        if (!src) continue
+        const tasks = openTaskItems(src.content)
+        if (tasks.length) entries.push({ before: src, tasks })
+      }
+      if (!entries.length) return
+      const combined = mergeTaskItems(...entries.map((e) => e.tasks))
+      const savedToday = await repo.updateContent(cur.id, addTasks(cur.content, combined), {
+        base: cur.content,
+      })
+      const savedSources = await Promise.all(
+        entries.map(async ({ before, tasks }) => ({
+          before,
+          tasks,
+          saved: await repo.updateContent(before.id, withoutTasks(before.content, tasks), {
+            base: before.content,
+          }),
+        })),
+      )
+      await kvStore(driver).set(key, 'moved')
+      await refresh(savedToday, ...savedSources.map((s) => s.saved))
+      toast(t('daily.carried', { count: combined.length }), {
+        action: {
+          label: t('common.undo'),
+          onClick: () =>
+            void (async () => {
+              const [c, ...currentSources] = await Promise.all([
+                repo.getNote(today.id),
+                ...savedSources.map((s) => repo.getNote(s.before.id)),
+              ])
+              const restored: Note[] = []
+              if (c) {
+                // Untouched since the move: the exact old text; edited meanwhile: just the added tasks.
+                restored.push(
+                  await repo.updateContent(
+                    c.id,
+                    c.content === savedToday.content
+                      ? cur.content
+                      : withoutTasks(c.content, combined, { keepFrom: cur.content }),
+                    { base: c.content },
+                  ),
+                )
+              }
+              for (let i = 0; i < savedSources.length; i++) {
+                const entry = savedSources[i]
+                const p = currentSources[i]
+                if (!entry || !p) continue
+                restored.push(
+                  await repo.updateContent(
+                    p.id,
+                    p.content === entry.saved.content
+                      ? entry.before.content
+                      : addTasks(p.content, entry.tasks),
+                    { base: p.content },
+                  ),
+                )
+              }
+              await driver.execute('DELETE FROM kv WHERE key = ?', [key])
+              await refresh(...restored)
+            })(),
+        },
+      })
+    } finally {
+      setMoving(false)
+    }
   }
+
+  const single = data.sources.length === 1 ? data.sources[0] : null
 
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm">
       <ListTodo className="size-4 shrink-0 text-brand" />
       <span className="flex-1">
-        {t('daily.carry', {
-          date: new Intl.DateTimeFormat(i18n.resolvedLanguage, {
-            day: 'numeric',
-            month: 'long',
-          }).format(new Date(`${data.date}T12:00:00`)),
-          count: data.tasks.length,
-        })}
+        {single
+          ? t('daily.carry', {
+              date: new Intl.DateTimeFormat(i18n.resolvedLanguage, {
+                day: 'numeric',
+                month: 'long',
+              }).format(new Date(`${single.dailyDate}T12:00:00`)),
+              count: data.count,
+            })
+          : t('daily.carryMany', {
+              days: data.sources.length,
+              count: data.count,
+            })}
       </span>
-      <Button size="sm" variant="brand" onClick={() => void move()}>
+      <Button size="sm" variant="brand" loading={moving} onClick={() => void move()}>
         {t('daily.carryMove')}
       </Button>
       <Button
         size="sm"
         variant="ghost"
+        disabled={moving}
         onClick={async () => {
           await kvStore(driver).set(key, 'dismissed')
           await qc.invalidateQueries({ queryKey: ['daily-carry'] })

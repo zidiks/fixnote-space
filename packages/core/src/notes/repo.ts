@@ -4,7 +4,7 @@ import type { SqlDriver, SqlRow, SqlValue } from '../platform'
 import { containsProtectedReference } from '../privacy/reference'
 import { type ProtectionChange, receivedProtection, scrubProtectedCopies } from '../privacy/scrub'
 import { merge3, unionLines } from '../sync/merge'
-import { addTasks } from './daily'
+import { addTasks, type DailyTask, openTaskItems } from './daily'
 import { deriveExcerpt, deriveTitle, taskProgress, toPlainText } from './markdown'
 import { applyTaskRule, dueRecurringTasks, type Recurrence } from './recurrence'
 import { buildFtsQuery } from './search'
@@ -544,6 +544,38 @@ export class NotesRepo {
       [date],
     )
     return row ? { id: row.id, dailyDate: row.daily_date } : null
+  }
+
+  /**
+   * Earlier daily notes strictly before `date` (YYYY-MM-DD) that still have unfinished tasks,
+   * returned oldest first. Bounded by `since` and `limit` so ancient abandoned notes don't pile up.
+   */
+  async earlierDailyWithOpenTasks(
+    date: string,
+    opts: { since?: string; limit?: number } = {},
+  ): Promise<{ id: string; dailyDate: string; tasks: DailyTask[] }[]> {
+    const limit = opts.limit ?? 30
+    const rows = opts.since
+      ? await this.db.query<{ id: string; daily_date: string; content: string }>(
+          `SELECT id, daily_date, content FROM notes
+            WHERE type = 'daily' AND daily_date < ? AND daily_date >= ? AND deleted_at IS NULL
+              AND shared_id IS NULL
+            ORDER BY daily_date DESC LIMIT ?`,
+          [date, opts.since, limit],
+        )
+      : await this.db.query<{ id: string; daily_date: string; content: string }>(
+          `SELECT id, daily_date, content FROM notes
+            WHERE type = 'daily' AND daily_date < ? AND deleted_at IS NULL
+              AND shared_id IS NULL
+            ORDER BY daily_date DESC LIMIT ?`,
+          [date, limit],
+        )
+    const out: { id: string; dailyDate: string; tasks: DailyTask[] }[] = []
+    for (const row of rows) {
+      const tasks = openTaskItems(row.content)
+      if (tasks.length) out.push({ id: row.id, dailyDate: row.daily_date, tasks })
+    }
+    return out.reverse()
   }
 
   private async findDaily(date: string): Promise<Note | null> {

@@ -86,6 +86,7 @@ const en = {
   },
   daily: {
     carry: 'Unfinished tasks from {{date}}: {{count}}.',
+    carryMany: 'Unfinished tasks from {{days}} earlier days: {{count}}.',
     carryMove: 'Move here',
     carryDismiss: 'Not now',
     carried: 'Moved tasks: {{count}}',

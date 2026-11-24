@@ -88,6 +88,7 @@ const es: LocaleResource = {
   },
   daily: {
     carry: 'Tareas sin terminar del {{date}}: {{count}}.',
+    carryMany: 'Tareas sin terminar de {{days}} días anteriores: {{count}}.',
     carryMove: 'Pasar aquí',
     carryDismiss: 'Ahora no',
     carried: 'Tareas pasadas: {{count}}',
