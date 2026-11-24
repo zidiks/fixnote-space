@@ -1166,7 +1166,7 @@
   height: 1.25em;
   min-width: 1.25em;
   margin-inline-start: 0.3em;
-  padding: 0;
+  padding: 0 0.38em;
   border-radius: 999px;
   border: 1px solid color-mix(in oklab, var(--color-brand) 38%, transparent);
   background: color-mix(in oklab, var(--color-brand) 14%, var(--color-popover));
@@ -1179,10 +1179,6 @@
     border-color 140ms var(--ease-apple),
     background-color 140ms var(--ease-apple),
     color 140ms var(--ease-apple);
-}
-
-.fixnote-comment-pin.has-count {
-  padding: 0 0.38em;
 }
 
 .fixnote-comment-pin.is-active,

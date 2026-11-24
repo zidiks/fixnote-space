@@ -63,7 +63,11 @@ function AnchoredCard({
   onClose?: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState<Placed | null>(null)
+  const [pos, setPos] = useState<Placed | null>(() => {
+    const anchor = getAnchor()
+    if (!anchor) return null
+    return clampPosition(anchor, Math.min(360, window.innerWidth - 24), 220)
+  })
 
   const place = useCallback(() => {
     const el = ref.current
@@ -71,7 +75,12 @@ function AnchoredCard({
     if (!el || !anchor) return
     const width = el.offsetWidth || 340
     const height = el.offsetHeight || 160
-    setPos(clampPosition(anchor, width, height))
+    const next = clampPosition(anchor, width, height)
+    setPos((prev) =>
+      prev && Math.abs(prev.left - next.left) < 1 && Math.abs(prev.top - next.top) < 1
+        ? prev
+        : next,
+    )
   }, [getAnchor])
 
   useLayoutEffect(() => {
@@ -122,9 +131,8 @@ function AnchoredCard({
       }}
       className={cn(
         'fixed z-40 rounded-2xl border bg-popover text-popover-foreground shadow-float',
-        interactive
-          ? 'animate-in fade-in-0 zoom-in-[0.97] duration-[var(--duration-spring-fast)] ease-[var(--ease-apple)]'
-          : 'pointer-events-none animate-in fade-in-0 duration-120 ease-[var(--ease-apple)]',
+        pos && 'animate-in fade-in-0 duration-120 ease-out',
+        !interactive && 'pointer-events-none',
         className,
       )}
     >
@@ -763,7 +771,7 @@ export function CommentsLayer({
             <aside
               ref={overviewRef}
               aria-label={t('comments.title')}
-              className="fixed top-12 right-3 z-40 flex max-h-[min(560px,calc(100dvh-4rem))] w-[min(360px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-[0.97] duration-[var(--duration-spring-fast)] ease-[var(--ease-apple)]"
+              className="fixed top-12 right-3 z-40 flex max-h-[min(560px,calc(100dvh-4rem))] w-[min(360px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 duration-120 ease-out"
             >
               <div className="flex items-center gap-2 border-b px-3.5 py-2.5">
                 <MessageSquare className="size-4 shrink-0 text-muted-foreground" />

@@ -203,13 +203,16 @@ export function getRangeRect(
   }
 }
 
-/** Scrolls the editor viewport smoothly to a comment highlight range. */
+/** Scrolls the editor viewport to a comment highlight only when it is outside the visible area. */
 export function scrollToComment(editor: Editor, range: { from: number; to: number }) {
   if (editor.isDestroyed) return
   try {
     const dom = editor.view.domAtPos(range.from)
     const el = dom.node instanceof Element ? dom.node : dom.node.parentElement
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const inView = rect.top >= 72 && rect.bottom <= window.innerHeight - 120
+    if (!inView) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   } catch {
     // Ignore out-of-range positions if the document just changed.
   }
@@ -284,7 +287,6 @@ export const CommentsHighlight = Extension.create<{
                     pin.type = 'button'
                     pin.className = [
                       'fixnote-comment-pin',
-                      r.count > 1 && 'has-count',
                       r.active && 'is-active',
                       r.hovered && 'is-hovered',
                       r.unread && 'is-unread',
@@ -313,12 +315,10 @@ export const CommentsHighlight = Extension.create<{
                     icon.appendChild(path)
                     pin.appendChild(icon)
 
-                    if (r.count > 1) {
-                      const num = document.createElement('span')
-                      num.className = 'fixnote-comment-pin-count'
-                      num.textContent = String(r.count)
-                      pin.appendChild(num)
-                    }
+                    const num = document.createElement('span')
+                    num.className = 'fixnote-comment-pin-count'
+                    num.textContent = String(r.count)
+                    pin.appendChild(num)
 
                     pin.addEventListener('mousedown', (e) => {
                       e.preventDefault()
