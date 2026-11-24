@@ -3,6 +3,7 @@ import {
   newNoteKey,
   noteKeyBytes,
   openProtectedFragment,
+  PrivacyDismissals,
   type ProtectedFragmentIdentity,
   ProtectedFragments,
   type ProtectedReference,
@@ -46,55 +47,40 @@ export function privacyDeviceKey() {
   return deviceKey
 }
 
-let fingerprintKey: Promise<CryptoKey> | undefined
+let dismissalStore: { db: SqlDriver; store: PrivacyDismissals } | undefined
 
-export async function secretFingerprint(kind: string, value: string): Promise<string> {
-  fingerprintKey ??= privacyDeviceKey()
-    .then(async (key) => {
-      const input = new Uint8Array(16 + key.length)
-      input.set(new TextEncoder().encode('fixnote-dismiss:'))
-      input.set(key, 16)
-      const digest = await crypto.subtle.digest('SHA-256', input)
-      return crypto.subtle.importKey('raw', digest, { name: 'HMAC', hash: 'SHA-256' }, false, [
-        'sign',
-      ])
-    })
-    .catch((err: unknown) => {
-      fingerprintKey = undefined
-      throw err
-    })
-  const digest = await crypto.subtle.sign(
-    'HMAC',
-    await fingerprintKey,
-    new TextEncoder().encode([kind, value].join('\u0000')),
-  )
-  return Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, '0')).join('')
-}
-
-const dismissalKey = (id: string) => `privacy.dismissed.${id}`
-
-export async function readPrivacyDismissals(db: SqlDriver, id: string): Promise<Set<string>> {
-  const [row] = await db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
-    dismissalKey(id),
-  ])
-  if (!row) return new Set()
-  try {
-    return new Set(JSON.parse(row.value) as string[])
-  } catch {
-    return new Set()
+function dismissalsFor(db: SqlDriver): PrivacyDismissals {
+  if (dismissalStore?.db !== db) {
+    dismissalStore = { db, store: new PrivacyDismissals(db, privacyDeviceKey) }
   }
+  return dismissalStore.store
 }
 
-export async function writePrivacyDismissals(db: SqlDriver, id: string, values: Set<string>) {
-  await db.execute(
-    'INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
-    [dismissalKey(id), JSON.stringify([...values].slice(-256))],
-  )
+export function privacyDismissalsEmpty(db: SqlDriver): Promise<boolean> {
+  return dismissalsFor(db).isEmpty()
+}
+
+export function isPrivacyDismissed(
+  db: SqlDriver,
+  noteId: string,
+  kind: string,
+  value: string,
+): Promise<boolean> {
+  return dismissalsFor(db).isDismissed(noteId, kind, value)
+}
+
+export function dismissPrivacyFinding(
+  db: SqlDriver,
+  noteId: string,
+  kind: string,
+  value: string,
+): Promise<void> {
+  return dismissalsFor(db).dismiss(noteId, kind, value)
 }
 
 export async function clearProtectedDeviceKey() {
   deviceKey = undefined
-  fingerprintKey = undefined
+  dismissalStore = undefined
   await platform.secrets.delete(KEY_NAME)
 }
 

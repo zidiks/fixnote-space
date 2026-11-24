@@ -4,7 +4,7 @@ import { i18n } from '@fixnote/i18n'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { useDb } from '../../lib/db'
-import { readPrivacyDismissals, secretFingerprint } from '../../lib/privacy'
+import { isPrivacyDismissed, privacyDismissalsEmpty } from '../../lib/privacy'
 import { noteWasScanned, requestPrivacyReview } from '../../lib/privacy-review'
 
 export default function PrivacyLibrary() {
@@ -32,6 +32,8 @@ export default function PrivacyLibrary() {
           }
           worker.postMessage({ id: 0, text })
         })
+      // Prime the shared dismissal cache once instead of querying kv per note.
+      await privacyDismissalsEmpty(driver)
       while (active) {
         const batch = await driver.query<{ id: string; content: string }>(
           `SELECT n.id, n.content FROM notes n
@@ -47,7 +49,6 @@ export default function PrivacyLibrary() {
           if (noteWasScanned(id)) continue
           // Working in windows keeps large imports from monopolizing worker messages. The
           // precise range is found again by the editor when opening the note.
-          const ignored = await readPrivacyDismissals(driver, id)
           for (let start = 0; active && start < content.length; start += 32_768) {
             const sample = toPlainText(
               maskProtectedReferences(content.slice(start, start + 40_960)),
@@ -55,8 +56,7 @@ export default function PrivacyLibrary() {
             let found = false
             for (const hit of await analyze(sample)) {
               if (
-                !ignored.size ||
-                !ignored.has(await secretFingerprint(hit.kind, sample.slice(hit.from, hit.to)))
+                !(await isPrivacyDismissed(driver, id, hit.kind, sample.slice(hit.from, hit.to)))
               ) {
                 found = true
                 break

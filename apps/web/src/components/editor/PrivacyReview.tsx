@@ -10,7 +10,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { useDb } from '../../lib/db'
-import { readPrivacyDismissals, secretFingerprint, writePrivacyDismissals } from '../../lib/privacy'
+import { dismissPrivacyFinding, isPrivacyDismissed } from '../../lib/privacy'
 import {
   markNoteScanned,
   registerPrivacyReviewer,
@@ -62,10 +62,10 @@ function highlight(editor: Editor, hit: ScanRange | null) {
 
 interface Finding {
   hit: ScanRange & { kind?: NoteCandidate['kind'] }
-  fingerprint?: string
+  /** Only kept in memory while the note is open; never persisted directly. */
+  value?: string
 }
 
-const dismissed = new Map<string, Set<string>>()
 const announced = new Set<string>()
 
 export function PrivacyReview({
@@ -109,13 +109,11 @@ export function PrivacyReview({
     let timer: ReturnType<typeof setTimeout>
     let pending: ScanRange | null = { from: 0, to: editor.state.doc.content.size }
     let findings: Finding[] = []
+    let dismissedRanges: NoteCandidate[] = []
     let showing: Finding | null = null
     const jobs = new Map<number, (c: SecretCandidate[]) => void>()
-    const exclusions = readPrivacyDismissals(driver, noteId)
-      .then((found) => {
-        if (!dismissed.has(noteId)) dismissed.set(noteId, found)
-      })
-      .catch(() => undefined)
+    const overlapsDismissed = (hit: NoteCandidate) =>
+      dismissedRanges.some((r) => r.kind === hit.kind && hit.from < r.to && hit.to > r.from)
     const stop = () => {
       alive = false
       worker.terminate()
@@ -144,6 +142,7 @@ export function PrivacyReview({
       if (editor.isDestroyed) return
       takePrivacyRequest(noteId)
       toast.dismiss(toastId)
+      toast.dismiss('privacy-library')
       showing = first
       highlight(editor, first.hit)
       editor.view.dom
@@ -161,14 +160,41 @@ export function PrivacyReview({
         if (range.from < range.to && range.to <= editor.state.doc.content.size) show({ hit: range })
       },
       dismiss() {
-        if (!showing?.fingerprint) return
-        const excluded = dismissed.get(noteId) ?? new Set<string>()
-        excluded.add(showing.fingerprint)
-        dismissed.set(noteId, excluded)
-        void writePrivacyDismissals(driver, noteId, excluded).catch(() => undefined)
-        findings = findings.filter((c) => !c.fingerprint || !excluded.has(c.fingerprint))
+        const currentShowing = showing
+        const kind = currentShowing?.hit.kind
+        const value = currentShowing?.value
+        if (!currentShowing || !kind || value === undefined) return
+        const { hit } = currentShowing
+        dismissedRanges.push({ from: hit.from, to: hit.to, kind })
+        findings = findings.filter(
+          (entry) =>
+            entry !== currentShowing &&
+            !(
+              entry.hit.kind &&
+              overlapsDismissed({ from: entry.hit.from, to: entry.hit.to, kind: entry.hit.kind })
+            ),
+        )
         setCount(findings.length)
         close()
+        void dismissPrivacyFinding(driver, noteId, kind, value)
+          .then(async () => {
+            if (!alive || !findings.length) return
+            const remaining: Finding[] = []
+            for (const entry of findings) {
+              if (
+                entry.hit.kind &&
+                entry.value !== undefined &&
+                (await isPrivacyDismissed(driver, noteId, entry.hit.kind, entry.value))
+              ) {
+                continue
+              }
+              remaining.push(entry)
+            }
+            if (!alive) return
+            findings = remaining
+            setCount(findings.length)
+          })
+          .catch(() => undefined)
       },
     }
     const unregister = registerPrivacyReviewer(noteId, actions.current.open)
@@ -179,13 +205,14 @@ export function PrivacyReview({
       const token = ++generation
       const current = () => alive && token === generation && !editor.isDestroyed
       const hits = await scanNoteRange(doc, range, analyze, current)
-      await exclusions
       if (!current()) return
       const next: Finding[] = []
       for (const hit of hits) {
-        const hash = await secretFingerprint(hit.kind, protectedRangeText(doc, hit))
+        if (overlapsDismissed(hit)) continue
+        const value = protectedRangeText(doc, hit)
+        if (await isPrivacyDismissed(driver, noteId, hit.kind, value)) continue
         if (!current()) return
-        if (!dismissed.get(noteId)?.has(hash)) next.push({ hit, fingerprint: hash })
+        next.push({ hit, value })
       }
       findings = [
         ...findings.filter(({ hit }) => hit.to <= range.from || hit.from >= range.to),
@@ -226,6 +253,10 @@ export function PrivacyReview({
       findings = findings.flatMap((c) => {
         const hit = { ...c.hit, ...mapRange(c.hit) }
         return hit.to <= dirty.from || hit.from >= dirty.to ? [{ ...c, hit }] : []
+      })
+      dismissedRanges = dismissedRanges.flatMap((r) => {
+        const mapped = mapRange(r)
+        return mapped.from < mapped.to ? [{ ...r, ...mapped }] : []
       })
       if (showing) {
         showing = null
@@ -362,7 +393,7 @@ export function PrivacyReview({
                 <Button size="sm" loading={busy} onClick={() => void protect()}>
                   {t('privacy.protect')}
                 </Button>
-                {review.fingerprint ? (
+                {review.value !== undefined && review.hit.kind ? (
                   <Button
                     size="sm"
                     variant="outline"
