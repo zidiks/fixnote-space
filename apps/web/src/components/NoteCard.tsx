@@ -22,6 +22,7 @@ import {
   FolderInput,
   Inbox,
   Link2,
+  MessageSquare,
   Pin,
   PinOff,
   SquareArrowOutUpRight,
@@ -31,6 +32,7 @@ import {
 import { memo } from 'react'
 import { useUi } from '../app/store'
 import { attachmentObjectUrl } from '../lib/attachments'
+import { useCommentAlerts } from '../lib/comments/store'
 import { useDb } from '../lib/db'
 import { useDeleteWithUndo, useFolders, useMoveNote, useSetPinned } from '../lib/queries'
 import { useNotePress } from '../lib/selection'
@@ -161,7 +163,26 @@ interface ItemProps {
   date?: 'edited' | 'created'
 }
 
-/** Small marks after the date: pinned, shared, the subfolder. */
+/** Unread comment/mention pill for a shared note; subscribes selectively to avoid re-renders. */
+function CommentBadge({ sharedId }: { sharedId: string | null }) {
+  const { t } = useTranslation()
+  const unread = useCommentAlerts((s) => (sharedId ? s.bySharedId[sharedId] : undefined))
+  if (!unread) return null
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none tabular-nums',
+        unread.mentions > 0 ? 'bg-brand text-brand-foreground' : 'bg-muted text-muted-foreground',
+      )}
+      title={t('comments.unreadBadge', { count: unread.total })}
+    >
+      <MessageSquare className="size-2.5" />
+      {unread.total > 99 ? '99+' : unread.total}
+    </span>
+  )
+}
+
+/** Small marks after the date: pinned, shared, unread comments, the subfolder. */
 function useMarks(note: NoteSummary, inFolder: string | undefined) {
   const { t } = useTranslation()
   const folders = useFolders().data ?? []
@@ -177,6 +198,7 @@ function useMarks(note: NoteSummary, inFolder: string | undefined) {
       {note.sharedId ? (
         <Users className="size-3.5 shrink-0 text-brand" aria-label={t('people.badge')} />
       ) : null}
+      <CommentBadge sharedId={note.sharedId} />
       {note.url ? (
         <span className="flex min-w-0 items-center gap-1" title={note.url}>
           <Link2 className="size-3.5 shrink-0" aria-label={t('links.badge')} />

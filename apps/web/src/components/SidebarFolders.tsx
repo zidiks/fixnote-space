@@ -20,6 +20,7 @@ import {
   Folder as FolderIcon,
   FolderPlus,
   LogOut,
+  MessageSquare,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -29,6 +30,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync, sharedContext, useAccount } from '../lib/account/account'
+import { useFolderCommentCounts } from '../lib/comments/store'
 import { useRepo } from '../lib/db'
 import { useDeleteKeyHandler } from '../lib/delete-key'
 import { errorMessage } from '../lib/errors'
@@ -213,6 +215,7 @@ export function SidebarFolders() {
 
   // A folder counts the notes of its subfolders too, as its list shows them.
   const totals = useMemo(() => subtreeCounts(folders), [folders])
+  const commentCounts = useFolderCommentCounts(folders)
   const children = useMemo(() => {
     const map = new Map<string | null, Folder[]>()
     for (const f of folders) {
@@ -265,6 +268,7 @@ export function SidebarFolders() {
     const kids = children.get(f.id)?.length ?? 0
     const open = !collapsed.has(f.id)
     const active = list?.kind === 'folder' && list.id === f.id
+    const unread = commentCounts.get(f.id)
     return renaming === f.id ? (
       <NameInput
         initial={f.name}
@@ -302,6 +306,20 @@ export function SidebarFolders() {
                   className="size-3.5 shrink-0 text-muted-foreground"
                   aria-label={t('people.sharedFolder')}
                 />
+              ) : null}
+              {unread ? (
+                <span
+                  className={cn(
+                    'inline-flex h-4 min-w-4 shrink-0 items-center justify-center gap-0.5 rounded-full px-1 text-[10px] font-semibold leading-none tabular-nums',
+                    unread.mentions > 0
+                      ? 'bg-brand text-brand-foreground'
+                      : 'bg-muted text-muted-foreground',
+                  )}
+                  title={t('comments.unreadBadge', { count: unread.total })}
+                >
+                  <MessageSquare className="size-2.5" />
+                  {unread.total > 99 ? '99+' : unread.total}
+                </span>
               ) : null}
             </button>
             {kids ? (

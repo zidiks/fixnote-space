@@ -18,7 +18,7 @@ export interface LiveEditing {
    * sync to send it. An edit made to the note outside the editor meanwhile (MCP, Telegram) comes
    * into the document. `taken`: the editor already shows the note's text (the assistant's change).
    */
-  persist(markdown: string, opts?: { taken?: boolean }): Promise<void>
+  persist(markdown: string, opts?: { taken?: boolean; immediate?: boolean }): Promise<void>
   persistProtection(
     markdown: string,
     state: Uint8Array,
@@ -87,8 +87,9 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     persist: async (markdown, opts) => {
       const outside = await ctx.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(doc), markdown, opts)
       if (outside) Y.applyUpdate(doc, outside, 'stored')
-      // People in the note get each keystroke live; the server copy can wait for a pause.
-      requestSync(SAVE_PAUSE)
+      // People in the note get each keystroke live; the server copy can wait for a pause unless
+      // an immediate sync was requested (e.g. a new comment with notifications).
+      requestSync(opts?.immediate ? 150 : SAVE_PAUSE)
     },
     persistProtection: async (markdown, state, base, protect) => {
       await ctx.shared.saveDoc(sharedId, state, markdown, { taken: true, base, protect })

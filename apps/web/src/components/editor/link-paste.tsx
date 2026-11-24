@@ -6,6 +6,7 @@ import { TextSelection, type Transaction } from '@tiptap/pm/state'
 import type { Step } from '@tiptap/pm/transform'
 import { Bookmark, Link2, Type } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 export type PasteMode = 'bookmark' | 'link' | 'text'
 
@@ -178,13 +179,16 @@ export function LinkPasteMenu({
     }
   }, [editor, paste, onChange, onClose])
 
-  return (
+  const left = Math.max(8, Math.min(paste.left, window.innerWidth - 216))
+  const top = Math.max(8, Math.min(paste.top + 6, window.innerHeight - 160))
+
+  return createPortal(
     <div
       data-link-paste-menu
       role="menu"
       aria-label={t('linkPaste.title')}
       className="fixed z-50 w-52 rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg"
-      style={{ left: paste.left, top: paste.top + 6 }}
+      style={{ left, top }}
       // Keep the editor focused: the menu is driven by the keyboard as well as the mouse.
       onMouseDown={(e) => e.preventDefault()}
     >
@@ -212,6 +216,7 @@ export function LinkPasteMenu({
           </button>
         )
       })}
-    </div>
+    </div>,
+    document.body,
   )
 }

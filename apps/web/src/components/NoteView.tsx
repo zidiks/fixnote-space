@@ -22,6 +22,7 @@ import {
   FolderPlus,
   Inbox,
   Link2,
+  MessageSquare,
   Mic,
   Pin,
   PinOff,
@@ -34,6 +35,7 @@ import { useUi } from '../app/store'
 import { useAccount } from '../lib/account/account'
 import { useLlm } from '../lib/assistant/llm'
 import { suggestForNewNote } from '../lib/assistant/tidy'
+import { useCommentAlerts } from '../lib/comments/store'
 import { useDb, useRepo } from '../lib/db'
 import { registerDropSink } from '../lib/drop'
 import {
@@ -74,6 +76,7 @@ export function NoteView({ id }: { id: string }) {
   const deleteWithUndo = useDeleteWithUndo()
   const setPinned = useSetPinned()
   const [saveState, setSaveState] = useState<SaveState>('idle')
+  const [commentCount, setCommentCount] = useState(0)
   const [privacyRevision, setPrivacyRevision] = useState(0)
   const editor = useRef<NoteEditorHandle>(null)
   const voice = useVoice((s) => s.status)
@@ -90,6 +93,8 @@ export function NoteView({ id }: { id: string }) {
   const hasServer = useAccount((s) => s.phase !== 'disabled')
   const localOnly = useLlm((s) => s.localOnly)
   const canShare = hasServer && !localOnly
+  const sharedId = note.data?.sharedId ?? null
+  const unreadComments = useCommentAlerts((s) => (sharedId ? s.bySharedId[sharedId] : undefined))
 
   // While this note is open, dictation goes into it.
   useEffect(() => registerVoiceSink('note', (d) => editor.current?.insertText(d.text)), [])
@@ -198,6 +203,37 @@ export function NoteView({ id }: { id: string }) {
               </Tooltip>
             </>
           )}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="relative"
+                onClick={() => editor.current?.toggleComments()}
+                aria-label={t('comments.title')}
+              >
+                <MessageSquare />
+                {unreadComments ? (
+                  <span
+                    className={cn(
+                      'absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 text-[9px] font-semibold leading-none tabular-nums',
+                      unreadComments.mentions > 0
+                        ? 'bg-brand text-brand-foreground'
+                        : 'bg-foreground text-background',
+                    )}
+                  >
+                    {unreadComments.total > 99 ? '99+' : unreadComments.total}
+                  </span>
+                ) : commentCount > 0 ? (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-muted px-0.5 text-[9px] font-semibold leading-none text-muted-foreground tabular-nums">
+                    {commentCount > 99 ? '99+' : commentCount}
+                  </span>
+                ) : null}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('comments.title')}</TooltipContent>
+          </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -318,6 +354,7 @@ export function NoteView({ id }: { id: string }) {
             note={n}
             live={shared.live ?? undefined}
             onStateChange={setSaveState}
+            onCommentCount={setCommentCount}
             onProtected={() => {
               if (!shared.live) setPrivacyRevision((revision) => revision + 1)
               else void invalidate()

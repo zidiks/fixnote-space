@@ -1,6 +1,10 @@
-import { type ProtectedReference, protectedReferenceMatches } from '@fixnote/core'
+import {
+  type ProtectedReference,
+  parseProtectedReference,
+  protectedReferenceMatches,
+} from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
-import { Extension } from '@tiptap/core'
+import { type Editor, Extension } from '@tiptap/core'
 import type { Node as PmNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state'
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view'
@@ -151,6 +155,7 @@ function decorations(
           (view, getPos) => {
             const block = document.createElement('span')
             block.className = 'fixnote-protected-fragment'
+            block.dataset.protectedRef = match[0]
             block.contentEditable = 'false'
 
             const label = document.createElement('span')
@@ -330,6 +335,42 @@ function decorations(
     }
   })
   return widgets
+}
+
+export interface ProtectedTarget {
+  from: number
+  to: number
+  ref: ProtectedReference
+  reference: string
+}
+
+/** Finds the protected fragment under a pointer target (for right-click → Remove protection). */
+export function protectedAt(editor: Editor, target: EventTarget | null): ProtectedTarget | null {
+  const el =
+    target instanceof Element ? target.closest<HTMLElement>('.fixnote-protected-fragment') : null
+  const reference = el?.dataset.protectedRef
+  if (!el || !reference) return null
+  const ref = parseProtectedReference(reference)
+  if (!ref) return null
+  const decos = key
+    .getState(editor.state)
+    ?.find(undefined, undefined, (spec) => spec.reference === reference)
+  if (!decos?.length) return null
+  if (decos.length === 1) {
+    const only = decos[0]
+    return only ? { from: only.from, to: only.to, ref, reference } : null
+  }
+  let pos = -1
+  try {
+    pos = editor.view.posAtDOM(el, 0)
+  } catch {
+    pos = -1
+  }
+  const best =
+    pos >= 0
+      ? decos.reduce((a, b) => (Math.abs(b.from - pos) < Math.abs(a.from - pos) ? b : a))
+      : decos[0]
+  return best ? { from: best.from, to: best.to, ref, reference } : null
 }
 
 export const ProtectedDisplay = Extension.create<ProtectedDisplayOptions>({

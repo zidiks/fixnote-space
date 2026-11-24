@@ -48,14 +48,14 @@ export function SettingsDialog() {
         data-back-layer
         aria-describedby={undefined}
         className={cn(
-          'top-[12%] flex h-[min(560px,76vh)] max-w-3xl p-0',
+          'top-[8%] flex h-[min(680px,84dvh)] max-h-[84dvh] w-[min(980px,calc(100vw-3rem))] max-w-none overflow-hidden p-0',
           // A phone: the whole screen, sections as a row of tabs above.
           'max-sm:inset-0 max-sm:h-full max-sm:max-h-none max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:flex-col max-sm:rounded-none max-sm:border-0 max-sm:pt-[env(safe-area-inset-top)] max-sm:pb-[env(safe-area-inset-bottom)]',
         )}
       >
         <nav
           ref={navRef}
-          className="relative flex w-44 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2 max-sm:w-full max-sm:flex-row max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b max-sm:pr-12 sm:w-60"
+          className="relative flex w-48 shrink-0 flex-col gap-0.5 border-r bg-sidebar p-2.5 max-sm:w-full max-sm:flex-row max-sm:overflow-x-auto max-sm:border-r-0 max-sm:border-b max-sm:pr-12 sm:w-60"
         >
           <DialogTitle className="px-2.5 pt-1.5 pb-3 text-sm font-semibold max-sm:sr-only">
             {t('settings.title')}
@@ -87,25 +87,29 @@ export function SettingsDialog() {
             </button>
           ))}
         </nav>
-        <div className="relative min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <Button
             variant="ghost"
             size="icon-xs"
-            className="absolute top-3 right-3 max-sm:fixed max-sm:top-[calc(env(safe-area-inset-top)+0.625rem)] max-sm:right-2 max-sm:z-10 max-sm:size-9 max-sm:bg-sidebar"
+            className="absolute top-3.5 right-3.5 z-10 max-sm:fixed max-sm:top-[calc(env(safe-area-inset-top)+0.625rem)] max-sm:right-2 max-sm:size-9 max-sm:bg-sidebar"
             onClick={() => open(null)}
             aria-label={t('window.close')}
           >
             <X />
           </Button>
-          <h2 className="mb-5 text-lg font-semibold">{section ? t(`settings.${section}`) : ''}</h2>
-          {section === 'general' ? <GeneralSection /> : null}
-          {section === 'account' ? <AccountSection /> : null}
-          {section === 'plan' ? <PlanSection /> : null}
-          {section === 'integrations' ? <IntegrationsSection /> : null}
-          {section === 'ai' ? <AiSection /> : null}
-          {section === 'data' ? <DataSection /> : null}
-          {section === 'shortcuts' ? <ShortcutsSection /> : null}
-          {section === 'advanced' ? <AdvancedSection /> : null}
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6 sm:px-10 sm:pr-14 sm:py-7">
+            <h2 className="mb-5 text-lg font-semibold">
+              {section ? t(`settings.${section}`) : ''}
+            </h2>
+            {section === 'general' ? <GeneralSection /> : null}
+            {section === 'account' ? <AccountSection /> : null}
+            {section === 'plan' ? <PlanSection /> : null}
+            {section === 'integrations' ? <IntegrationsSection /> : null}
+            {section === 'ai' ? <AiSection /> : null}
+            {section === 'data' ? <DataSection /> : null}
+            {section === 'shortcuts' ? <ShortcutsSection /> : null}
+            {section === 'advanced' ? <AdvancedSection /> : null}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

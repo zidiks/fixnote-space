@@ -10,6 +10,7 @@ import {
   type Recurrence,
   redactProtectedReferences,
 } from '@fixnote/core'
+import { detectSecrets } from '@fixnote/core/privacy/detect'
 import { i18n, useTranslation } from '@fixnote/i18n'
 import {
   ContextMenu,
@@ -37,10 +38,12 @@ import {
   Italic,
   List,
   ListChecks,
+  MessageSquarePlus,
   Repeat,
   ScanText,
   Scissors,
   Shield,
+  ShieldOff,
   Sparkles,
   Strikethrough,
   TextSelect,
@@ -66,6 +69,7 @@ import { useLoadPreview } from '../../lib/links'
 import { usePlatform } from '../../lib/platform'
 import {
   discardProtectedFragment,
+  dismissPrivacyFinding,
   loadProtectedFragment,
   protectedFragmentSaved,
   stageProtectedFragment,
@@ -74,6 +78,7 @@ import { type AiEditHandle, AiEditLayer, useAiEdit } from './AiEdit'
 
 export interface NoteEditorHandle {
   openAi: AiEditHandle['open']
+  toggleComments(): void
   /** Dictated text: at the cursor while typing, otherwise as a new paragraph at the end. */
   insertText(text: string): void
   /**
@@ -85,19 +90,23 @@ export interface NoteEditorHandle {
 
 import { AiRangeExtension, rangeMarkdown } from './ai-range'
 import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
+import { CommentsPanel } from './CommentsPanel'
 import { combo } from './combo'
+import { CommentsHighlight } from './comments-highlight'
 import { ImageTextDialog } from './ImageTextDialog'
 import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
 import { PrivacyHighlight, PrivacyReview } from './PrivacyReview'
 import type { ScanRange } from './privacy-scan'
-import { ProtectedDisplay } from './protected-display'
+import { ProtectedDisplay, type ProtectedTarget, protectedAt } from './protected-display'
 import { protectedRangeText } from './protected-text'
 import { RepeatDialog } from './RepeatDialog'
 import { RecurringTasks, repeatOf, setRepeat, type TaskTarget, taskAt } from './recurring'
 import { RemoteFade } from './remote-fade'
+import { SlashMenu } from './SlashMenu'
 import { noteSchema } from './schema'
+import { useNoteComments } from './use-comments'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
@@ -142,19 +151,24 @@ function redactClipboard(fragment: Fragment): Fragment {
 function EditorMenu({
   editor,
   onAskAi,
+  onComment,
   onInsertImage,
   onRepeat,
   onRemove,
   onImageText,
   onProtect,
+  onUnprotect,
   readOnly,
 }: {
   editor: Editor
   /** View only: the menu offers copying and selecting, nothing that changes the note. */
   readOnly: boolean
   onAskAi: () => void
+  onComment: () => void
   onInsertImage: () => void
   onProtect: () => void
+  /** Set when the menu was opened on a protected fragment. */
+  onUnprotect?: () => void
   /** Set when the menu was opened on a task of a daily note. */
   onRepeat?: () => void
   /** Set when the menu was opened on an attached file or an image. */
@@ -309,7 +323,23 @@ function EditorMenu({
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
+      {!readOnly && onUnprotect ? (
+        <>
+          <ContextMenuItem onSelect={onUnprotect}>
+            <ShieldOff />
+            {t('privacy.unprotect')}
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+        </>
+      ) : null}
       {!readOnly && hasSelection ? (
+        <ContextMenuItem onSelect={onComment}>
+          <MessageSquarePlus />
+          {t('comments.add')}
+          <MenuShortcut>{combo('M', { alt: true })}</MenuShortcut>
+        </ContextMenuItem>
+      ) : null}
+      {!readOnly && hasSelection && !onUnprotect ? (
         <ContextMenuItem onSelect={onProtect}>
           <Shield />
           {t('privacy.protect')}
@@ -377,6 +407,7 @@ export function NoteEditor({
   note,
   onSave,
   onStateChange,
+  onCommentCount,
   onLeave,
   onRepeat,
   onProtected,
@@ -397,6 +428,7 @@ export function NoteEditor({
   onSave: (markdown: string, base: string, protect?: ProtectionChange) => Promise<Note>
   onProtected: () => void
   onStateChange?: (state: SaveState) => void
+  onCommentCount?: (openCount: number) => void
   /** Called on unmount with the final Markdown. */
   onLeave?: (markdown: string) => void
 }) {
@@ -421,6 +453,9 @@ export function NoteEditor({
   noteRef.current = note
   const openAi = useRef<AiEditHandle['open']>(() => undefined)
   const stopInlineAi = useRef<() => void>(() => undefined)
+  const selectCommentRef = useRef<(threadId: string) => void>(() => undefined)
+  const startCommentRef = useRef<() => void>(() => undefined)
+  const toggleCommentsRef = useRef<() => void>(() => undefined)
   const platform = usePlatform()
   const loadPreview = useLoadPreview()
   const { attachments, audit, driver, repo } = useDb()
@@ -455,6 +490,8 @@ export function NoteEditor({
   const [menuTask, setMenuTask] = useState<TaskTarget | null>(null)
   /** The attached file or image right-clicked, as the range that removes it. */
   const [menuAttachment, setMenuAttachment] = useState<AttachmentRange | null>(null)
+  /** The protected fragment right-clicked (to restore it as ordinary text). */
+  const [menuProtected, setMenuProtected] = useState<ProtectedTarget | null>(null)
   /** The image whose text is shown (its attachment id). */
   const [imageText, setImageText] = useState<string | null>(null)
   const [repeatTask, setRepeatTask] = useState<(TaskTarget & { rule: Recurrence | null }) | null>(
@@ -565,11 +602,18 @@ export function NoteEditor({
             }),
           ]
         : []),
+      CommentsHighlight.configure({
+        onSelectThread: (threadId) => selectCommentRef.current(threadId),
+      }),
       Extension.create({
         name: 'aiShortcut',
         addKeyboardShortcuts: () => ({
           'Mod-Shift-e': () => {
             openAi.current('selection')
+            return true
+          },
+          'Mod-Alt-m': () => {
+            startCommentRef.current()
             return true
           },
         }),
@@ -806,10 +850,22 @@ export function NoteEditor({
     if (readOnlyRef.current) toast(i18n.t('people.viewOnly'))
     else ai.open(target, action)
   }
+  const comments = useNoteComments({
+    editor,
+    note,
+    live,
+    readOnly,
+    onOpenCountChange: onCommentCount,
+  })
+  selectCommentRef.current = comments.selectThread
+  startCommentRef.current = comments.startDraft
+  toggleCommentsRef.current = comments.toggleOpen
+
   useImperativeHandle(
     ref,
     () => ({
       openAi: (target, action) => openAi.current(target, action),
+      toggleComments: () => toggleCommentsRef.current(),
       insertDropped: (markdown, at) => {
         const e = editorRef.current
         if (!e || e.isDestroyed || !markdown.trim()) return
@@ -992,6 +1048,41 @@ export function NoteEditor({
     }
   }, [flush])
 
+  const unprotect = async (target: ProtectedTarget) => {
+    const e = editorRef.current
+    if (!e || e.isDestroyed || !e.isEditable || protecting.current) return
+    const plain = await loadProtectedFragment(
+      target.ref,
+      live?.sharedId,
+      !useLlm.getState().localOnly,
+    ).catch(() => null)
+    if (plain === null) {
+      toast.error(t('privacy.unavailable'))
+      return
+    }
+    if (e.isDestroyed) return
+    const current = protectedRangeText(e.state.doc, { from: target.from, to: target.to })
+    if (current !== target.reference) return
+    // Suppress automatic re-detection of the passage the user just explicitly unprotected.
+    for (const hit of detectSecrets(plain)) {
+      void dismissPrivacyFinding(driver, note.id, hit.kind, plain.slice(hit.from, hit.to)).catch(
+        () => undefined,
+      )
+    }
+    const lines = plain.replace(/\r\n?/g, '\n').split('\n')
+    const nodes: PmNode[] = []
+    const hardBreak = e.schema.nodes.hardBreak
+    lines.forEach((line, i) => {
+      if (i > 0 && hardBreak) nodes.push(hardBreak.create())
+      if (line) nodes.push(e.schema.text(line))
+    })
+    const tr = e.state.tr
+      .replaceWith(target.from, target.to, nodes.length ? nodes : e.schema.text(plain))
+      .setMeta('privacyReferenceChange', true)
+    e.view.dispatch(tr)
+    e.view.focus()
+  }
+
   return (
     // Clicks below the text land here and put the caret at the end, like in Bear. Done on
     // mousedown and synchronously, so a key pressed right after the click is not lost.
@@ -1011,6 +1102,7 @@ export function NoteEditor({
           onContextMenu={(e) => {
             setMenuTask(editor && note.dailyDate ? taskAt(editor, e.clientX, e.clientY) : null)
             setMenuAttachment(editor ? attachmentAt(editor, e.target) : null)
+            setMenuProtected(editor ? protectedAt(editor, e.target) : null)
           }}
         >
           <EditorContent editor={editor} />
@@ -1020,11 +1112,13 @@ export function NoteEditor({
             editor={editor}
             readOnly={readOnly}
             onAskAi={() => ai.open('selection')}
+            onComment={comments.startDraft}
             onInsertImage={() => fileInput.current?.click()}
             onProtect={() => {
               const { from, to } = editor.state.selection
               setManualPrivacy({ from, to })
             }}
+            onUnprotect={menuProtected ? () => void unprotect(menuProtected) : undefined}
             onRemove={
               menuAttachment
                 ? {
@@ -1078,7 +1172,35 @@ export function NoteEditor({
           }}
         />
       ) : null}
-      {editor ? <AiEditLayer editor={editor} ai={ai} /> : null}
+      {editor ? (
+        <AiEditLayer
+          editor={editor}
+          ai={ai}
+          onComment={!readOnly ? comments.startDraft : undefined}
+        />
+      ) : null}
+      <CommentsPanel
+        open={comments.open}
+        readOnly={readOnly}
+        isShared={Boolean(live)}
+        currentUserId={comments.currentUserId}
+        threads={comments.threads}
+        activeThreadId={comments.activeThreadId}
+        unreadThreadIds={comments.unreadThreadIds}
+        orphanThreadIds={comments.orphanThreadIds}
+        collaborators={comments.collaborators}
+        draft={comments.draft}
+        onClose={comments.close}
+        onSelectThread={comments.selectThread}
+        onCreateThread={comments.createThread}
+        onCancelDraft={comments.cancelDraft}
+        onReply={comments.reply}
+        onSetStatus={comments.setStatus}
+        onDeleteMessage={comments.deleteMessage}
+      />
+      {editor && !readOnly ? (
+        <SlashMenu editor={editor} onInsertImage={() => fileInput.current?.click()} />
+      ) : null}
       {editor && !readOnly ? (
         <PrivacyReview
           editor={editor}

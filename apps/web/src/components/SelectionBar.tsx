@@ -27,6 +27,7 @@ import {
   useLayoutEffect,
   useState,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { findSuggestions, refreshTidyCount, tidyUnavailableText } from '../lib/assistant/tidy'
@@ -172,7 +173,7 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
   const disabled = busy !== null || !picked.length
   const label = 'max-sm:sr-only'
 
-  return (
+  return createPortal(
     <div
       role="toolbar"
       aria-label={t('select.count', { count: picked.length })}
@@ -285,6 +286,7 @@ export function SelectionBar({ notes }: { notes: NoteSummary[] }) {
           void remove()
         }}
       />
-    </div>
+    </div>,
+    document.body,
   )
 }

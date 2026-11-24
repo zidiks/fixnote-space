@@ -45,6 +45,7 @@ export async function forgetLocalNotes(db: SqlDriver, blobs: BlobStore): Promise
       'shared_folders',
       'shared_files',
       'image_text',
+      'note_comments',
     ])
       await tx.execute(`DELETE FROM ${table}`)
     await tx.execute(

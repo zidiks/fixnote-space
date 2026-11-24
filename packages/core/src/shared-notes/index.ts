@@ -1,5 +1,6 @@
 import * as Y from 'yjs'
 import { type AttachmentSource, type Attachments, attachmentIds } from '../attachments'
+import type { CommentNotification } from '../comments'
 import {
   type AccountKeys,
   DecryptionError,
@@ -184,6 +185,18 @@ export interface SharedRemote {
   putFile(sharedId: string, fileId: string, sealed: Uint8Array): Promise<void>
   /** Members: a file of the note; null when the server has none. */
   getFile(sharedId: string, fileId: string): Promise<Uint8Array | null>
+
+  /** Unread comment & @mention notifications for the signed-in account. */
+  commentEvents?(): Promise<CommentNotification[]>
+  /** Owner and editors: notify other accepted members of a new comment or reply. */
+  notifyComment?(
+    sharedId: string,
+    threadId: string,
+    mentions: string[],
+    isReply: boolean,
+  ): Promise<void>
+  /** Mark unread comment notifications as read (all, per note, or per thread). */
+  markCommentsRead?(sharedId?: string, threadId?: string): Promise<void>
 }
 
 /** Markdown ⇄ the editor's Yjs document. Needs the editor schema, so the app provides it. */
@@ -517,6 +530,53 @@ export class SharedNotes {
 
   members(sharedId: string): Promise<SharedMember[]> {
     return this.remote.members(sharedId)
+  }
+
+  /**
+   * Accepted collaborators on a shared note, merging direct note members and the parent shared
+   * folder's members (if any), deduplicated by userId with the stronger role kept.
+   */
+  async collaborators(sharedId: string): Promise<SharedMember[]> {
+    const doc = await this.doc(sharedId)
+    const [noteMembers, folderMembers] = await Promise.all([
+      this.remote.members(sharedId).catch(() => [] as SharedMember[]),
+      doc?.folderSharedId
+        ? this.remote.folderMembers(doc.folderSharedId).catch(() => [] as SharedMember[])
+        : Promise.resolve([] as SharedMember[]),
+    ])
+    const rank: Record<SharedRole, number> = { owner: 0, edit: 1, view: 2 }
+    const byId = new Map<string, SharedMember>()
+    for (const m of [...noteMembers, ...folderMembers]) {
+      if (!m.accepted) continue
+      const existing = byId.get(m.userId)
+      if (!existing || rank[m.role] < rank[existing.role]) {
+        byId.set(m.userId, m)
+      }
+    }
+    return [...byId.values()]
+  }
+
+  /** Unread comment & @mention notifications for this account. */
+  async unreadCommentEvents(): Promise<CommentNotification[]> {
+    if (!this.remote.commentEvents) return []
+    return this.remote.commentEvents()
+  }
+
+  /** Notify other members of a shared note about a new comment or reply. */
+  async notifyComment(
+    sharedId: string,
+    threadId: string,
+    mentions: string[] = [],
+    isReply = false,
+  ): Promise<void> {
+    if (!this.remote.notifyComment) return
+    await this.remote.notifyComment(sharedId, threadId, mentions, isReply)
+  }
+
+  /** Mark unread comment notifications as read (all, per note, or per thread). */
+  async markCommentsRead(sharedId?: string, threadId?: string): Promise<void> {
+    if (!this.remote.markCommentsRead) return
+    await this.remote.markCommentsRead(sharedId, threadId)
   }
 
   setRole(sharedId: string, userId: string, role: 'edit' | 'view'): Promise<void> {

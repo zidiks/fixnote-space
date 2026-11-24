@@ -1,3 +1,4 @@
+import type { CommentEventKind, CommentNotification } from '../comments'
 import {
   type FolderNote,
   INVITE_DAYS,
@@ -7,6 +8,11 @@ import {
   type SharedRemote,
   type SharedRole,
 } from './index'
+
+interface StoredCommentEvent extends CommentNotification {
+  recipientId: string
+  readAt: number | null
+}
 
 interface Member {
   role: SharedRole
@@ -54,6 +60,8 @@ export class MemorySharedServer {
   readonly folders = new Map<string, FolderRow>()
   /** Files of shared notes (`<shared id>/<file id>`), sealed, as base64. */
   readonly files = new Map<string, string>()
+  /** Unread & read comment notifications (`comment_events`). */
+  readonly commentEvents: StoredCommentEvent[] = []
   private seq = 0
   /** How often documents were read: syncs must not fetch the ones that did not change. */
   readonly calls = { state: 0, versions: 0, folderLayout: 0 }
@@ -79,6 +87,7 @@ export class MemorySharedServer {
         { ...f, members: members(f.members) },
       ]),
       files: [...this.files.entries()],
+      commentEvents: this.commentEvents,
     })
   }
 
@@ -92,6 +101,7 @@ export class MemorySharedServer {
       notes?: [string, Stored<NoteRow>][]
       folders?: [string, Stored<FolderRow>][]
       files?: [string, string][]
+      commentEvents?: StoredCommentEvent[]
     }
     server.seq = data.seq ?? 0
     for (const [id, u] of data.users ?? []) server.users.set(id, u)
@@ -100,6 +110,7 @@ export class MemorySharedServer {
     for (const [id, f] of data.folders ?? [])
       server.folders.set(id, { ...f, members: new Map(f.members) })
     for (const [path, b64] of data.files ?? []) server.files.set(path, b64)
+    for (const ev of data.commentEvents ?? []) server.commentEvents.push(ev)
     return server
   }
 
@@ -426,6 +437,56 @@ export class MemorySharedServer {
         if (!active(id)) return null
         const b64 = this.files.get(`${id}/${fileId}`)
         return b64 ? Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) : null
+      },
+      commentEvents: async () =>
+        this.commentEvents
+          .filter((ev) => ev.recipientId === userId && ev.readAt === null)
+          .sort((a, b) => b.createdAt - a.createdAt)
+          .slice(0, 100)
+          .map(({ recipientId: _r, readAt: _ra, ...rest }) => rest),
+      notifyComment: async (sharedId, threadId, mentions, isReply) => {
+        const n = this.notes.get(sharedId)
+        const r = active(sharedId)
+        must(Boolean(n) && !n?.deleted && (r === 'owner' || r === 'edit'), 'read only')
+        if (!n) return
+        const recipients = new Set<string>()
+        for (const [u, m] of n.members) if (m.accepted && u !== userId) recipients.add(u)
+        if (n.folder) {
+          const folder = this.folders.get(n.folder)
+          for (const [u, m] of folder?.members ?? []) {
+            if (m.accepted && u !== userId) recipients.add(u)
+          }
+        }
+        const mentionSet = new Set(mentions)
+        const actorEmail = this.users.get(userId)?.email ?? ''
+        const now = this.now()
+        for (const recipientId of recipients) {
+          const kind: CommentEventKind = mentionSet.has(recipientId)
+            ? 'mention'
+            : isReply
+              ? 'reply'
+              : 'comment'
+          this.commentEvents.push({
+            id: `cev-${++this.seq}`,
+            sharedNoteId: sharedId,
+            threadId,
+            actorId: userId,
+            actorEmail,
+            kind,
+            createdAt: now,
+            recipientId,
+            readAt: null,
+          })
+        }
+      },
+      markCommentsRead: async (sharedId, threadId) => {
+        const now = this.now()
+        for (const ev of this.commentEvents) {
+          if (ev.recipientId !== userId || ev.readAt !== null) continue
+          if (sharedId && ev.sharedNoteId !== sharedId) continue
+          if (threadId && ev.threadId !== threadId) continue
+          ev.readAt = now
+        }
       },
     }
   }

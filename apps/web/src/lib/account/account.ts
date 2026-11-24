@@ -33,6 +33,7 @@ import {
 import { i18n } from '@fixnote/i18n'
 import { toast } from 'sonner'
 import { create } from 'zustand'
+import { refreshCommentEvents, useCommentAlerts } from '../comments/store'
 import { conflictHeading } from '../conflict'
 import { paid, paymentPending, paymentStarted, showPaymentDialog } from '../payment'
 import { isProRequired, toPlanInfo, usePlan } from '../plan'
@@ -235,6 +236,7 @@ async function checkSession() {
   keys = null
   session = null
   backend().requireSession?.(false)
+  useCommentAlerts.getState().clear()
   set({
     phase: 'signed-out',
     email: '',
@@ -544,6 +546,7 @@ export async function signOut() {
     .catch(() => undefined)
   await backend().signOut()
   usePlan.setState({ info: null })
+  useCommentAlerts.getState().clear()
   planFetchedAt = 0
   set({
     phase: 'signed-out',
@@ -705,6 +708,7 @@ export async function runSync() {
       await refreshAfterProtection().catch(() => undefined)
     }
     await refreshPairingRequests().catch(() => undefined)
+    await refreshCommentEvents(shared).catch(() => undefined)
     // Images go after the notes that use them; another device fetches them when shown.
     const sync = attachmentSync()
     if (sync) {

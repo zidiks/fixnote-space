@@ -23,6 +23,7 @@ import {
   CheckCheck,
   FilePlus2,
   LayoutList,
+  MessageSquarePlus,
   Scissors,
   Sparkles,
   SpellCheck,
@@ -30,6 +31,7 @@ import {
   WandSparkles,
 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { useUi } from '../../app/store'
 import { unavailableText } from '../../lib/assistant/assistant'
@@ -436,9 +438,6 @@ function AiEditBody({
           <Button size="sm" variant="ghost" onClick={retry}>
             {t('ai.retry')}
           </Button>
-          <span className="ml-auto hidden pr-1 text-xs text-muted-foreground sm:inline">
-            {t('ai.hint')}
-          </span>
         </div>
       </div>
     )
@@ -502,7 +501,7 @@ function FloatingPanel({ editor, children }: { editor: Editor; children: ReactNo
         if (below + height > window.innerHeight - 8 && start.top - 8 - height > 8) {
           setPos({ left, bottom: window.innerHeight - start.top + 8 })
         } else {
-          setPos({ left, top: Math.min(below, window.innerHeight - height - 8) })
+          setPos({ left, top: Math.max(8, Math.min(below, window.innerHeight - height - 8)) })
         }
       })
     }
@@ -521,23 +520,32 @@ function FloatingPanel({ editor, children }: { editor: Editor; children: ReactNo
     }
   }, [editor])
 
-  return (
+  return createPortal(
     <div
       ref={ref}
       role="dialog"
       aria-modal="false"
       style={{ left: pos?.left ?? -9999, top: pos?.top, bottom: pos?.bottom }}
-      className="fixed z-40 w-[min(440px,calc(100vw-16px))] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-95"
+      className="fixed z-40 w-[min(440px,calc(100vw-16px))] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 zoom-in-[0.97] duration-[var(--duration-spring-fast)] ease-[var(--ease-apple)]"
     >
       {children}
-    </div>
+    </div>,
+    document.body,
   )
 }
 
 /**
  * The selection pill ("Ask AI") and the popover or dialog it opens. Rendered next to the editor.
  */
-export function AiEditLayer({ editor, ai }: { editor: Editor; ai: AiEdit }) {
+export function AiEditLayer({
+  editor,
+  ai,
+  onComment,
+}: {
+  editor: Editor
+  ai: AiEdit
+  onComment?: () => void
+}) {
   const { t } = useTranslation()
   const repo = useRepo()
   const invalidate = useInvalidateNotes()
@@ -607,6 +615,21 @@ export function AiEditLayer({ editor, ai }: { editor: Editor; ai: AiEdit }) {
           </button>
           <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
           <FormatBar editor={editor} />
+          {onComment ? (
+            <>
+              <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={onComment}
+                title={`${t('comments.add')} (${mod}+${isApple ? '⌥' : 'Alt+'}M)`}
+                aria-label={t('comments.add')}
+                className="flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground pointer-coarse:size-9 [&_svg]:size-3.5"
+              >
+                <MessageSquarePlus />
+              </button>
+            </>
+          ) : null}
         </div>
       </BubbleMenu>
 

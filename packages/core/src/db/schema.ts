@@ -294,6 +294,17 @@ export const MIGRATIONS: readonly string[] = [
   ALTER TABLE chat_messages ADD COLUMN trace TEXT;
   ALTER TABLE ai_actions ADD COLUMN memory TEXT;
   `,
+  // 21: fragment comment threads on personal notes (shared notes keep theirs in the E2EE Yjs doc).
+  `
+  CREATE TABLE note_comments (
+    id         TEXT PRIMARY KEY,
+    note_id    TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    thread_id  TEXT NOT NULL,
+    payload    TEXT NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE INDEX note_comments_note ON note_comments(note_id);
+  `,
 ]
 
 /** Splits a migration into statements, keeping trigger bodies (BEGIN … END;) whole. */

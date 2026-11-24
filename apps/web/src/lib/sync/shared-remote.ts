@@ -1,4 +1,6 @@
 import type {
+  CommentEventKind,
+  CommentNotification,
   FolderNote,
   SaveResult,
   SharedFolderMembership,
@@ -249,6 +251,53 @@ export function supabaseSharedRemote(client: SupabaseClient, userId: string): Sh
         .download(`shared/${id}/${fileId}`)
       if (error) return null
       return new Uint8Array(await data.arrayBuffer())
+    },
+    async commentEvents(): Promise<CommentNotification[]> {
+      const { data, error } = await client
+        .from('comment_events')
+        .select('id, shared_note_id, thread_id, actor_id, actor_email, kind, created_at')
+        .is('read_at', null)
+        .order('created_at', { ascending: false })
+        .limit(100)
+      if (error) {
+        // Older server without comment_events table yet: fail softly so sync stays healthy.
+        if (error.code === '42P01' || error.code === 'PGRST205') return []
+        throw toError(error)
+      }
+      type Row = {
+        id: string
+        shared_note_id: string
+        thread_id: string
+        actor_id: string
+        actor_email: string
+        kind: CommentEventKind
+        created_at: string
+      }
+      return ((data ?? []) as Row[]).map((r) => ({
+        id: r.id,
+        sharedNoteId: r.shared_note_id,
+        threadId: r.thread_id,
+        actorId: r.actor_id,
+        actorEmail: r.actor_email,
+        kind: r.kind,
+        createdAt: Date.parse(r.created_at),
+      }))
+    },
+    async notifyComment(sharedId, threadId, mentions, isReply) {
+      const { error } = await client.rpc('notify_comment', {
+        p_note: sharedId,
+        p_thread: threadId,
+        p_mentions: mentions,
+        p_is_reply: isReply,
+      })
+      if (error && error.code !== '42883' && error.code !== 'PGRST202') throw toError(error)
+    },
+    async markCommentsRead(sharedId, threadId) {
+      const { error } = await client.rpc('mark_comments_read', {
+        p_note: sharedId ?? null,
+        p_thread: threadId ?? null,
+      })
+      if (error && error.code !== '42883' && error.code !== 'PGRST202') throw toError(error)
     },
   }
 }
