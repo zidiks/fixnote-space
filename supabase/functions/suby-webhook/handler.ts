@@ -6,6 +6,7 @@
  * end in the same place. Revoked right away on a refund or a chargeback.
  */
 
+import { timingSafeEqual } from '../_shared/auth.ts'
 import type { Suby, SubySubscription } from '../_shared/suby.ts'
 
 export type PlanStatus = 'trialing' | 'active' | 'past_due' | 'canceled'
@@ -26,6 +27,12 @@ export interface BillingStore {
   userBySubscription(subscriptionId: string): Promise<string | null>
   userByCustomer(customerId: string): Promise<string | null>
   userByEmail(email: string): Promise<string | null>
+  /** Existing subscription row for the user, if any (used to prevent stale reactivation). */
+  current?(userId: string): Promise<{
+    status: PlanStatus
+    currentPeriodEnd: string | null
+    subscriptionId: string | null
+  } | null>
   save(userId: string, row: SubscriptionRow): Promise<void>
 }
 
@@ -34,6 +41,8 @@ export interface WebhookDeps {
   /** Only reads: what a subscription and a payment are now. */
   suby: Pick<Suby, 'subscription' | 'paymentSubscription'> | null
   store: BillingStore
+  /** Allowed Fixnote Pro Suby product IDs; when non-empty, other products are ignored. */
+  allowedProducts?: string[]
   now?: () => number
 }
 
@@ -64,11 +73,7 @@ async function validSignature(secret: string, timestamp: string, body: string, s
     ['sign'],
   )
   const expected = `v1=${hex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${timestamp}.${body}`)))}`
-  // Constant time: the same length and every character compared.
-  if (expected.length !== signature.length) return false
-  let diff = 0
-  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ signature.charCodeAt(i)
-  return diff === 0
+  return timingSafeEqual(expected, signature)
 }
 
 /** Our plan status from Suby's subscription; null while it is not paid for yet. */
@@ -147,6 +152,16 @@ export async function handle(req: Request, deps: WebhookDeps): Promise<Response>
 
   const sub = await deps.suby.subscription(subscriptionId)
   if (!sub) return new Response('Subscription not found', { status: 404 })
+  if (deps.allowedProducts?.length) {
+    if (!sub.productId || !deps.allowedProducts.includes(sub.productId)) {
+      console.error('suby-webhook: unrecognized product', {
+        subscriptionId,
+        productId: sub.productId ?? null,
+      })
+      await deps.store.markSeen(id, type)
+      return new Response('ok')
+    }
+  }
   const customerId = sub.customerId ?? field('customer_id', 'customerId')
   const metadata = (data.metadata ?? {}) as Record<string, unknown>
   const user =
@@ -164,7 +179,30 @@ export async function handle(req: Request, deps: WebhookDeps): Promise<Response>
   const plan = REVOKE.has(type)
     ? { status: 'canceled' as const, currentPeriodEnd: nowIso }
     : planFromSubscription(sub, nowIso)
-  if (plan) await deps.store.save(user, { ...plan, customerId, subscriptionId })
+  if (plan) {
+    let skipSave = false
+    // Prevent a delayed or stale `subscription.updated` from reactivating or extending a
+    // subscription that was already canceled/revoked (e.g. by refund or dispute).
+    if (type === 'subscription.updated' && deps.store.current) {
+      const existing = await deps.store.current(user)
+      if (
+        existing &&
+        existing.subscriptionId === subscriptionId &&
+        existing.status === 'canceled'
+      ) {
+        if (plan.status !== 'canceled') {
+          skipSave = true
+        } else if (existing.currentPeriodEnd) {
+          const prevEnd = Date.parse(existing.currentPeriodEnd)
+          const nextEnd = plan.currentPeriodEnd ? Date.parse(plan.currentPeriodEnd) : Infinity
+          if (Number.isFinite(prevEnd) && (!Number.isFinite(nextEnd) || nextEnd >= prevEnd)) {
+            skipSave = true
+          }
+        }
+      }
+    }
+    if (!skipSave) await deps.store.save(user, { ...plan, customerId, subscriptionId })
+  }
   await deps.store.markSeen(id, type)
   return new Response('ok')
 }

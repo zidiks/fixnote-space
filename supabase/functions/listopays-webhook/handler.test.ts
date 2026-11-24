@@ -65,11 +65,13 @@ Deno.test('refuses a wrong or missing private key, and answers 503 without one s
   assertEquals(extended, [])
 })
 
-Deno.test('trusts only what matches the order: less money or another currency gives nothing', async () => {
+Deno.test('trusts only what matches the order: less money, missing or wrong currency gives nothing', async () => {
   const { deps, extended } = setup()
   const meta = (m: Record<string, unknown>) => event({ metadata: { ...event().metadata, ...m } })
   await deliver(meta({ amount: 6.99 }), deps)
   await deliver(meta({ currency: 'EUR' }), deps)
+  await deliver(meta({ currency: undefined }), deps)
+  await deliver(meta({ currency: '' }), deps)
   assertEquals(extended, [])
   // "Commission In Price": the person paid more than the order, which still counts.
   await deliver(meta({ amount: '7.35' }), deps)

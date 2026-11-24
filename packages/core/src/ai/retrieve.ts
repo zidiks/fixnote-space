@@ -290,24 +290,28 @@ export async function retrieve(
   if (indexer) {
     try {
       const q = await indexer.embedQuery(question)
-      const scored: { noteId: string; ord: number; text: string; sim: number }[] = []
+      const scored: { noteId: string; ord: number; sim: number }[] = []
       for (const [noteId, chunks] of await indexer.all()) {
         if (allowed && !allowed.has(noteId)) continue
-        for (const c of chunks)
-          scored.push({ noteId, ord: c.ord, text: c.text, sim: dot(q, c.vector) })
+        for (const c of chunks) scored.push({ noteId, ord: c.ord, sim: dot(q, c.vector) })
       }
       scored.sort((a, b) => b.sim - a.sim)
       const top = scored.slice(0, 40)
-      await loadNotes([...new Set(top.map((t) => t.noteId))])
+      const [texts] = await Promise.all([
+        indexer.loadTexts(top),
+        loadNotes([...new Set(top.map((t) => t.noteId))]),
+      ])
       const current = new Map<string, ReturnType<typeof chunkNote>>()
       for (const [rank, t] of top.entries()) {
+        const text = texts.get(`${t.noteId}:${t.ord}`)
+        if (text === undefined) continue
         const note = notes.get(t.noteId)
         if (note && containsProtectedReference(note.content)) {
           const chunks = current.get(note.id) ?? chunkNote(note.content)
           current.set(note.id, chunks)
-          if (chunks[t.ord]?.text !== t.text) continue
+          if (chunks[t.ord]?.text !== text) continue
         }
-        add(t.noteId, t.ord, t.text, rank, 'semantic')
+        add(t.noteId, t.ord, text, rank, 'semantic')
       }
     } catch {
       // Model unavailable (offline first run, blocked download): keyword results still answer.
@@ -346,30 +350,33 @@ export async function similarNotes(
   const limit = opts.limit ?? 5
   const margin = opts.margin ?? 0.08
   const q = await indexer.embedQuery(query)
-  const best = new Map<string, { text: string; sim: number }>()
+  const best = new Map<string, { ord: number; sim: number }>()
   for (const [noteId, chunks] of await indexer.all()) {
     if (opts.exclude?.has(noteId)) continue
     for (const c of chunks) {
       const sim = dot(q, c.vector)
-      if (sim > (best.get(noteId)?.sim ?? -Infinity)) best.set(noteId, { text: c.text, sim })
+      if (sim > (best.get(noteId)?.sim ?? -Infinity)) best.set(noteId, { ord: c.ord, sim })
     }
   }
   const ranked = [...best.entries()].sort((a, b) => b[1].sim - a[1].sim)
   const top = ranked[0]?.[1].sim ?? 0
   const picked = ranked.filter(([, h]) => h.sim >= top - margin).slice(0, limit * 2)
   if (!picked.length) return []
-  const rows = await db.query<{ id: string; title: string }>(
-    `SELECT id, title FROM notes WHERE deleted_at IS NULL AND id IN (${picked.map(() => '?').join(',')})`,
-    picked.map(([id]) => id),
-  )
+  const [rows, texts] = await Promise.all([
+    db.query<{ id: string; title: string }>(
+      `SELECT id, title FROM notes WHERE deleted_at IS NULL AND id IN (${picked.map(() => '?').join(',')})`,
+      picked.map(([id]) => id),
+    ),
+    indexer.loadTexts(picked.map(([noteId, h]) => ({ noteId, ord: h.ord }))),
+  ])
   const titles = new Map(rows.map((r) => [r.id, r.title]))
   return picked
-    .filter(([id]) => titles.has(id))
+    .filter(([id, h]) => titles.has(id) && texts.has(`${id}:${h.ord}`))
     .slice(0, limit)
     .map(([noteId, h]) => ({
       noteId,
       title: titles.get(noteId) ?? '',
-      text: h.text,
+      text: texts.get(`${noteId}:${h.ord}`) ?? '',
       similarity: h.sim,
     }))
 }

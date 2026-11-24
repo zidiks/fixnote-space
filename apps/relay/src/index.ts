@@ -1,14 +1,21 @@
 import {
-  isAuthorizationId,
   RELAY_AUTH_PREFIX,
   RELAY_CLOSE,
   RELAY_PROTOCOL,
   remoteToolList,
 } from '@fixnote/core/remote-mcp'
 import { type AuthEnv, challenge, checkToken, issuer, resourceMetadata, TokenCache } from './auth'
-import { consentPoll, consentPost } from './consent'
+import {
+  consentInspect,
+  consentPoll,
+  consentPost,
+  isConsentId,
+  supabaseConsentDecider,
+  supabaseConsentInspector,
+  supabaseConsentVerifier,
+} from './consent'
 import type { HandoffEnv } from './handoff'
-import { answerBody, SERVER_VERSION } from './mcp'
+import { answerBody, MAX_MCP_BODY_BYTES, readLimitedText, SERVER_VERSION } from './mcp'
 import type { RelayEnv } from './relay'
 
 export { DemoDevice } from './demo'
@@ -101,9 +108,22 @@ async function mcp(req: Request, env: Env): Promise<Response> {
   if (await relay.revokedSince(clientId, caller.issuedAt)) {
     return unauthorized('Access was revoked in Fixnote')
   }
+  if (!(await relay.allowRequest())) {
+    return json(
+      { jsonrpc: '2.0', id: null, error: { code: -32000, message: 'Too many requests' } },
+      { status: 429, headers: { ...MCP_CORS, 'Retry-After': '60' } },
+    )
+  }
+  const raw = await readLimitedText(req, MAX_MCP_BODY_BYTES)
+  if (raw === null) {
+    return json(
+      { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Request too large' } },
+      { status: 413, headers: MCP_CORS },
+    )
+  }
   let body: unknown
   try {
-    body = await req.json()
+    body = JSON.parse(raw)
   } catch {
     return json(
       { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } },
@@ -145,7 +165,9 @@ async function device(req: Request, env: Env): Promise<Response> {
       headers: { 'Sec-WebSocket-Protocol': RELAY_PROTOCOL },
     })
   }
-  return stub(env, caller.userId).fetch(req)
+  const url = new URL(req.url)
+  url.searchParams.set('exp', String(caller.expiresAt))
+  return stub(env, caller.userId).fetch(new Request(url, req))
 }
 
 /** /api/…: the app's settings (its own session, never an AI app's token). */
@@ -154,13 +176,26 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
   const token = bearer(req)
   const caller = token ? await checkToken(token, 'device', env, deps()) : null
-  if (!caller?.ok) return json({ error: 'unauthorized' }, { status: 401, headers: cors })
+  if (!caller?.ok || !token) return json({ error: 'unauthorized' }, { status: 401, headers: cors })
   const consent = path.match(/^\/api\/consent\/([^/]+)$/)
+  if (consent?.[1] && req.method === 'GET') {
+    const id = consent[1]
+    if (!isConsentId(id)) return json({ error: 'bad_request' }, { status: 400, headers: cors })
+    return consentInspect(handoff(env, id), cors, {
+      authorizationId: id,
+      userId: caller.userId,
+      inspect: supabaseConsentInspector(env, token, deps().fetch),
+    })
+  }
   if (consent?.[1] && req.method === 'POST') {
     const id = consent[1]
-    if (!isAuthorizationId(id))
-      return json({ error: 'bad_request' }, { status: 400, headers: cors })
-    return consentPost(req, handoff(env, id), cors)
+    if (!isConsentId(id)) return json({ error: 'bad_request' }, { status: 400, headers: cors })
+    return consentPost(req, handoff(env, id), cors, {
+      authorizationId: id,
+      userId: caller.userId,
+      check: supabaseConsentVerifier(env, token, deps().fetch),
+      decide: supabaseConsentDecider(env, token, deps().fetch),
+    })
   }
   const relay = stub(env, caller.userId)
   if (path === '/api/clients' && req.method === 'GET') {
@@ -182,7 +217,7 @@ async function consentGet(req: Request, env: Env, path: string): Promise<Respons
   const cors = appCors(req, env)
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors })
   const id = path.slice('/consent/'.length)
-  if (req.method !== 'GET' || !isAuthorizationId(id)) {
+  if (req.method !== 'GET' || !isConsentId(id)) {
     return json({ error: 'bad_request' }, { status: 400, headers: cors })
   }
   return consentPoll(handoff(env, id), cors)

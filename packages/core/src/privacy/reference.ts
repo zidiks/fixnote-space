@@ -4,6 +4,9 @@ const PREFIX = '⟦fixnote-private:v1:'
 const REFERENCE =
   /⟦fixnote-private:v1:(personal|members):([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})⟧/g
 
+/** Placeholder substituted for protected fragments in search, AI, MCP, comments, and exports. */
+export const REDACTED_PROTECTED_FRAGMENT = '[protected fragment]'
+
 export type ProtectedReference = Pick<ProtectedFragmentIdentity, 'fragmentId' | 'audience'>
 
 /** The text survives clients without the protected fragment renderer. It carries no value or key. */
@@ -13,7 +16,9 @@ export function protectedReference({ audience, fragmentId }: ProtectedReference)
 
 /** Projection for previews, search, AI, MCP and conventional exports. */
 export function redactProtectedReferences(content: string): string {
-  return content.includes(PREFIX) ? content.replace(REFERENCE, '[protected fragment]') : content
+  return content.includes(PREFIX)
+    ? content.replace(REFERENCE, REDACTED_PROTECTED_FRAGMENT)
+    : content
 }
 
 export function protectedReferenceMatches(content: string): RegExpExecArray[] {

@@ -1,5 +1,10 @@
 import type { DeviceHardware, LocalLlm, ProgressListener } from '@fixnote/core'
+import { createIdleTimer } from '../idle'
 import type { LlmBody, LlmResponse, LocalChatMessage } from './protocol'
+
+const IDLE_VISIBLE_MS = 12 * 60_000
+const IDLE_HIDDEN_MS = 90_000
+const IDLE_BENCHMARK_MS = 60_000
 
 /**
  * A language model in a dedicated worker (transformers.js, WebGPU when there is one), the same on
@@ -9,6 +14,7 @@ import type { LlmBody, LlmResponse, LocalChatMessage } from './protocol'
 export function createLocalLlm(): LocalLlm {
   let worker: Worker | null = null
   let nextId = 1
+  let afterBenchmark = false
   const pending = new Map<
     number,
     {
@@ -18,6 +24,13 @@ export function createLocalLlm(): LocalLlm {
     }
   >()
   const listeners = new Set<ProgressListener>()
+
+  const idle = createIdleTimer({
+    visibleMs: IDLE_VISIBLE_MS,
+    hiddenMs: IDLE_HIDDEN_MS,
+    isLive: () => worker !== null,
+    onIdle: () => llm.unload(),
+  })
 
   const start = () => {
     if (worker) return worker
@@ -46,6 +59,8 @@ export function createLocalLlm(): LocalLlm {
   }
 
   const fail = (error: Error) => {
+    idle.cancel()
+    afterBenchmark = false
     for (const p of pending.values()) p.reject(error)
     pending.clear()
     worker?.terminate()
@@ -73,24 +88,33 @@ export function createLocalLlm(): LocalLlm {
     )
   }
 
-  return {
+  const llm: LocalLlm = {
     load(model, onProgress) {
+      afterBenchmark = false
+      idle.begin()
       if (onProgress) listeners.add(onProgress)
       return call({ op: 'load', model })
         .then(() => undefined)
         .finally(() => {
           if (onProgress) listeners.delete(onProgress)
+          idle.end(afterBenchmark ? IDLE_BENCHMARK_MS : undefined)
         })
     },
     async benchmark(model) {
-      // A short answer; the speed of the tokens after the first is what a person feels.
-      const { tokens, ms } = await generate(
-        model,
-        [{ role: 'user', content: 'Write three short sentences about notes.' }],
-        { maxTokens: 48, temperature: 0 },
-        () => undefined,
-      )
-      return tokens && ms ? (tokens / ms) * 1000 : 0
+      afterBenchmark = true
+      idle.begin()
+      try {
+        // A short answer; the speed of the tokens after the first is what a person feels.
+        const { tokens, ms } = await generate(
+          model,
+          [{ role: 'user', content: 'Write three short sentences about notes.' }],
+          { maxTokens: 48, temperature: 0 },
+          () => undefined,
+        )
+        return tokens && ms ? (tokens / ms) * 1000 : 0
+      } finally {
+        idle.end(afterBenchmark ? IDLE_BENCHMARK_MS : undefined)
+      }
     },
     hardware,
     unload() {
@@ -109,27 +133,32 @@ export function createLocalLlm(): LocalLlm {
         start(controller) {
           const send = (data: unknown) =>
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+          afterBenchmark = false
+          idle.begin()
           generate(
             body.model,
             messages,
             { maxTokens: body.max_tokens ?? 1024, temperature: body.temperature ?? 0.3 },
             (text) => send({ choices: [{ delta: { content: text } }] }),
             init?.signal ?? undefined,
-          ).then(
-            () => {
-              controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-              controller.close()
-            },
-            (err: unknown) => {
-              send({ error: { message: err instanceof Error ? err.message : String(err) } })
-              controller.close()
-            },
           )
+            .then(
+              () => {
+                controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+                controller.close()
+              },
+              (err: unknown) => {
+                send({ error: { message: err instanceof Error ? err.message : String(err) } })
+                controller.close()
+              },
+            )
+            .finally(() => idle.end(afterBenchmark ? IDLE_BENCHMARK_MS : undefined))
         },
       })
       return new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } })
     }) as typeof fetch,
   }
+  return llm
 }
 
 type Stats = { tokens: number; ms: number }

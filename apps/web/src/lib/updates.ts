@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { create } from 'zustand'
+import { useLlm } from './assistant/llm'
 import { useDb } from './db'
 import { kvStore } from './kv'
 import { usePlatform } from './platform'
@@ -83,20 +84,23 @@ export async function installUpdate(update: AvailableUpdate) {
 export function useAutoUpdateCheck() {
   const updater = usePlatform().updater
   const { driver } = useDb()
+  const localOnly = useLlm((s) => s.localOnly)
   const enabled =
     useQuery({
       queryKey: ['kv', AUTO_UPDATE],
       queryFn: async () => (await kvStore(driver).get(AUTO_UPDATE)) !== '0',
-      enabled: Boolean(updater),
+      enabled: Boolean(updater) && !localOnly,
     }).data ?? false
   useEffect(() => {
-    if (!updater || !enabled) return
-    const run = () => void checkForUpdate(updater, true)
+    if (!updater || !enabled || localOnly) return
+    const run = () => {
+      if (!document.hidden && !useLlm.getState().localOnly) void checkForUpdate(updater, true)
+    }
     const first = setTimeout(run, FIRST_CHECK)
     const every = setInterval(run, EVERY)
     return () => {
       clearTimeout(first)
       clearInterval(every)
     }
-  }, [updater, enabled])
+  }, [updater, enabled, localOnly])
 }

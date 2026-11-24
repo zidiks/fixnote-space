@@ -1,4 +1,5 @@
 import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1'
+import { unsafeUnverifiedClaimsAuth } from '../_shared/auth.ts'
 import { type Allowance, handle, type Meter, type ProxyEnv } from './handler.ts'
 
 const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '')
@@ -15,6 +16,23 @@ const upstream = Deno.serve({ port: 0, onListen() {} }, async (req) => {
       '{"error":{"message":"Insufficient Balance for request with secret text"}}',
       { status: 402 },
     )
+  }
+  if (seen.body.messages && JSON.stringify(seen.body.messages).includes('fail-stream')) {
+    let sentChunk = false
+    const broken = new ReadableStream({
+      async pull(c) {
+        if (!sentChunk) {
+          sentChunk = true
+          c.enqueue(
+            new TextEncoder().encode('data: {"choices":[{"delta":{"content":"Partial"}}]}\n\n'),
+          )
+          return
+        }
+        await new Promise((r) => setTimeout(r, 20))
+        c.error(new Error('upstream dropped'))
+      },
+    })
+    return new Response(broken, { headers: { 'Content-Type': 'text/event-stream' } })
   }
   const cached = JSON.stringify(seen.body.messages).includes('cached')
   const stream = new ReadableStream({
@@ -49,6 +67,7 @@ const env = (over: Partial<ProxyEnv> = {}): ProxyEnv => ({
   maxTokensHard: 16384,
   hardWeight: 4,
   perMinute: 3,
+  verifyUser: unsafeUnverifiedClaimsAuth,
   ...over,
 })
 
@@ -262,7 +281,7 @@ const TOOL = {
   },
 }
 
-Deno.test('passes tools and tool steps on; a step is not a new request', async () => {
+Deno.test('passes tools and tool steps on; every call counts toward limits', async () => {
   const first = meter({ ok: true })
   const res = await handle(post({ ...ok, tools: [TOOL] }, auth('t1')), env(), Date.now(), first.m)
   await res.text()
@@ -298,7 +317,7 @@ Deno.test('passes tools and tool steps on; a step is not a new request', async (
   }
   const next = meter({ ok: true })
   await (await handle(post(steps, auth('t1')), env(), Date.now(), next.m)).text()
-  assertEquals(next.requests, [0])
+  assertEquals(next.requests, [1])
   assertEquals((seen?.body.messages as unknown[] | undefined)?.[1], {
     role: 'assistant',
     content: null,
@@ -310,6 +329,48 @@ Deno.test('passes tools and tool steps on; a step is not a new request', async (
       },
     ],
   })
+})
+
+Deno.test('trailing role:tool cannot triple per-minute limit; fails closed without verifier or allowance', async () => {
+  const spoofedTool = {
+    messages: [
+      { role: 'user', content: 'hi' },
+      { role: 'tool', tool_call_id: 'fake', content: 'x' },
+    ],
+  }
+  const e = env({ perMinute: 2 })
+  const t = 2_000_000
+  assertEquals((await handle(post(spoofedTool, auth('spoof')), e, t)).status, 200)
+  assertEquals((await handle(post(spoofedTool, auth('spoof')), e, t + 1)).status, 200)
+  assertEquals((await handle(post(spoofedTool, auth('spoof')), e, t + 2)).status, 429)
+
+  // Missing verifier fails closed (401)
+  assertEquals((await handle(post(ok, auth('nov')), env({ verifyUser: undefined }))).status, 401)
+  // Unavailable allowance RPC fails closed (503)
+  const unavail = await handle(
+    post(ok, auth('dbdown')),
+    env(),
+    Date.now(),
+    meter({ ok: false, reason: 'unavailable' }).m,
+  )
+  assertEquals(unavail.status, 503)
+  assertEquals((await unavail.json()).error.code, 'unavailable')
+})
+
+Deno.test('records estimated tokens when the upstream stream errors mid-read', async () => {
+  const { m, charged, requests } = meter({ ok: true })
+  const res = await handle(
+    post({ messages: [{ role: 'user', content: 'fail-stream' }] }, auth('m-err')),
+    env(),
+    Date.now(),
+    m,
+  )
+  assertEquals(res.status, 200)
+  await res.text().catch(() => undefined)
+  assertEquals(charged.length, 1)
+  assertEquals(charged[0]?.[0], 'm-err')
+  assertEquals((charged[0]?.[1] ?? 0) > 0, true)
+  assertEquals(requests, [1])
 })
 
 Deno.test('rejects malformed tools and tool messages', async () => {

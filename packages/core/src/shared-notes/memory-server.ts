@@ -360,6 +360,12 @@ export class MemorySharedServer {
         if (found) {
           const [id, n] = found
           if (n.folder === folderId && !n.deleted) return id
+          // Only the owner may move or re-home an existing shared note record; an editor may only
+          // restore a tombstoned note that they themselves created in this same folder.
+          const isOwner = userId === owner
+          const editorRestoreOwnTombstone =
+            !isOwner && n.deleted && n.folder === folderId && n.createdBy === userId
+          must(isOwner || editorRestoreOwnTombstone, 'not the owner')
           // The same note again (back after a delete, put back, moved from another folder of the
           // owner): its record starts over here, unless others still have it.
           must(

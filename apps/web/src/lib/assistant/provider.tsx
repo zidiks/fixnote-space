@@ -5,6 +5,7 @@ import { useDb } from '../db'
 import { kvStore } from '../kv'
 import { initOcr } from '../ocr'
 import { platform } from '../platform'
+import { invalidateNoteData } from '../queries'
 import { initAssistant, notifyNotesChanged } from './assistant'
 import { initLlm, useLlm } from './llm'
 import { acceptWithUndo, maybeRunScheduled, refreshTidyCount } from './tidy'
@@ -24,7 +25,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
       repo,
       audit,
       onNotesChanged: () => {
-        void qc.invalidateQueries()
+        void invalidateNoteData(qc)
         notifyNotesChanged()
         // Other devices (and the people a note is shared with) get the change soon, not later.
         requestSync()
@@ -32,7 +33,16 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
     })
     void refreshTidyCount(tidy)
     // Text in images (OCR), read on this device in the background, for search and the assistant.
-    initOcr({ db: driver, attachments, onRead: () => void qc.invalidateQueries() })
+    initOcr({
+      db: driver,
+      attachments,
+      onRead: () => {
+        void Promise.all([
+          qc.invalidateQueries({ queryKey: ['notes', 'search'] }),
+          qc.invalidateQueries({ queryKey: ['notes', 'similar'] }),
+        ])
+      },
+    })
   }, [driver, tidy, repo, audit, qc, attachments])
 
   // Tidy looks for suggestions every few days, once the model is reachable.
@@ -48,7 +58,7 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
         tidy,
         audit,
         refresh: async () => {
-          await qc.invalidateQueries()
+          await invalidateNoteData(qc)
         },
       })
     }, 20_000)

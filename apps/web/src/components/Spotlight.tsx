@@ -3,8 +3,9 @@ import { useTranslation } from '@fixnote/i18n'
 import { cn, Dialog, DialogContent, DialogTitle, Kbd } from '@fixnote/ui'
 import { Command } from 'cmdk'
 import { CalendarDays, FileText, Search, Sparkles, SquarePen } from 'lucide-react'
-import { type ReactNode, useDeferredValue, useState } from 'react'
+import { type ReactNode, useDeferredValue, useEffect, useState } from 'react'
 import { useUi } from '../app/store'
+import { warmSemantic } from '../lib/assistant/assistant'
 import { useBackLayer } from '../lib/nav-history'
 import { useCreateNote, useOpenDaily, useRecents, useSearch, useSimilar } from '../lib/queries'
 import { formatCardDate } from '../lib/time'
@@ -48,11 +49,16 @@ export function Spotlight() {
   const navigate = useUi((s) => s.navigate)
   const [q, setQ] = useState('')
   const query = useDeferredValue(q)
-  const recents = useRecents(8)
+  const recents = useRecents(8, open)
   const search = useSearch(query)
   const similar = useSimilar(query)
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
+
+  // Warm the semantic worker non-blockingly as soon as the user opens Spotlight.
+  useEffect(() => {
+    if (open) warmSemantic()
+  }, [open])
 
   const close = () => {
     setOpen(false)

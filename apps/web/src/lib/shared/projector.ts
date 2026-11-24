@@ -12,19 +12,27 @@ import { LIVE_FIELD } from '../collab/live'
 export const projector: DocProjector = {
   toMarkdown(state) {
     const doc = new Y.Doc()
-    Y.applyUpdate(doc, state)
-    const json = yXmlFragmentToProsemirrorJSON(doc.getXmlFragment(LIVE_FIELD))
-    return schemaEditor().markdown?.serialize(json) ?? ''
+    try {
+      Y.applyUpdate(doc, state)
+      const json = yXmlFragmentToProsemirrorJSON(doc.getXmlFragment(LIVE_FIELD))
+      return schemaEditor().markdown?.serialize(json) ?? ''
+    } finally {
+      doc.destroy()
+    }
   },
   fromMarkdown(state, markdown) {
     const editor = schemaEditor()
     const doc = new Y.Doc()
-    if (state) Y.applyUpdate(doc, state)
-    const json = editor.markdown?.parse(markdown) ?? { type: 'doc', content: [] }
-    updateYFragment(doc, doc.getXmlFragment(LIVE_FIELD), editor.schema.nodeFromJSON(json), {
-      mapping: new Map(),
-      isOMark: new Map(),
-    })
-    return Y.encodeStateAsUpdate(doc)
+    try {
+      if (state) Y.applyUpdate(doc, state)
+      const json = editor.markdown?.parse(markdown) ?? { type: 'doc', content: [] }
+      updateYFragment(doc, doc.getXmlFragment(LIVE_FIELD), editor.schema.nodeFromJSON(json), {
+        mapping: new Map(),
+        isOMark: new Map(),
+      })
+      return Y.encodeStateAsUpdate(doc)
+    } finally {
+      doc.destroy()
+    }
   },
 }

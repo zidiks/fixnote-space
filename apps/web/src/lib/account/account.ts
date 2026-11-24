@@ -43,7 +43,6 @@ import {
   loadProtectedValues,
   syncProtectedFragments,
 } from '../privacy'
-import { projector } from '../shared/projector'
 import type { AccountBackend, PairingRequest, Session } from './backend'
 
 export type Phase =
@@ -135,6 +134,7 @@ let debounce: ReturnType<typeof setTimeout> | undefined
 
 const OWNER = 'account.owner'
 const OWNER_EMAIL = 'account.email'
+const LOCAL_ONLY_KV = 'mode.localOnly'
 const SYNC_DELAY = 1200
 /**
  * Changes from other devices arrive by themselves (Realtime), so a sync of its own is only a
@@ -193,6 +193,17 @@ export async function initAccount(d: Deps) {
     return
   }
   await cryptoReady()
+  // Respect desktop "Only on this device" immediately at boot, before initLlm finishes loading kv.
+  localOnlyBoot =
+    localOnly() ||
+    (typeof window !== 'undefined' &&
+      '__TAURI_INTERNALS__' in window &&
+      (await kvGet(LOCAL_ONLY_KV).catch(() => null)) === 'on')
+  if (localOnlyBoot) {
+    if (await resumeOffline().catch(() => false)) return
+    set({ phase: 'signed-out', ownerEmail: await boundEmail().catch(() => '') })
+    return
+  }
   try {
     const s = await d.backend.getSession()
     if (s) await resolveSession(s)
@@ -264,18 +275,24 @@ async function resolveSession(s: Session) {
     .catch(() => null)
   if (stored) {
     const k = deriveKeys(stored)
-    try {
-      const row = await backend().getUserKeys()
-      if (row && !verifyKeyCheck(k, row.keyCheck)) {
-        // The account's keys changed elsewhere; the stored secret no longer opens anything.
-        await need().keyStore.clear()
-        set({ phase: 'needs-phrase' })
-        return
+    if (!isLocalOnlyMode()) {
+      try {
+        const row = await backend().getUserKeys()
+        if (row && !verifyKeyCheck(k, row.keyCheck)) {
+          // The account's keys changed elsewhere; the stored secret no longer opens anything.
+          await need().keyStore.clear()
+          set({ phase: 'needs-phrase' })
+          return
+        }
+      } catch {
+        // Offline start: trust the stored key and sync later.
       }
-    } catch {
-      // Offline start: trust the stored key and sync later.
     }
     await becomeReady(k)
+    return
+  }
+  if (isLocalOnlyMode()) {
+    set({ phase: 'signed-out', ownerEmail: await boundEmail().catch(() => '') })
     return
   }
   const row = await backend().getUserKeys()
@@ -294,20 +311,27 @@ async function becomeReady(k: AccountKeys) {
     conflictHeading,
     readProtectedValues: loadProtectedValues,
   })
-  shared = session
-    ? new SharedNotes({
-        db: need().db,
-        repo: need().repo,
-        keys: k,
-        remote: backend().shared(session.userId),
-        projector,
-        userId: session.userId,
-        detachProtected: (sharedId, content) =>
-          detachProtectedFragments(need().db, sharedId, content),
-      })
-    : null
+  // Lazily load the ProseMirror/Yjs projector so NoteView/editor stays code-split at startup.
+  const sharedProjector = session ? (await import('../shared/projector')).projector : null
+  shared =
+    session && sharedProjector
+      ? new SharedNotes({
+          db: need().db,
+          repo: need().repo,
+          keys: k,
+          remote: backend().shared(session.userId),
+          projector: sharedProjector,
+          userId: session.userId,
+          detachProtected: (sharedId, content) =>
+            detachProtectedFragments(need().db, sharedId, content),
+        })
+      : null
   backend().requireSession?.(Boolean(session))
   set({ phase: 'ready', pendingSecret: null })
+  if (isLocalOnlyMode()) {
+    setSync({ status: 'idle', error: null })
+    return
+  }
   startWatching()
   // The plan first, so a Free account does not try to push.
   void refreshPlan(true).then(runSync)
@@ -315,7 +339,26 @@ async function becomeReady(k: AccountKeys) {
 
 function startWatching() {
   stopWatching?.()
+  if (isLocalOnlyMode()) return
   live = false
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let stopped = false
+  const schedule = (delayOverride?: number) => {
+    clearTimeout(timer)
+    if (stopped || isLocalOnlyMode()) return
+    const every = document.hidden ? SYNC_HIDDEN : live ? SYNC_SAFETY : SYNC_POLL
+    const wait = delayOverride ?? Math.max(10_000, every - (Date.now() - lastSyncAt))
+    timer = setTimeout(() => {
+      if (stopped || isLocalOnlyMode()) return
+      const currentEvery = document.hidden ? SYNC_HIDDEN : live ? SYNC_SAFETY : SYNC_POLL
+      if (Date.now() - lastSyncAt >= currentEvery) {
+        requestSync()
+        schedule(currentEvery)
+        return
+      }
+      schedule()
+    }, wait)
+  }
   const unsubscribe = session
     ? backend().subscribe(
         session.userId,
@@ -324,26 +367,32 @@ function startWatching() {
           // Back after a break: what was missed meanwhile.
           if (on && !live) requestSync()
           live = on
+          schedule()
         },
       )
     : () => undefined
-  const tick = () => {
-    const every = document.hidden ? SYNC_HIDDEN : live ? SYNC_SAFETY : SYNC_POLL
-    if (Date.now() - lastSyncAt >= every) requestSync()
+  schedule()
+  const online = () => {
+    if (!isLocalOnlyMode()) requestSync()
   }
-  const interval = setInterval(tick, 30_000)
-  const online = () => requestSync()
   const shown = () => {
+    if (isLocalOnlyMode()) return
     if (!document.hidden && Date.now() - lastSyncAt >= SYNC_POLL) requestSync()
+    schedule()
+  }
+  const focused = () => {
+    if (!isLocalOnlyMode() && !document.hidden && Date.now() - lastSyncAt >= SYNC_POLL)
+      requestSync()
   }
   window.addEventListener('online', online)
-  window.addEventListener('focus', shown)
+  window.addEventListener('focus', focused)
   document.addEventListener('visibilitychange', shown)
   stopWatching = () => {
+    stopped = true
     unsubscribe()
-    clearInterval(interval)
+    clearTimeout(timer)
     window.removeEventListener('online', online)
-    window.removeEventListener('focus', shown)
+    window.removeEventListener('focus', focused)
     document.removeEventListener('visibilitychange', shown)
   }
 }
@@ -566,16 +615,37 @@ export function currentSecret(): Uint8Array | null {
 // ── Sync ─────────────────────────────────────────────────────────────────────
 
 let localOnly: () => boolean = () => false
+let localOnlyBoot = false
+const isLocalOnlyMode = () => localOnly() || localOnlyBoot
 
 /** The desktop "only on this device" switch (lives with the AI settings). */
 export function setLocalOnlyCheck(check: () => boolean) {
   localOnly = check
 }
 
+/** Disconnects Realtime/sync immediately when entering local-only, and resumes on exit. */
+export function onLocalOnlyChanged(on: boolean) {
+  localOnlyBoot = on
+  if (on) {
+    stopWatching?.()
+    stopWatching = null
+    clearTimeout(debounce)
+    useCommentAlerts.getState().clear()
+    setSync({ status: 'idle', error: null })
+    return
+  }
+  if (engine) {
+    startWatching()
+    void refreshPlan(true).then(runSync)
+  } else if (deps) {
+    void initAccount(deps)
+  }
+}
+
 /** Local data changed: sync soon, batching bursts of edits. */
 /** Syncs soon: changes made within `delay` of each other go in one sync. */
 export function requestSync(delay = SYNC_DELAY) {
-  if (!engine) return
+  if (!engine || isLocalOnlyMode()) return
   clearTimeout(debounce)
   debounce = setTimeout(() => void runSync(), delay)
 }
@@ -588,6 +658,7 @@ let planFetchedAt = 0
  * last known plan stays; signed out there is none.
  */
 export async function refreshPlan(force = false) {
+  if (isLocalOnlyMode()) return
   const b = deps?.backend
   if (!b || !session) {
     usePlan.setState({ info: null })
@@ -671,7 +742,7 @@ export async function runSync() {
   if (!e) return
   lastSyncAt = Date.now()
   // "Only on this device": nothing is sent or fetched, the account just stays signed in.
-  if (localOnly()) {
+  if (isLocalOnlyMode()) {
     setSync({ status: 'idle', error: null })
     return
   }
@@ -787,12 +858,14 @@ export function captureBackend() {
  * shared note that uses it (sealed with the note key). Undefined when signed out or locked.
  */
 export function attachmentSource(): AttachmentSource | undefined {
+  if (isLocalOnlyMode()) return undefined
   const sync = attachmentSync()
   if (!sync) return undefined
   return anySource(accountSource(sync.keys, sync.remote), shared?.fileSource())
 }
 
 export function attachmentSync(): { keys: AccountKeys; remote: AttachmentRemote } | undefined {
+  if (isLocalOnlyMode()) return undefined
   const b = deps?.backend
   if (!b || !keys || !session || !engine) return undefined
   return { keys, remote: b.attachments(session.userId) }
@@ -800,6 +873,7 @@ export function attachmentSync(): { keys: AccountKeys; remote: AttachmentRemote 
 
 /** Backend, keys and local files for shared links, when signed in and unlocked. */
 export function shareContext() {
+  if (isLocalOnlyMode()) return null
   const b = deps?.backend
   if (!b || !keys || !session || !engine) return null
   return { backend: b, keys, attachments: deps?.attachments as Attachments }
@@ -807,6 +881,7 @@ export function shareContext() {
 
 /** Shared notes and the backend for their live editing, when signed in and unlocked. */
 export function sharedContext() {
+  if (isLocalOnlyMode()) return null
   const b = deps?.backend
   if (!b || !keys || !session || !engine || !shared) return null
   return { backend: b, shared, userId: session.userId, email: session.email }
@@ -814,12 +889,14 @@ export function sharedContext() {
 
 /** Reads a page for a link card through the server, or null when signed out. */
 export async function fetchPageViaServer(url: string) {
+  if (isLocalOnlyMode()) return null
   const b = deps?.backend
   return b ? b.fetchPage(url) : null
 }
 
 /** Endpoint for the assistant, or null when signed out / not configured. */
 export async function chatTransport() {
+  if (isLocalOnlyMode()) return null
   const b = deps?.backend
   return b ? b.chatTransport() : null
 }

@@ -2,6 +2,7 @@ import type { Note, NoteCursor, NoteFilter, NoteSort, NotesRepo } from '@fixnote
 import { i18n } from '@fixnote/i18n'
 import {
   keepPreviousData,
+  type QueryClient,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -10,8 +11,14 @@ import {
 import { toast } from 'sonner'
 import { useUi } from '../app/store'
 import { requestSync, sharedContext } from './account/account'
-import { findSimilar, notifyNotesChanged, useAssistant } from './assistant/assistant'
+import {
+  findSimilar,
+  invalidateIndexerNote,
+  notifyNotesChanged,
+  useAssistant,
+} from './assistant/assistant'
 import { useRepo } from './db'
+import { clearFoldedPositions } from './folded-storage'
 import { navBack } from './nav-history'
 import { cacheSavedNote } from './saved-note'
 
@@ -108,12 +115,32 @@ export function useSimilar(q: string) {
   })
 }
 
-export function useRecents(limit = 8) {
+export function useRecents(limit = 8, enabled = true) {
   const repo = useRepo()
   return useQuery({
     queryKey: [...keys.notes, 'recents', limit],
     queryFn: async () => (await repo.listNotes({ limit })).items,
+    enabled,
   })
+}
+
+/**
+ * Invalidates all note-derived queries (lists, open notes, navigation, conflicts, daily,
+ * tidy, audit, comment notifications) without nuking static device/hardware/update/kv caches.
+ */
+export function invalidateNoteData(qc: QueryClient) {
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: keys.notes }),
+    qc.invalidateQueries({ queryKey: keys.navigation }),
+    qc.invalidateQueries({ queryKey: ['conflicts'] }),
+    qc.invalidateQueries({ queryKey: ['conflict-notes'] }),
+    qc.invalidateQueries({ queryKey: ['daily-adjacent'] }),
+    qc.invalidateQueries({ queryKey: ['daily-carry'] }),
+    qc.invalidateQueries({ queryKey: ['tidy'] }),
+    qc.invalidateQueries({ queryKey: ['audit'] }),
+    qc.invalidateQueries({ queryKey: ['comment-note-folders'] }),
+    qc.invalidateQueries({ queryKey: ['comment-notif-notes'] }),
+  ])
 }
 
 /** After a local change: refresh everything derived from notes and schedule a sync. */
@@ -162,6 +189,8 @@ export function useDeleteWithUndo() {
       return
     }
     await repo.deleteNote(id)
+    clearFoldedPositions(id)
+    invalidateIndexerNote(id)
     await invalidate()
     if (route.kind === 'note' && route.id === id) navBack()
     toast(i18n.t('note.deleted'), {

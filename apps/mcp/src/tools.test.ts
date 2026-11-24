@@ -1,4 +1,4 @@
-import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { AuditLog, NotesRepo, prepareDatabase, type SqlDriver } from '@fixnote/core'
@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { blobFileName, fileBlobStore } from './blobs'
 import { defaultDatabasePath } from './paths'
 import { openNodeSqlite } from './sqlite'
-import { ACCESS_KEY, NotesTools, SCOPE_KEY } from './tools'
+import { ACCESS_KEY, AccessError, NotesTools, SCOPE_KEY } from './tools'
 
 let db: SqlDriver
 let tools: NotesTools
@@ -247,5 +247,85 @@ describe('NotesTools', () => {
     expect(defaultDatabasePath({ XDG_DATA_HOME: '/data' })).toMatch(
       /space\.fixnote\.app[\\/]fixnote\.db$/,
     )
+  })
+
+  it('blocks attach_file from reading FixNote data, database, dotfiles, credentials, or symlinks into them', async () => {
+    await setAccess('write')
+    const dataDir = join(dir, 'fixnote-app-data')
+    const blobsDir = join(dataDir, 'blobs')
+    mkdirSync(blobsDir, { recursive: true })
+    const scopedTools = new NotesTools(db, () => 'Claude', fileBlobStore(blobsDir), dataDir)
+
+    const repo = new NotesRepo(db)
+    const note = await repo.createNote({ content: '# Notes' })
+
+    const makeFile = (...parts: string[]) => {
+      const full = join(...parts)
+      mkdirSync(join(...parts.slice(0, -1)), { recursive: true })
+      writeFileSync(full, 'secret-content')
+      return full
+    }
+
+    const blockedFiles = [
+      // FixNote own data dir, blobs dir, and fixnote.db* anywhere
+      makeFile(dataDir, 'fixnote.db'),
+      makeFile(dataDir, 'fixnote.db-wal'),
+      makeFile(dataDir, 'fixnote.db-shm'),
+      makeFile(dataDir, 'other.txt'),
+      makeFile(blobsDir, 'att_existing'),
+      makeFile(dir, 'fixnote.db'),
+      makeFile(dir, 'fixnote.db-wal'),
+      // Dotfiles and dot-directories
+      makeFile(dir, '.ssh', 'id_rsa'),
+      makeFile(dir, '.aws', 'credentials'),
+      makeFile(dir, '.env'),
+      makeFile(dir, '.env.local'),
+      makeFile(dir, '.netrc'),
+      // Windows / macOS sensitive directories
+      makeFile(dir, 'AppData', 'Roaming', 'token.txt'),
+      makeFile(dir, 'ProgramData', 'secret.txt'),
+      makeFile(dir, 'Windows', 'System32', 'config.txt'),
+      makeFile(dir, 'Library', 'Keychains', 'login.keychain'),
+      makeFile(dir, 'Library', 'Application Support', 'SomeApp', 'secrets.json'),
+    ]
+
+    for (const badPath of blockedFiles) {
+      await expect(scopedTools.attach(note.id, { path: badPath }), badPath).rejects.toBeInstanceOf(
+        AccessError,
+      )
+    }
+
+    // Linux/Unix system roots are blocked before touching disk.
+    await expect(scopedTools.attach(note.id, { path: '/etc/passwd' })).rejects.toBeInstanceOf(
+      AccessError,
+    )
+    await expect(
+      scopedTools.attach(note.id, { path: '/proc/self/environ' }),
+    ).rejects.toBeInstanceOf(AccessError)
+
+    // Symlink / junction pointing into a blocked directory is resolved and blocked.
+    const linkType = process.platform === 'win32' ? 'junction' : 'dir'
+    const linkToSsh = join(dir, 'innocent-link-ssh')
+    symlinkSync(join(dir, '.ssh'), linkToSsh, linkType)
+    await expect(
+      scopedTools.attach(note.id, { path: join(linkToSsh, 'id_rsa') }),
+    ).rejects.toBeInstanceOf(AccessError)
+
+    const linkToData = join(dir, 'innocent-link-data')
+    symlinkSync(dataDir, linkToData, linkType)
+    await expect(
+      scopedTools.attach(note.id, { path: join(linkToData, 'other.txt') }),
+    ).rejects.toBeInstanceOf(AccessError)
+
+    // Legitimate regular file outside blocked locations still attaches cleanly.
+    const okFile = makeFile(dir, 'uploads', 'report.txt')
+    expect(await scopedTools.attach(note.id, { path: okFile })).toMatch(/^Attached report\.txt/)
+    // Base64 data attach continues to work as well.
+    expect(
+      await scopedTools.attach(note.id, {
+        data: PNG.toString('base64'),
+        name: 'chart.png',
+      }),
+    ).toMatch(/^Attached chart\.png/)
   })
 })

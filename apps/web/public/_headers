@@ -6,4 +6,6 @@
 /*
   X-Robots-Tag: noindex, nofollow
   X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
   Referrer-Policy: no-referrer
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-YNCWyozqcn6TCflmrX9yi31Y5YV1BWTE3xNeWfdmfWo=' 'sha256-97KRKP5PzSMmGc2EeaZDdCmm691nUG2Ug8NAwvifFlM=' https://cdn.jsdelivr.net blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' blob: data: https://nsteehqbmljuczxgkvae.supabase.co wss://nsteehqbmljuczxgkvae.supabase.co https://mcp.fixnote.space wss://mcp.fixnote.space https://huggingface.co https://*.huggingface.co https://*.hf.co https://cdn.jsdelivr.net https://api.openai.com https://openrouter.ai https://api.groq.com https://api.deepseek.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'

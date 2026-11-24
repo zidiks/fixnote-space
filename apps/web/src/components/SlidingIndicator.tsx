@@ -251,7 +251,12 @@ export function SlidingHoverIndicator({
         return
       }
       const isActive = target.dataset.active === 'true'
-      applyRect(measureIn(root, target), false, !isActive)
+      const r = measureIn(root, target)
+      // Update geometry directly without forcing synchronous layout reflow (`offsetWidth`).
+      pill.style.width = `${r.w}px`
+      pill.style.height = `${r.h}px`
+      pill.style.transform = `translate3d(${r.x}px, ${r.y}px, 0)`
+      pill.style.opacity = isActive ? '0' : '1'
     }
 
     let frame = 0

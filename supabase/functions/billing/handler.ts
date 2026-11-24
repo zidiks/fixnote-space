@@ -20,7 +20,13 @@
  * no receipts). A Suby checkout is refused while card time runs (it would start a second period).
  */
 
-import { CORS, jsonError, rateLimiter, userEmail, userId } from '../_shared/auth.ts'
+import {
+  type AuthVerifier,
+  CORS,
+  denoJwtVerifier,
+  jsonError,
+  rateLimiter,
+} from '../_shared/auth.ts'
 import { CARD_PRICES, type ListoPays, receiptPdf } from '../_shared/listopays.ts'
 import type { Suby, SubyPayment, SubySubscription } from '../_shared/suby.ts'
 
@@ -70,6 +76,8 @@ export interface BillingEnv {
   products: { month: string | undefined; year: string | undefined }
   /** Where Suby sends the buyer back to (the web app, or its page that opens the desktop app). */
   returnUrl: string
+  /** Cryptographic JWT verifier (required; omitted fails closed with 401). */
+  verifyUser?: AuthVerifier
 }
 
 export function envFromDeno(): BillingEnv {
@@ -79,6 +87,7 @@ export function envFromDeno(): BillingEnv {
       year: Deno.env.get('SUBY_PRODUCT_YEAR'),
     },
     returnUrl: Deno.env.get('BILLING_RETURN_URL') ?? 'https://app.fixnote.space/',
+    verifyUser: denoJwtVerifier(),
   }
 }
 
@@ -145,8 +154,9 @@ export async function handle(
 ): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (req.method !== 'POST') return jsonError(405, 'Method not allowed')
-  const user = userId(req)
-  const email = userEmail(req)
+  const verified = env.verifyUser ? await env.verifyUser(req) : null
+  const user = verified?.id ?? null
+  const email = verified?.email ?? null
   if (!user || !email) return jsonError(401, 'Sign in first')
 
   let body: {

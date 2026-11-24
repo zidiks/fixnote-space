@@ -8,7 +8,9 @@ import { appendToToday, captureToDaily } from '../daily'
 import { useDb } from '../db'
 import { currentListRoute } from '../layout'
 import { saveLinkWithToast } from '../link-save'
+import { readImagesSoon } from '../ocr'
 import { platform } from '../platform'
+import { invalidateNoteData } from '../queries'
 import { initAccount, onSharedSync } from './account'
 import { pickBackend } from './pick'
 
@@ -54,7 +56,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
               previews: links,
               refresh: () => {
                 notifyNotesChanged()
-                return qc.invalidateQueries()
+                return invalidateNoteData(qc)
               },
             },
             link,
@@ -71,8 +73,9 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           ).text,
         onCaptured: (count) => toast(i18n.t('capture.imported', { count })),
         onRemoteChange: () => {
-          void qc.invalidateQueries()
+          void invalidateNoteData(qc)
           notifyNotesChanged()
+          readImagesSoon()
         },
         onConflicts: (count) =>
           toast(i18n.t('sync.conflictsFound', { count }), {

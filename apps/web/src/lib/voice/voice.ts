@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import { create } from 'zustand'
 import { useCall } from './call'
 import { MAX_RECORDING_MS, MicrophoneError, Recorder } from './recorder'
-import { RATE, wav } from './segments'
 
 /**
  * Where a transcript goes. `auto`: into the open note if there is one, else a new note.
@@ -89,6 +88,7 @@ class Pieces {
   private texts: string[] = []
   private chain: Promise<void> = Promise.resolve()
   private failed = false
+  private cancelled = false
   private language: string | null = null
   private modelId: string | undefined
   private count = 0
@@ -100,18 +100,21 @@ class Pieces {
   ) {}
 
   add(pcm: Float32Array) {
+    if (this.cancelled) return
     const i = this.count++
-    const audio = wav(pcm, RATE)
     this.chain = this.chain.then(async () => {
-      if (this.failed) return
+      if (this.failed || this.cancelled) return
       try {
         const tr = await this.transcriber()
+        if (this.cancelled) return
         await tr.ready()
+        if (this.cancelled) return
         const prompt = speechPrompt(await this.words, this.texts.filter(Boolean).join(' '))
-        const r = await tr.transcribe(audio, {
+        const r = await tr.transcribe(pcm, {
           ...(this.language ? { language: this.language } : { prefer: this.prefer }),
           ...(prompt ? { prompt } : {}),
         })
+        if (this.cancelled) return
         this.texts[i] = r.text.trim()
         if (this.texts[i]) {
           this.language ??= r.language
@@ -123,10 +126,14 @@ class Pieces {
     })
   }
 
+  cancel() {
+    this.cancelled = true
+  }
+
   /** The whole text; null when there were no pieces or one failed (then the recording is used). */
   async done(): Promise<{ text: string; language: string; modelId?: string } | null> {
     await this.chain
-    if (this.failed || !this.count) return null
+    if (this.failed || this.cancelled || !this.count) return null
     return {
       text: this.texts.filter(Boolean).join(' '),
       language: this.language ?? this.prefer,
@@ -184,31 +191,8 @@ function noteSpeed(tr: Transcriber, waitedMs: number) {
   })
 }
 
-const USED_KEY = 'fixnote.voice-used'
-const WARM_AFTER_MS = 3000
-
 export function setVoiceDeps(d: Deps) {
   deps = d
-  prewarm(d)
-}
-
-/**
- * Someone who dictated before will likely again: load the model a few seconds after start, so
- * the first phrase does not wait for it. Nobody else downloads anything.
- */
-function prewarm(d: Deps) {
-  try {
-    if (!localStorage.getItem(USED_KEY)) return
-  } catch {
-    return
-  }
-  setTimeout(() => {
-    if (useVoice.getState().status !== 'idle') return
-    void d
-      .transcriber()
-      .then((tr) => tr.ready())
-      .catch(() => undefined)
-  }, WARM_AFTER_MS)
 }
 
 /** The open note (or the chat) takes transcripts while mounted. */
@@ -243,7 +227,10 @@ export async function toggleVoice(target: VoiceTarget = 'auto') {
       (pcm) => piecesNow.add(pcm),
     )
   } catch (err) {
+    rec.cancel()
+    piecesNow.cancel()
     recorder = null
+    pieces = null
     set({ status: 'idle' })
     if (err instanceof MicrophoneError && err.reason !== 'other') {
       toast.error(i18n.t(err.reason === 'denied' ? 'voice.noMic' : 'voice.missingMic'))
@@ -297,11 +284,6 @@ export async function stopVoice() {
     // Only Whisper's speed: a lighter Whisper does not help when GigaAM wrote the text.
     if (ready && modelId === transcriber.modelId)
       noteSpeed(transcriber, performance.now() - stoppedAt)
-    try {
-      localStorage.setItem(USED_KEY, '1')
-    } catch {
-      // private window: no warm start next time, nothing else changes
-    }
     await deliver({ text: text.trim(), audio, durationMs, peaks, language }, target, d)
   } catch (err) {
     set({ status: 'idle', download: null })
@@ -315,6 +297,7 @@ export function cancelVoice() {
   clearTimeout(limitTimer)
   recorder?.cancel()
   recorder = null
+  pieces?.cancel()
   pieces = null
   set({ status: 'idle', level: 0 })
 }

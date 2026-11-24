@@ -348,10 +348,14 @@ export class NotesRepo {
   async deleteNote(id: string, opts: SharingWrite = {}): Promise<void> {
     if (!opts.fromSharing) await this.assertWritableNote(id)
     const ts = this.now()
-    await this.db.execute(
-      `UPDATE notes SET deleted_at = ?, updated_at = ?, dirty = 1, local_rev = local_rev + 1 WHERE id = ? AND deleted_at IS NULL`,
-      [ts, ts, id],
-    )
+    await this.db.transaction(async (tx) => {
+      await tx.execute(
+        `UPDATE notes SET deleted_at = ?, updated_at = ?, indexed_at = NULL, indexed_hash = NULL, dirty = 1, local_rev = local_rev + 1
+          WHERE id = ? AND deleted_at IS NULL`,
+        [ts, ts, id],
+      )
+      await tx.execute('DELETE FROM chunks WHERE note_id = ?', [id])
+    })
   }
 
   /** Throws ReadOnlyError for a note shared with this account to view only. */

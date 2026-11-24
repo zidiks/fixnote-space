@@ -15,7 +15,14 @@ export interface AuthEnv {
 }
 
 export type Caller =
-  | { ok: true; userId: string; clientId: string | null; issuedAt: number; pro: boolean }
+  | {
+      ok: true
+      userId: string
+      clientId: string | null
+      issuedAt: number
+      expiresAt: number
+      pro: boolean
+    }
   | { ok: false; status: 401; reason: string }
 
 interface Claims {
@@ -122,12 +129,13 @@ export async function checkToken(
   if (kind === 'client' && !clientId) return deny('Connect through OAuth')
   if (kind === 'device' && clientId) return deny('Not a Fixnote session')
   const issuedAt = typeof c.iat === 'number' ? c.iat : 0
+  const expiresAt = c.exp * 1000
 
   const key = await sha256(token)
   const cached = deps.cache.get(key, deps.now())
   if (cached) {
     if (cached.userId !== c.sub) return deny('Token mismatch')
-    return { ok: true, userId: cached.userId, clientId, issuedAt, pro: cached.pro }
+    return { ok: true, userId: cached.userId, clientId, issuedAt, expiresAt, pro: cached.pro }
   }
   const headers = { Authorization: `Bearer ${token}`, apikey: env.SUPABASE_ANON_KEY }
   const user = await deps.fetch(`${env.SUPABASE_URL}/auth/v1/user`, { headers })
@@ -140,12 +148,12 @@ export async function checkToken(
     body: '{}',
   })
   // Unknown plan (server trouble): refuse rather than let it through, and do not cache.
-  if (!plan.ok) return { ok: true, userId: c.sub, clientId, issuedAt, pro: false }
+  if (!plan.ok) return { ok: true, userId: c.sub, clientId, issuedAt, expiresAt, pro: false }
   const pro = (await plan.json().catch(() => false)) === true
   deps.cache.set(key, {
     userId: c.sub,
     pro,
-    until: Math.min(deps.now() + CACHE_MS, c.exp * 1000),
+    until: Math.min(deps.now() + CACHE_MS, expiresAt),
   })
-  return { ok: true, userId: c.sub, clientId, issuedAt, pro }
+  return { ok: true, userId: c.sub, clientId, issuedAt, expiresAt, pro }
 }

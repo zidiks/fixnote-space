@@ -1,7 +1,7 @@
 import { ApiError, type LinkPayload, type Pairing, refreshKey, saveLink, unpair } from './api'
 import { SITES_URL } from './config'
 import { type PageCapture, readPage } from './extract'
-import { type Message, msg } from './messages'
+import { isAllowedSender, isExtensionMessage, type Message, msg } from './messages'
 import { DEFAULT_SITES, parseSites } from './sites'
 
 /**
@@ -163,8 +163,12 @@ async function answer(message: Message): Promise<unknown> {
   }
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (typeof message !== 'object' || message === null || !('type' in message)) return undefined
-  void answer(message as Message).then(sendResponse)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!isExtensionMessage(message)) return undefined
+  if (!isAllowedSender(message, sender, chrome.runtime.id, chrome.runtime.getURL(''))) {
+    sendResponse({ ok: false, error: 'forbidden' })
+    return false
+  }
+  void answer(message).then(sendResponse)
   return true
 })

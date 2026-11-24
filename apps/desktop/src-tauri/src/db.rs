@@ -4,21 +4,46 @@
 use std::path::Path;
 use std::sync::Mutex;
 
+use rusqlite::config::DbConfig;
+use rusqlite::limits::Limit;
 use rusqlite::types::{Value as SqlValue, ValueRef};
 use rusqlite::{params_from_iter, Connection};
 use serde_json::{json, Map, Value};
+use tauri::Manager;
 
 /// Blobs cross IPC as `{"$blob": [u8, ...]}`; JSON has no binary type.
 const BLOB_KEY: &str = "$blob";
+/// Cap the WAL file after checkpoints so bulk operations don't leave unbounded journals on disk.
+const JOURNAL_SIZE_LIMIT: i64 = 64 * 1024 * 1024;
 
 pub struct Db(pub Mutex<Connection>);
 
 pub fn open(path: &Path) -> rusqlite::Result<Connection> {
     let conn = Connection::open(path)?;
+    conn.set_db_config(DbConfig::SQLITE_DBCONFIG_DEFENSIVE, true)?;
+    conn.set_limit(Limit::SQLITE_LIMIT_ATTACHED, 0)?;
     conn.pragma_update(None, "journal_mode", "WAL")?;
     conn.pragma_update(None, "synchronous", "NORMAL")?;
+    conn.pragma_update(None, "journal_size_limit", JOURNAL_SIZE_LIMIT)?;
     conn.busy_timeout(std::time::Duration::from_secs(5))?;
     Ok(conn)
+}
+
+fn shrink_conn(conn: &Connection) {
+    let _ = conn.execute_batch("PRAGMA shrink_memory; PRAGMA wal_checkpoint(PASSIVE);");
+}
+
+/// Releases unused SQLite cache pages and passively checkpoints the WAL in the background when
+/// hiding the window to the tray.
+pub fn shrink_memory(app: &tauri::AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Some(db) = app.try_state::<Db>() {
+            if let Ok(conn) = db.0.lock() {
+                shrink_conn(&conn);
+            }
+        }
+    });
 }
 
 fn to_sql(value: &Value) -> Result<SqlValue, String> {
@@ -191,5 +216,27 @@ mod tests {
         assert!(execute(&c, "SELECT ?", &[json!([1, 2])]).is_err());
         assert!(execute(&c, "SELECT ?", &[json!({ "$blob": [256] })]).is_err());
         assert!(execute(&c, "SELEKT", &[]).is_err());
+    }
+
+    #[test]
+    fn open_applies_hardening_and_shrink_works() {
+        let path = std::env::temp_dir().join(format!(
+            "fixnote-db-test-{}-{}.db",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let c = open(&path).unwrap();
+        let limit = query(&c, "PRAGMA journal_size_limit", &[]).unwrap();
+        assert_eq!(limit[0]["journal_size_limit"], json!(JOURNAL_SIZE_LIMIT));
+        // SQLITE_LIMIT_ATTACHED = 0 blocks ATTACH DATABASE.
+        assert!(execute(&c, "ATTACH DATABASE ':memory:' AS other", &[]).is_err());
+        shrink_conn(&c);
+        drop(c);
+        let _ = std::fs::remove_file(&path);
+        let _ = std::fs::remove_file(path.with_extension("db-wal"));
+        let _ = std::fs::remove_file(path.with_extension("db-shm"));
     }
 }

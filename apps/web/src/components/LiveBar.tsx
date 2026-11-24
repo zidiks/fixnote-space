@@ -4,6 +4,7 @@ import { Bot, CloudOff, Users } from 'lucide-react'
 import { useEffect, useReducer, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { onSharedSync, useAccount } from '../lib/account/account'
+import { useLlm } from '../lib/assistant/llm'
 import { type LiveEditing, openShared } from '../lib/collab/live'
 import { aiIn, initials, type LiveUser, onColor, othersIn } from '../lib/collab/people'
 
@@ -17,6 +18,7 @@ import { aiIn, initials, type LiveUser, onColor, othersIn } from '../lib/collab/
 export function useSharedLive(sharedId: string | null, onLost?: () => void) {
   const { t } = useTranslation()
   const phase = useAccount((s) => s.phase)
+  const localOnly = useLlm((s) => s.localOnly)
   const [live, setLive] = useState<LiveEditing | null>(null)
   const [opening, setOpening] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -27,7 +29,7 @@ export function useSharedLive(sharedId: string | null, onLost?: () => void) {
   current.current = live
 
   useEffect(() => {
-    if (!sharedId) return
+    if (!sharedId || localOnly) return
     return onSharedSync((report) => {
       if (report.removed.some((r) => r.sharedId === sharedId && !r.kept)) {
         lost.current?.()
@@ -39,11 +41,11 @@ export function useSharedLive(sharedId: string | null, onLost?: () => void) {
         reopen()
       } else if (report.pulled) void current.current?.refresh()
     })
-  }, [sharedId, t])
+  }, [sharedId, localOnly, t])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `generation` rejoins the room
   useEffect(() => {
-    if (!sharedId || phase !== 'ready') {
+    if (!sharedId || phase !== 'ready' || localOnly) {
       setFailed(Boolean(sharedId))
       return
     }
@@ -68,7 +70,7 @@ export function useSharedLive(sharedId: string | null, onLost?: () => void) {
       opened?.session.destroy()
       setLive(null)
     }
-  }, [sharedId, phase, generation])
+  }, [sharedId, phase, localOnly, generation])
 
   return { live, opening, failed }
 }
@@ -81,10 +83,26 @@ export function LiveBar({ live }: { live: LiveEditing }) {
   const { t } = useTranslation()
   const [, refresh] = useReducer((n: number) => n + 1, 0)
   useEffect(() => {
-    live.session.awareness.on('change', refresh)
-    live.session.onConnection = refresh
+    const signature = () => {
+      const others = othersIn(live.session.awareness)
+        .map((u) => `${u.clientId}:${u.email}:${u.name}:${u.role}:${u.color}`)
+        .join('|')
+      const ai = aiIn(live.session.awareness)
+        .map((a) => `${a.clientId}:${a.askedBy}:${a.self}`)
+        .join('|')
+      return `${live.session.connected ? 1 : 0};${others};${ai}`
+    }
+    let prev = signature()
+    const maybeRefresh = () => {
+      const next = signature()
+      if (next === prev) return
+      prev = next
+      refresh()
+    }
+    live.session.awareness.on('change', maybeRefresh)
+    live.session.onConnection = maybeRefresh
     return () => {
-      live.session.awareness.off('change', refresh)
+      live.session.awareness.off('change', maybeRefresh)
       live.session.onConnection = undefined
     }
   }, [live])

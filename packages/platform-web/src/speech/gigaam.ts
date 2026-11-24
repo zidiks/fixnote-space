@@ -36,22 +36,31 @@ export class GigaAm {
     let weight = 0
     for (const piece of splitAtQuiet(audio, MAX_S)) {
       const { data, frames } = gigaamFeatures(piece)
-      const result = await this.session.run({
-        features: new this.ort.Tensor('float32', data, [1, MELS, frames]),
-        feature_lengths: new this.ort.Tensor('int64', BigInt64Array.from([BigInt(frames)]), [1]),
-      })
-      const logProbs = result.log_probs as Ort.Tensor
-      const steps = logProbs.dims[1] ?? 0
-      const { text, confidence } = ctcDecode(logProbs.data as Float32Array, steps, this.vocab)
-      if (!text) continue
-      texts.push(text)
-      sure += confidence * text.length
-      weight += text.length
+      const features = new this.ort.Tensor('float32', data, [1, MELS, frames])
+      const featureLengths = new this.ort.Tensor('int64', BigInt64Array.from([BigInt(frames)]), [1])
+      let logProbs: Ort.Tensor | undefined
+      try {
+        const result = await this.session.run({
+          features,
+          feature_lengths: featureLengths,
+        })
+        logProbs = result.log_probs as Ort.Tensor
+        const steps = logProbs.dims[1] ?? 0
+        const { text, confidence } = ctcDecode(logProbs.data as Float32Array, steps, this.vocab)
+        if (!text) continue
+        texts.push(text)
+        sure += confidence * text.length
+        weight += text.length
+      } finally {
+        features.dispose()
+        featureLengths.dispose()
+        logProbs?.dispose()
+      }
     }
     return { text: texts.join(' '), confidence: weight ? sure / weight : 0 }
   }
 
-  release() {
-    void this.session.release()
+  release(): Promise<void> {
+    return this.session.release()
   }
 }

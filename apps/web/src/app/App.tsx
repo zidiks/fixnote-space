@@ -6,7 +6,6 @@ import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useR
 import { Toaster } from 'sonner'
 import { CallBar } from '../components/CallBar'
 import { CardPaymentDialog } from '../components/CardPaymentDialog'
-import { ChatPanel } from '../components/ChatPanel'
 import { ConnectDialog } from '../components/connect/ConnectDialog'
 import { ExtensionConnectDialog } from '../components/connect/ExtensionConnectDialog'
 import { DeleteKey } from '../components/DeleteKey'
@@ -24,8 +23,6 @@ import { SelectionArea } from '../components/SelectionBar'
 import { Sidebar } from '../components/Sidebar'
 import { Spotlight } from '../components/Spotlight'
 import { StorageBanner } from '../components/StorageBanner'
-import { SettingsDialog } from '../components/settings/SettingsDialog'
-import { TidyView } from '../components/TidyView'
 import { TitleBar } from '../components/TitleBar'
 import { VoiceBar } from '../components/VoiceBar'
 import { paymentReturned } from '../lib/account/account'
@@ -51,8 +48,15 @@ import { useVisualViewport } from '../lib/viewport'
 import { toggleVoice } from '../lib/voice/voice'
 import { applyFontMode, applyTheme, listOf, useUi } from './store'
 
-// The editor (Tiptap/ProseMirror) is the heaviest part of the bundle; load it on first open.
+// The editor (Tiptap/ProseMirror) and secondary panels load on first open.
 const NoteView = lazy(() => import('../components/NoteView').then((m) => ({ default: m.NoteView })))
+const ChatPanel = lazy(() =>
+  import('../components/ChatPanel').then((m) => ({ default: m.ChatPanel })),
+)
+const SettingsDialog = lazy(() =>
+  import('../components/settings/SettingsDialog').then((m) => ({ default: m.SettingsDialog })),
+)
+const TidyView = lazy(() => import('../components/TidyView').then((m) => ({ default: m.TidyView })))
 const PrivacyLibrary = lazy(() => import('../components/editor/PrivacyLibrary'))
 
 const queryClient = new QueryClient({
@@ -63,6 +67,7 @@ const queryClient = new QueryClient({
     // fail then like any other error.
     queries: {
       staleTime: Number.POSITIVE_INFINITY,
+      gcTime: 2 * 60_000,
       retry: false,
       refetchOnWindowFocus: false,
       networkMode: 'always',
@@ -89,7 +94,11 @@ function Content() {
     case 'overview':
       return <Home />
     case 'tidy':
-      return <TidyView />
+      return (
+        <Suspense fallback={null}>
+          <TidyView />
+        </Suspense>
+      )
     case 'note':
       return <OpenNote id={route.id} />
     default:
@@ -131,7 +140,12 @@ function NotesContent({ onNewNote }: { onNewNote: () => void }) {
   )
   if (narrow) {
     if (route.kind === 'overview') return whole(<Home />)
-    if (route.kind === 'tidy') return whole(<TidyView />)
+    if (route.kind === 'tidy')
+      return whole(
+        <Suspense fallback={null}>
+          <TidyView />
+        </Suspense>,
+      )
     if (route.kind === 'note') return whole(<OpenNote id={route.id} />)
     // One instance per list: its search and scroll start fresh in another place.
     return <NoteColumn key={JSON.stringify(list)} list={list} wide />
@@ -142,7 +156,11 @@ function NotesContent({ onNewNote }: { onNewNote: () => void }) {
         {route.kind === 'overview' ? (
           whole(<Home />)
         ) : route.kind === 'tidy' ? (
-          whole(<TidyView />)
+          whole(
+            <Suspense fallback={null}>
+              <TidyView />
+            </Suspense>,
+          )
         ) : (
           <>
             <NoteColumn key={key} list={list} activeId={openId ?? undefined} onFirst={onFirst} />
@@ -157,11 +175,18 @@ function NotesContent({ onNewNote }: { onNewNote: () => void }) {
 function AppShell() {
   const { t, i18n } = useTranslation()
   const platform = usePlatform()
-  const ui = useUi()
   const createNote = useCreateNote()
   const openDaily = useOpenDaily()
   const { driver } = useDb()
-  const { sidebarOpen, chatOpen, theme, fontMode, drawerOpen } = ui
+  const sidebarOpen = useUi((s) => s.sidebarOpen)
+  const chatOpen = useUi((s) => s.chatOpen)
+  const theme = useUi((s) => s.theme)
+  const fontMode = useUi((s) => s.fontMode)
+  const drawerOpen = useUi((s) => s.drawerOpen)
+  const settingsOpen = useUi((s) => s.settings !== null)
+  const toggleSidebar = useUi((s) => s.toggleSidebar)
+  const toggleChat = useUi((s) => s.toggleChat)
+  const setChatOpen = useUi((s) => s.setChatOpen)
   // Beside the content, or over it when it would squeeze the content too much.
   const { sidebarDrawer, chatOverlay } = useDocking()
   const layout = useLayout()
@@ -217,18 +242,30 @@ function AppShell() {
   }, [])
   // The notes layout also lets panels open over the content when its columns would be tight.
   useEffect(() => {
-    const update = () => useUi.getState().setWidth(window.innerWidth)
+    if (layout !== 'notes') return
+    let frame = 0
+    const update = () => {
+      frame = 0
+      useUi.getState().setWidth(window.innerWidth)
+    }
+    const onResize = () => {
+      if (frame) return
+      frame = requestAnimationFrame(update)
+    }
     update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [layout])
 
   const newNote = () => {
     // In the folder on screen, or (notes layout) the folder listed beside the open note.
     const list = currentListRoute()
     createNote.mutate(
       { content: '', folderId: list?.kind === 'folder' ? list.id : null },
-      { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) },
+      { onSuccess: (n) => useUi.getState().navigate({ kind: 'note', id: n.id }) },
     )
   }
   const nativeActions = useMemo(
@@ -253,13 +290,18 @@ function AppShell() {
   useNativeFeel(platform, isApple, nativeActions)
   useExternalChanges()
   useAutoUpdateCheck()
-  useShortcut('chat', ui.toggleChat)
-  useShortcut('sidebar', ui.toggleSidebar)
-  useShortcut('search', () => ui.setSpotlightOpen(!ui.spotlightOpen))
+  useShortcut('chat', toggleChat)
+  useShortcut('sidebar', toggleSidebar)
+  useShortcut('search', () => {
+    const s = useUi.getState()
+    s.setSpotlightOpen(!s.spotlightOpen)
+  })
   useShortcut('back', navBack)
   useShortcut('forward', navForward)
   useShortcut('today', () =>
-    openDaily.mutate(undefined, { onSuccess: (n) => ui.navigate({ kind: 'note', id: n.id }) }),
+    openDaily.mutate(undefined, {
+      onSuccess: (n) => useUi.getState().navigate({ kind: 'note', id: n.id }),
+    }),
   )
   // Dictation: into the chat input when it has focus, else into the open note or a new one.
   useShortcut(
@@ -311,7 +353,7 @@ function AppShell() {
                 type="button"
                 aria-label={t('sidebar.collapse')}
                 className="absolute inset-0 z-30 bg-scrim"
-                onClick={ui.toggleSidebar}
+                onClick={toggleSidebar}
               />
               <div className="absolute inset-y-0 left-0 z-40 shadow-xl">
                 <Sidebar drawer />
@@ -336,17 +378,25 @@ function AppShell() {
             type="button"
             aria-label={t('chat.close')}
             className="absolute inset-0 z-30 bg-scrim"
-            onClick={() => ui.setChatOpen(false)}
+            onClick={() => setChatOpen(false)}
           />
           <div className="absolute inset-y-0 right-0 z-40 flex max-w-full max-sm:left-0">
-            <ChatPanel />
+            <Suspense fallback={null}>
+              <ChatPanel />
+            </Suspense>
           </div>
         </>
       ) : chatOpen ? (
-        <ChatPanel />
+        <Suspense fallback={null}>
+          <ChatPanel />
+        </Suspense>
       ) : null}
       <Spotlight />
-      <SettingsDialog />
+      {settingsOpen ? (
+        <Suspense fallback={null}>
+          <SettingsDialog />
+        </Suspense>
+      ) : null}
       <ProDialog />
       <TrialEndedDialog />
       <Paywall />

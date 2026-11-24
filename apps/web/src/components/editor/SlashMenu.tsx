@@ -236,13 +236,19 @@ export function SlashMenu({
         return next
       })
     }
+    const onTransaction = ({
+      transaction,
+    }: {
+      transaction: { docChanged: boolean; selectionSet: boolean }
+    }) => {
+      if (!transaction.docChanged && !transaction.selectionSet) return
+      sync()
+    }
     const onBlur = () => setMatch(null)
-    editor.on('selectionUpdate', sync)
-    editor.on('update', sync)
+    editor.on('transaction', onTransaction)
     editor.on('blur', onBlur)
     return () => {
-      editor.off('selectionUpdate', sync)
-      editor.off('update', sync)
+      editor.off('transaction', onTransaction)
       editor.off('blur', onBlur)
     }
   }, [editor])

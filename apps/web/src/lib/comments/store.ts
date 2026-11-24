@@ -32,7 +32,13 @@ interface CommentAlertState {
 export const useCommentAlerts = create<CommentAlertState>((set) => ({
   events: [],
   bySharedId: {},
-  setEvents: (events) => set({ events, bySharedId: summarize(events) }),
+  setEvents: (events) =>
+    set((s) => {
+      if (s.events.length === events.length && s.events.every((e, i) => e.id === events[i]?.id)) {
+        return s
+      }
+      return { events, bySharedId: summarize(events) }
+    }),
   markReadLocal: (sharedId, threadId) =>
     set((s) => {
       const next = s.events.filter((ev) => {
@@ -43,7 +49,7 @@ export const useCommentAlerts = create<CommentAlertState>((set) => ({
       if (next.length === s.events.length) return s
       return { events: next, bySharedId: summarize(next) }
     }),
-  clear: () => set({ events: [], bySharedId: {} }),
+  clear: () => set((s) => (s.events.length === 0 ? s : { events: [], bySharedId: {} })),
 }))
 
 export async function refreshCommentEvents(shared: SharedNotes | null): Promise<void> {

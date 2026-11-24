@@ -21,10 +21,20 @@ const WEEK = [
 ]
 const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
+const weekdayCache = new Map<string, { key: (typeof WEEKDAYS)[number]; name: string }[]>()
+
 /** Short weekday names in the UI language, Monday first, with the rule's keys. */
 export function weekdayNames(lang = i18n.resolvedLanguage) {
+  const key = lang ?? ''
+  const cached = weekdayCache.get(key)
+  if (cached) return cached
   const format = new Intl.DateTimeFormat(lang, { weekday: 'short' })
-  return WEEKDAYS.map((key, i) => ({ key, name: format.format(new Date(`${WEEK[i]}T12:00:00`)) }))
+  const built = WEEKDAYS.map((day, i) => ({
+    key: day,
+    name: format.format(new Date(`${WEEK[i]}T12:00:00`)),
+  }))
+  weekdayCache.set(key, built)
+  return built
 }
 
 /** "по пн, чт", "every 3 days"… */
@@ -107,7 +117,69 @@ export function setRepeat(editor: Editor, pos: number, rule: Recurrence | null):
   editor.view.dispatch(tr)
 }
 
-const key = new PluginKey('recurringTasks')
+interface RecurringState {
+  decorations: DecorationSet
+  hasRecurring: boolean
+  editingPos: number | null
+}
+
+/** Position of the recurring taskItem whose first line holds `$head`, or null. */
+function editingRecurringPos(doc: PmNode, headPos: number): number | null {
+  const $head = doc.resolve(headPos)
+  for (let d = $head.depth; d >= 1; d--) {
+    const node = $head.node(d)
+    if (node.type.name !== 'taskItem') continue
+    const pos = $head.before(d)
+    const first = node.firstChild
+    if (!first?.isTextblock) return null
+    if (headPos < pos + 2 || headPos > pos + 2 + first.content.size) return null
+    return markIn(first, pos + 2)?.rule ? pos : null
+  }
+  return null
+}
+
+function buildRecurringState(doc: PmNode, headPos: number): RecurringState {
+  const decorations: Decoration[] = []
+  let hasRecurring = false
+  let editingPos: number | null = null
+  doc.descendants((node, pos) => {
+    if (node.type.name !== 'taskItem') return true
+    const first = node.firstChild
+    if (!first?.isTextblock) return true
+    const mark = markIn(first, pos + 2)
+    if (!mark?.rule) return true
+    hasRecurring = true
+    const editing = headPos >= pos + 2 && headPos <= pos + 2 + first.content.size
+    if (editing) {
+      editingPos = pos
+      decorations.push(Decoration.inline(mark.from, mark.to, { class: 'fixnote-repeat-raw' }))
+      return true
+    }
+    decorations.push(Decoration.inline(mark.from, mark.to, { class: 'fixnote-repeat-hidden' }))
+    const label = `${RECUR_MARK} ${repeatLabel(mark.rule)}`
+    decorations.push(
+      Decoration.widget(
+        mark.to,
+        () => {
+          const chip = document.createElement('span')
+          chip.className = 'fixnote-repeat-chip'
+          chip.contentEditable = 'false'
+          chip.textContent = label
+          return chip
+        },
+        { side: 1, key: `repeat-${label}`, ignoreSelection: true },
+      ),
+    )
+    return true
+  })
+  return {
+    decorations: decorations.length ? DecorationSet.create(doc, decorations) : DecorationSet.empty,
+    hasRecurring,
+    editingPos,
+  }
+}
+
+const key = new PluginKey<RecurringState>('recurringTasks')
 
 /**
  * Shows a task's rule as a small "🔁 every Mon" label; with the caret in that line the raw text
@@ -117,46 +189,22 @@ export const RecurringTasks = Extension.create({
   name: 'recurringTasks',
   addProseMirrorPlugins() {
     return [
-      new Plugin({
+      new Plugin<RecurringState>({
         key,
-        props: {
-          decorations: (state) => {
-            const decorations: Decoration[] = []
-            const { $head } = state.selection
-            state.doc.descendants((node, pos) => {
-              if (node.type.name !== 'taskItem') return true
-              const first = node.firstChild
-              if (!first?.isTextblock) return true
-              const mark = markIn(first, pos + 2)
-              if (!mark?.rule) return true
-              const editing = $head.pos >= pos + 2 && $head.pos <= pos + 2 + first.content.size
-              if (editing) {
-                decorations.push(
-                  Decoration.inline(mark.from, mark.to, { class: 'fixnote-repeat-raw' }),
-                )
-                return true
-              }
-              decorations.push(
-                Decoration.inline(mark.from, mark.to, { class: 'fixnote-repeat-hidden' }),
-              )
-              const label = `${RECUR_MARK} ${repeatLabel(mark.rule)}`
-              decorations.push(
-                Decoration.widget(
-                  mark.to,
-                  () => {
-                    const chip = document.createElement('span')
-                    chip.className = 'fixnote-repeat-chip'
-                    chip.contentEditable = 'false'
-                    chip.textContent = label
-                    return chip
-                  },
-                  { side: 1, key: `repeat-${label}`, ignoreSelection: true },
-                ),
-              )
-              return true
-            })
-            return DecorationSet.create(state.doc, decorations)
+        state: {
+          init: (_config, state) => buildRecurringState(state.doc, state.selection.$head.pos),
+          apply: (tr, prev, _oldState, newState) => {
+            if (tr.docChanged) {
+              return buildRecurringState(newState.doc, newState.selection.$head.pos)
+            }
+            if (!prev.hasRecurring || !tr.selectionSet) return prev
+            const nextEditing = editingRecurringPos(newState.doc, newState.selection.$head.pos)
+            if (nextEditing === prev.editingPos) return prev
+            return buildRecurringState(newState.doc, newState.selection.$head.pos)
           },
+        },
+        props: {
+          decorations: (state) => key.getState(state)?.decorations ?? DecorationSet.empty,
         },
       }),
     ]

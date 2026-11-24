@@ -1,7 +1,10 @@
-import { Bloub, type BloubState } from '@fixnote/ui'
+import type { BloubState } from '@fixnote/ui/bloub'
+import { lazy, Suspense } from 'react'
 import { useAssistant } from '../lib/assistant/assistant'
 import { useIsDark } from '../lib/useIsDark'
 import { useVoice } from '../lib/voice/voice'
+
+const Bloub = lazy(() => import('@fixnote/ui/bloub').then((m) => ({ default: m.Bloub })))
 
 /** Hex twins of --foreground / --background, which the avatar needs for its color math. */
 const COLORS = {
@@ -31,5 +34,13 @@ export function AssistantAvatar({ size, follow = false }: { size: number; follow
               ? 'orbit'
               : 'idle'
 
-  return <Bloub size={size} state={state} follow={follow} {...COLORS[dark ? 'dark' : 'light']} />
+  return (
+    <Suspense
+      fallback={
+        <span aria-hidden className="inline-block shrink-0" style={{ width: size, height: size }} />
+      }
+    >
+      <Bloub size={size} state={state} follow={follow} {...COLORS[dark ? 'dark' : 'light']} />
+    </Suspense>
+  )
 }

@@ -81,6 +81,7 @@ fn db_query(
 #[tauri::command]
 fn window_ready(window: tauri::WebviewWindow) {
     if !window.is_visible().unwrap_or(true) {
+        webview::set_low_memory(&window, false);
         let _ = window.show();
         let _ = window.set_focus();
     }
@@ -127,7 +128,7 @@ pub fn run() {
             // the tray menu.
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                let _ = window.hide();
+                tray::hide(window.app_handle());
             }
         })
         .invoke_handler(tauri::generate_handler![

@@ -159,6 +159,7 @@ export async function acceptWithUndo(list: TidySuggestion[], deps: AcceptDeps) {
 }
 
 const suggestedThisSession = new Set<string>()
+const MAX_SUGGESTED = 512
 
 /**
  * After leaving a fresh note that has no folder: ask for a folder and a title for it and
@@ -169,6 +170,10 @@ export async function suggestForNewNote(
   deps: AcceptDeps & { review: () => void },
 ) {
   if (suggestedThisSession.has(note.id)) return
+  if (suggestedThisSession.size >= MAX_SUGGESTED) {
+    const oldest = suggestedThisSession.values().next().value
+    if (oldest !== undefined) suggestedThisSession.delete(oldest)
+  }
   suggestedThisSession.add(note.id)
   let found: TidySuggestion[] | LlmUnavailable
   try {

@@ -1,5 +1,14 @@
-import { readFileSync, statSync } from 'node:fs'
-import { basename, extname, isAbsolute } from 'node:path'
+import { readFileSync, realpathSync, statSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import {
+  basename,
+  dirname,
+  extname,
+  isAbsolute,
+  parse as parsePath,
+  relative,
+  resolve,
+} from 'node:path'
 import {
   AccessError,
   Attachments,
@@ -18,6 +27,8 @@ import {
   type SqlDriver,
   type ToolGate,
 } from '@fixnote/core'
+import { blobStoreDir } from './blobs'
+import { defaultDatabasePath } from './paths'
 
 export type { McpAccess }
 export { AccessError, fileSize }
@@ -101,7 +112,9 @@ function settingsGate(db: SqlDriver): ToolGate {
  * Every call re-reads the access level and the scope, so a change in the app applies right away.
  */
 export class NotesTools extends NoteTools {
-  constructor(db: SqlDriver, client: () => string, blobs?: BlobStore) {
+  private readonly blockedDirs: string[]
+
+  constructor(db: SqlDriver, client: () => string, blobs?: BlobStore, dataDir?: string) {
     const repo = new NotesRepo(db)
     super(db, repo, new AuditLog(db, repo), {
       gate: settingsGate(db),
@@ -110,6 +123,11 @@ export class NotesTools extends NoteTools {
       attachments: blobs ? new Attachments(db, blobs) : null,
       attachmentTool: true,
     })
+    this.blockedDirs = [
+      dirname(defaultDatabasePath()),
+      ...(dataDir ? [dataDir] : []),
+      ...(blobStoreDir(blobs) ? [blobStoreDir(blobs) as string] : []),
+    ].map((d) => resolve(d))
   }
 
   async access(): Promise<McpAccess> {
@@ -158,10 +176,18 @@ export class NotesTools extends NoteTools {
     let name = file.name?.trim() ?? ''
     if (file.path) {
       if (!isAbsolute(file.path)) throw new Error('Give the full path to the file.')
-      const stat = statSync(file.path, { throwIfNoEntry: false })
+      if (isRestrictedPath(file.path, this.blockedDirs)) throw new AccessError(RESTRICTED_PATH)
+      let resolved: string
+      try {
+        resolved = realpathSync(file.path)
+      } catch {
+        throw new Error(`No file at ${file.path}.`)
+      }
+      if (isRestrictedPath(resolved, this.blockedDirs)) throw new AccessError(RESTRICTED_PATH)
+      const stat = statSync(resolved, { throwIfNoEntry: false })
       if (!stat?.isFile()) throw new Error(`No file at ${file.path}.`)
       if (stat.size > MAX_ATTACHMENT_BYTES) throw new Error(tooBig(stat.size))
-      bytes = new Uint8Array(readFileSync(file.path))
+      bytes = new Uint8Array(readFileSync(resolved))
       name ||= basename(file.path)
     } else if (file.data) {
       bytes = new Uint8Array(Buffer.from(file.data, 'base64'))
@@ -179,3 +205,71 @@ export class NotesTools extends NoteTools {
 
 const tooBig = (size: number) =>
   `The file is ${fileSize(size)}; Fixnote takes files up to ${fileSize(MAX_ATTACHMENT_BYTES)}.`
+
+const RESTRICTED_PATH =
+  'This file cannot be attached because it is in a restricted or sensitive location.'
+const BLOCKED_SEGMENTS = new Set(['appdata', 'programdata', 'windows', 'system32', 'syswow64'])
+const BLOCKED_ROOTS = new Set(['etc', 'proc', 'sys'])
+
+function safeRealpath(p: string): string | null {
+  try {
+    return realpathSync(p)
+  } catch {
+    return null
+  }
+}
+
+function isInsideDir(target: string, dir: string): boolean {
+  const norm = (p: string) => (process.platform === 'win32' ? p.toLowerCase() : p)
+  const rel = relative(norm(dir), norm(target))
+  return (
+    rel === '' ||
+    (rel !== '..' && !rel.startsWith('../') && !rel.startsWith('..\\') && !isAbsolute(rel))
+  )
+}
+
+function pathSegments(p: string): string[] {
+  const { root } = parsePath(p)
+  return p
+    .slice(root.length)
+    .split(/[\\/]+/)
+    .filter(Boolean)
+}
+
+function isRestrictedPath(candidate: string, blockedDirs: readonly string[]): boolean {
+  const normCandidate = resolve(candidate)
+  if (basename(normCandidate).toLowerCase().startsWith('fixnote.db')) return true
+
+  for (const dir of blockedDirs) {
+    if (isInsideDir(normCandidate, dir)) return true
+    const realDir = safeRealpath(dir)
+    if (realDir && isInsideDir(normCandidate, realDir)) return true
+  }
+
+  const rootSegments = pathSegments(normCandidate)
+  let segmentsToCheck = rootSegments
+  if (process.platform === 'win32') {
+    const tmp = safeRealpath(tmpdir()) ?? resolve(tmpdir())
+    if (isInsideDir(normCandidate, tmp)) {
+      const rel = relative(tmp.toLowerCase(), normCandidate.toLowerCase())
+      segmentsToCheck = rel ? rel.split(/[\\/]+/).filter(Boolean) : []
+    }
+  }
+
+  const lowerRoot = rootSegments.map((s) => s.toLowerCase())
+  if (lowerRoot[0] && BLOCKED_ROOTS.has(lowerRoot[0])) return true
+  if (lowerRoot[0] === 'private' && lowerRoot[1] && BLOCKED_ROOTS.has(lowerRoot[1])) return true
+
+  const lower = segmentsToCheck.map((s) => s.toLowerCase())
+  for (let i = 0; i < segmentsToCheck.length; i++) {
+    const seg = segmentsToCheck[i] as string
+    const low = lower[i] as string
+    if (seg.startsWith('.')) return true
+    if (BLOCKED_SEGMENTS.has(low)) return true
+    if (low === 'library') {
+      const next = lower[i + 1]
+      if (next === 'keychains' || next === 'application support') return true
+    }
+  }
+  return false
+}

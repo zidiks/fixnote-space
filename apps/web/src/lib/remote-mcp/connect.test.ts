@@ -89,6 +89,20 @@ describe('the app answers fixnote://connect', () => {
     expect(consent.decide).not.toHaveBeenCalled()
   })
 
+  it('uses relay-side decideAndHandoff when provided without client-supplied redirects', async () => {
+    const { api, consent, handoff } = fakeApi({})
+    api.decideAndHandoff = vi.fn(async () => 'done' as const)
+    const state = await loadConnect(api, 'auth-123456', { localOnly: false })
+    expect(await answerConnect(api, 'auth-123456', state, true)).toBe('done')
+    expect(api.decideAndHandoff).toHaveBeenCalledWith('auth-123456', true)
+    expect(consent.decide).not.toHaveBeenCalled()
+    expect(handoff).not.toHaveBeenCalled()
+    vi.mocked(api.decideAndHandoff).mockResolvedValueOnce('failed')
+    expect(await answerConnect(api, 'auth-123456', state, false)).toBe('failed')
+    vi.mocked(api.decideAndHandoff).mockRejectedValueOnce(new Error('network'))
+    expect(await answerConnect(api, 'auth-123456', state, true)).toBe('unsent')
+  })
+
   it('never acts without a pending request, and reports a relay that is down', async () => {
     const { api, consent } = fakeApi({})
     expect(await answerConnect(api, 'auth-123456', { kind: 'loading' }, true)).toBe('failed')

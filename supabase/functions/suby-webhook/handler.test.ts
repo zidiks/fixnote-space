@@ -37,10 +37,11 @@ async function deliver(
   )
 }
 
-function setup(sub: Partial<SubySubscription> = {}) {
+function setup(sub: Partial<SubySubscription> = {}, extraDeps: Partial<WebhookDeps> = {}) {
   const subscription: SubySubscription = {
     id: 'sub_1',
     customerId: 'cus_1',
+    productId: 'pro_month',
     status: 'ACTIVE',
     cancelAtPeriodEnd: false,
     currentCycleDueAt: '2026-11-01T12:00:00Z',
@@ -57,13 +58,28 @@ function setup(sub: Partial<SubySubscription> = {}) {
       [...rows].find(([, r]) => r.subscriptionId === id)?.[0] ?? null,
     userByCustomer: async (id) => [...rows].find(([, r]) => r.customerId === id)?.[0] ?? null,
     userByEmail: async (email) => (email === 'ann@x.io' ? 'user-ann' : null),
+    current: async (user) => {
+      const r = rows.get(user)
+      return r
+        ? {
+            status: r.status,
+            currentPeriodEnd: r.currentPeriodEnd,
+            subscriptionId: r.subscriptionId,
+          }
+        : null
+    },
     save: async (user, row) => void rows.set(user, row),
   }
   const suby: WebhookDeps['suby'] = {
     subscription: async (id) => (id === subscription.id ? subscription : null),
     paymentSubscription: async (id) => (id === 'pay_1' ? 'sub_1' : null),
   }
-  return { deps: { secret: SECRET, suby, store, now: () => NOW }, rows, seen, subscription }
+  return {
+    deps: { secret: SECRET, suby, store, now: () => NOW, ...extraDeps },
+    rows,
+    seen,
+    subscription,
+  }
 }
 
 const paid = {
@@ -180,4 +196,57 @@ Deno.test('an unknown account is retried later, other events are ignored', async
     200,
   )
   assertEquals(rows.size, 0)
+})
+
+Deno.test('ignores subscriptions for unrecognized products when allowedProducts is configured', async () => {
+  const { deps, rows, seen } = setup(
+    { productId: 'cheap_other_product' },
+    { allowedProducts: ['pro_month', 'pro_year'] },
+  )
+  assertEquals((await deliver(paid, deps)).status, 200)
+  assertEquals(rows.size, 0)
+  assertEquals(seen.has('evt_1'), true)
+
+  const ok = setup({ productId: 'pro_year' }, { allowedProducts: ['pro_month', 'pro_year'] })
+  assertEquals((await deliver(paid, ok.deps)).status, 200)
+  assertEquals(ok.rows.get('user-ann')?.status, 'active')
+})
+
+Deno.test('subscription.updated cannot reactivate or extend a refunded/disputed subscription', async () => {
+  const { deps, rows, subscription } = setup()
+  await deliver(paid, deps)
+  await deliver(
+    {
+      id: 'evt_ref',
+      type: 'payment.refunded',
+      data: { object: 'payment', subscription_id: 'sub_1' },
+    },
+    deps,
+  )
+  assertEquals(rows.get('user-ann')?.status, 'canceled')
+  assertEquals(rows.get('user-ann')?.currentPeriodEnd, new Date(NOW).toISOString())
+
+  // Suby still reports ACTIVE and fires subscription.updated: must NOT reactivate.
+  await deliver(
+    { id: 'evt_upd1', type: 'subscription.updated', data: { object: 'subscription', id: 'sub_1' } },
+    deps,
+  )
+  assertEquals(rows.get('user-ann')?.status, 'canceled')
+  assertEquals(rows.get('user-ann')?.currentPeriodEnd, new Date(NOW).toISOString())
+
+  // Even with cancelAtPeriodEnd=true, must NOT extend currentPeriodEnd past revocation time.
+  subscription.cancelAtPeriodEnd = true
+  await deliver(
+    { id: 'evt_upd2', type: 'subscription.updated', data: { object: 'subscription', id: 'sub_1' } },
+    deps,
+  )
+  assertEquals(rows.get('user-ann')?.currentPeriodEnd, new Date(NOW).toISOString())
+
+  // Winning a dispute still restores Pro.
+  subscription.cancelAtPeriodEnd = false
+  await deliver(
+    { id: 'evt_won', type: 'dispute.won', data: { object: 'dispute', payment_id: 'pay_1' } },
+    deps,
+  )
+  assertEquals(rows.get('user-ann')?.status, 'active')
 })

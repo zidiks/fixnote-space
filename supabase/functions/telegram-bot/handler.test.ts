@@ -16,8 +16,15 @@ const open = (sealed: string) =>
 function setup() {
   const sent: { chat: number; text: string }[] = []
   const reactions: number[] = []
-  const codes = new Map([['good-code', 'user-1']])
+  const codes = new Map([
+    ['good-code', 'user-1'],
+    ['other-code', 'user-2'],
+  ])
   const links = new Map<string, string>()
+  const emails = new Map([
+    ['user-1', 'alice@example.com'],
+    ['user-2', 'bob@example.com'],
+  ])
   const items: { user: string; sealed: string }[] = []
   const store: CaptureStore = {
     consumeCode: async (c) => {
@@ -28,6 +35,7 @@ function setup() {
     link: async (chat, user) => void links.set(chat, user),
     unlink: async (chat) => links.delete(chat),
     userForChat: async (chat) => links.get(chat) ?? null,
+    userEmail: async (user) => emails.get(user) ?? null,
     publicKey: async (user) => (user === 'user-1' || user === 'free-user' ? PK : null),
     isPro: async (user) => user !== 'free-user',
     addItem: async (user, sealed) => void items.push({ user, sealed }),
@@ -92,8 +100,22 @@ Deno.test('links a chat with a one-time code, in the user language', async () =>
   await send({ text: '/start good-code' })
   assertEquals(links.get('42'), 'user-1')
   assertEquals(sent.at(-1)?.text.startsWith('Готово'), true)
+  assertEquals(sent.at(-1)?.text.includes('al***@example.com'), true)
   await send({ text: '/start good-code' })
   assertEquals(sent.at(-1)?.text.startsWith('Ссылка устарела'), true)
+})
+
+Deno.test('refuses to silently overwrite a chat linked to another account until /stop', async () => {
+  const { send, sent, links } = setup()
+  links.set('42', 'user-1')
+  await send({ text: '/start other-code' })
+  assertEquals(links.get('42'), 'user-1')
+  assertEquals(sent.at(-1)?.text.includes('/stop'), true)
+  assertEquals(sent.at(-1)?.text.includes('al***@example.com'), true)
+  await send({ text: '/stop' })
+  assertEquals(links.has('42'), false)
+  await send({ text: '/start good-code' })
+  assertEquals(links.get('42'), 'user-1')
 })
 
 Deno.test('seals text, voice and photos to the account key; nothing readable is stored', async () => {

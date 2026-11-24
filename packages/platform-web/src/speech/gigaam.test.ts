@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import * as ort from 'onnxruntime-web'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ctcDecode, parseVocabulary } from './ctc'
 import { frameCount, gigaamFeatures, MELS } from './features'
 import { GigaAm } from './gigaam'
@@ -35,6 +35,51 @@ describe('gigaamFeatures', () => {
     expect(data.length).toBe(MELS * 99)
     // Silence is the clamp's floor.
     expect(data[0]).toBeCloseTo(Math.log(1e-9))
+  })
+})
+
+describe('SileroVad tensor disposal', () => {
+  it('disposes replaced state tensors, input tensors, sr, and output tensors across frames', async () => {
+    const disposed: string[] = []
+    let stateId = 0
+    class FakeTensor {
+      readonly tag: string
+      constructor(
+        public readonly type: string,
+        public readonly data: Float32Array | BigInt64Array,
+        public readonly dims: number[],
+      ) {
+        this.tag = type === 'int64' ? 'sr' : dims.length === 3 ? `state-${stateId++}` : 'frame'
+      }
+      dispose() {
+        disposed.push(this.tag)
+      }
+    }
+    const fakeSession = {
+      run: vi.fn(async () => ({
+        output: {
+          data: new Float32Array([0.25]),
+          dispose: () => disposed.push('output'),
+        },
+        stateN: {
+          dispose: () => disposed.push(`state-${stateId++}`),
+        },
+      })),
+      release: vi.fn(async () => undefined),
+    }
+    const fakeOrt = {
+      Tensor: FakeTensor,
+      InferenceSession: { create: vi.fn(async () => fakeSession) },
+    } as unknown as typeof ort
+
+    const vad = await SileroVad.load(fakeOrt, new Uint8Array([1, 2, 3]))
+    const probs = await vad.probabilities(new Float32Array(512 * 3))
+    expect(probs.length).toBe(3)
+    expect(disposed.filter((t) => t === 'frame')).toHaveLength(3)
+    expect(disposed.filter((t) => t === 'output')).toHaveLength(3)
+    // Initial state + 3 returned stateN tensors = 4 total states disposed.
+    expect(disposed.filter((t) => t.startsWith('state-'))).toHaveLength(4)
+    expect(disposed.filter((t) => t === 'sr')).toHaveLength(1)
   })
 })
 

@@ -39,6 +39,20 @@ const store: BillingStore = {
     if (error) throw error
     return (data as string | null) ?? null
   },
+  async current(userId) {
+    const { data, error } = await db
+      .from('subscriptions')
+      .select('status, current_period_end, provider_subscription_id')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error) throw error
+    if (!data) return null
+    return {
+      status: data.status as 'trialing' | 'active' | 'past_due' | 'canceled',
+      currentPeriodEnd: (data.current_period_end as string | null) ?? null,
+      subscriptionId: (data.provider_subscription_id as string | null) ?? null,
+    }
+  },
   async save(userId, row) {
     const { error } = await db.from('subscriptions').upsert(
       {
@@ -59,4 +73,10 @@ const store: BillingStore = {
 
 const key = Deno.env.get('SUBY_API_KEY')
 const secret = Deno.env.get('SUBY_WEBHOOK_SECRET')
-Deno.serve((req) => handle(req, { secret, suby: key ? subyApi(key) : null, store }))
+const allowedProducts = [
+  Deno.env.get('SUBY_PRODUCT_MONTH')?.trim(),
+  Deno.env.get('SUBY_PRODUCT_YEAR')?.trim(),
+].filter((id): id is string => Boolean(id))
+Deno.serve((req) =>
+  handle(req, { secret, suby: key ? subyApi(key) : null, store, allowedProducts }),
+)

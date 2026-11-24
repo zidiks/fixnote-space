@@ -21,6 +21,7 @@ pub fn after_update(data_dir: &Path, version: &str) {
 fn refresh_bundle() {
     use std::process::Command;
     const LSREGISTER: &str = "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister";
+    const TOUCH: &str = "/usr/bin/touch";
     // …/Fixnote.app/Contents/MacOS/<binary>
     let Ok(exe) = std::env::current_exe() else {
         return;
@@ -31,6 +32,6 @@ fn refresh_bundle() {
     if bundle.extension().and_then(|e| e.to_str()) != Some("app") {
         return;
     }
-    let _ = Command::new("touch").arg(bundle).status();
+    let _ = Command::new(TOUCH).arg(bundle).status();
     let _ = Command::new(LSREGISTER).arg("-f").arg(bundle).status();
 }

@@ -1,8 +1,20 @@
-import { CHANGE_UNSURE_MESSAGE, NO_DEVICE_MESSAGE, remoteToolList } from '@fixnote/core/remote-mcp'
+import {
+  CHANGE_UNSURE_MESSAGE,
+  NO_DEVICE_MESSAGE,
+  RELAY_CLOSE,
+  remoteToolList,
+} from '@fixnote/core/remote-mcp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { challenge, checkToken, resourceMetadata, TokenCache } from './auth'
-import { type DeviceInfo, type DeviceSocket, Hub, newDeviceInfo, rankDevices } from './hub'
-import { answer, answerBody, type McpContext } from './mcp'
+import {
+  type DeviceInfo,
+  type DeviceSocket,
+  Hub,
+  newDeviceInfo,
+  RateLimiter,
+  rankDevices,
+} from './hub'
+import { answer, answerBody, MAX_BATCH_SIZE, type McpContext, readLimitedText } from './mcp'
 
 const env = {
   SUPABASE_URL: 'https://ref.supabase.co',
@@ -53,6 +65,7 @@ describe('token check', () => {
       userId: 'user-1',
       clientId: 'claude',
       issuedAt: NOW / 1000 - 10,
+      expiresAt: (NOW / 1000 + 3600) * 1000,
       pro: true,
     })
     await checkToken(token, 'client', env, deps)
@@ -116,6 +129,7 @@ describe('token check', () => {
 
 class FakeDevice implements DeviceSocket {
   sent: string[] = []
+  closed: { code: number; reason: string } | null = null
   constructor(private data: DeviceInfo) {}
   send(text: string) {
     this.sent.push(text)
@@ -125,6 +139,9 @@ class FakeDevice implements DeviceSocket {
   }
   setInfo(info: DeviceInfo) {
     this.data = info
+  }
+  close(code: number, reason: string) {
+    this.closed = { code, reason }
   }
   last() {
     return JSON.parse(this.sent.at(-1) ?? '{}') as { id: string; tool: string; scope: unknown }
@@ -257,6 +274,79 @@ describe('Hub', () => {
       },
     ])
     expect(scopes).toEqual([{ folders: ['f'], notes: [] }])
+  })
+
+  it('closes and skips device sockets whose JWT has expired', async () => {
+    const expired = device({ device: 'old', kind: 'desktop', expiresAt: 1000 })
+    const valid = device({ device: 'fresh', kind: 'web', expiresAt: 5000 })
+    const hub = new Hub(() => [expired, valid], { now: () => 2000 })
+    const pending = hub.call(claude, 'list_folders', {}, read)
+    expect(expired.closed).toEqual({ code: RELAY_CLOSE.unauthorized, reason: 'token expired' })
+    expect(expired.sent).toHaveLength(0)
+    expect(valid.sent).toHaveLength(1)
+    valid.answer(hub, 'Inbox')
+    expect(await pending).toEqual({ content: [{ type: 'text', text: 'Inbox' }] })
+
+    // Messages arriving on an expired socket also close it and are ignored.
+    const late = device({ device: 'late', expiresAt: 1500 })
+    hub.onMessage(
+      late,
+      JSON.stringify({ type: 'hello', device: 'X', kind: 'desktop', syncedAt: 9, serving: true }),
+    )
+    expect(late.closed).toEqual({ code: RELAY_CLOSE.unauthorized, reason: 'token expired' })
+    expect(late.info().device).toBe('late')
+  })
+})
+
+describe('rate limit, body size cap, and batch cap', () => {
+  it('enforces a sliding-window rate limit', () => {
+    const limiter = new RateLimiter(2, 60_000)
+    expect(limiter.allow(1000)).toBe(true)
+    expect(limiter.allow(2000)).toBe(true)
+    expect(limiter.allow(3000)).toBe(false)
+    expect(limiter.allow(61_000)).toBe(true)
+  })
+
+  it('rejects oversized MCP request bodies via Content-Length and streamed byte count', async () => {
+    const okReq = new Request('https://mcp.fixnote.space/mcp', {
+      method: 'POST',
+      body: 'hello',
+    })
+    expect(await readLimitedText(okReq, 10)).toBe('hello')
+
+    const tooBigStream = new Request('https://mcp.fixnote.space/mcp', {
+      method: 'POST',
+      body: 'x'.repeat(20),
+    })
+    expect(await readLimitedText(tooBigStream, 10)).toBeNull()
+
+    const tooBigHeader = new Request('https://mcp.fixnote.space/mcp', {
+      method: 'POST',
+      headers: { 'content-length': '999999' },
+      body: 'tiny',
+    })
+    expect(await readLimitedText(tooBigHeader, 10)).toBeNull()
+  })
+
+  it('caps JSON-RPC batch arrays to MAX_BATCH_SIZE and rejects empty batches', async () => {
+    const c: McpContext = {
+      hello: async () => undefined,
+      call: async () => ({ content: [{ type: 'text', text: 'ok' }] }),
+    }
+    expect(await answerBody([], c)).toMatchObject({ error: { code: -32600 } })
+    const tooMany = Array.from({ length: MAX_BATCH_SIZE + 1 }, (_, i) => ({
+      jsonrpc: '2.0',
+      id: i,
+      method: 'ping',
+    }))
+    expect(await answerBody(tooMany, c)).toMatchObject({ error: { code: -32600 } })
+    const maxOk = Array.from({ length: MAX_BATCH_SIZE }, (_, i) => ({
+      jsonrpc: '2.0',
+      id: i,
+      method: 'ping',
+    }))
+    const res = await answerBody(maxOk, c)
+    expect(Array.isArray(res) && res.length === MAX_BATCH_SIZE).toBe(true)
   })
 })
 

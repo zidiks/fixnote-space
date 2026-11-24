@@ -19,6 +19,8 @@
  * Disconnecting in the app deletes the link row, and the token stops working at once.
  */
 
+import { timingSafeEqual } from '../_shared/auth.ts'
+
 export interface ExtensionRequest {
   secretHash: string
   label: string
@@ -100,6 +102,17 @@ function allowed(key: string, limit: number, now: number): boolean {
   return true
 }
 
+function clientIp(req: Request): string {
+  const cf = req.headers.get('cf-connecting-ip')?.trim()
+  if (cf) return cf
+  const forwarded = req.headers
+    .get('x-forwarded-for')
+    ?.split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  return forwarded?.at(-1) || 'unknown'
+}
+
 export async function handle(req: Request, deps: ExtensionDeps): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (req.method !== 'POST') return fail(405, 'method')
@@ -113,7 +126,7 @@ export async function handle(req: Request, deps: ExtensionDeps): Promise<Respons
   }
 
   if (action === 'request') {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    const ip = clientIp(req)
     if (!allowed(`request:${ip}`, REQUESTS_PER_MINUTE, now)) return fail(429, 'too-many')
     const secret = (deps.newToken ?? randomToken)()
     const code = (deps.newCode ?? randomCode)()
@@ -127,7 +140,7 @@ export async function handle(req: Request, deps: ExtensionDeps): Promise<Respons
     const secret = typeof body.secret === 'string' ? body.secret : ''
     if (!UUID.test(id) || secret.length < 20) return fail(400, 'bad-request')
     const r = await deps.store.request(id)
-    if (!r || r.secretHash !== (await sha256Hex(secret))) return fail(404, 'gone')
+    if (!r || !timingSafeEqual(r.secretHash, await sha256Hex(secret))) return fail(404, 'gone')
     if (r.status === 'denied') {
       await deps.store.deleteRequest(id)
       return json(200, { status: 'denied' })

@@ -7,6 +7,7 @@ export interface HandoffEnv {
 }
 
 const KEY = 'r'
+const STAGED_KEY = 's'
 
 /**
  * One connect handoff, named by the OAuth authorization id (see consent.ts). SQLite-backed like
@@ -21,9 +22,23 @@ export class ConsentHandoff extends DurableObject<HandoffEnv> {
         await this.ctx.storage.deleteAlarm()
         await this.ctx.storage.deleteAll()
       },
+      getStaged: () => this.ctx.storage.get(STAGED_KEY),
+      putStaged: (v) => this.ctx.storage.put(STAGED_KEY, v),
+      clearStaged: async () => {
+        await this.ctx.storage.delete(STAGED_KEY)
+      },
     },
     Date.now,
   )
+
+  async stage(userId: string, redirect: string): Promise<void> {
+    await this.box.stage(userId, redirect)
+    await this.ctx.storage.setAlarm(Date.now() + CONSENT_TTL_MS)
+  }
+
+  consumeStaged(userId: string): Promise<string | null> {
+    return this.box.consumeStaged(userId)
+  }
 
   async put(result: ConsentResult): Promise<'ok' | 'exists'> {
     const r = await this.box.put(result)

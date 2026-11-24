@@ -1,5 +1,10 @@
+import type { CommentThread } from '../comments'
 import type { SqlDriver } from '../platform'
-import { parseProtectedReference, protectedReferenceMatches } from './reference'
+import {
+  parseProtectedReference,
+  protectedReferenceMatches,
+  REDACTED_PROTECTED_FRAGMENT,
+} from './reference'
 
 export interface ProtectionChange {
   fragmentId: string
@@ -10,20 +15,24 @@ export interface ProtectionChange {
 }
 
 export async function scrubProtectedCopies(
-  tx: Pick<SqlDriver, 'execute'>,
+  tx: Pick<SqlDriver, 'execute' | 'query'>,
   noteId: string,
   change: ProtectionChange,
   queue = true,
 ) {
-  const replacement = '[protected fragment]'
+  const replacement = REDACTED_PROTECTED_FRAGMENT
   await tx.execute('DELETE FROM chunks WHERE note_id = ?', [noteId])
   await tx.execute('UPDATE notes SET indexed_at = NULL, indexed_hash = NULL WHERE id = ?', [noteId])
   await tx.execute('DELETE FROM tidy_suggestions WHERE note_id = ?', [noteId])
   await tx.execute(
     "INSERT INTO kv (key, value) VALUES ('privacy.revision', '1') ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1",
   )
-  for (const value of new Set(change.values.filter(Boolean))) {
+  const uniqueValues = [...new Set(change.values.filter(Boolean))].sort(
+    (a, b) => b.length - a.length,
+  )
+  for (const value of uniqueValues) {
     const json = JSON.stringify(value).slice(1, -1)
+    const doubleJson = JSON.stringify(json).slice(1, -1)
     await tx.execute('UPDATE notes SET base_content = replace(base_content, ?, ?) WHERE id = ?', [
       value,
       change.reference,
@@ -34,8 +43,11 @@ export async function scrubProtectedCopies(
       [json, value, json],
     )
     await tx.execute(
-      'UPDATE chat_messages SET content = replace(content, ?, ?), trace = replace(trace, ?, ?), citations = replace(citations, ?, ?)',
-      [value, replacement, json, replacement, json, replacement],
+      `UPDATE chat_messages
+          SET content = replace(content, ?, ?),
+              trace = replace(replace(trace, ?, ?), ?, ?),
+              citations = replace(citations, ?, ?)`,
+      [value, replacement, doubleJson, replacement, json, replacement, json, replacement],
     )
     await tx.execute(
       "UPDATE kv SET value = replace(value, CASE WHEN key = 'chat.summary' THEN ? ELSE ? END, ?) WHERE key IN ('assistant.memory', 'chat.summary')",
@@ -45,6 +57,59 @@ export async function scrubProtectedCopies(
       value,
       encodeURIComponent(value),
     ])
+  }
+  if (uniqueValues.length) {
+    const scrubText = (text: string): string => {
+      let out = text
+      for (const target of uniqueValues) out = out.replaceAll(target, replacement)
+      return out
+    }
+    const jsonValues = uniqueValues.map((v) => JSON.stringify(v).slice(1, -1))
+    const conds = ['note_id = ?', ...jsonValues.map(() => 'instr(payload, ?) > 0')]
+    const commentRows = await tx.query<{ id: string; payload: string }>(
+      `SELECT id, payload FROM note_comments WHERE ${conds.join(' OR ')}`,
+      [noteId, ...jsonValues],
+    )
+    for (const row of commentRows) {
+      let nextPayload: string | null = null
+      try {
+        const parsed = JSON.parse(row.payload) as Partial<CommentThread>
+        let dirty = false
+        for (const field of ['quote', 'contextBefore', 'contextAfter'] as const) {
+          const raw = parsed[field]
+          if (typeof raw === 'string') {
+            const next = scrubText(raw)
+            if (next !== raw) {
+              parsed[field] = next
+              dirty = true
+            }
+          }
+        }
+        if (Array.isArray(parsed.messages)) {
+          for (const msg of parsed.messages) {
+            if (msg && typeof msg.body === 'string') {
+              const next = scrubText(msg.body)
+              if (next !== msg.body) {
+                msg.body = next
+                dirty = true
+              }
+            }
+          }
+        }
+        if (dirty) nextPayload = JSON.stringify(parsed)
+      } catch {
+        let fallback = row.payload
+        for (let i = 0; i < uniqueValues.length; i++) {
+          fallback = fallback
+            .replaceAll(jsonValues[i] as string, replacement)
+            .replaceAll(uniqueValues[i] as string, replacement)
+        }
+        if (fallback !== row.payload) nextPayload = fallback
+      }
+      if (nextPayload !== null) {
+        await tx.execute('UPDATE note_comments SET payload = ? WHERE id = ?', [nextPayload, row.id])
+      }
+    }
   }
   if (queue) {
     await tx.execute("UPDATE kv SET value = json_set(value, '$.pending', 1) WHERE key = ?", [

@@ -148,6 +148,9 @@ export interface RemoteActivity {
  * it syncs and can be undone.
  */
 export class RemoteExecutor {
+  /** Serializes mutating calls so concurrent requests cannot race `CHANGE_LIMIT`. */
+  private mutationQueue: Promise<void> = Promise.resolve()
+
   constructor(
     private readonly db: SqlDriver,
     private readonly repo: NotesRepo,
@@ -164,9 +167,29 @@ export class RemoteExecutor {
     } = {},
   ) {}
 
+  private serializeMutation<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.mutationQueue.then(fn, fn)
+    this.mutationQueue = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }
+
   async run(call: RelayCall): Promise<RelayResult> {
     const client = call.client.name || 'Remote app'
     const activity = { id: call.id, client, tool: call.tool }
+    const change = isRemoteTool(call.tool) && changesNotes(call.tool, call.args)
+    const exec = () => this.execute(call, client, activity, change)
+    return change ? this.serializeMutation(exec) : exec()
+  }
+
+  private async execute(
+    call: RelayCall,
+    client: string,
+    activity: RemoteActivity,
+    change: boolean,
+  ): Promise<RelayResult> {
     const gate = remoteGate(this.db, this.repo, call.scope)
     let text: string
     let ok = true
@@ -177,7 +200,6 @@ export class RemoteExecutor {
         if (!spec) throw new Error(`There is no tool named ${call.tool}.`)
         throw new AccessError(spec.level === 'full' ? NO_DELETE : NOT_REMOTE)
       }
-      const change = changesNotes(call.tool, call.args)
       await gate.need(change ? 'write' : 'read')
       if (change && !(await this.mayChange())) throw new AccessError(TOO_MANY)
       this.opts.onStart?.(activity)
@@ -191,7 +213,12 @@ export class RemoteExecutor {
           this.opts.onChange?.(action)
         },
       })
-      text = await runNoteTool(tools, call.tool, call.args)
+      // Remote MCP advertises `daily_note` with `readOnlyHint: true`; never let `append` through.
+      const args =
+        call.tool === 'daily_note'
+          ? Object.fromEntries(Object.entries(call.args).filter(([key]) => key !== 'append'))
+          : call.args
+      text = await runNoteTool(tools, call.tool, args)
     } catch (err) {
       ok = false
       text = err instanceof Error ? err.message : String(err)

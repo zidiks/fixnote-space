@@ -29,14 +29,12 @@ fn file_name(key: &str) -> Result<String, String> {
     Ok(name)
 }
 
-fn path(app: &tauri::AppHandle, key: &str) -> Result<PathBuf, String> {
-    let dir = app
+fn dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    Ok(app
         .path()
         .app_data_dir()
         .map_err(|e| e.to_string())?
-        .join("blobs");
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    Ok(dir.join(file_name(key)?))
+        .join("blobs"))
 }
 
 fn key_header(request: &Request<'_>) -> Result<String, String> {
@@ -54,29 +52,44 @@ pub async fn blob_put(app: tauri::AppHandle, request: Request<'_>) -> Result<(),
     let InvokeBody::Raw(data) = request.body() else {
         return Err("expected raw bytes".into());
     };
-    let target = path(&app, &key_header(&request)?)?;
-    // Write then rename, so a crash never leaves half a file under the real name.
-    let tmp = target.with_extension("part");
-    std::fs::write(&tmp, data).map_err(|e| e.to_string())?;
-    std::fs::rename(&tmp, &target).map_err(|e| e.to_string())
+    let dir = dir(&app)?;
+    let name = file_name(&key_header(&request)?)?;
+    let bytes = data.clone();
+    tokio::task::spawn_blocking(move || {
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let target = dir.join(name);
+        // Write then rename, so a crash never leaves half a file under the real name.
+        let tmp = target.with_extension("part");
+        std::fs::write(&tmp, bytes).map_err(|e| e.to_string())?;
+        std::fs::rename(tmp, target).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Raw bytes, or the error "missing".
 #[tauri::command]
 pub async fn blob_get(app: tauri::AppHandle, key: String) -> Result<Response, String> {
-    match std::fs::read(path(&app, &key)?) {
-        Ok(bytes) => Ok(Response::new(bytes)),
+    let target = dir(&app)?.join(file_name(&key)?);
+    let bytes = tokio::task::spawn_blocking(move || match std::fs::read(target) {
+        Ok(bytes) => Ok(bytes),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Err("missing".into()),
         Err(e) => Err(e.to_string()),
-    }
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    Ok(Response::new(bytes))
 }
 
 #[tauri::command]
 pub async fn blob_delete(app: tauri::AppHandle, key: String) -> Result<(), String> {
-    match std::fs::remove_file(path(&app, &key)?) {
+    let target = dir(&app)?.join(file_name(&key)?);
+    tokio::task::spawn_blocking(move || match std::fs::remove_file(target) {
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.to_string()),
         _ => Ok(()),
-    }
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[cfg(test)]

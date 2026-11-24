@@ -1,15 +1,17 @@
 import type { LinkPreview, PageFetcher } from '@fixnote/core'
 import { useCallback } from 'react'
 import { fetchPageViaServer, useAccount } from './account/account'
+import { useLlm } from './assistant/llm'
 import { useDb } from './db'
 import { platform } from './platform'
 
 /**
  * Who reads pages for link cards: the desktop app itself, or on the web our `unfurl` function
- * for a signed-in user. Null means "no cards now"; nothing is recorded, so cards appear once
- * the user signs in.
+ * for a signed-in user. Null means "no cards now" (local-only mode or signed out on web);
+ * nothing is recorded, so cards appear once allowed.
  */
 export function linkFetcher(): PageFetcher | null {
+  if (useLlm.getState().localOnly) return null
   if (platform.fetchPage) return platform.fetchPage
   if (useAccount.getState().phase !== 'ready') return null
   return async (url) => {

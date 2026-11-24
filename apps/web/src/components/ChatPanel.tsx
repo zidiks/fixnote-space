@@ -50,9 +50,11 @@ import {
   ask,
   clearChat,
   enableSemantic,
+  ensureChatLoaded,
   setScopeMode,
   stop,
   useAssistant,
+  warmSemantic,
 } from '../lib/assistant/assistant'
 import { useLlm } from '../lib/assistant/llm'
 import { fileSize } from '../lib/attachments'
@@ -530,10 +532,12 @@ export function ChatPanel() {
     [platform],
   )
 
-  // Opening the assistant is the moment to prepare search by meaning (first time: model download).
+  // Opening the assistant loads chat history on demand and prepares search by meaning.
   // On a phone the keyboard would cover half the screen, and the download waits for a tap.
   useEffect(() => {
+    void ensureChatLoaded()
     if (isTouch()) return
+    warmSemantic()
     void enableSemantic()
     input.current?.focus()
   }, [])

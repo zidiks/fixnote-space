@@ -1,5 +1,6 @@
 import * as Y from 'yjs'
 import type { SqlDriver } from '../platform'
+import { REDACTED_PROTECTED_FRAGMENT } from '../privacy/reference'
 
 /** Dedicated Yjs root map inside a shared note's E2EE document for fragment comment threads. */
 export const COMMENTS_FIELD = 'comments'
@@ -309,6 +310,55 @@ export function deleteYCommentMessage(doc: Y.Doc, threadId: string, messageId: s
     if (msgs.length === 0) root.delete(threadId)
     else entry.set('updatedAt', Date.now())
   }, 'comments')
+}
+
+/**
+ * Scrubs protected plaintext values from comment quotes, surrounding context, and message bodies
+ * inside a shared note's Yjs document. Returns true if any comment field changed.
+ */
+export function scrubYComments(
+  doc: Y.Doc,
+  values: readonly string[],
+  replacement = REDACTED_PROTECTED_FRAGMENT,
+): boolean {
+  const targets = [...new Set(values.filter(Boolean))].sort((a, b) => b.length - a.length)
+  if (!targets.length) return false
+  const scrubText = (text: string): string => {
+    let out = text
+    for (const target of targets) out = out.replaceAll(target, replacement)
+    return out
+  }
+  let changed = false
+  doc.transact(() => {
+    const root = doc.getMap(COMMENTS_FIELD)
+    root.forEach((value) => {
+      if (!(value instanceof Y.Map)) return
+      for (const field of ['quote', 'contextBefore', 'contextAfter'] as const) {
+        const raw = value.get(field)
+        if (typeof raw !== 'string') continue
+        const next = scrubText(raw)
+        if (next !== raw) {
+          value.set(field, next)
+          changed = true
+        }
+      }
+      const rawMsgs = value.get('messages')
+      if (rawMsgs instanceof Y.Array) {
+        const arr = rawMsgs.toArray() as CommentMessage[]
+        for (let i = 0; i < arr.length; i++) {
+          const msg = arr[i]
+          if (!msg || typeof msg.body !== 'string') continue
+          const nextBody = scrubText(msg.body)
+          if (nextBody !== msg.body) {
+            rawMsgs.delete(i, 1)
+            rawMsgs.insert(i, [{ ...msg, body: nextBody }])
+            changed = true
+          }
+        }
+      }
+    })
+  }, 'privacy')
+  return changed
 }
 
 /** Local SQLite storage for fragment comments on personal notes. */

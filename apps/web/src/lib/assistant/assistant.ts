@@ -125,18 +125,65 @@ let controller: AbortController | null = null
 let indexing: Promise<void> | null = null
 let indexTimer: ReturnType<typeof setTimeout> | undefined
 let doneTimer: ReturnType<typeof setTimeout> | undefined
+let cacheClearTimer: ReturnType<typeof setTimeout> | undefined
+let visibilityWired = false
+
+const MAX_UI_MESSAGES = 200
+const HIDDEN_CACHE_TTL_MS = 45_000
+let chatLoaded = false
+
+/** Lazily loads recent chat history on first Chat open or question, avoiding startup DB/RAM overhead. */
+export async function ensureChatLoaded() {
+  if (chatLoaded || !chat) return
+  chatLoaded = true
+  set({ messages: await chat.recent(MAX_UI_MESSAGES) })
+  void measureContext()
+}
 
 export async function initAssistant(d: Deps) {
   deps = d
   chat = new ChatRepo(d.db)
-  set({ messages: await chat.recent() })
+  chatLoaded = false
+  if (!visibilityWired && typeof document !== 'undefined') {
+    visibilityWired = true
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        clearTimeout(cacheClearTimer)
+        cacheClearTimer = setTimeout(() => {
+          if (document.hidden) indexer?.clearCache()
+        }, HIDDEN_CACHE_TTL_MS)
+      } else {
+        clearTimeout(cacheClearTimer)
+        cacheClearTimer = undefined
+      }
+    })
+  }
   await loadAssistantMemory()
-  void measureContext()
   const [row] = await d.db.query<{ value: string }>('SELECT value FROM kv WHERE key = ?', [
     SEMANTIC_KEY,
   ])
-  // The model downloads once, on the first visit to the assistant; later launches just load it.
-  if (row?.value === 'on') void enableSemantic()
+  // Lazy semantic start: bind the Indexer without spawning the ~250 MB ONNX worker until
+  // there are pending notes to index (deferred) or the user searches / opens Chat/Spotlight.
+  if (row?.value === 'on') {
+    const embedder = await d.embedder()
+    const ix = new Indexer(d.db, embedder)
+    await ix.prepare()
+    indexer = ix
+    set({ semantic: 'ready' })
+    clearTimeout(indexTimer)
+    indexTimer = setTimeout(() => {
+      if (!document.hidden) void runIndexing()
+    }, 12_000)
+  }
+}
+
+/** Warms the semantic embedding worker non-blockingly when the user opens Spotlight or Chat. */
+export function warmSemantic() {
+  if (!deps || !indexer || useAssistant.getState().semantic !== 'ready') return
+  void deps
+    .embedder()
+    .then((e) => e.ready())
+    .catch(() => undefined)
 }
 
 /** Loads the embedding model (first time: ~120 MB download) and indexes notes in the background. */
@@ -201,6 +248,11 @@ export function notifyNotesChanged() {
   if (!indexer) return
   clearTimeout(indexTimer)
   indexTimer = setTimeout(() => void runIndexing(), 3000)
+}
+
+/** Evicts one note (or all notes) from the in-memory semantic vector cache immediately. */
+export function invalidateIndexerNote(noteId?: string) {
+  indexer?.invalidate(noteId)
 }
 
 /** Notes close in meaning to `query`; empty until the semantic index is on. */
@@ -386,6 +438,7 @@ export async function ask(
   const repo = chat
   const d = deps
   if (!repo || !d || !question.trim()) return 'ok'
+  await ensureChatLoaded()
   const reach = await llmRoute()
   if (!reach.ok) {
     set({ status: 'error', error: unavailableText(reach.reason), refused: false })
@@ -412,7 +465,11 @@ export async function ask(
   )
   const answer = await repo.add({ kind: 'assistant', content: '', scope, status: 'streaming' })
   added.push(answer)
-  set((s) => ({ messages: [...s.messages, ...added], status: 'thinking', error: null }))
+  set((s) => ({
+    messages: [...s.messages, ...added].slice(-MAX_UI_MESSAGES),
+    status: 'thinking',
+    error: null,
+  }))
 
   controller?.abort()
   const ctrl = new AbortController()

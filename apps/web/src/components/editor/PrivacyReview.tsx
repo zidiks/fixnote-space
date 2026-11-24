@@ -1,4 +1,3 @@
-import type { SecretCandidate } from '@fixnote/core/privacy/detect'
 import { i18n, useTranslation } from '@fixnote/i18n'
 import { Button } from '@fixnote/ui'
 import { Extension } from '@tiptap/core'
@@ -24,6 +23,7 @@ import {
   scanContext,
   scanNoteRange,
 } from './privacy-scan'
+import { scanPrivacyText } from './privacy-worker'
 import { protectedRangeText } from './protected-text'
 
 const REVIEW_META = 'fixnote.privacy.review'
@@ -67,6 +67,15 @@ interface Finding {
 }
 
 const announced = new Set<string>()
+const MAX_ANNOUNCED = 512
+
+function markAnnounced(noteId: string) {
+  if (announced.size >= MAX_ANNOUNCED) {
+    const oldest = announced.values().next().value
+    if (oldest !== undefined) announced.delete(oldest)
+  }
+  announced.add(noteId)
+}
 
 export function PrivacyReview({
   editor,
@@ -102,36 +111,19 @@ export function PrivacyReview({
   useEffect(() => {
     if (!editor.isEditable) return
     const toastId = `privacy:${noteId}`
-    const worker = new Worker(new URL('./privacy.worker.ts', import.meta.url), { type: 'module' })
     let alive = true
-    let scanId = 0
     let generation = 0
     let timer: ReturnType<typeof setTimeout>
     let pending: ScanRange | null = { from: 0, to: editor.state.doc.content.size }
     let findings: Finding[] = []
     let dismissedRanges: NoteCandidate[] = []
     let showing: Finding | null = null
-    const jobs = new Map<number, (c: SecretCandidate[]) => void>()
     const overlapsDismissed = (hit: NoteCandidate) =>
       dismissedRanges.some((r) => r.kind === hit.kind && hit.from < r.to && hit.to > r.from)
     const stop = () => {
       alive = false
-      worker.terminate()
-      for (const resolve of jobs.values()) resolve([])
-      jobs.clear()
     }
-    worker.onmessage = (e: MessageEvent<{ id: number; candidates: SecretCandidate[] }>) => {
-      jobs.get(e.data.id)?.(e.data.candidates)
-      jobs.delete(e.data.id)
-    }
-    worker.onerror = stop
-    const analyze = (text: string) =>
-      new Promise<SecretCandidate[]>((resolve) => {
-        if (!alive) return resolve([])
-        const id = ++scanId
-        jobs.set(id, resolve)
-        worker.postMessage({ id, text })
-      })
+    const analyze = (text: string) => (alive ? scanPrivacyText(text) : Promise.resolve([]))
 
     const close = () => {
       showing = null
@@ -224,7 +216,7 @@ export function PrivacyReview({
       if (takePrivacyRequest(noteId)) {
         actions.current.open()
       } else if (findings.length && !announced.has(noteId)) {
-        announced.add(noteId)
+        markAnnounced(noteId)
         toast(i18n.t('privacy.offer'), {
           id: toastId,
           action: {

@@ -87,8 +87,12 @@ export class CollabSession {
   private stopStatus: (() => void) | null = null
   private destroyed = false
   private answered = false
-  private onAnswered: (() => void)[] = []
+  private syncWaiters = new Set<{
+    timer: ReturnType<typeof setTimeout>
+    resolve: (synced: boolean) => void
+  }>()
   private readonly listenOnly: boolean
+  private readonly destroyDoc: boolean
 
   constructor(opts: {
     key: Uint8Array
@@ -101,6 +105,8 @@ export class CollabSession {
     now?: () => number
     /** Only receives (a viewer: the server does not let it send anyway). */
     listenOnly?: boolean
+    /** Whether `destroy()` also calls `doc.destroy()` (default true). */
+    destroyDoc?: boolean
   }) {
     this.doc = opts.doc ?? new Y.Doc()
     this.awareness = new Awareness(this.doc)
@@ -111,6 +117,7 @@ export class CollabSession {
     this.awarenessMs = opts.awarenessMs ?? 50
     this.now = opts.now ?? (() => performance.now())
     this.listenOnly = opts.listenOnly ?? false
+    this.destroyDoc = opts.destroyDoc ?? true
     this.doc.on('update', this.onDocUpdate)
     this.awareness.on('update', this.onAwarenessUpdate)
     this.stopListening = this.transport.onMessage((m) => this.receive(m))
@@ -123,16 +130,20 @@ export class CollabSession {
 
   /**
    * Resolves true once another device answered (its state is applied by then: it sends the state
-   * before the answer), or false after `timeoutMs` with nobody there.
+   * before the answer), or false after `timeoutMs` with nobody there (or on `destroy()`).
    */
   whenSynced(timeoutMs = 1500): Promise<boolean> {
     if (this.answered) return Promise.resolve(true)
+    if (this.destroyed) return Promise.resolve(false)
     return new Promise((resolve) => {
-      const timer = setTimeout(() => resolve(false), timeoutMs)
-      this.onAnswered.push(() => {
-        clearTimeout(timer)
-        resolve(true)
-      })
+      const waiter = {
+        timer: setTimeout(() => {
+          this.syncWaiters.delete(waiter)
+          resolve(false)
+        }, timeoutMs),
+        resolve,
+      }
+      this.syncWaiters.add(waiter)
     })
   }
 
@@ -161,6 +172,11 @@ export class CollabSession {
     removeAwarenessStates(this.awareness, [this.doc.clientID], 'local')
     this.flushAwareness()
     this.destroyed = true
+    for (const waiter of this.syncWaiters) {
+      clearTimeout(waiter.timer)
+      waiter.resolve(false)
+    }
+    this.syncWaiters.clear()
     clearTimeout(this.awarenessTimer)
     clearInterval(this.pingTimer)
     this.doc.off('update', this.onDocUpdate)
@@ -169,6 +185,7 @@ export class CollabSession {
     this.stopListening?.()
     this.stopStatus?.()
     this.transport.close()
+    if (this.destroyDoc) this.doc.destroy()
   }
 
   /**
@@ -224,6 +241,7 @@ export class CollabSession {
   }
 
   private ping() {
+    if (!this.connected || this.awareness.getStates().size <= 1 || !this.onRtt) return
     const body = new Uint8Array(12)
     const view = new DataView(body.buffer)
     view.setUint32(0, this.doc.clientID)
@@ -263,7 +281,11 @@ export class CollabSession {
             this.send(AWARENESS, encodeAwarenessUpdate(this.awareness, [this.doc.clientID]))
         } else if (!this.answered) {
           this.answered = true
-          for (const done of this.onAnswered.splice(0)) done()
+          for (const waiter of this.syncWaiters) {
+            clearTimeout(waiter.timer)
+            waiter.resolve(true)
+          }
+          this.syncWaiters.clear()
         }
         break
       }

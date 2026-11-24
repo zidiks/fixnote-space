@@ -12,7 +12,13 @@
  * more. A thinking model's `reasoning_content` goes back to it with its tool calls.
  */
 
-import { CORS, jsonError, rateLimiter, userId } from '../_shared/auth.ts'
+import {
+  type AuthVerifier,
+  CORS,
+  denoJwtVerifier,
+  jsonError,
+  rateLimiter,
+} from '../_shared/auth.ts'
 
 export interface ProxyEnv {
   apiKey: string | undefined
@@ -24,12 +30,14 @@ export interface ProxyEnv {
   maxTokensHard: number
   hardWeight: number
   perMinute: number
+  /** Cryptographic JWT verifier (required; omitted fails closed with 401). */
+  verifyUser?: AuthVerifier
 }
 
 /** What `ai_allowance` answers: may this account ask, and how much it has used. */
 export interface Allowance {
   ok: boolean
-  reason?: 'pro_required' | 'month_limit' | 'day_limit' | 'paused'
+  reason?: 'pro_required' | 'month_limit' | 'day_limit' | 'paused' | 'unavailable'
   used?: number
   limit?: number
   resets_at?: string
@@ -39,8 +47,8 @@ export interface Allowance {
 export interface Meter {
   allowance(user: string): Promise<Allowance>
   /**
-   * `requests`: 1 for a question, 0 for a step that only brings tool results back. `hard`: the
-   * larger model answered (the daily report counts the levels apart).
+   * `requests`: always 1 per upstream call (never trusted from client-supplied message roles).
+   * `hard`: the larger model answered (the daily report counts the levels apart).
    */
   record(user: string, tokens: number, requests: number, hard: boolean): Promise<void>
 }
@@ -56,6 +64,7 @@ const REFUSED: Record<NonNullable<Allowance['reason']>, [number, string]> = {
   month_limit: [429, 'This month’s AI allowance is used up'],
   day_limit: [429, 'Today’s AI allowance is used up'],
   paused: [503, 'The assistant is paused for a while'],
+  unavailable: [503, 'The assistant is temporarily unavailable'],
 }
 
 export function envFromDeno(): ProxyEnv {
@@ -70,6 +79,7 @@ export function envFromDeno(): ProxyEnv {
     maxTokensHard: Number(Deno.env.get('LLM_MAX_TOKENS_HARD') ?? 16384),
     hardWeight: Number(Deno.env.get('LLM_HARD_WEIGHT') ?? 4),
     perMinute: Number(Deno.env.get('LLM_REQUESTS_PER_MINUTE') ?? 20),
+    verifyUser: denoJwtVerifier(),
   }
 }
 
@@ -190,8 +200,9 @@ export async function handle(
   if (req.method !== 'POST') return json(405, 'Method not allowed')
   if (!env.apiKey) return json(503, 'Assistant is not configured on the server')
 
-  const user = userId(req)
-  if (!user) return json(401, 'Sign in to use the assistant')
+  const verified = env.verifyUser ? await env.verifyUser(req, now) : null
+  if (!verified) return json(401, 'Sign in to use the assistant')
+  const user = verified.id
 
   const raw = await req.text()
   if (raw.length > MAX_BODY) return json(413, 'Request too large')
@@ -205,9 +216,7 @@ export async function handle(
   if (!sent) return json(400, 'Invalid messages')
   const toolList = tools(body.tools)
   if (toolList === null) return json(400, 'Invalid tools')
-  // Tool results going back: the same question, a few steps of it.
-  const step = sent[sent.length - 1]?.role === 'tool'
-  if (!allow(user, step ? env.perMinute * 3 : env.perMinute, now)) {
+  if (!allow(user, env.perMinute, now)) {
     return json(429, 'Too many requests, try again in a minute')
   }
 
@@ -265,7 +274,7 @@ export async function handle(
 
   return new Response(
     metered(upstream.body, raw.length, (tokens) =>
-      meter.record(user, Math.ceil(tokens * (hard ? env.hardWeight : 1)), step ? 0 : 1, hard),
+      meter.record(user, Math.ceil(tokens * (hard ? env.hardWeight : 1)), 1, hard),
     ),
     {
       status: 200,
@@ -327,14 +336,20 @@ function metered(
   }
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
-      const { done: ended, value } = await reader.read()
-      if (ended) {
+      let chunk: ReadableStreamReadResult<Uint8Array>
+      try {
+        chunk = await reader.read()
+      } catch (err) {
+        await finish()
+        throw err
+      }
+      if (chunk.done) {
         await finish()
         controller.close()
         return
       }
-      scan(decoder.decode(value, { stream: true }))
-      controller.enqueue(value)
+      scan(decoder.decode(chunk.value, { stream: true }))
+      controller.enqueue(chunk.value)
     },
     async cancel(reason) {
       await finish()

@@ -13,6 +13,8 @@
  * packages/core/src/capture. A message that is only a link is sent as a link (the app files it).
  */
 
+import { maskEmail } from '../_shared/auth.ts'
+
 export interface DiscordApi {
   /** Replaces the "thinking…" answer of a deferred interaction. */
   editReply(token: string, content: string): Promise<void>
@@ -27,6 +29,8 @@ export interface CaptureStore {
   link(discordUser: string, userId: string, label: string): Promise<void>
   unlink(discordUser: string): Promise<boolean>
   userFor(discordUser: string): Promise<string | null>
+  /** Optional account email for showing a masked notice on link conflict. */
+  userEmail?(userId: string): Promise<string | null>
   publicKey(userId: string): Promise<string | null>
   isPro(userId: string): Promise<boolean>
   addItem(userId: string, sealed: string): Promise<void>
@@ -58,6 +62,10 @@ const TEXT: Record<Lang, Record<string, string>> = {
     savedSome: 'Saved to Fixnote: {n}. Other files are not supported yet.',
     notLinked:
       'Discord is not connected to Fixnote yet. In Fixnote, open Settings → Integrations → Discord.',
+    alreadyLinked:
+      'This Discord account is already connected to another Fixnote account. Run /disconnect in Discord first to switch accounts.',
+    alreadyLinkedTo:
+      'This Discord account is already connected to Fixnote ({email}). Run /disconnect in Discord first to switch accounts.',
     badCode:
       'This link has expired. Create a new one in Fixnote: Settings → Integrations → Discord.',
     stopped: 'Disconnected. Nothing from Discord goes to Fixnote now.',
@@ -72,6 +80,10 @@ const TEXT: Record<Lang, Record<string, string>> = {
     savedSome: 'Сохранено в Fixnote: {n}. Другие файлы пока не поддерживаются.',
     notLinked:
       'Discord ещё не подключён к Fixnote. В Fixnote откройте Настройки → Интеграции → Discord.',
+    alreadyLinked:
+      'Этот аккаунт Discord уже подключён к другому аккаунту Fixnote. Сначала выполните /disconnect в Discord, чтобы сменить аккаунт.',
+    alreadyLinkedTo:
+      'Этот аккаунт Discord уже подключён к Fixnote ({email}). Сначала выполните /disconnect в Discord, чтобы сменить аккаунт.',
     badCode: 'Ссылка устарела. Создайте новую в Fixnote: Настройки → Интеграции → Discord.',
     stopped: 'Отключено. Из Discord в Fixnote больше ничего не попадает.',
     empty: 'В этом сообщении нечего сохранить.',
@@ -85,6 +97,10 @@ const TEXT: Record<Lang, Record<string, string>> = {
     savedSome: 'Guardado en Fixnote: {n}. Otros archivos aún no se admiten.',
     notLinked:
       'Discord aún no está conectado a Fixnote. En Fixnote, abre Ajustes → Integraciones → Discord.',
+    alreadyLinked:
+      'Esta cuenta de Discord ya está conectada a otra cuenta de Fixnote. Ejecuta /disconnect en Discord primero para cambiar de cuenta.',
+    alreadyLinkedTo:
+      'Esta cuenta de Discord ya está conectada a Fixnote ({email}). Ejecuta /disconnect en Discord primero para cambiar de cuenta.',
     badCode:
       'Este enlace ha caducado. Crea uno nuevo en Fixnote: Ajustes → Integraciones → Discord.',
     stopped: 'Desconectado. Nada de Discord llega ya a Fixnote.',
@@ -243,6 +259,11 @@ export async function handle(req: Request, deps: BotDeps): Promise<Response> {
   const body = await req.text()
   const signature = req.headers.get('x-signature-ed25519') ?? ''
   const timestamp = req.headers.get('x-signature-timestamp') ?? ''
+  const ts = Number(timestamp)
+  const nowSec = (deps.now ?? Date.now)() / 1000
+  if (!/^\d+$/.test(timestamp) || !Number.isFinite(ts) || Math.abs(nowSec - ts) > 300) {
+    return new Response('Stale or missing timestamp', { status: 401 })
+  }
   const verify = deps.verify ?? ed25519
   if (!deps.publicKey || !(await verify(deps.publicKey, signature, timestamp + body))) {
     return new Response('Bad signature', { status: 401 })
@@ -336,6 +357,12 @@ async function connect(req: Request, deps: BotDeps): Promise<Response> {
   if (!who) return text(t.failed, 502)
   const user = await deps.store.consumeCode(state)
   if (!user) return text(t.badCode)
+  const existing = await deps.store.userFor(who.id)
+  if (existing && existing !== user) {
+    const email = await deps.store.userEmail?.(existing).catch(() => null)
+    const masked = email ? maskEmail(email) : ''
+    return text(masked ? t.alreadyLinkedTo.replace('{email}', masked) : t.alreadyLinked, 409)
+  }
   await deps.store.link(who.id, user, who.label)
   return new Response(null, { status: 302, headers: { Location: deps.doneUrl } })
 }

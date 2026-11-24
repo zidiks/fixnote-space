@@ -1,9 +1,12 @@
 import type { Embedder, ProgressListener } from '@fixnote/core'
+import { createIdleTimer } from '../idle'
 import type { EmbedBody, EmbedResponse } from './protocol'
 
 const BATCH = 16
 /** A worker that has not even acknowledged a request by then is stuck; it is restarted. */
 const STALL_MS = 15_000
+const IDLE_VISIBLE_MS = 4 * 60_000
+const IDLE_HIDDEN_MS = 45_000
 
 /**
  * multilingual-e5-small (int8) in a dedicated worker, shared by the web app and the desktop app
@@ -23,6 +26,13 @@ export function createTransformersEmbedder(): Embedder {
   >()
   const listeners = new Set<ProgressListener>()
   let ready: Promise<void> | null = null
+
+  const idle = createIdleTimer({
+    visibleMs: IDLE_VISIBLE_MS,
+    hiddenMs: IDLE_HIDDEN_MS,
+    isLive: () => worker !== null,
+    onIdle: () => embedder.unload?.(),
+  })
 
   const start = () => {
     if (worker) return worker
@@ -50,6 +60,7 @@ export function createTransformersEmbedder(): Embedder {
 
   /** Every open request fails and the next one starts a fresh worker. */
   const fail = (error: Error) => {
+    idle.cancel()
     for (const p of pending.values()) {
       clearTimeout(p.stall)
       p.reject(error)
@@ -72,6 +83,7 @@ export function createTransformersEmbedder(): Embedder {
     modelId: 'Xenova/multilingual-e5-small@q8',
     dimensions: 384,
     ready(onProgress) {
+      idle.begin()
       if (!ready) {
         const current = call({ op: 'init' }).then(() => undefined)
         ready = current
@@ -86,18 +98,26 @@ export function createTransformersEmbedder(): Embedder {
           () => listeners.delete(onProgress),
         )
       }
-      return ready
+      return ready.finally(() => idle.end())
     },
     async embed(texts, kind) {
-      await embedder.ready()
-      const prefix = kind === 'query' ? 'query: ' : 'passage: '
-      const out: Float32Array[] = []
-      for (let i = 0; i < texts.length; i += BATCH) {
-        out.push(
-          ...(await call({ op: 'embed', texts: texts.slice(i, i + BATCH).map((t) => prefix + t) })),
-        )
+      idle.begin()
+      try {
+        await embedder.ready()
+        const prefix = kind === 'query' ? 'query: ' : 'passage: '
+        const out: Float32Array[] = []
+        for (let i = 0; i < texts.length; i += BATCH) {
+          out.push(
+            ...(await call({
+              op: 'embed',
+              texts: texts.slice(i, i + BATCH).map((t) => prefix + t),
+            })),
+          )
+        }
+        return out
+      } finally {
+        idle.end()
       }
-      return out
     },
     unload() {
       fail(new Error('The search model was removed'))

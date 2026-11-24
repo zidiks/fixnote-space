@@ -72,9 +72,14 @@ self.onmessage = async (event: MessageEvent<EmbedRequest>) => {
       return
     }
     const output = await model(req.texts, { pooling: 'mean', normalize: true })
-    const [rows, dims] = output.dims as [number, number]
-    const data = output.data as Float32Array
-    const vectors = Array.from({ length: rows }, (_, i) => data.slice(i * dims, (i + 1) * dims))
+    let vectors: Float32Array[]
+    try {
+      const [rows, dims] = output.dims as [number, number]
+      const data = output.data as Float32Array
+      vectors = Array.from({ length: rows }, (_, i) => data.slice(i * dims, (i + 1) * dims))
+    } finally {
+      output.dispose?.()
+    }
     self.postMessage({ kind: 'result', id: req.id, ok: true, vectors } satisfies EmbedResponse, {
       transfer: vectors.map((v) => v.buffer),
     })

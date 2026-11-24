@@ -86,7 +86,7 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     readOnly,
     persist: async (markdown, opts) => {
       const outside = await ctx.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(doc), markdown, opts)
-      if (outside) Y.applyUpdate(doc, outside, 'stored')
+      if (outside && !doc.isDestroyed) Y.applyUpdate(doc, outside, 'stored')
       // People in the note get each keystroke live; the server copy can wait for a pause unless
       // an immediate sync was requested (e.g. a new comment with notifications).
       requestSync(opts?.immediate ? 150 : SAVE_PAUSE)
@@ -94,12 +94,12 @@ export async function openShared(sharedId: string): Promise<LiveEditing | null> 
     persistProtection: async (markdown, state, base, protect) => {
       await ctx.shared.saveDoc(sharedId, state, markdown, { taken: true, base, protect })
       // Apply only after the vault and note are durable. This update contains references only.
-      Y.applyUpdate(doc, state, 'privacy')
+      if (!doc.isDestroyed) Y.applyUpdate(doc, state, 'privacy')
       requestSync()
     },
     refresh: async () => {
       const now = await ctx.shared.doc(sharedId)
-      if (now?.state) Y.applyUpdate(doc, now.state, 'stored')
+      if (now?.state && !doc.isDestroyed) Y.applyUpdate(doc, now.state, 'stored')
     },
   }
 }

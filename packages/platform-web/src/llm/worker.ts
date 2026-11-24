@@ -84,8 +84,13 @@ async function create(id: string, device: Device, f16: boolean): Promise<Loaded>
     progress_callback: report,
   })
   // One token through the model: a GPU that loads it but cannot run it fails here, not mid-answer.
-  const probe = tokenizer('Hi', { add_special_tokens: false })
-  await model.generate({ ...probe, max_new_tokens: 1, do_sample: false })
+  try {
+    const probe = tokenizer('Hi', { add_special_tokens: false })
+    await model.generate({ ...probe, max_new_tokens: 1, do_sample: false })
+  } catch (err) {
+    await model.dispose().catch(() => {})
+    throw err
+  }
   return { tokenizer, model, device }
 }
 
@@ -98,8 +103,10 @@ async function disposeCurrent() {
 
 function load(id: string): Promise<Loaded> {
   if (current?.id === id) return current.loaded
-  if (current) current.loaded.then(({ model }) => model.dispose()).catch(() => {})
+  const prev = current
+  current = null
   const loaded = (async () => {
+    if (prev) await prev.loaded.then(({ model }) => model.dispose()).catch(() => {})
     await runtime
     const gpu = await webGpu()
     if (gpu !== 'none') {

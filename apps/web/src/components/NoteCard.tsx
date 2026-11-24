@@ -12,7 +12,6 @@ import {
   ContextMenuTrigger,
   cn,
 } from '@fixnote/ui'
-import { useQuery } from '@tanstack/react-query'
 import {
   CalendarDays,
   Check,
@@ -29,9 +28,10 @@ import {
   Trash2,
   Users,
 } from 'lucide-react'
-import { memo } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { useUi } from '../app/store'
-import { attachmentObjectUrl } from '../lib/attachments'
+import { useLlm } from '../lib/assistant/llm'
+import { acquireAttachmentUrl, releaseAttachmentUrl } from '../lib/attachments'
 import { useCommentAlerts } from '../lib/comments/store'
 import { useDb } from '../lib/db'
 import { useDeleteWithUndo, useFolders, useMoveNote, useSetPinned } from '../lib/queries'
@@ -39,18 +39,34 @@ import { useNotePress } from '../lib/selection'
 import { formatCardDate } from '../lib/time'
 import { SLIDING_INDICATOR } from './SlidingIndicator'
 
-/** The note's first image: attachments resolve to a local object URL, web images load as is. */
+const LOCAL_IMG_SRC = /^(data:image\/|blob:)/i
+
+/** The note's first image: attachments resolve to a ref-counted object URL; remote URLs respect localOnly. */
 function useCoverUrl(src: string): string | null {
   const { attachments } = useDb()
+  const localOnly = useLlm((s) => s.localOnly)
   const id = attachmentIdFromUrl(src)
-  const url = useQuery({
-    queryKey: ['attachment-url', id],
-    queryFn: () => (id ? attachmentObjectUrl(attachments, id) : null),
-    enabled: id !== null,
-    staleTime: Number.POSITIVE_INFINITY,
-  }).data
-  if (id && url && !url.mime.startsWith('image/')) return null
-  return (id ? url?.url : src) ?? null
+  const [resolved, setResolved] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!id) {
+      setResolved(null)
+      return
+    }
+    let alive = true
+    void acquireAttachmentUrl(attachments, id).then((file) => {
+      if (!alive) return
+      setResolved(file?.mime.startsWith('image/') ? file.url : null)
+    })
+    return () => {
+      alive = false
+      releaseAttachmentUrl(id)
+    }
+  }, [attachments, id])
+
+  if (id) return resolved
+  if (localOnly && !LOCAL_IMG_SRC.test(src)) return null
+  return src || null
 }
 
 function Cover({ src }: { src: string }) {
@@ -92,8 +108,8 @@ function Thumb({ src, small = false }: { src: string; small?: boolean }) {
   )
 }
 
-/** Right-click menu of a note in a list, the same for every view. */
-function NoteMenu({ note, children }: { note: NoteSummary; children: React.ReactNode }) {
+/** Lazy menu body: only subscribes to folders & mutations when right-click menu is open. */
+function NoteMenuBody({ note }: { note: NoteSummary }) {
   const { t } = useTranslation()
   const navigate = useUi((s) => s.navigate)
   const folders = useFolders().data ?? []
@@ -104,54 +120,62 @@ function NoteMenu({ note, children }: { note: NoteSummary; children: React.React
   const open = () => navigate({ kind: 'note', id: note.id })
 
   return (
-    <ContextMenu>
+    <ContextMenuContent>
+      <ContextMenuItem onSelect={open}>
+        <SquareArrowOutUpRight />
+        {t('menu.open')}
+      </ContextMenuItem>
+      <ContextMenuItem onSelect={() => setPinned.mutate({ id: note.id, pinned: !pinned })}>
+        {pinned ? <PinOff /> : <Pin />}
+        {pinned ? t('pin.unpin') : t('pin.pin')}
+      </ContextMenuItem>
+      {/* View only: no moving or deleting it from here. */}
+      {note.readOnly ? null : (
+        <>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <FolderInput />
+              {t('menu.moveTo')}
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              <ContextMenuItem onSelect={() => move.mutate({ id: note.id, folderId: null })}>
+                <Inbox />
+                <span className="flex-1">{t('common.noFolder')}</span>
+                <Check className={cn(note.folderId !== null && 'invisible')} />
+              </ContextMenuItem>
+              {folderTree(folders.filter((f) => f.access !== 'view')).map(
+                ({ folder: f, depth }) => (
+                  <ContextMenuItem
+                    key={f.id}
+                    onSelect={() => move.mutate({ id: note.id, folderId: f.id })}
+                    style={{ paddingInlineStart: `${0.5 + depth}rem` }}
+                  >
+                    <Folder />
+                    <span className="flex-1">{f.name}</span>
+                    <Check className={cn(note.folderId !== f.id && 'invisible')} />
+                  </ContextMenuItem>
+                ),
+              )}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+          <ContextMenuSeparator />
+          <ContextMenuItem destructive onSelect={() => void deleteWithUndo(note.id)}>
+            <Trash2 />
+            {t('note.delete')}
+          </ContextMenuItem>
+        </>
+      )}
+    </ContextMenuContent>
+  )
+}
+
+/** Right-click menu of a note in a list, the same for every view. */
+function NoteMenu({ note, children }: { note: NoteSummary; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <ContextMenu onOpenChange={setOpen}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onSelect={open}>
-          <SquareArrowOutUpRight />
-          {t('menu.open')}
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => setPinned.mutate({ id: note.id, pinned: !pinned })}>
-          {pinned ? <PinOff /> : <Pin />}
-          {pinned ? t('pin.unpin') : t('pin.pin')}
-        </ContextMenuItem>
-        {/* View only: no moving or deleting it from here. */}
-        {note.readOnly ? null : (
-          <>
-            <ContextMenuSub>
-              <ContextMenuSubTrigger>
-                <FolderInput />
-                {t('menu.moveTo')}
-              </ContextMenuSubTrigger>
-              <ContextMenuSubContent>
-                <ContextMenuItem onSelect={() => move.mutate({ id: note.id, folderId: null })}>
-                  <Inbox />
-                  <span className="flex-1">{t('common.noFolder')}</span>
-                  <Check className={cn(note.folderId !== null && 'invisible')} />
-                </ContextMenuItem>
-                {folderTree(folders.filter((f) => f.access !== 'view')).map(
-                  ({ folder: f, depth }) => (
-                    <ContextMenuItem
-                      key={f.id}
-                      onSelect={() => move.mutate({ id: note.id, folderId: f.id })}
-                      style={{ paddingInlineStart: `${0.5 + depth}rem` }}
-                    >
-                      <Folder />
-                      <span className="flex-1">{f.name}</span>
-                      <Check className={cn(note.folderId !== f.id && 'invisible')} />
-                    </ContextMenuItem>
-                  ),
-                )}
-              </ContextMenuSubContent>
-            </ContextMenuSub>
-            <ContextMenuSeparator />
-            <ContextMenuItem destructive onSelect={() => void deleteWithUndo(note.id)}>
-              <Trash2 />
-              {t('note.delete')}
-            </ContextMenuItem>
-          </>
-        )}
-      </ContextMenuContent>
+      {open ? <NoteMenuBody note={note} /> : null}
     </ContextMenu>
   )
 }

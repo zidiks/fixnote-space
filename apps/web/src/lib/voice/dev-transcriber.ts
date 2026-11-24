@@ -31,11 +31,17 @@ export function devTranscriber(): Transcriber {
     },
     async transcribe(audio) {
       await this.ready()
-      // A piece of dictation is a 16 kHz WAV; a whole recording (Opus) is taken as a few seconds.
-      const seconds = audio.type === 'audio/wav' ? (audio.size - 44) / 32_000 : 3
+      // A piece of dictation is a 16 kHz PCM buffer or WAV; a whole recording (Opus) is a few seconds.
+      const seconds =
+        audio instanceof Float32Array
+          ? audio.length / 16_000
+          : audio.type === 'audio/wav'
+            ? (audio.size - 44) / 32_000
+            : 3
+      const hasAudio = audio instanceof Float32Array ? audio.length > 0 : audio.size > 0
       await new Promise((r) => setTimeout(r, pace * seconds * 1000))
       return {
-        text: audio.size
+        text: hasAudio
           ? 'Надо купить молоко и хлеб, позвонить маме в пятницу, и ещё записать идею про бота в Telegram.'
           : '',
         language: 'ru',

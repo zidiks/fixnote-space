@@ -303,4 +303,43 @@ describe('RemoteExecutor', () => {
     ])
     expect(JSON.stringify(log)).not.toContain('bank')
   })
+
+  it('serializes concurrent mutations so CHANGE_LIMIT cannot be bypassed by a race', async () => {
+    await setKv(MCP_ACCESS_KEY, 'write')
+    const paced = new RemoteExecutor(db, repo, audit, { now: () => 5000 })
+    const total = CHANGE_LIMIT + 10
+    const results = await Promise.all(
+      Array.from({ length: total }, (_, i) =>
+        paced.run(call('create_note', { content: `# Concurrent ${i}` })),
+      ),
+    )
+    const succeeded = results.filter((r) => !r.isError)
+    const rejected = results.filter((r) => r.isError)
+    expect(succeeded).toHaveLength(CHANGE_LIMIT)
+    expect(rejected).toHaveLength(10)
+    expect(rejected.every((r) => text(r).includes('Too many changes'))).toBe(true)
+    expect((await repo.listNotes({ limit: 50 })).items).toHaveLength(CHANGE_LIMIT)
+  })
+
+  it('strips append on daily_note so remote MCP cannot mutate under readOnlyHint', async () => {
+    await setKv(MCP_ACCESS_KEY, 'write')
+    // When no daily note exists yet, passing `append` must not create one.
+    const missing = await exec.run(
+      call('daily_note', { date: '2026-09-25', append: 'injected line' }),
+    )
+    expect(missing.isError).toBeUndefined()
+    expect(text(missing)).toBe('There is no daily note for 2026-09-25.')
+    expect(await repo.hasDaily('2026-09-25')).toBe(false)
+
+    // When a daily note exists, passing `append` must read it without modifying content.
+    const daily = await repo.getOrCreateDaily('2026-09-25', () => '# 2026-09-25\n\nOriginal')
+    const existing = await exec.run(
+      call('daily_note', { date: '2026-09-25', append: 'injected line' }),
+    )
+    expect(existing.isError).toBeUndefined()
+    expect(text(existing)).toContain('Original')
+    expect(text(existing)).not.toContain('injected line')
+    expect((await repo.getNote(daily.id))?.content).toBe('# 2026-09-25\n\nOriginal')
+    expect(await audit.list()).toEqual([])
+  })
 })

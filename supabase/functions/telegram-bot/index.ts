@@ -62,10 +62,31 @@ const store: CaptureStore = {
     return data?.user_id ?? null
   },
   async link(chatId, userId, label) {
-    const { error } = await db
+    const { data: existing, error: selErr } = await db
       .from('capture_links')
-      .upsert({ channel: 'telegram', external_id: chatId, user_id: userId, label })
+      .select('user_id')
+      .eq('channel', 'telegram')
+      .eq('external_id', chatId)
+      .maybeSingle()
+    if (selErr) throw selErr
+    if (existing && existing.user_id !== userId) {
+      throw new Error('chat_already_linked')
+    }
+    const { error } = existing
+      ? await db
+          .from('capture_links')
+          .update({ label })
+          .eq('channel', 'telegram')
+          .eq('external_id', chatId)
+          .eq('user_id', userId)
+      : await db
+          .from('capture_links')
+          .insert({ channel: 'telegram', external_id: chatId, user_id: userId, label })
     if (error) throw error
+  },
+  async userEmail(userId) {
+    const { data, error } = await db.auth.admin.getUserById(userId)
+    return error ? null : (data.user?.email ?? null)
   },
   async unlink(chatId) {
     const { data } = await db

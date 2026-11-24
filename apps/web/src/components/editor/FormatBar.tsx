@@ -4,6 +4,8 @@ import { type Editor, useEditorState } from '@tiptap/react'
 import { Bold, Code, Italic, Strikethrough } from 'lucide-react'
 import { combo } from './combo'
 
+const EMPTY_MARKS = { bold: false, italic: false, strike: false, code: false }
+
 /**
  * The formatting used most on selected text, next to "Ask AI" in the selection pill. The rest
  * (headings, lists, tasks) stays in the right-click menu.
@@ -12,12 +14,16 @@ export function FormatBar({ editor }: { editor: Editor }) {
   const { t } = useTranslation()
   const active = useEditorState({
     editor,
-    selector: ({ editor: e }) => ({
-      bold: e.isActive('bold'),
-      italic: e.isActive('italic'),
-      strike: e.isActive('strike'),
-      code: e.isActive('code'),
-    }),
+    selector: ({ editor: e }) => {
+      // Skip 4 mark checks on every keystroke while the selection bubble is hidden.
+      if (e.state.selection.empty) return EMPTY_MARKS
+      return {
+        bold: e.isActive('bold'),
+        italic: e.isActive('italic'),
+        strike: e.isActive('strike'),
+        code: e.isActive('code'),
+      }
+    },
   })
   const chain = () => editor.chain().focus()
   const items = [

@@ -18,6 +18,17 @@ const filesOf = async (modelId: string) => {
 }
 
 export const localModels: LocalModels = {
+  async has(modelId) {
+    if (!('caches' in globalThis)) return false
+    const needle = `/${modelId}/`
+    for (const name of CACHES) {
+      const cache = await caches.open(name)
+      for (const request of await cache.keys()) {
+        if (request.url.includes(needle)) return true
+      }
+    }
+    return false
+  },
   async size(modelId) {
     const found = await filesOf(modelId)
     if (!found) return 0

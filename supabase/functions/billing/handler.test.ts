@@ -1,4 +1,5 @@
 import { assertEquals } from 'jsr:@std/assert@1'
+import { unsafeUnverifiedClaimsAuth } from '../_shared/auth.ts'
 import { listoPaysApi } from '../_shared/listopays.ts'
 import { subyApi } from '../_shared/suby.ts'
 import {
@@ -17,6 +18,7 @@ const signedIn = {
 const env: BillingEnv = {
   products: { month: 'pro_month', year: 'pro_year' },
   returnUrl: 'https://app.fixnote.space/',
+  verifyUser: unsafeUnverifiedClaimsAuth,
 }
 const post = (body: unknown, headers: Record<string, string> = signedIn) =>
   new Request('http://fn/billing', { method: 'POST', headers, body: JSON.stringify(body) })
@@ -79,6 +81,10 @@ Deno.test('from the desktop app, the buyer comes back to the page that opens the
 Deno.test('needs a signed-in account, a known plan and the payment setup', async () => {
   const { suby } = fakeSuby()
   assertEquals((await handle(post({ plan: 'year' }, {}), env, suby)).status, 401)
+  assertEquals(
+    (await handle(post({ plan: 'year' }), { ...env, verifyUser: undefined }, suby)).status,
+    401,
+  )
   assertEquals((await handle(post({ plan: 'lifetime' }), env, suby)).status, 400)
   assertEquals((await handle(post({ plan: 'month' }), env, null)).status, 503)
   const noProducts = { ...env, products: { month: undefined, year: undefined } }

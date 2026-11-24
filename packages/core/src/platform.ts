@@ -75,7 +75,7 @@ export interface Transcriber {
    * model should expect (the person's own words, what was said just before).
    */
   transcribe(
-    audio: Blob,
+    audio: Blob | Float32Array,
     opts?: { language?: string; languages?: string[]; prefer?: string; prompt?: string },
   ): Promise<TranscriptionResult>
   /** Switches the Whisper model (`SPEECH_MODELS`); it downloads on next use. Remembered. */
@@ -163,6 +163,8 @@ export interface TextRecognizer {
   ready(onProgress?: ProgressListener): Promise<void>
   /** The text found in the image ('' when there is none). */
   recognize(image: Blob): Promise<string>
+  /** Terminates the idle worker to reclaim WASM memory while keeping cached language data. */
+  sleep?(): void
   /** Frees the model (after its files were removed); the next use loads it again. */
   unload?(): void
 }
@@ -279,6 +281,8 @@ export interface DeepLinks {
 
 /** The files of on-device models (`models.ts`), cached by the webview. */
 export interface LocalModels {
+  /** Whether any cached file for `modelId` exists on this device (cheap, never reads blobs). */
+  has?(modelId: string): Promise<boolean>
   /** Bytes of the model's files on this device; 0 when it is not downloaded. */
   size(modelId: string): Promise<number>
   /** Removes the model's files; it downloads again when next needed. */

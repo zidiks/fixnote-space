@@ -1,46 +1,37 @@
 import { maskProtectedReferences, toPlainText } from '@fixnote/core'
-import type { SecretCandidate } from '@fixnote/core/privacy/detect'
 import { i18n } from '@fixnote/i18n'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { useDb } from '../../lib/db'
+import { kvStore } from '../../lib/kv'
 import { isPrivacyDismissed, privacyDismissalsEmpty } from '../../lib/privacy'
 import { noteWasScanned, requestPrivacyReview } from '../../lib/privacy-review'
+import { scanPrivacyText } from './privacy-worker'
+
+const SCAN_WATERMARK_KEY = 'privacy.libraryScannedAt'
 
 export default function PrivacyLibrary() {
   const { driver } = useDb()
   useEffect(() => {
     let active = true
-    let worker: Worker | undefined
-    let release: (() => void) | undefined
-    let timer: ReturnType<typeof setTimeout>
     const run = async () => {
-      worker = new Worker(new URL('./privacy.worker.ts', import.meta.url), { type: 'module' })
+      if (document.hidden) return
+      const kv = kvStore(driver)
+      const since = Number((await kv.get(SCAN_WATERMARK_KEY)) ?? '0') || 0
+      const startedAt = Date.now()
       let after = ''
       let first: string | undefined
-      const analyze = (text: string) =>
-        new Promise<SecretCandidate[]>((resolve) => {
-          if (!worker || !active) return resolve([])
-          release = () => resolve([])
-          worker.onmessage = (event: MessageEvent<{ candidates: SecretCandidate[] }>) => {
-            release = undefined
-            resolve(event.data.candidates)
-          }
-          worker.onerror = () => {
-            active = false
-            resolve([])
-          }
-          worker.postMessage({ id: 0, text })
-        })
       // Prime the shared dismissal cache once instead of querying kv per note.
       await privacyDismissalsEmpty(driver)
-      while (active) {
+      while (active && !first) {
+        if (document.hidden) return
         const batch = await driver.query<{ id: string; content: string }>(
           `SELECT n.id, n.content FROM notes n
              LEFT JOIN shared_docs d ON d.shared_id = n.shared_id
-            WHERE n.id > ? AND n.deleted_at IS NULL AND coalesce(d.role, 'edit') <> 'view'
+            WHERE n.id > ? AND n.deleted_at IS NULL AND n.updated_at >= ?
+              AND coalesce(d.role, 'edit') <> 'view'
             ORDER BY n.id LIMIT 8`,
-          [after],
+          [after, since],
         )
         if (!batch.length) break
         for (const { id, content } of batch) {
@@ -54,7 +45,7 @@ export default function PrivacyLibrary() {
               maskProtectedReferences(content.slice(start, start + 40_960)),
             )
             let found = false
-            for (const hit of await analyze(sample)) {
+            for (const hit of await scanPrivacyText(sample)) {
               if (
                 !(await isPrivacyDismissed(driver, id, hit.kind, sample.slice(hit.from, hit.to)))
               ) {
@@ -63,33 +54,30 @@ export default function PrivacyLibrary() {
               }
             }
             if (found) {
-              first ??= id
+              first = id
               break
             }
           }
+          if (first) break
         }
+        if (first) break
         await new Promise((resolve) => setTimeout(resolve, 40))
       }
-      if (active && first && !noteWasScanned(first)) {
+      if (!active) return
+      if (first && !noteWasScanned(first)) {
         const note = first
         toast(i18n.t('privacy.libraryOffer'), {
           id: 'privacy-library',
           action: { label: i18n.t('privacy.open'), onClick: () => requestPrivacyReview(note) },
         })
+      } else if (!first) {
+        await kv.set(SCAN_WATERMARK_KEY, String(startedAt))
       }
     }
-    timer = setTimeout(
-      () =>
-        void run()
-          .catch(() => undefined)
-          .finally(() => worker?.terminate()),
-      2800,
-    )
+    const timer = setTimeout(() => void run().catch(() => undefined), 4000)
     return () => {
       active = false
       clearTimeout(timer)
-      release?.()
-      worker?.terminate()
     }
   }, [driver])
   return null

@@ -8,7 +8,9 @@ declare namespace chrome {
   }
 
   namespace runtime {
+    const id: string
     interface MessageSender {
+      id?: string
       tab?: tabs.Tab
       url?: string
     }
@@ -22,6 +24,7 @@ declare namespace chrome {
     >
     function sendMessage(message: unknown): Promise<unknown>
     function openOptionsPage(): Promise<void>
+    function getURL(path: string): string
     function getManifest(): { version: string }
   }
 

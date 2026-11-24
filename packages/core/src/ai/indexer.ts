@@ -7,7 +7,6 @@ const MODEL_KEY = 'index.model'
 export interface IndexedChunk {
   noteId: string
   ord: number
-  text: string
   vector: Float32Array
 }
 
@@ -26,6 +25,11 @@ export class Indexer {
   invalidate(noteId?: string) {
     if (noteId) this.cache?.delete(noteId)
     else this.cache = null
+  }
+
+  /** Releases the in-memory vector cache (e.g. when idle or hidden in tray). */
+  clearCache(): void {
+    this.cache = null
   }
 
   /** Clears everything if the embedding model or the passages changed since the last run. */
@@ -111,7 +115,6 @@ export class Indexer {
         chunks.map((c, i) => ({
           noteId: row.id,
           ord: c.ord,
-          text: c.text,
           vector: vectors[i] as Float32Array,
         })),
       )
@@ -119,27 +122,59 @@ export class Indexer {
     return this.pendingCount()
   }
 
-  /** All passages with their vectors, loaded once and kept current by `indexSome`. */
+  /** All live passages' vectors, loaded once and kept current by `indexSome`. */
   async all(): Promise<Map<string, IndexedChunk[]>> {
     if (this.cache) return this.cache
     const rows = await this.db.query<
-      SqlRow & { note_id: string; ord: number; text: string; embedding: Uint8Array }
-    >('SELECT note_id, ord, text, embedding FROM chunks WHERE model = ? ORDER BY note_id, ord', [
-      this.embedder.modelId,
-    ])
+      SqlRow & { note_id: string; ord: number; embedding: Uint8Array }
+    >(
+      `SELECT c.note_id, c.ord, c.embedding FROM chunks c
+         JOIN notes n ON n.id = c.note_id
+        WHERE c.model = ? AND n.deleted_at IS NULL
+        ORDER BY c.note_id, c.ord`,
+      [this.embedder.modelId],
+    )
     const map = new Map<string, IndexedChunk[]>()
     for (const r of rows) {
       const list = map.get(r.note_id) ?? []
       list.push({
         noteId: r.note_id,
         ord: Number(r.ord),
-        text: r.text,
         vector: fromBlob(r.embedding),
       })
       map.set(r.note_id, list)
     }
     this.cache = map
     return map
+  }
+
+  /** Loads chunk texts on demand for top semantic hits, keyed by `${noteId}:${ord}`. */
+  async loadTexts(hits: readonly { noteId: string; ord: number }[]): Promise<Map<string, string>> {
+    const out = new Map<string, string>()
+    if (!hits.length) return out
+    const seen = new Set<string>()
+    const unique: { noteId: string; ord: number }[] = []
+    for (const h of hits) {
+      const key = `${h.noteId}:${h.ord}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      unique.push(h)
+    }
+    const BATCH = 200
+    for (let i = 0; i < unique.length; i += BATCH) {
+      const slice = unique.slice(i, i + BATCH)
+      const conds = slice.map(() => '(c.note_id = ? AND c.ord = ?)').join(' OR ')
+      const params: (string | number)[] = [this.embedder.modelId]
+      for (const h of slice) params.push(h.noteId, h.ord)
+      const rows = await this.db.query<SqlRow & { note_id: string; ord: number; text: string }>(
+        `SELECT c.note_id, c.ord, c.text FROM chunks c
+           JOIN notes n ON n.id = c.note_id
+          WHERE c.model = ? AND n.deleted_at IS NULL AND (${conds})`,
+        params,
+      )
+      for (const r of rows) out.set(`${r.note_id}:${Number(r.ord)}`, r.text)
+    }
+    return out
   }
 
   async embedQuery(text: string): Promise<Float32Array> {

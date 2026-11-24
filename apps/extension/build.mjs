@@ -65,10 +65,8 @@ for (const name of ['background', 'social', 'options']) {
 cpSync(join(here, 'static'), out, { recursive: true })
 const manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8'))
 manifest.version = JSON.parse(readFileSync(join(here, 'package.json'), 'utf8')).version
-// A site other than fixnote.space (staging): the social rules come from there.
-if (site !== 'https://fixnote.space') {
-  manifest.host_permissions = [`${new URL(site).origin}/*`, ...manifest.host_permissions.slice(1)]
-}
+// Pin host_permissions to the exact site and Supabase project origins for this build.
+manifest.host_permissions = [`${new URL(site).origin}/*`, `${new URL(supabase).origin}/*`]
 writeFileSync(join(out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
 
 // The app's icon; the browser scales it to each size.

@@ -23,7 +23,7 @@
   },
   "options_page": "options.html",
   "permissions": ["activeTab", "scripting", "contextMenus", "storage"],
-  "host_permissions": ["https://fixnote.space/*", "https://*.supabase.co/*"],
+  "host_permissions": ["https://fixnote.space/*", "https://nsteehqbmljuczxgkvae.supabase.co/*"],
   "commands": {
     "save-page": {
       "suggested_key": {

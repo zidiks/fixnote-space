@@ -6,6 +6,8 @@
  * packages/core/src/capture.
  */
 
+import { maskEmail, timingSafeEqual } from '../_shared/auth.ts'
+
 export interface TelegramApi {
   sendMessage(chatId: number, text: string): Promise<void>
   react(chatId: number, messageId: number, emoji: string): Promise<void>
@@ -19,6 +21,8 @@ export interface CaptureStore {
   link(chatId: string, userId: string, label: string): Promise<void>
   unlink(chatId: string): Promise<boolean>
   userForChat(chatId: string): Promise<string | null>
+  /** Optional account email for showing a masked confirmation on link. */
+  userEmail?(userId: string): Promise<string | null>
   publicKey(userId: string): Promise<string | null>
   /** Saving from messengers is part of Pro (supabase/migrations/*_plans.sql). */
   isPro(userId: string): Promise<boolean>
@@ -39,7 +43,14 @@ const MAX_FILE = 10 * 1024 * 1024
 type Lang = 'en' | 'ru' | 'es'
 const TEXT: Record<Lang, Record<string, string>> = {
   en: {
-    linked: 'Done. Everything you send here will appear in Fixnote. To disconnect, send /stop.',
+    linked:
+      'Done. Everything you send here will appear in Fixnote. If you did not connect this chat yourself, send /stop right away.',
+    linkedTo:
+      'Done. Connected to Fixnote ({email}). Everything you send here will go to that account — if this is not yours, send /stop right away.',
+    alreadyLinked:
+      'This chat is already connected to another Fixnote account. Send /stop first to disconnect before switching accounts.',
+    alreadyLinkedTo:
+      'This chat is already connected to Fixnote ({email}). Send /stop first to disconnect before switching accounts.',
     notLinked: 'This chat is not connected. In Fixnote, open Settings → Integrations → Telegram.',
     badCode:
       'This link has expired. Create a new one in Fixnote: Settings → Integrations → Telegram.',
@@ -51,7 +62,14 @@ const TEXT: Record<Lang, Record<string, string>> = {
       'Saving from messengers is part of Fixnote Pro. Open Fixnote → Settings → Plan to upgrade.',
   },
   ru: {
-    linked: 'Готово. Всё, что вы пришлёте сюда, появится в Fixnote. Отключить: /stop',
+    linked:
+      'Готово. Всё, что вы пришлёте сюда, появится в Fixnote. Если вы не подключали этот чат сами, сразу отправьте /stop.',
+    linkedTo:
+      'Готово. Чат подключён к Fixnote ({email}). Всё, что вы пришлёте сюда, попадёт в этот аккаунт — если это не ваш аккаунт, сразу отправьте /stop.',
+    alreadyLinked:
+      'Этот чат уже подключён к другому аккаунту Fixnote. Сначала отправьте /stop, чтобы отключиться перед сменой аккаунта.',
+    alreadyLinkedTo:
+      'Этот чат уже подключён к Fixnote ({email}). Сначала отправьте /stop, чтобы отключиться перед сменой аккаунта.',
     notLinked: 'Этот чат не подключён. В Fixnote откройте Настройки → Интеграции → Telegram.',
     badCode: 'Ссылка устарела. Создайте новую в Fixnote: Настройки → Интеграции → Telegram.',
     stopped: 'Чат отключён. Сообщения больше не попадают в Fixnote.',
@@ -62,7 +80,14 @@ const TEXT: Record<Lang, Record<string, string>> = {
       'Сохранение из мессенджеров входит в Fixnote Pro. Откройте Fixnote → Настройки → Тариф.',
   },
   es: {
-    linked: 'Listo. Todo lo que envíes aquí aparecerá en Fixnote. Para desconectar, envía /stop.',
+    linked:
+      'Listo. Todo lo que envíes aquí aparecerá en Fixnote. Si no conectaste este chat tú, envía /stop de inmediato.',
+    linkedTo:
+      'Listo. Conectado a Fixnote ({email}). Todo lo que envíes aquí irá a esa cuenta — si no es tuya, envía /stop de inmediato.',
+    alreadyLinked:
+      'Este chat ya está conectado a otra cuenta de Fixnote. Envía /stop primero para desconectar antes de cambiar de cuenta.',
+    alreadyLinkedTo:
+      'Este chat ya está conectado a Fixnote ({email}). Envía /stop primero para desconectar antes de cambiar de cuenta.',
     notLinked: 'Este chat no está conectado. En Fixnote, abre Ajustes → Integraciones → Telegram.',
     badCode:
       'Este enlace ha caducado. Crea uno nuevo en Fixnote: Ajustes → Integraciones → Telegram.',
@@ -159,7 +184,8 @@ function forwardedFrom(m: TgMessage): string | null {
 
 export async function handle(req: Request, deps: BotDeps): Promise<Response> {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
-  if (!deps.secret || req.headers.get('x-telegram-bot-api-secret-token') !== deps.secret) {
+  const headerSecret = req.headers.get('x-telegram-bot-api-secret-token') ?? ''
+  if (!deps.secret || !timingSafeEqual(headerSecret, deps.secret)) {
     return new Response('Unauthorized', { status: 401 })
   }
   let update: { message?: TgMessage }
@@ -196,9 +222,18 @@ async function onMessage(m: TgMessage, deps: BotDeps) {
       await say(t.badCode)
       return
     }
+    const existing = await deps.store.userForChat(chatId)
+    if (existing && existing !== user) {
+      const email = await deps.store.userEmail?.(existing).catch(() => null)
+      const masked = email ? maskEmail(email) : ''
+      await say(masked ? t.alreadyLinkedTo.replace('{email}', masked) : t.alreadyLinked)
+      return
+    }
     const label = m.chat.username ? `@${m.chat.username}` : (m.chat.first_name ?? '')
     await deps.store.link(chatId, user, label)
-    await say(t.linked)
+    const email = await deps.store.userEmail?.(user).catch(() => null)
+    const masked = email ? maskEmail(email) : ''
+    await say(masked ? t.linkedTo.replace('{email}', masked) : t.linked)
     return
   }
   if (command?.[1] === 'stop') {

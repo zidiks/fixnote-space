@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./bloub": "./src/bloub/Bloub.tsx",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {

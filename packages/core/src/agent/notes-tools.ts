@@ -193,6 +193,7 @@ export class NoteTools {
       f && parts.length < 16;
       f = f.parentId ? byId.get(f.parentId) : undefined
     ) {
+      if (!this.seesFolder(reach, f.id)) break
       parts.unshift(f.name)
     }
     return parts.join(' / ') || '(no folder)'

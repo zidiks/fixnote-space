@@ -169,7 +169,10 @@ describe('CollabSession', () => {
     const now = () => clock
     const a = new CollabSession({ key, roomId: id, transport: net.connect(), pingMs: 1000, now })
     const b = new CollabSession({ key, roomId: id, transport: net.connect(), pingMs: 0, now })
+    const rtts: number[] = []
+    a.onRtt = (ms) => rtts.push(ms)
     a.awareness.setLocalStateField('user', { name: 'Mac' })
+    b.awareness.setLocalStateField('user', { name: 'PC' })
     const tick = async (ms: number) => {
       for (let i = 0; i < ms; i += 10) {
         clock += 10
@@ -179,11 +182,95 @@ describe('CollabSession', () => {
     await tick(1300)
     expect(b.awareness.getStates().get(a.doc.clientID)).toEqual({ user: { name: 'Mac' } })
     expect(a.rtt).toBe(100)
+    expect(rtts).toContain(100)
     a.destroy()
     await tick(200)
     // A left: its cursor is gone on B.
     expect(b.awareness.getStates().has(a.doc.clientID)).toBe(false)
     b.destroy()
+  })
+
+  it('skips periodic pings when alone, disconnected, or without an onRtt listener', async () => {
+    vi.useFakeTimers()
+    const { id, key } = room()
+    const net = relay({ minMs: 10, maxMs: 10 })
+    const link = droppable(net.connect())
+    const a = new CollabSession({ key, roomId: id, transport: link.transport, pingMs: 500 })
+    await vi.advanceTimersByTimeAsync(100)
+    const sentAlone = a.stats.sent
+    // Alone (awareness size === 1) even with onRtt set: no periodic PINGs sent.
+    a.onRtt = () => {}
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(a.stats.sent).toBe(sentAlone)
+
+    // Peer joins, but onRtt is removed: still no periodic PINGs sent.
+    a.onRtt = undefined
+    const b = new CollabSession({ key, roomId: id, transport: net.connect(), pingMs: 0 })
+    b.awareness.setLocalStateField('user', { name: 'Peer' })
+    await vi.advanceTimersByTimeAsync(200)
+    expect(a.awareness.getStates().size).toBe(2)
+    const sentWithPeerNoListener = a.stats.sent
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(a.stats.sent).toBe(sentWithPeerNoListener)
+
+    // Disconnected with onRtt set: no periodic PINGs sent.
+    a.onRtt = () => {}
+    link.drop()
+    const sentWhileOffline = a.stats.sent
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(a.stats.sent).toBe(sentWhileOffline)
+
+    // Reconnected + peer present + onRtt set: periodic PINGs resume.
+    link.restore()
+    await vi.advanceTimersByTimeAsync(200)
+    const sentBeforePing = a.stats.sent
+    await vi.advanceTimersByTimeAsync(600)
+    expect(a.stats.sent).toBeGreaterThan(sentBeforePing)
+
+    a.destroy()
+    b.destroy()
+  })
+
+  it('clears pending whenSynced waiters and destroys doc on destroy()', async () => {
+    vi.useFakeTimers()
+    const { id, key } = room()
+    const net = relay({ minMs: 20, maxMs: 20 })
+    const externalDoc = new Y.Doc()
+    let destroyed = false
+    externalDoc.on('destroy', () => {
+      destroyed = true
+    })
+    const a = new CollabSession({
+      key,
+      roomId: id,
+      transport: net.connect(),
+      doc: externalDoc,
+      pingMs: 0,
+    })
+    const waiting = a.whenSynced(5000)
+    a.destroy()
+    // Resolves immediately without waiting for timeout.
+    expect(await waiting).toBe(false)
+    expect(await a.whenSynced(5000)).toBe(false)
+    expect(destroyed).toBe(true)
+
+    // destroyDoc: false keeps caller-owned doc alive.
+    const keptDoc = new Y.Doc()
+    let keptDestroyed = false
+    keptDoc.on('destroy', () => {
+      keptDestroyed = true
+    })
+    const b = new CollabSession({
+      key,
+      roomId: id,
+      transport: net.connect(),
+      doc: keptDoc,
+      pingMs: 0,
+      destroyDoc: false,
+    })
+    b.destroy()
+    expect(keptDestroyed).toBe(false)
+    keptDoc.destroy()
   })
 
   it('sends the caret in the same batch as the text typed before it', async () => {

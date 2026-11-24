@@ -2,6 +2,7 @@ import { useUi } from '../app/store'
 
 const editors = new Map<string, () => void>()
 const scanned = new Set<string>()
+const MAX_SCANNED = 1024
 let requested: string | null = null
 
 export function noteWasScanned(noteId: string) {
@@ -9,6 +10,10 @@ export function noteWasScanned(noteId: string) {
 }
 
 export function markNoteScanned(noteId: string) {
+  if (scanned.size >= MAX_SCANNED) {
+    const oldest = scanned.values().next().value
+    if (oldest !== undefined) scanned.delete(oldest)
+  }
   scanned.add(noteId)
 }
 

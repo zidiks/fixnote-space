@@ -67,6 +67,49 @@ describe('Indexer', () => {
     await next.prepare()
     expect(await next.pendingCount()).toBe(1)
   })
+
+  it('keeps slim vectors in cache, loads texts on demand, excludes deleted notes, and cleans up chunks on delete', async () => {
+    const live = await repo.createNote({ content: 'Design system\n\nupdated oklch palette' })
+    const doomed = await repo.createNote({ content: 'Old draft to remove' })
+    await indexer.indexSome()
+
+    const cached = await indexer.all()
+    expect(cached.has(live.id)).toBe(true)
+    expect(cached.has(doomed.id)).toBe(true)
+    // Slim cache entries omit text strings to save RAM.
+    const liveEntry = cached.get(live.id)?.[0]
+    expect(liveEntry).toBeDefined()
+    expect('text' in (liveEntry as object)).toBe(false)
+
+    // loadTexts fetches exact passage texts on demand.
+    const texts = await indexer.loadTexts([{ noteId: live.id, ord: 0 }])
+    expect(texts.get(`${live.id}:0`)).toContain('Design system')
+
+    // Soft-deleting removes orphaned chunks from SQLite and allows re-indexing after restore.
+    await repo.deleteNote(doomed.id)
+    const remainingChunks = await db.query<{ note_id: string }>(
+      'SELECT note_id FROM chunks WHERE note_id = ?',
+      [doomed.id],
+    )
+    expect(remainingChunks).toEqual([])
+
+    // Even if a soft-deleted note somehow still had rows in chunks, Indexer.all() excludes it.
+    await db.execute(
+      'INSERT INTO chunks (note_id, ord, text, model, embedding) VALUES (?, 0, ?, ?, ?)',
+      [doomed.id, 'stale', embedder.modelId, new Uint8Array(4)],
+    )
+    indexer.clearCache()
+    const reloaded = await indexer.all()
+    expect(reloaded.has(live.id)).toBe(true)
+    expect(reloaded.has(doomed.id)).toBe(false)
+
+    // Restoring a deleted note marks it pending so it gets re-indexed cleanly.
+    await repo.restoreNote(doomed.id)
+    expect(await indexer.pendingCount()).toBe(1)
+    await indexer.indexSome()
+    expect(await indexer.pendingCount()).toBe(0)
+    expect((await indexer.all()).has(doomed.id)).toBe(true)
+  })
 })
 
 describe('keywordQuery', () => {

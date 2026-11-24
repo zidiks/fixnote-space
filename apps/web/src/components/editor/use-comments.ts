@@ -15,6 +15,7 @@ import {
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { sharedContext, useAccount } from '../../lib/account/account'
+import { useLlm } from '../../lib/assistant/llm'
 import type { LiveEditing } from '../../lib/collab/live'
 import {
   markCommentsRead,
@@ -33,6 +34,7 @@ import {
   scrollToComment,
   setCommentHighlights,
 } from './comments-highlight'
+import { projectScanText } from './privacy-scan'
 
 const HOVER_OPEN_DELAY = 120
 const HOVER_CLOSE_DELAY = 90
@@ -66,6 +68,7 @@ export function useNoteComments({
   const [orphanThreadIds, setOrphanThreadIds] = useState<Set<string>>(() => new Set())
   const [threadOffsets, setThreadOffsets] = useState<Map<string, number>>(() => new Map())
   const rangesRef = useRef<Map<string, { from: number; to: number }>>(new Map())
+  const hadHighlightsRef = useRef(false)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const allEvents = useCommentAlerts((s) => s.events)
@@ -107,7 +110,7 @@ export function useNoteComments({
 
   // Load collaborators for @mention autocomplete on shared notes when any comment UI opens.
   useEffect(() => {
-    if (!live) {
+    if (!live || useLlm.getState().localOnly) {
       setCollaborators([])
       return
     }
@@ -135,12 +138,36 @@ export function useNoteComments({
   // Resolve and apply ProseMirror highlight decorations + inline pins.
   const syncHighlights = useCallback(() => {
     if (!editor || editor.isDestroyed) return
+    // Fast path: 0 threads avoids allocating Maps/Sets or dispatching extra ProseMirror transactions.
+    if (!threads.length) {
+      if (!hadHighlightsRef.current && rangesRef.current.size === 0) return
+      hadHighlightsRef.current = false
+      rangesRef.current = new Map()
+      setThreadOffsets((prev) => (prev.size === 0 ? prev : new Map()))
+      setOrphanThreadIds((prev) => (prev.size === 0 ? prev : new Set()))
+      setCommentHighlights(editor, [])
+      return
+    }
+
     const nextMap = new Map<string, { from: number; to: number }>()
     const nextOffsets = new Map<string, number>()
     const nextOrphans = new Set<string>()
     const ranges: CommentHighlightRange[] = []
+    // Compute the plain-text projection at most once for all quote-anchored threads.
+    let projection: ReturnType<typeof projectScanText> | undefined
+    const getProjection = () => {
+      projection ??= projectScanText(editor.state.doc, 0, editor.state.doc.content.size)
+      return projection
+    }
+
     for (const thread of threads) {
-      const resolved = resolveThreadRange(editor, thread, live)
+      const needsProjection = !(live && thread.anchorFrom && thread.anchorTo)
+      const resolved = resolveThreadRange(
+        editor,
+        thread,
+        live,
+        needsProjection ? getProjection() : undefined,
+      )
       if (!resolved) {
         nextOrphans.add(thread.id)
         continue
@@ -163,8 +190,33 @@ export function useNoteComments({
       }
     }
     rangesRef.current = nextMap
-    setThreadOffsets(nextOffsets)
-    setOrphanThreadIds(nextOrphans)
+    hadHighlightsRef.current = ranges.length > 0
+    setThreadOffsets((prev) => {
+      if (prev.size === nextOffsets.size) {
+        let same = true
+        for (const [k, v] of nextOffsets) {
+          if (prev.get(k) !== v) {
+            same = false
+            break
+          }
+        }
+        if (same) return prev
+      }
+      return nextOffsets
+    })
+    setOrphanThreadIds((prev) => {
+      if (prev.size === nextOrphans.size) {
+        let same = true
+        for (const id of nextOrphans) {
+          if (!prev.has(id)) {
+            same = false
+            break
+          }
+        }
+        if (same) return prev
+      }
+      return nextOrphans
+    })
     setCommentHighlights(editor, ranges)
   }, [activeThreadId, editor, hoveredThreadId, live, threads, unreadThreadIds])
 
@@ -172,9 +224,9 @@ export function useNoteComments({
     syncHighlights()
   }, [syncHighlights])
 
-  // Re-resolve when the document changes.
+  // Re-resolve when the document changes (only while the note actually has comments).
   useEffect(() => {
-    if (!editor || editor.isDestroyed) return
+    if (!editor || editor.isDestroyed || !threads.length) return
     let timer: ReturnType<typeof setTimeout> | undefined
     const onUpdate = () => {
       clearTimeout(timer)
@@ -185,7 +237,7 @@ export function useNoteComments({
       clearTimeout(timer)
       editor.off('update', onUpdate)
     }
-  }, [editor, syncHighlights])
+  }, [editor, syncHighlights, threads.length])
 
   useEffect(() => () => clearTimeout(hoverTimerRef.current), [])
 
@@ -213,7 +265,7 @@ export function useNoteComments({
         setActiveThreadId(threadId)
         setOverviewOpen(true)
       }
-      if (note.sharedId && unreadThreadIds.has(threadId)) {
+      if (note.sharedId && unreadThreadIds.has(threadId) && !useLlm.getState().localOnly) {
         void markCommentsRead(sharedContext()?.shared ?? null, note.sharedId, threadId)
       }
     },
@@ -321,9 +373,11 @@ export function useNoteComments({
         setActiveThreadId(thread.id)
         await live.persist(editor.getMarkdown(), { immediate: true })
         const mentionIds = [...new Set(mentions.map((m) => m.userId))]
-        void sharedContext()
-          ?.shared.notifyComment(live.sharedId, thread.id, mentionIds, false)
-          .catch(() => undefined)
+        if (!useLlm.getState().localOnly) {
+          void sharedContext()
+            ?.shared.notifyComment(live.sharedId, thread.id, mentionIds, false)
+            .catch(() => undefined)
+        }
         return
       }
       await repo.save(note.id, thread)
@@ -348,9 +402,11 @@ export function useNoteComments({
         addYCommentReply(live.session.doc, threadId, msg)
         await live.persist(editor.getMarkdown(), { immediate: true })
         const mentionIds = [...new Set(mentions.map((m) => m.userId))]
-        void sharedContext()
-          ?.shared.notifyComment(live.sharedId, threadId, mentionIds, true)
-          .catch(() => undefined)
+        if (!useLlm.getState().localOnly) {
+          void sharedContext()
+            ?.shared.notifyComment(live.sharedId, threadId, mentionIds, true)
+            .catch(() => undefined)
+        }
         return
       }
       const existing = threads.find((th) => th.id === threadId)

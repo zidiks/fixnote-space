@@ -16,10 +16,17 @@ export function blobFileName(key: string): string {
 /** The app's attachment folder: `blobs/` next to the database. */
 export const blobsDirFor = (databasePath: string) => join(dirname(databasePath), 'blobs')
 
+const blobStoreDirs = new WeakMap<BlobStore, string>()
+
+/** Returns the directory backing a `fileBlobStore` instance, if known. */
+export function blobStoreDir(blobs: BlobStore | undefined): string | undefined {
+  return blobs ? blobStoreDirs.get(blobs) : undefined
+}
+
 /** Attachment bytes in the desktop app's folder. */
 export function fileBlobStore(dir: string): BlobStore {
   const path = (key: string) => join(dir, blobFileName(key))
-  return {
+  const store: BlobStore = {
     async put(key, data) {
       mkdirSync(dir, { recursive: true })
       const target = path(key)
@@ -39,4 +46,6 @@ export function fileBlobStore(dir: string): BlobStore {
       rmSync(path(key), { force: true })
     },
   }
+  blobStoreDirs.set(store, dir)
+  return store
 }

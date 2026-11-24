@@ -8,6 +8,8 @@
  * GitHub downloads) is optional: without its secrets, or when it fails, its lines are left out.
  */
 
+import { timingSafeEqual } from '../_shared/auth.ts'
+
 export interface DayStats {
   accounts: number
   signups: number
@@ -154,7 +156,7 @@ export const HELP = [
 ].join('\n')
 
 async function command(req: Request, secret: string, deps: DigestDeps): Promise<Response> {
-  if (!deps.webhookSecret || secret !== deps.webhookSecret) {
+  if (!deps.webhookSecret || !timingSafeEqual(secret, deps.webhookSecret)) {
     return new Response('Forbidden', { status: 403 })
   }
   let update: { message?: { chat?: { id?: number | string }; text?: string } }

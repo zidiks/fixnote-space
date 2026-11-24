@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { type AutomaticSpeechRecognitionPipeline, env, pipeline } from '@huggingface/transformers'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { pickLanguage, transcribe } from './whisper'
 
 /**
@@ -18,6 +18,59 @@ describe('pickLanguage', () => {
     expect(pickLanguage({ en: 2, ru: 1.5 })).toBe('en')
     expect(pickLanguage({ en: 1, ru: 2 }, 'de')).toBe('ru')
     expect(pickLanguage({}, 'ru')).toBe('ru')
+  })
+})
+
+describe('tensor disposal in transcribe', () => {
+  it('disposes encoder_outputs, input_features, logits, present.* KV tensors, and generated ids', async () => {
+    const encoderDispose = vi.fn()
+    const featuresDispose = vi.fn()
+    const logitsDispose = vi.fn()
+    const kvKeyDispose = vi.fn()
+    const kvValDispose = vi.fn()
+    const idsDispose = vi.fn()
+
+    const encoderOutputs = { dispose: encoderDispose }
+    const inputFeatures = { dispose: featuresDispose }
+    const logitsData = new Float32Array([0, 5, 1])
+    const forwardFn = vi.fn(async () => ({
+      logits: { dims: [1, 1, 3], data: logitsData, dispose: logitsDispose },
+      'present.0.decoder.key': { dispose: kvKeyDispose },
+      'present.0.decoder.value': { dispose: kvValDispose },
+    }))
+    const model = Object.assign(forwardFn, {
+      generation_config: {
+        decoder_start_token_id: 50258,
+        lang_to_id: { '<|en|>': 1, '<|ru|>': 2 },
+        task_to_id: { transcribe: 50359 },
+        no_timestamps_token_id: 50363,
+      },
+      _prepare_encoder_decoder_kwargs_for_generation: vi.fn(async () => ({
+        encoder_outputs: encoderOutputs,
+      })),
+      generate: vi.fn(async () => ({
+        tolist: () => [[50258n, 1n, 50359n, 50363n, 100n]],
+        dispose: idsDispose,
+      })),
+    })
+    const fakeAsr = {
+      model,
+      processor: vi.fn(async () => ({ input_features: inputFeatures })),
+      tokenizer: {
+        convert_tokens_to_ids: () => undefined,
+        encode: () => [],
+        batch_decode: () => ['hello'],
+      },
+    } as unknown as AutomaticSpeechRecognitionPipeline
+
+    const res = await transcribe(fakeAsr, new Float32Array(16_000), undefined, ['en', 'ru'])
+    expect(res).toEqual({ text: 'hello', language: 'en' })
+    expect(logitsDispose).toHaveBeenCalledTimes(1)
+    expect(kvKeyDispose).toHaveBeenCalledTimes(1)
+    expect(kvValDispose).toHaveBeenCalledTimes(1)
+    expect(idsDispose).toHaveBeenCalledTimes(1)
+    expect(encoderDispose).toHaveBeenCalledTimes(1)
+    expect(featuresDispose).toHaveBeenCalledTimes(1)
   })
 })
 

@@ -9,6 +9,7 @@ import {
   protectedReference,
   type Recurrence,
   redactProtectedReferences,
+  scrubYComments,
 } from '@fixnote/core'
 import { detectSecrets } from '@fixnote/core/privacy/detect'
 import { i18n, useTranslation } from '@fixnote/i18n'
@@ -57,8 +58,9 @@ import { providerLabel, refreshAfterProtection, stop } from '../../lib/assistant
 import { useLlm } from '../../lib/assistant/llm'
 import { registerOpenNote } from '../../lib/assistant/open-notes'
 import {
-  attachmentObjectUrl,
+  acquireAttachmentUrl,
   ImageTooLargeError,
+  releaseAttachmentUrl,
   saveAttachment,
   storeImage,
 } from '../../lib/attachments'
@@ -489,6 +491,7 @@ export function NoteEditor({
   const callbacks = useRef({ onSave, onStateChange, onLeave, onRepeat })
   callbacks.current = { onSave, onStateChange, onLeave, onRepeat }
   /** The task right-clicked in a daily note, and the one whose repeat is being edited. */
+  const [menuOpen, setMenuOpen] = useState(false)
   const [menuTask, setMenuTask] = useState<TaskTarget | null>(null)
   /** The attached file or image right-clicked, as the range that removes it. */
   const [menuAttachment, setMenuAttachment] = useState<AttachmentRange | null>(null)
@@ -552,7 +555,9 @@ export function NoteEditor({
         // Live, undo is Yjs's own (only this device's changes are undone).
         live: Boolean(live),
         shouldAutoLink: (url) => !plainUrls.current.has(url),
-        resolveImage: (id) => attachmentObjectUrl(images.current, id),
+        resolveImage: (id) => acquireAttachmentUrl(images.current, id),
+        releaseImage: (id) => releaseAttachmentUrl(id),
+        allowExternalImages: () => !useLlm.getState().localOnly,
       }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       AiRangeExtension,
@@ -774,6 +779,7 @@ export function NoteEditor({
             mapping: new Map(),
             isOMark: new Map(),
           })
+          if (change.values.length) scrubYComments(draft, change.values)
           yUndoPluginKey.getState(e.state)?.undoManager.clear()
           await live.persistProtection(markdown, Y.encodeStateAsUpdate(draft), previous, change)
           yUndoPluginKey.getState(e.state)?.undoManager.clear()
@@ -1101,7 +1107,7 @@ export function NoteEditor({
         editor.view.focus()
       }}
     >
-      <ContextMenu>
+      <ContextMenu onOpenChange={setMenuOpen}>
         <ContextMenuTrigger
           asChild
           onContextMenu={(e) => {
@@ -1112,7 +1118,7 @@ export function NoteEditor({
         >
           <EditorContent editor={editor} />
         </ContextMenuTrigger>
-        {editor ? (
+        {editor && menuOpen ? (
           <EditorMenu
             editor={editor}
             readOnly={readOnly}

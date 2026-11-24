@@ -31,10 +31,19 @@ type Device = 'webgpu' | 'wasm'
 
 type Loaded = { model: AutomaticSpeechRecognitionPipeline; device: Device }
 
+/** When both Whisper and GigaAM are resident, evict the less-recently-used one after this idle window. */
+const SECONDARY_IDLE_MS = 2 * 60_000
+
 /** The Whisper model in memory; one at a time (the other one is freed when the person switches). */
 let asr: { id: string; loaded: Promise<Loaded> } | null = null
 let gigaam: Promise<GigaAm> | null = null
 let vad: Promise<SileroVad> | null = null
+let lastUsedAsr = 0
+let lastUsedGigaam = 0
+let evictingAsr: Promise<void> | null = null
+let evictingGigaam: Promise<void> | null = null
+let inFlight = 0
+let secondaryTimer: ReturnType<typeof setTimeout> | null = null
 
 async function hasWebGpu(): Promise<boolean> {
   try {
@@ -86,13 +95,70 @@ async function create(id: string, device: Device) {
   return { model, device }
 }
 
-function loadWhisper(id: string) {
-  if (asr?.id === id) return asr.loaded
-  if (asr) {
-    const previous = asr.loaded
-    previous.then(({ model }) => model.dispose()).catch(() => {})
+function evictWhisper(): Promise<void> {
+  const prev = asr
+  if (!prev) return evictingAsr ?? Promise.resolve()
+  asr = null
+  self.postMessage({ kind: 'evicted', model: prev.id } satisfies SpeechResponse)
+  const pendingEvict = evictingAsr
+  const cleanup = (async () => {
+    if (pendingEvict) await pendingEvict
+    await prev.loaded.then(({ model }) => model.dispose()).catch(() => {})
+  })()
+  evictingAsr = cleanup
+  void cleanup.finally(() => {
+    if (evictingAsr === cleanup) evictingAsr = null
+  })
+  return cleanup
+}
+
+function evictGigaam(): Promise<void> {
+  const prev = gigaam
+  if (!prev) return evictingGigaam ?? Promise.resolve()
+  gigaam = null
+  self.postMessage({ kind: 'evicted', model: RUSSIAN_SPEECH_MODEL.id } satisfies SpeechResponse)
+  const pendingEvict = evictingGigaam
+  const cleanup = (async () => {
+    if (pendingEvict) await pendingEvict
+    await prev.then((m) => m.release()).catch(() => {})
+  })()
+  evictingGigaam = cleanup
+  void cleanup.finally(() => {
+    if (evictingGigaam === cleanup) evictingGigaam = null
+  })
+  return cleanup
+}
+
+function clearSecondaryTimer() {
+  if (secondaryTimer !== null) {
+    clearTimeout(secondaryTimer)
+    secondaryTimer = null
   }
+}
+
+function scheduleSecondaryEviction() {
+  clearSecondaryTimer()
+  if (inFlight > 0 || !asr || !gigaam) return
+  const evictAsr = lastUsedAsr <= lastUsedGigaam
+  const lastUsed = evictAsr ? lastUsedAsr : lastUsedGigaam
+  const delay = Math.max(0, lastUsed + SECONDARY_IDLE_MS - Date.now())
+  secondaryTimer = setTimeout(() => {
+    secondaryTimer = null
+    if (inFlight > 0 || !asr || !gigaam) return
+    if (lastUsedAsr <= lastUsedGigaam) void evictWhisper()
+    else void evictGigaam()
+  }, delay)
+}
+
+function loadWhisper(id: string) {
+  lastUsedAsr = Date.now()
+  if (asr?.id === id) return asr.loaded
+  const previous = asr
+  asr = null
+  const pendingEvict = evictingAsr
   const loaded = (async () => {
+    if (pendingEvict) await pendingEvict
+    if (previous) await previous.loaded.then(({ model }) => model.dispose()).catch(() => {})
     await runtime
     if (await hasWebGpu()) {
       try {
@@ -140,13 +206,15 @@ const loadVad = (report = progressReporter()) =>
     },
   )
 
-const loadGigaam = (report = progressReporter()) =>
-  once(
+const loadGigaam = (report = progressReporter()) => {
+  lastUsedGigaam = Date.now()
+  return once(
     () => gigaam,
     (p) => {
       gigaam = p
     },
     async () => {
+      if (evictingGigaam) await evictingGigaam
       await runtime
       const [model, vocab] = await Promise.all([
         fetchFile(hubUrl(RUSSIAN_SPEECH_MODEL.id, GIGAAM_FILES.model), report),
@@ -155,6 +223,7 @@ const loadGigaam = (report = progressReporter()) =>
       return GigaAm.load(ort, model, new TextDecoder().decode(vocab))
     },
   )
+}
 
 /**
  * Text GigaAM is not sure of: low confidence, or mostly Latin letters (it spells English that
@@ -227,7 +296,21 @@ async function route(req: Transcribe): Promise<{ text: string; language: string;
 
 self.onmessage = async (event: MessageEvent<SpeechRequest>) => {
   const req = event.data
+  clearSecondaryTimer()
+  inFlight++
   try {
+    if (req.op === 'evict') {
+      if (req.model === RUSSIAN_SPEECH_MODEL.id) {
+        await evictGigaam()
+      } else if (req.model) {
+        if (asr?.id === req.model) await evictWhisper()
+      } else if (asr && gigaam) {
+        if (lastUsedAsr <= lastUsedGigaam) await evictWhisper()
+        else await evictGigaam()
+      }
+      self.postMessage({ kind: 'result', id: req.id, ok: true } satisfies SpeechResponse)
+      return
+    }
     if (req.op === 'init') {
       const report = progressReporter()
       if (req.model === RUSSIAN_SPEECH_MODEL.id) {
@@ -263,5 +346,8 @@ self.onmessage = async (event: MessageEvent<SpeechRequest>) => {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
     } satisfies SpeechResponse)
+  } finally {
+    inFlight--
+    if (inFlight === 0) scheduleSecondaryEviction()
   }
 }

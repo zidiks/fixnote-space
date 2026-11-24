@@ -2,6 +2,48 @@ import { negotiateProtocol, REMOTE_INSTRUCTIONS, remoteToolList } from '@fixnote
 import type { ToolAnswer } from './hub'
 
 export const SERVER_VERSION = '0.2.0'
+export const MAX_MCP_BODY_BYTES = 128 * 1024
+export const MAX_BATCH_SIZE = 10
+
+/**
+ * Reads a request body as UTF-8 up to `maxBytes`; returns null if Content-Length or streamed bytes
+ * exceed the limit.
+ */
+export async function readLimitedText(
+  req: Request,
+  maxBytes = MAX_MCP_BODY_BYTES,
+): Promise<string | null> {
+  const declared = req.headers.get('content-length')
+  if (declared !== null) {
+    const len = Number(declared)
+    if (Number.isFinite(len) && len > maxBytes) return null
+  }
+  if (!req.body) return ''
+  const reader = req.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => undefined)
+        return null
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+  const joined = new Uint8Array(total)
+  let offset = 0
+  for (const c of chunks) {
+    joined.set(c, offset)
+    offset += c.byteLength
+  }
+  return new TextDecoder().decode(joined)
+}
 
 /**
  * The app icon for AI apps that show one next to the server's name (MCP 2025-11-25
@@ -92,12 +134,19 @@ export async function answer(message: unknown, ctx: McpContext): Promise<JsonRpc
   }
 }
 
-/** A POSTed body: one message or (older clients) a batch. */
+/** A POSTed body: one message or (older clients) a bounded batch. */
 export async function answerBody(
   body: unknown,
   ctx: McpContext,
 ): Promise<JsonRpcResponse | JsonRpcResponse[] | null> {
   if (Array.isArray(body)) {
+    if (body.length === 0 || body.length > MAX_BATCH_SIZE) {
+      return fail(
+        null,
+        -32600,
+        body.length === 0 ? 'Empty batch' : `Batch too large (max ${MAX_BATCH_SIZE})`,
+      )
+    }
     const out: JsonRpcResponse[] = []
     for (const m of body) {
       const r = await answer(m, ctx)

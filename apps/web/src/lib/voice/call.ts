@@ -27,7 +27,7 @@ import { create } from 'zustand'
 import { llm, offlineText } from '../assistant/llm'
 import { aiRefusalText } from '../plan'
 import { MicrophoneError, Recorder } from './recorder'
-import { RATE, Segmenter, wav } from './segments'
+import { RATE, Segmenter } from './segments'
 
 /**
  * Call notes: the microphone ("me") and what the computer plays ("them", `SystemAudio`) are
@@ -83,6 +83,7 @@ class CallTranscripts {
   readonly pieces: CallPiece[] = []
   private chain: Promise<void> = Promise.resolve()
   private waiting = 0
+  private cancelled = false
   private language: string | null = null
 
   constructor(
@@ -92,23 +93,30 @@ class CallTranscripts {
   ) {}
 
   add(speaker: Speaker, pcm: Float32Array, endMs: number) {
+    if (this.cancelled) return
     const startMs = Math.max(0, endMs - (pcm.length / RATE) * 1000)
-    const audio = wav(pcm, RATE)
     this.waiting++
     this.chain = this.chain.then(async () => {
+      if (this.cancelled) {
+        this.waiting--
+        return
+      }
       try {
         const tr = await this.transcriber()
+        if (this.cancelled) return
         await tr.ready()
+        if (this.cancelled) return
         // What was said last, by either side: names and topic carry over.
         const before = this.pieces
           .slice(-3)
           .map((p) => p.text)
           .join(' ')
         const prompt = speechPrompt(await this.words, before)
-        const r = await tr.transcribe(audio, {
+        const r = await tr.transcribe(pcm, {
           ...(this.language ? { language: this.language } : { prefer: this.prefer }),
           ...(prompt ? { prompt } : {}),
         })
+        if (this.cancelled) return
         const text = r.text.trim()
         // The language is settled by the first real sentence, not by "hello?".
         if (!this.language && text.split(/\s+/).length >= 5) this.language = r.language
@@ -120,6 +128,10 @@ class CallTranscripts {
         if (useCall.getState().status === 'transcribing') set({ left: this.waiting })
       }
     })
+  }
+
+  cancel() {
+    this.cancelled = true
   }
 
   get left() {
@@ -201,6 +213,7 @@ export async function startCall() {
     }
   } catch (err) {
     clearTimeout(current.limit)
+    current.transcripts.cancel()
     mic.cancel()
     void d.systemAudio?.stop().catch(() => undefined)
     session = null
@@ -226,6 +239,7 @@ export function cancelCall() {
   if (!current) return
   session = null
   clearTimeout(current.limit)
+  current.transcripts.cancel()
   current.mic.cancel()
   void current.system?.stop().catch(() => undefined)
   set({ status: 'idle', me: 0, them: 0, left: 0 })

@@ -11,10 +11,10 @@ const db = createClient(
 const meter: Meter = {
   async allowance(user) {
     const { data, error } = await db.rpc('ai_allowance', { p_user: user })
-    // Without the database the assistant stays on rather than failing everyone.
+    // Fail closed if the allowance database is unreachable so quotas cannot be bypassed.
     if (error) {
       console.error('ai_allowance failed', error.message)
-      return { ok: true }
+      return { ok: false, reason: 'unavailable' }
     }
     return data as Allowance
   },

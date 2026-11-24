@@ -53,6 +53,13 @@ export async function answerConnect(
   state: ConnectDialogState,
   allow: boolean,
 ): Promise<'done' | 'failed' | 'unsent'> {
+  if ((state.kind === 'ask' || state.kind === 'again') && api.decideAndHandoff) {
+    try {
+      return await api.decideAndHandoff(id, allow)
+    } catch {
+      return 'unsent'
+    }
+  }
   let redirect: string | null
   if (state.kind === 'ask') {
     redirect = await api.consent.decide(id, allow).catch(() => null)

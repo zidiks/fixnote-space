@@ -45,15 +45,16 @@ export function VirtualList<T>({
     const measure = () => {
       if (root.current)
         setMargin(
-          root.current.getBoundingClientRect().top -
-            scroller.getBoundingClientRect().top +
-            scroller.scrollTop,
+          Math.round(
+            root.current.getBoundingClientRect().top -
+              scroller.getBoundingClientRect().top +
+              scroller.scrollTop,
+          ),
         )
     }
     measure()
     const resize = new ResizeObserver(measure)
     resize.observe(scroller)
-    if (root.current) resize.observe(root.current)
     // Navigation entries above the list can appear without changing either observed size.
     const children = new MutationObserver(measure)
     children.observe(scroller, { childList: true })

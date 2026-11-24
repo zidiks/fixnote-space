@@ -14,6 +14,7 @@ import {
   sealProtectedFragment,
 } from '@fixnote/core'
 import { attachmentSync, requestSync, sharedContext } from './account/account'
+import { useLlm } from './assistant/llm'
 import { platform } from './platform'
 
 const KEY_NAME = 'privacy.fragments.device.v1'
@@ -196,7 +197,7 @@ export async function loadProtectedFragment(
 }
 
 export async function loadProtectedValues(ref: ProtectedReference, sharedId?: string) {
-  const body = await loadRecord(ref, sharedId, true)
+  const body = await loadRecord(ref, sharedId, !useLlm.getState().localOnly)
   if (!body) return []
   const { text, markdown } = JSON.parse(body) as FragmentBody
   return [...new Set([markdown, text].filter(Boolean))].sort((a, b) => b.length - a.length)

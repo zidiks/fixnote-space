@@ -6,11 +6,31 @@ import {
   FIRST_TRY_MS,
   NO_DEVICE_MESSAGE,
   parseFromDevice,
+  RELAY_CLOSE,
   type RelayCall,
   type RemoteClient,
   type RemoteScope,
   type ToolText,
 } from '@fixnote/core/remote-mcp'
+
+export const MCP_RATE_LIMIT = 60
+export const MCP_RATE_WINDOW_MS = 60_000
+
+/** In-memory sliding-window rate limiter (per account inside the Durable Object). */
+export class RateLimiter {
+  private timestamps: number[] = []
+  constructor(
+    private readonly limit = MCP_RATE_LIMIT,
+    private readonly windowMs = MCP_RATE_WINDOW_MS,
+  ) {}
+
+  allow(now = Date.now()): boolean {
+    this.timestamps = this.timestamps.filter((t) => now - t < this.windowMs)
+    if (this.timestamps.length >= this.limit) return false
+    this.timestamps.push(now)
+    return true
+  }
+}
 
 /** A device's socket as the hub sees it (a hibernatable WebSocket in the Durable Object). */
 export interface DeviceSocket {
@@ -18,15 +38,22 @@ export interface DeviceSocket {
   /** What the device said about itself, kept with the socket across hibernation. */
   info(): DeviceInfo
   setInfo(info: DeviceInfo): void
+  /** Closes the underlying WebSocket (e.g. when its session token expires). */
+  close?(code: number, reason: string): void
 }
 
 export interface DeviceInfo extends DeviceState {
   connectedAt: number
   /** Last message from the device (or its connection). */
   activeAt: number
+  /** Epoch ms when the device's authenticated JWT expires. */
+  expiresAt?: number
 }
 
-export const newDeviceInfo = (now: number): DeviceInfo => ({
+export const isDeviceExpired = (info: DeviceInfo, now: number): boolean =>
+  typeof info.expiresAt === 'number' && info.expiresAt <= now
+
+export const newDeviceInfo = (now: number, expiresAt?: number): DeviceInfo => ({
   device: '',
   kind: 'web',
   syncedAt: null,
@@ -34,6 +61,7 @@ export const newDeviceInfo = (now: number): DeviceInfo => ({
   serving: false,
   connectedAt: now,
   activeAt: now,
+  ...(expiresAt !== undefined ? { expiresAt } : {}),
 })
 
 export interface ToolAnswer {
@@ -94,8 +122,22 @@ export class Hub {
     return (this.opts.now ?? Date.now)()
   }
 
+  private liveSockets(): DeviceSocket[] {
+    const now = this.now()
+    const live: DeviceSocket[] = []
+    for (const socket of this.sockets()) {
+      if (isDeviceExpired(socket.info(), now)) {
+        socket.close?.(RELAY_CLOSE.unauthorized, 'token expired')
+        this.onClose(socket)
+        continue
+      }
+      live.push(socket)
+    }
+    return live
+  }
+
   devices(): DeviceInfo[] {
-    return this.sockets().map((s) => s.info())
+    return this.liveSockets().map((s) => s.info())
   }
 
   async call(
@@ -104,7 +146,7 @@ export class Hub {
     args: Record<string, unknown>,
     opts: { scope: RemoteScope; retry: boolean },
   ): Promise<ToolAnswer> {
-    const ranked = rankDevices(this.sockets())
+    const ranked = rankDevices(this.liveSockets())
     if (!ranked.length) return error(NO_DEVICE_MESSAGE)
     const tries = opts.retry ? ranked.slice(0, 2) : ranked.slice(0, 1)
     let last: Outcome = { failed: 'gone' }
@@ -154,6 +196,11 @@ export class Hub {
 
   /** A message from a device: an answer, its state or a new scope. */
   onMessage(socket: DeviceSocket, text: string) {
+    if (isDeviceExpired(socket.info(), this.now())) {
+      socket.close?.(RELAY_CLOSE.unauthorized, 'token expired')
+      this.onClose(socket)
+      return
+    }
     const message = parseFromDevice(text)
     if (!message) return
     if (message.type === 'hello' || message.type === 'state') {

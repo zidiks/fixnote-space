@@ -72,10 +72,20 @@ pub fn chosen(app: &AppHandle, id: &str) {
 /// Brings the window back (from the tray, the Dock, minimized, or a second launch).
 pub fn show(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
+        crate::webview::set_low_memory(&window, false);
         let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     }
+}
+
+/// Hides the window to the tray and asks WebView2 and SQLite to shed idle memory.
+pub fn hide(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
+        crate::webview::set_low_memory(&window, true);
+    }
+    crate::db::shrink_memory(app);
 }
 
 /// Hides the window when it is in front, else brings it back.
@@ -87,7 +97,7 @@ fn toggle(app: &AppHandle) {
         && window.is_focused().unwrap_or(false)
         && !window.is_minimized().unwrap_or(false);
     if in_front {
-        let _ = window.hide();
+        hide(app);
     } else {
         show(app);
     }

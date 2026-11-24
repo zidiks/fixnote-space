@@ -101,4 +101,55 @@ describe('NoteTools and images', () => {
     await new ImageTexts(db).set('rcpt', 'Cafe Leto\nTotal 570')
     expect(await tools.get(n.id)).toContain('text in it: Cafe Leto / Total 570')
   })
+
+  it('does not leak out-of-scope ancestor or containing folder names in paths', async () => {
+    const privateParent = await repo.createFolder('SecretParent')
+    const sharedChild = await repo.createFolder('SharedWork', privateParent.id)
+    const deepChild = await repo.createFolder('Roadmap', sharedChild.id)
+    const inDeep = await repo.createNote({ content: '# Q4\n\nlaunch plan', folderId: deepChild.id })
+    const singleShared = await repo.createNote({
+      content: '# Single\n\nlaunch checklist',
+      folderId: privateParent.id,
+    })
+
+    const scoped = new NoteTools(db, repo, audit, {
+      gate: {
+        need: async () => {},
+        scope: async () => ({
+          kind: 'some',
+          folders: [sharedChild.id],
+          notes: [singleShared.id],
+        }),
+        dailyHidden: 'hidden',
+      },
+      provider: () => 'MCP',
+      kinds: 'mcp',
+    })
+
+    const folders = await scoped.folders()
+    expect(folders).toContain('SharedWork')
+    expect(folders).toContain('SharedWork / Roadmap')
+    expect(folders).not.toContain('SecretParent')
+
+    const deepNote = await scoped.get(inDeep.id)
+    expect(deepNote).toContain('folder: SharedWork / Roadmap')
+    expect(deepNote).not.toContain('SecretParent')
+
+    const singleNote = await scoped.get(singleShared.id)
+    expect(singleNote).toContain('folder: (no folder)')
+    expect(singleNote).not.toContain('SecretParent')
+
+    const found = await scoped.search('launch')
+    expect(found).toContain('in SharedWork / Roadmap')
+    expect(found).toContain('in (no folder)')
+    expect(found).not.toContain('SecretParent')
+
+    const recent = await scoped.recent(10)
+    expect(recent).toContain('in SharedWork / Roadmap')
+    expect(recent).toContain('in (no folder)')
+    expect(recent).not.toContain('SecretParent')
+
+    // Scoped path resolution matches the redacted path without the hidden ancestor.
+    expect(await scoped.recent(10, 'SharedWork / Roadmap')).toContain('Q4')
+  })
 })

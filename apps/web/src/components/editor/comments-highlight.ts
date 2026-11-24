@@ -3,6 +3,7 @@ import {
   decodeRelativePosition,
   encodeRelativePosition,
   findQuoteRange,
+  redactProtectedReferences,
 } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { Extension } from '@tiptap/core'
@@ -49,7 +50,10 @@ export interface AnchorRect {
   bottom: number
 }
 
-export const commentsHighlightKey = new PluginKey<CommentHighlightRange[]>('fixnoteComments')
+export const commentsHighlightKey = new PluginKey<{
+  ranges: CommentHighlightRange[]
+  decorations: DecorationSet
+}>('fixnoteComments')
 
 export function setCommentHighlights(editor: Editor, ranges: CommentHighlightRange[]) {
   if (editor.isDestroyed) return
@@ -70,16 +74,23 @@ export function captureSelectionAnchor(
 
   const beforeText = doc.textBetween(Math.max(0, range.from - 60), range.from, '\n')
   const afterText = doc.textBetween(range.to, Math.min(doc.content.size, range.to + 60), '\n')
-  const contextBefore = beforeText.slice(-40)
-  const contextAfter = afterText.slice(0, 40)
+  const rawBefore = beforeText.slice(-40)
+  const rawAfter = afterText.slice(0, 40)
 
   const MAX_QUOTE_LEN = 4000
-  const quote = quoteRaw.slice(0, MAX_QUOTE_LEN)
-  const hit = findQuoteRange(proj.text, quote, { contextBefore, contextAfter })
+  const quoteMatch = quoteRaw.slice(0, MAX_QUOTE_LEN)
+  const hit = findQuoteRange(proj.text, quoteMatch, {
+    contextBefore: rawBefore,
+    contextAfter: rawAfter,
+  })
   const from = hit ? hit.from : 0
-  const to = hit ? hit.to : quote.length
-  const effectiveAfter =
-    quoteRaw.length > MAX_QUOTE_LEN && hit ? proj.text.slice(hit.to, hit.to + 40) : contextAfter
+  const to = hit ? hit.to : quoteMatch.length
+  const contextBefore = redactProtectedReferences(rawBefore)
+  const effectiveAfter = redactProtectedReferences(
+    quoteRaw.length > MAX_QUOTE_LEN && hit ? proj.text.slice(hit.to, hit.to + 40) : rawAfter,
+  )
+  // Never store raw protected fragment reference tokens in persisted comment quotes/context.
+  const quote = redactProtectedReferences(quoteMatch)
 
   let anchorFrom: string | undefined
   let anchorTo: string | undefined
@@ -118,6 +129,7 @@ export function resolveThreadRange(
   editor: Editor,
   thread: CommentThread,
   live?: LiveEditing,
+  projection?: ReturnType<typeof projectScanText>,
 ): { from: number; to: number } | null {
   const docSize = editor.state.doc.content.size
   if (live && thread.anchorFrom && thread.anchorTo) {
@@ -150,7 +162,7 @@ export function resolveThreadRange(
   }
 
   if (!thread.quote) return null
-  const proj = projectScanText(editor.state.doc, 0, docSize)
+  const proj = projection ?? projectScanText(editor.state.doc, 0, docSize)
   const hit = findQuoteRange(proj.text, thread.quote, {
     contextBefore: thread.contextBefore,
     contextAfter: thread.contextAfter,
@@ -262,6 +274,92 @@ function threadIdFromTarget(target: EventTarget | null): string | null {
   return hit?.dataset.commentThread ?? null
 }
 
+function buildCommentDecorations(
+  doc: Editor['state']['doc'],
+  ranges: CommentHighlightRange[],
+  onSelect: (threadId: string) => void,
+): DecorationSet {
+  if (!ranges.length) return DecorationSet.empty
+  const max = doc.content.size
+  const decos: Decoration[] = []
+  for (const r of ranges) {
+    if (r.from < 0 || r.to > max || r.from >= r.to) continue
+    const cls = [
+      'fixnote-comment-mark',
+      r.active && 'is-active',
+      r.hovered && 'is-hovered',
+      r.unread && 'is-unread',
+    ]
+      .filter(Boolean)
+      .join(' ')
+    decos.push(
+      Decoration.inline(r.from, r.to, {
+        class: cls,
+        'data-comment-thread': r.id,
+      }),
+    )
+
+    // Minimal inline badge at the end of the highlighted passage: crisp cap-height circle
+    // with a clean comment icon (plus count when > 1), matching FixNote's subtle styling.
+    decos.push(
+      Decoration.widget(
+        r.to,
+        () => {
+          const pin = document.createElement('button')
+          pin.type = 'button'
+          pin.className = [
+            'fixnote-comment-pin',
+            r.active && 'is-active',
+            r.hovered && 'is-hovered',
+            r.unread && 'is-unread',
+          ]
+            .filter(Boolean)
+            .join(' ')
+          pin.dataset.commentThread = r.id
+          pin.contentEditable = 'false'
+          pin.tabIndex = -1
+          pin.setAttribute('aria-label', i18n.t('comments.title'))
+
+          const svgNS = 'http://www.w3.org/2000/svg'
+          const icon = document.createElementNS(svgNS, 'svg')
+          icon.setAttribute('viewBox', '0 0 16 16')
+          icon.setAttribute('fill', 'none')
+          icon.setAttribute('aria-hidden', 'true')
+          icon.setAttribute('class', 'fixnote-comment-pin-icon')
+          const path = document.createElementNS(svgNS, 'path')
+          path.setAttribute(
+            'd',
+            'M3.25 3.5h9.5A1.25 1.25 0 0 1 14 4.75v5.5a1.25 1.25 0 0 1-1.25 1.25H6.6L3.6 13.7a.35.35 0 0 1-.55-.28V11.5h-.3A1.25 1.25 0 0 1 1.5 10.25v-5.5A1.25 1.25 0 0 1 2.75 3.5h.5Z',
+          )
+          path.setAttribute('stroke', 'currentColor')
+          path.setAttribute('stroke-width', '1.4')
+          path.setAttribute('stroke-linejoin', 'round')
+          icon.appendChild(path)
+          pin.appendChild(icon)
+
+          const num = document.createElement('span')
+          num.className = 'fixnote-comment-pin-count'
+          num.textContent = String(r.count)
+          pin.appendChild(num)
+
+          pin.addEventListener('mousedown', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onSelect(r.id)
+          })
+          return pin
+        },
+        {
+          side: 1,
+          key: `cpin-${r.id}-${r.count}-${r.active ? 1 : 0}-${r.hovered ? 1 : 0}-${r.unread ? 1 : 0}`,
+          ignoreSelection: true,
+        },
+      ),
+    )
+  }
+  return decos.length ? DecorationSet.create(doc, decos) : DecorationSet.empty
+}
+
 export const CommentsHighlight = Extension.create<{
   onSelectThread: (threadId: string) => void
   onHoverThread: (threadId: string | null) => void
@@ -275,106 +373,34 @@ export const CommentsHighlight = Extension.create<{
     const onSelect = this.options.onSelectThread
     const onHover = this.options.onHoverThread
     return [
-      new Plugin<CommentHighlightRange[]>({
+      new Plugin<{ ranges: CommentHighlightRange[]; decorations: DecorationSet }>({
         key: commentsHighlightKey,
         state: {
-          init: () => [],
+          init: () => ({ ranges: [], decorations: DecorationSet.empty }),
           apply: (tr, prev) => {
             const next = tr.getMeta(commentsHighlightKey) as CommentHighlightRange[] | undefined
-            if (next !== undefined) return next
-            if (!tr.docChanged || !prev.length) return prev
+            if (next !== undefined) {
+              return {
+                ranges: next,
+                decorations: buildCommentDecorations(tr.doc, next, onSelect),
+              }
+            }
+            if (!tr.docChanged || !prev.ranges.length) return prev
             const mapped: CommentHighlightRange[] = []
-            for (const r of prev) {
+            for (const r of prev.ranges) {
               const from = tr.mapping.map(r.from, 1)
               const to = tr.mapping.map(r.to, -1)
               if (from < to) mapped.push({ ...r, from, to })
             }
-            return mapped
+            return {
+              ranges: mapped,
+              decorations: buildCommentDecorations(tr.doc, mapped, onSelect),
+            }
           },
         },
         props: {
-          decorations: (state) => {
-            const ranges = commentsHighlightKey.getState(state) ?? []
-            if (!ranges.length) return DecorationSet.empty
-            const max = state.doc.content.size
-            const decos: Decoration[] = []
-            for (const r of ranges) {
-              if (r.from < 0 || r.to > max || r.from >= r.to) continue
-              const cls = [
-                'fixnote-comment-mark',
-                r.active && 'is-active',
-                r.hovered && 'is-hovered',
-                r.unread && 'is-unread',
-              ]
-                .filter(Boolean)
-                .join(' ')
-              decos.push(
-                Decoration.inline(r.from, r.to, {
-                  class: cls,
-                  'data-comment-thread': r.id,
-                }),
-              )
-
-              // Minimal inline badge at the end of the highlighted passage: crisp cap-height circle
-              // with a clean comment icon (plus count when > 1), matching FixNote's subtle styling.
-              decos.push(
-                Decoration.widget(
-                  r.to,
-                  () => {
-                    const pin = document.createElement('button')
-                    pin.type = 'button'
-                    pin.className = [
-                      'fixnote-comment-pin',
-                      r.active && 'is-active',
-                      r.hovered && 'is-hovered',
-                      r.unread && 'is-unread',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')
-                    pin.dataset.commentThread = r.id
-                    pin.contentEditable = 'false'
-                    pin.tabIndex = -1
-                    pin.setAttribute('aria-label', i18n.t('comments.title'))
-
-                    const svgNS = 'http://www.w3.org/2000/svg'
-                    const icon = document.createElementNS(svgNS, 'svg')
-                    icon.setAttribute('viewBox', '0 0 16 16')
-                    icon.setAttribute('fill', 'none')
-                    icon.setAttribute('aria-hidden', 'true')
-                    icon.setAttribute('class', 'fixnote-comment-pin-icon')
-                    const path = document.createElementNS(svgNS, 'path')
-                    path.setAttribute(
-                      'd',
-                      'M3.25 3.5h9.5A1.25 1.25 0 0 1 14 4.75v5.5a1.25 1.25 0 0 1-1.25 1.25H6.6L3.6 13.7a.35.35 0 0 1-.55-.28V11.5h-.3A1.25 1.25 0 0 1 1.5 10.25v-5.5A1.25 1.25 0 0 1 2.75 3.5h.5Z',
-                    )
-                    path.setAttribute('stroke', 'currentColor')
-                    path.setAttribute('stroke-width', '1.4')
-                    path.setAttribute('stroke-linejoin', 'round')
-                    icon.appendChild(path)
-                    pin.appendChild(icon)
-
-                    const num = document.createElement('span')
-                    num.className = 'fixnote-comment-pin-count'
-                    num.textContent = String(r.count)
-                    pin.appendChild(num)
-
-                    pin.addEventListener('mousedown', (e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      onSelect(r.id)
-                    })
-                    return pin
-                  },
-                  {
-                    side: 1,
-                    key: `cpin-${r.id}-${r.count}-${r.active ? 1 : 0}-${r.hovered ? 1 : 0}-${r.unread ? 1 : 0}`,
-                    ignoreSelection: true,
-                  },
-                ),
-              )
-            }
-            return DecorationSet.create(state.doc, decos)
-          },
+          decorations: (state) =>
+            commentsHighlightKey.getState(state)?.decorations ?? DecorationSet.empty,
           handleClick: (_view, _pos, event) => {
             if (event.button !== 0) return false
             const threadId = threadIdFromTarget(event.target)

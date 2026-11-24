@@ -12,7 +12,7 @@ import { NotesTools, type ToolContent } from './tools'
 export const VERSION = '0.1.2'
 
 /** The Fixnote MCP server over an open notes database and, when given, the app's files. */
-export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
+export function createServer(db: SqlDriver, blobs?: BlobStore, dataDir?: string): McpServer {
   const server = new McpServer(
     { name: 'fixnote', version: VERSION },
     {
@@ -23,6 +23,7 @@ export function createServer(db: SqlDriver, blobs?: BlobStore): McpServer {
     db,
     () => server.server.getClientVersion()?.name ?? 'MCP client',
     blobs,
+    dataDir,
   )
 
   const run = async (fn: () => Promise<string | ToolContent[]>) => {

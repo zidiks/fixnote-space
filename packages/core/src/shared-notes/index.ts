@@ -1,6 +1,6 @@
 import * as Y from 'yjs'
 import { type AttachmentSource, type Attachments, attachmentIds } from '../attachments'
-import type { CommentNotification } from '../comments'
+import { type CommentNotification, scrubYComments } from '../comments'
 import {
   type AccountKeys,
   DecryptionError,
@@ -21,7 +21,7 @@ import { deriveTitle } from '../notes/markdown'
 import type { NotesRepo } from '../notes/repo'
 import type { SqlDriver, SqlRow } from '../platform'
 import { containsProtectedReference } from '../privacy/reference'
-import type { ProtectionChange } from '../privacy/scrub'
+import { type ProtectionChange, receivedProtection } from '../privacy/scrub'
 import {
   applyLayout,
   EMPTY_LAYOUT,
@@ -300,13 +300,27 @@ const RANK: Record<SharedRole, number> = { owner: 0, edit: 1, view: 2 }
 const stronger = (a: SharedRole, b: SharedRole) => (RANK[a] <= RANK[b] ? a : b)
 const merge = (a: Uint8Array | null, b: Uint8Array) => (a ? Y.mergeUpdates([a, b]) : b)
 
-function compactProtectedState(state: Uint8Array, markdown: string): Uint8Array {
-  if (!containsProtectedReference(markdown)) return state
+function compactProtectedState(
+  state: Uint8Array,
+  markdown: string,
+  values?: readonly string[],
+): Uint8Array {
+  const hasValues = Boolean(values?.some(Boolean))
+  if (!containsProtectedReference(markdown) && !hasValues) return state
   // mergeUpdates retains deleted structs. Applying to a fresh GC-enabled doc removes
   // their content while keeping the clock and delete set that live peers need.
   const doc = new Y.Doc()
   try {
     Y.applyUpdate(doc, state)
+    if (values?.length && scrubYComments(doc, values)) {
+      const compacted = new Y.Doc()
+      try {
+        Y.applyUpdate(compacted, Y.encodeStateAsUpdate(doc))
+        return Y.encodeStateAsUpdate(compacted)
+      } finally {
+        compacted.destroy()
+      }
+    }
     return Y.encodeStateAsUpdate(doc)
   } finally {
     doc.destroy()
@@ -766,7 +780,7 @@ export class SharedNotes {
       const outside = opts.taken ? null : await this.absorbOutsideEdits(doc)
       const combined = merge(outside ?? doc.state, update)
       const text = outside ? this.projector.toMarkdown(combined) : markdown
-      const state = compactProtectedState(combined, text)
+      const state = compactProtectedState(combined, text, opts.protect?.values)
       await this.repo.updateContent(doc.noteId, text, {
         ...(opts.protect
           ? { protect: opts.protect, base: opts.base, protectedSharedState: { sharedId, state } }
@@ -866,11 +880,11 @@ export class SharedNotes {
     for (const a of access.values()) {
       try {
         const before = await this.doc(a.sharedId)
+        if (before) await this.checkKey(a, before)
         const added = await this.link(a)
         if (added) report.added.push(added)
         if (before && before.role !== a.role)
           report.roles.push({ sharedId: a.sharedId, role: a.role })
-        if (before) await this.checkKey(a, before)
       } catch (err) {
         // One note that cannot be opened does not stop the others.
         if (!(err instanceof DecryptionError)) throw err
@@ -960,30 +974,35 @@ export class SharedNotes {
         [f.folderId],
       )
       if (!row) return
-      const doc = new Y.Doc()
-      if (row.layout) Y.applyUpdate(doc, new Uint8Array(row.layout))
       let version = Number(row.layout_version)
-      if (server && server.version > version) {
-        Y.applyUpdate(doc, openSharedState(row.folder_key, id, server.state))
-        version = server.version
-      }
-      const projected: Layout | null = row.layout_projected
-        ? JSON.parse(row.layout_projected)
-        : null
       let dirty = Number(row.layout_dirty) === 1
-      // The owner's first time: the folder as it is becomes the layout.
-      if (canEdit(f.role) && (projected || own)) {
-        const real = await readReality(this.db, row.folder_id, f.folderId)
-        if (recordLocalChanges(doc, real, projected ?? EMPTY_LAYOUT)) dirty = true
+      let state: Uint8Array
+      const doc = new Y.Doc()
+      try {
+        if (row.layout) Y.applyUpdate(doc, new Uint8Array(row.layout))
+        if (server && server.version > version) {
+          Y.applyUpdate(doc, openSharedState(row.folder_key, id, server.state))
+          version = server.version
+        }
+        const projected: Layout | null = row.layout_projected
+          ? JSON.parse(row.layout_projected)
+          : null
+        // The owner's first time: the folder as it is becomes the layout.
+        if (canEdit(f.role) && (projected || own)) {
+          const real = await readReality(this.db, row.folder_id, f.folderId)
+          if (recordLocalChanges(doc, real, projected ?? EMPTY_LAYOUT)) dirty = true
+        }
+        const applied = await applyLayout(this.db, readLayout(doc), {
+          rootId: row.folder_id,
+          folderSharedId: f.folderId,
+          member: !own,
+          now: this.now(),
+        })
+        if (applied) report.folders++
+        state = Y.encodeStateAsUpdate(doc)
+      } finally {
+        doc.destroy()
       }
-      const applied = await applyLayout(this.db, readLayout(doc), {
-        rootId: row.folder_id,
-        folderSharedId: f.folderId,
-        member: !own,
-        now: this.now(),
-      })
-      if (applied) report.folders++
-      const state = Y.encodeStateAsUpdate(doc)
       const after = (await readReality(this.db, row.folder_id, f.folderId)).layout
       await this.db.execute(
         `UPDATE shared_folders SET layout = ?, layout_version = ?, layout_dirty = ?,
@@ -1401,8 +1420,13 @@ export class SharedNotes {
         version = remote.version
       }
       if (!state) return false
-      const markdown = await this.writeNote(doc.noteId, state, editedAt, Boolean(absorbed))
-      state = compactProtectedState(state, markdown)
+      const { markdown, protectedValues } = await this.writeNote(
+        doc.noteId,
+        state,
+        editedAt,
+        Boolean(absorbed),
+      )
+      state = compactProtectedState(state, markdown, protectedValues)
       await this.db.execute(
         `UPDATE shared_docs SET state = ?, server_version = ?, projected = ?,
                 dirty = CASE WHEN ? THEN 1 ELSE dirty END
@@ -1432,7 +1456,13 @@ export class SharedNotes {
       return
     }
     if (key === doc.noteKey) return
+    if (doc.role === 'owner' && a.folderSharedId !== doc.folderSharedId) {
+      throw new DecryptionError('Refusing unexpected key swap across folders')
+    }
     const remote = await this.remote.state(a.sharedId)
+    if (doc.role === 'owner' && (!remote || (remote.version === 0 && !remote.state))) {
+      throw new DecryptionError('Refusing key swap after remote state reset')
+    }
     await this.locked(async () => {
       const now = await this.doc(a.sharedId)
       if (!now) return
@@ -1492,9 +1522,13 @@ export class SharedNotes {
     state: Uint8Array,
     editedAt: number | null,
     absorbed = false,
-  ): Promise<string> {
+  ): Promise<{ markdown: string; protectedValues: string[] }> {
     const markdown = this.projector.toMarkdown(state)
     const note = await this.repo.getNote(noteId)
+    const protectedValues =
+      note && note.content !== markdown && containsProtectedReference(markdown)
+        ? receivedProtection(note.content, markdown).flatMap((p) => p.values)
+        : []
     if (note && note.content !== markdown)
       await this.repo.updateContent(noteId, markdown, {
         fromSharing: true,
@@ -1505,7 +1539,7 @@ export class SharedNotes {
               ? Math.max(editedAt, note.updatedAt)
               : editedAt,
       })
-    return markdown
+    return { markdown, protectedValues }
   }
 
   /** Sends this device's state if it has changes; merges and retries if someone saved first. */
@@ -1534,8 +1568,13 @@ export class SharedNotes {
         if (res.state) state = merge(state, openSharedState(now.noteKey, sharedId, res.state))
         if (!state) return true
         // Someone saved while this device was saving: both edits are recent, theirs just now.
-        const markdown = await this.writeNote(now.noteId, state, this.now(), true)
-        state = compactProtectedState(state, markdown)
+        const { markdown, protectedValues } = await this.writeNote(
+          now.noteId,
+          state,
+          this.now(),
+          true,
+        )
+        state = compactProtectedState(state, markdown, protectedValues)
         await this.db.execute(
           'UPDATE shared_docs SET state = ?, server_version = ?, projected = ?, dirty = 1 WHERE shared_id = ?',
           [state, res.version, markdown, sharedId],

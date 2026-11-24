@@ -1,16 +1,29 @@
+import { redactProtectedReferences } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { type Editor, getMarkRange } from '@tiptap/core'
 import CodeBlock from '@tiptap/extension-code-block'
 import type { Node as PmNode } from '@tiptap/pm/model'
-import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state'
+import { Plugin, PluginKey, TextSelection, type Transaction } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { common, createLowlight } from 'lowlight'
 
-const lowlight = createLowlight(common)
-const highlightKey = new PluginKey<DecorationSet>('codeBlockHighlight')
+let lowlightInstance: ReturnType<typeof createLowlight> | null = null
+function getLowlight() {
+  lowlightInstance ??= createLowlight(common)
+  return lowlightInstance
+}
 
+const highlightKey = new PluginKey<{
+  decorations: DecorationSet
+  detected: Map<number, string | null>
+}>('codeBlockHighlight')
+
+const REDETECT_META = 'fixnote.codeBlock.redetect'
+const REDETECT_DELAY_MS = 350
 /** Minimum highlight.js auto-detection relevance so short prose is not mislabeled as code. */
 const MIN_AUTO_RELEVANCE = 3
+const MAX_CACHE = 64
+const MAX_CACHE_CHARS = 50_000
 
 interface HighlightToken {
   from: number
@@ -55,23 +68,31 @@ function collectTokens(
 }
 
 const highlightCache = new Map<string, HighlightResult>()
-const MAX_CACHE = 64
 
 export function highlightCode(code: string, explicitLanguage?: string | null): HighlightResult {
   const explicit = explicitLanguage?.trim().toLowerCase() || null
-  const cacheKey = `${explicit ?? ''}\u0000${code}`
-  const cached = highlightCache.get(cacheKey)
-  if (cached) return cached
+  const cacheable = code.length <= MAX_CACHE_CHARS
+  const cacheKey = cacheable ? `${explicit ?? ''}\u0000${code}` : null
+  if (cacheKey) {
+    const cached = highlightCache.get(cacheKey)
+    if (cached) {
+      // Refresh LRU order on hit.
+      highlightCache.delete(cacheKey)
+      highlightCache.set(cacheKey, cached)
+      return cached
+    }
+  }
 
   let result: HighlightResult = { language: explicit, tokens: [] }
   if (code.length > 0) {
-    if (explicit && lowlight.registered(explicit)) {
-      const tree = lowlight.highlight(explicit, code)
+    const ll = getLowlight()
+    if (explicit && ll.registered(explicit)) {
+      const tree = ll.highlight(explicit, code)
       const tokens: HighlightToken[] = []
       collectTokens(tree.children as readonly HastNode[], 0, [], tokens)
       result = { language: explicit, tokens }
     } else if (!explicit && code.trim().length >= 3) {
-      const tree = lowlight.highlightAuto(code)
+      const tree = ll.highlightAuto(code)
       const detected = tree.data?.language ?? null
       const relevance = tree.data?.relevance ?? 0
       if (detected && relevance >= MIN_AUTO_RELEVANCE) {
@@ -82,31 +103,62 @@ export function highlightCode(code: string, explicitLanguage?: string | null): H
     }
   }
 
-  if (highlightCache.size >= MAX_CACHE) {
-    const oldest = highlightCache.keys().next().value
-    if (oldest !== undefined) highlightCache.delete(oldest)
+  if (cacheKey) {
+    if (highlightCache.size >= MAX_CACHE) {
+      const oldest = highlightCache.keys().next().value
+      if (oldest !== undefined) highlightCache.delete(oldest)
+    }
+    highlightCache.set(cacheKey, result)
   }
-  highlightCache.set(cacheKey, result)
   return result
 }
 
-function buildDecorations(doc: PmNode): DecorationSet {
+function decorationsForBlock(
+  node: PmNode,
+  pos: number,
+  hintLanguage?: string | null,
+): { decorations: Decoration[]; language: string | null } {
+  const explicit = typeof node.attrs.language === 'string' ? node.attrs.language : null
+  const effectiveLang = explicit || hintLanguage || null
+  const { language, tokens } = highlightCode(node.textContent, effectiveLang)
+  const base = pos + 1
+  const decorations = tokens.map((token) =>
+    Decoration.inline(base + token.from, base + token.to, {
+      class: token.classes.join(' '),
+    }),
+  )
+  return { decorations, language }
+}
+
+function buildAllDecorations(doc: PmNode): {
+  decorations: DecorationSet
+  detected: Map<number, string | null>
+} {
   const decorations: Decoration[] = []
+  const detected = new Map<number, string | null>()
   doc.descendants((node, pos) => {
     if (node.type.name !== 'codeBlock') return
-    const language = typeof node.attrs.language === 'string' ? node.attrs.language : null
-    const { tokens } = highlightCode(node.textContent, language)
-    const base = pos + 1
-    for (const token of tokens) {
-      decorations.push(
-        Decoration.inline(base + token.from, base + token.to, {
-          class: token.classes.join(' '),
-        }),
-      )
-    }
+    const built = decorationsForBlock(node, pos)
+    for (const d of built.decorations) decorations.push(d)
+    detected.set(pos, built.language)
     return false
   })
-  return DecorationSet.create(doc, decorations)
+  return { decorations: DecorationSet.create(doc, decorations), detected }
+}
+
+/** Ranges in `tr.doc` touched by `tr.steps`, so typing in prose skips all code blocks. */
+function changedRanges(tr: Transaction): { from: number; to: number }[] {
+  const ranges: { from: number; to: number }[] = []
+  for (let i = 0; i < tr.mapping.maps.length; i++) {
+    const map = tr.mapping.maps[i]
+    const rest = tr.mapping.slice(i + 1)
+    map?.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
+      const from = rest.map(newStart, -1)
+      const to = rest.map(newEnd, 1)
+      ranges.push({ from: Math.min(from, to), to: Math.max(from, to) })
+    })
+  }
+  return ranges
 }
 
 function svgIcon(paths: readonly string[]) {
@@ -200,6 +252,8 @@ export const NoteCodeBlock = CodeBlock.extend({
     return ({ node }) => {
       let current = node
       let copyTimer: ReturnType<typeof setTimeout> | undefined
+      let headerTimer: ReturnType<typeof setTimeout> | undefined
+      let detectedLang: string | null = null
 
       const wrapper = document.createElement('div')
       wrapper.className = 'fixnote-code-block'
@@ -230,8 +284,10 @@ export const NoteCodeBlock = CodeBlock.extend({
       copyBtn.addEventListener('click', (event) => {
         event.preventDefault()
         event.stopPropagation()
+        // Never copy raw protected fragment reference tokens out of a code block.
+        const safeText = redactProtectedReferences(current.textContent)
         void navigator.clipboard
-          .writeText(current.textContent)
+          .writeText(safeText)
           .then(() => {
             setCopied(true)
             clearTimeout(copyTimer)
@@ -247,24 +303,33 @@ export const NoteCodeBlock = CodeBlock.extend({
       pre.append(code)
       wrapper.append(header, pre)
 
-      const syncHeader = (next: PmNode) => {
+      const syncHeader = (next: PmNode, allowAuto: boolean) => {
         const explicit = typeof next.attrs.language === 'string' ? next.attrs.language : null
-        const { language } = highlightCode(next.textContent, explicit)
-        langEl.textContent = language ?? ''
-        langEl.hidden = !language
+        if (explicit) {
+          detectedLang = explicit.trim().toLowerCase() || null
+        } else if (allowAuto || detectedLang === null) {
+          detectedLang = highlightCode(next.textContent, null).language
+        }
+        langEl.textContent = detectedLang ?? ''
+        langEl.hidden = !detectedLang
       }
-      syncHeader(current)
+      syncHeader(current, true)
 
       return {
         dom: wrapper,
         contentDOM: code,
         update(updated) {
           if (updated.type !== current.type) return false
-          const changed =
-            updated.textContent !== current.textContent ||
-            updated.attrs.language !== current.attrs.language
+          const langChanged = updated.attrs.language !== current.attrs.language
+          const textChanged = updated.textContent !== current.textContent
           current = updated
-          if (changed) syncHeader(current)
+          if (langChanged) {
+            clearTimeout(headerTimer)
+            syncHeader(current, true)
+          } else if (textChanged && !updated.attrs.language) {
+            clearTimeout(headerTimer)
+            headerTimer = setTimeout(() => syncHeader(current, true), REDETECT_DELAY_MS)
+          }
           return true
         },
         ignoreMutation(mutation) {
@@ -272,6 +337,7 @@ export const NoteCodeBlock = CodeBlock.extend({
         },
         destroy() {
           clearTimeout(copyTimer)
+          clearTimeout(headerTimer)
         },
       }
     }
@@ -280,18 +346,91 @@ export const NoteCodeBlock = CodeBlock.extend({
   addProseMirrorPlugins() {
     return [
       ...(this.parent?.() ?? []),
-      new Plugin<DecorationSet>({
+      new Plugin<{ decorations: DecorationSet; detected: Map<number, string | null> }>({
         key: highlightKey,
         state: {
-          init: (_, state) => buildDecorations(state.doc),
+          init: (_, state) => buildAllDecorations(state.doc),
           apply(tr, previous) {
+            const redetectPos = tr.getMeta(REDETECT_META) as number | undefined
+            if (redetectPos !== undefined) {
+              const node = tr.doc.nodeAt(redetectPos)
+              if (node?.type.name !== 'codeBlock' || node.attrs.language) return previous
+              const existing = previous.decorations.find(redetectPos, redetectPos + node.nodeSize)
+              const built = decorationsForBlock(node, redetectPos)
+              const nextDetected = new Map(previous.detected)
+              nextDetected.set(redetectPos, built.language)
+              return {
+                decorations: previous.decorations.remove(existing).add(tr.doc, built.decorations),
+                detected: nextDetected,
+              }
+            }
             if (!tr.docChanged) return previous
-            return buildDecorations(tr.doc)
+
+            const mappedDecos = previous.decorations.map(tr.mapping, tr.doc)
+            const mappedDetected = new Map<number, string | null>()
+            for (const [oldPos, lang] of previous.detected) {
+              const res = tr.mapping.mapResult(oldPos, 1)
+              if (!res.deleted) mappedDetected.set(res.pos, lang)
+            }
+
+            const touched = changedRanges(tr)
+            if (!touched.length) return { decorations: mappedDecos, detected: mappedDetected }
+
+            // Only re-highlight codeBlock nodes that overlap a changed range.
+            const toRehighlight = new Map<number, PmNode>()
+            for (const { from, to } of touched) {
+              const start = Math.max(0, Math.min(from, tr.doc.content.size))
+              const end = Math.max(start, Math.min(to, tr.doc.content.size))
+              tr.doc.nodesBetween(start, end, (node, pos) => {
+                if (node.type.name === 'codeBlock') {
+                  toRehighlight.set(pos, node)
+                  return false
+                }
+                return true
+              })
+            }
+            if (!toRehighlight.size) return { decorations: mappedDecos, detected: mappedDetected }
+
+            let decos = mappedDecos
+            for (const [pos, node] of toRehighlight) {
+              const existing = decos.find(pos, pos + node.nodeSize)
+              const explicit = typeof node.attrs.language === 'string' ? node.attrs.language : null
+              // Reuse previously detected language during rapid typing so we highlight with 1
+              // grammar instead of running ~37 highlightAuto grammars on every keystroke.
+              const prevLang = explicit ? null : (mappedDetected.get(pos) ?? null)
+              const built = decorationsForBlock(node, pos, prevLang)
+              mappedDetected.set(pos, built.language)
+              decos = decos.remove(existing).add(tr.doc, built.decorations)
+            }
+            return { decorations: decos, detected: mappedDetected }
           },
+        },
+        view() {
+          let timer: ReturnType<typeof setTimeout> | undefined
+          return {
+            update(view, prevState) {
+              if (view.state.doc === prevState.doc) return
+              const { $from } = view.state.selection
+              if ($from.parent.type.name !== 'codeBlock' || $from.parent.attrs.language) return
+              const blockPos = $from.before()
+              clearTimeout(timer)
+              timer = setTimeout(() => {
+                if (view.isDestroyed) return
+                const node = view.state.doc.nodeAt(blockPos)
+                if (node?.type.name !== 'codeBlock' || node.attrs.language) return
+                view.dispatch(
+                  view.state.tr.setMeta(REDETECT_META, blockPos).setMeta('addToHistory', false),
+                )
+              }, REDETECT_DELAY_MS)
+            },
+            destroy() {
+              clearTimeout(timer)
+            },
+          }
         },
         props: {
           decorations(state) {
-            return this.getState(state)
+            return highlightKey.getState(state)?.decorations ?? DecorationSet.empty
           },
         },
       }),

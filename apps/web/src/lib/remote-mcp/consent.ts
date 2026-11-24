@@ -39,25 +39,39 @@ export interface ConsentAuth {
 
 const httpsOnly = (uri: string | undefined) => (uri && /^https:\/\//i.test(uri) ? uri : '')
 
+/** Parses Supabase Auth's OAuth authorization response into our typed union. */
+export function parseAuthorizationResponse(data: unknown): Authorization | null {
+  if (!data || typeof data !== 'object') return null
+  const d = data as Record<string, unknown>
+  if (!('authorization_id' in d)) {
+    return typeof d.redirect_url === 'string' && d.redirect_url
+      ? { kind: 'allowed', redirect: d.redirect_url }
+      : null
+  }
+  const client = d.client as { id?: string; name?: string; uri?: string; logo_uri?: string } | null
+  const user = d.user as { email?: string } | null
+  if (!client?.id || typeof d.redirect_uri !== 'string' || !user?.email) return null
+  return {
+    kind: 'ask',
+    details: {
+      client: {
+        id: client.id,
+        name: client.name || client.id,
+        site: client.uri ? redirectHost(client.uri) : '',
+        logo: httpsOnly(client.logo_uri),
+      },
+      redirectHost: redirectHost(d.redirect_uri),
+      email: user.email,
+    },
+  }
+}
+
 export function supabaseConsent(client: SupabaseClient): ConsentAuth {
   return {
     async authorization(id) {
       const { data, error } = await client.auth.oauth.getAuthorizationDetails(id)
       if (error || !data) return null
-      if (!('authorization_id' in data)) return { kind: 'allowed', redirect: data.redirect_url }
-      return {
-        kind: 'ask',
-        details: {
-          client: {
-            id: data.client.id,
-            name: data.client.name || data.client.id,
-            site: data.client.uri ? redirectHost(data.client.uri) : '',
-            logo: httpsOnly(data.client.logo_uri),
-          },
-          redirectHost: redirectHost(data.redirect_uri),
-          email: data.user.email,
-        },
-      }
+      return parseAuthorizationResponse(data)
     },
     async decide(id, allow) {
       const opts = { skipBrowserRedirect: true }
@@ -71,6 +85,37 @@ export function supabaseConsent(client: SupabaseClient): ConsentAuth {
       return data === true
     },
   }
+}
+
+/** Fetches OAuth authorization details through the relay (`GET /api/consent/<id>`). */
+export async function inspectViaRelay(
+  relayUrl: string,
+  token: string,
+  id: string,
+): Promise<Authorization | null> {
+  const res = await fetch(`${relayUrl.replace(/\/+$/, '')}/api/consent/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  })
+  if (!res.ok) return null
+  return parseAuthorizationResponse(await res.json().catch(() => null))
+}
+
+/** Asks the relay to execute approve/deny directly against Supabase Auth and store the redirect. */
+export async function decideViaRelay(
+  relayUrl: string,
+  token: string,
+  id: string,
+  allow: boolean,
+): Promise<'done' | 'failed'> {
+  const res = await fetch(`${relayUrl.replace(/\/+$/, '')}/api/consent/${encodeURIComponent(id)}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: allow ? 'approve' : 'deny' }),
+  })
+  if (res.ok || res.status === 409) return 'done'
+  if (res.status === 400 || res.status === 403 || res.status === 404) return 'failed'
+  throw new Error(`relay ${res.status}`)
 }
 
 /** The page's side of the relay handoff: `GET /consent/<id>`. */

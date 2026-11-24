@@ -82,13 +82,14 @@ function useRouteLabel(route: Route): string {
 /** Current place in the middle of the title bar; opens recent notes (like a document switcher). */
 function PlaceMenu() {
   const { t, i18n } = useTranslation()
+  const [open, setOpen] = useState(false)
   const route = useUi((s) => s.route)
   const navigate = useUi((s) => s.navigate)
   const label = useRouteLabel(route)
-  const recents = useRecents(10)
+  const recents = useRecents(10, open)
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -144,12 +145,19 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
     chat: useShortcutLabel('chat'),
   }
   const platform = usePlatform()
-  const ui = useUi()
+  const sidebarOpen = useUi((s) => s.sidebarOpen)
+  const drawerOpen = useUi((s) => s.drawerOpen)
+  const chatOpen = useUi((s) => s.chatOpen)
+  const hasBack = useUi((s) => s.back.length > 0)
+  const hasForward = useUi((s) => s.forward.length > 0)
+  const navigate = useUi((s) => s.navigate)
+  const toggleSidebar = useUi((s) => s.toggleSidebar)
+  const toggleChat = useUi((s) => s.toggleChat)
   const drag = platform.kind === 'desktop' ? { 'data-tauri-drag-region': true } : {}
   // Docked beside the content, or (narrow window, tight columns) opened over it.
   const { sidebarDrawer } = useDocking()
-  const docked = ui.sidebarOpen && !sidebarDrawer
-  const shown = sidebarDrawer ? ui.drawerOpen : ui.sidebarOpen
+  const docked = sidebarOpen && !sidebarDrawer
+  const shown = sidebarDrawer ? drawerOpen : sidebarOpen
 
   return (
     <header {...drag} className="flex h-11 shrink-0 select-none items-stretch">
@@ -165,7 +173,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
       >
         <button
           type="button"
-          onClick={() => ui.navigate({ kind: 'home' })}
+          onClick={() => navigate({ kind: 'home' })}
           aria-label={t('app.name')}
           className={cn(
             '-ml-1 flex items-center rounded-md px-1 py-1 transition-colors hover:text-brand',
@@ -188,7 +196,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
           <Button
             variant="ghost"
             size="icon-xs"
-            onClick={ui.toggleSidebar}
+            onClick={toggleSidebar}
             aria-label={shown ? t('sidebar.collapse') : t('sidebar.expand')}
           >
             {shown ? <PanelLeftClose /> : <PanelLeftOpen />}
@@ -206,7 +214,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
               variant="ghost"
               size="icon-xs"
               onClick={navBack}
-              disabled={!ui.back.length}
+              disabled={!hasBack}
               aria-label={t('nav.back')}
             >
               <ArrowLeft />
@@ -217,7 +225,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
               variant="ghost"
               size="icon-xs"
               onClick={navForward}
-              disabled={!ui.forward.length}
+              disabled={!hasForward}
               aria-label={t('nav.forward')}
             >
               <ArrowRight />
@@ -228,14 +236,14 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
         <div {...drag} className="flex items-center justify-end gap-1">
           <RemoteActivityPill />
           <NotificationsButton />
-          <Tip label={ui.chatOpen ? t('chat.close') : t('chat.open')} hint={keys.chat}>
+          <Tip label={chatOpen ? t('chat.close') : t('chat.open')} hint={keys.chat}>
             <Button
               variant="ghost"
               size="icon-xs"
-              onClick={ui.toggleChat}
-              aria-pressed={ui.chatOpen}
-              className={cn(ui.chatOpen && 'bg-accent text-brand')}
-              aria-label={ui.chatOpen ? t('chat.close') : t('chat.open')}
+              onClick={toggleChat}
+              aria-pressed={chatOpen}
+              className={cn(chatOpen && 'bg-accent text-brand')}
+              aria-label={chatOpen ? t('chat.close') : t('chat.open')}
             >
               <MessageCircle />
             </Button>
@@ -244,7 +252,7 @@ export function TitleBar({ onNewNote }: { onNewNote: () => void }) {
       </div>
 
       {/* With the assistant open, the caption buttons move to the top of its panel (window corner). */}
-      {platform.window && !ui.chatOpen ? <WindowControls controls={platform.window} /> : null}
+      {platform.window && !chatOpen ? <WindowControls controls={platform.window} /> : null}
     </header>
   )
 }

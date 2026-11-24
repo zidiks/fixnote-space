@@ -2,7 +2,7 @@ import { ChatError } from '@fixnote/ai'
 import { LOCAL_LLM_MODELS, type LocalLlmKey } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
 import { create } from 'zustand'
-import { chatTransport, requestSync, setLocalOnlyCheck } from '../account/account'
+import { chatTransport, onLocalOnlyChanged, setLocalOnlyCheck } from '../account/account'
 import { platform } from '../platform'
 
 /** Where the assistant's language model runs. */
@@ -139,6 +139,7 @@ export async function initLlm(store: Kv) {
     deviceSpeed,
     loaded: true,
   })
+  if (localOnly) onLocalOnlyChanged(true)
 }
 
 export async function saveProvider(patch: Partial<ProviderSettings>) {
@@ -159,8 +160,8 @@ export async function setLocalOnly(on: boolean) {
   const { settings, deviceModels } = useLlm.getState()
   if (on && settings.kind !== 'ollama' && settings.kind !== 'device')
     await saveProvider({ kind: deviceModels.length ? 'device' : 'ollama' })
-  // Back from local-only: catch up with the other devices.
-  if (!on) requestSync()
+  // Disconnect active Realtime / background sync when entering local-only; resume on exit.
+  onLocalOnlyChanged(on)
 }
 
 export const isLocalOnly = () => useLlm.getState().localOnly
@@ -245,7 +246,7 @@ export async function llm(): Promise<
   if (s.kind === 'device') return deviceRoute(s.deviceModel)
   // No internet (or nothing may leave the device) and a model here: it answers instead.
   const fallback = deviceModels.at(-1)
-  if (localOnly && s.kind !== 'ollama')
+  if (localOnly && !runsHere(s))
     return fallback ? deviceRoute(fallback) : { ok: false, reason: 'local-only' }
   if (!navigator.onLine && !runsHere(s))
     return fallback ? deviceRoute(fallback) : { ok: false, reason: 'offline' }
@@ -323,10 +324,14 @@ async function installedDeviceModels(store: Kv): Promise<LocalLlmKey[]> {
   } catch {
     return []
   }
-  const sizes = await Promise.all(
-    keys.map((k) => platform.models?.size(LOCAL_LLM_MODELS[k].id).catch(() => 0) ?? 0),
+  const present = await Promise.all(
+    keys.map(async (k) => {
+      const id = LOCAL_LLM_MODELS[k].id
+      if (platform.models?.has) return platform.models.has(id).catch(() => false)
+      return ((await platform.models?.size(id).catch(() => 0)) ?? 0) > 0
+    }),
   )
-  return keys.filter((_, i) => (sizes[i] ?? 0) > 0)
+  return keys.filter((_, i) => present[i])
 }
 
 /** Downloads (the first time) and loads an on-device model; it then shows as installed. */

@@ -16,6 +16,7 @@ import {
   findQuoteRange,
   parseCommentBody,
   readYComments,
+  scrubYComments,
   setYCommentStatus,
 } from './index'
 
@@ -133,6 +134,52 @@ describe('Yjs shared note comments CRDT', () => {
 
     deleteYCommentMessage(docA, thread.id, 'm2')
     expect(readYComments(docA)[0]?.messages).toHaveLength(2)
+  })
+
+  it('scrubs protected values from quotes, context, and message bodies in Yjs comments', () => {
+    const doc = new Y.Doc()
+    addYCommentThread(doc, {
+      id: 't-secret',
+      quote: 'token=ghp_abc123',
+      contextBefore: 'before ghp_abc123 ',
+      contextAfter: ' after **ghp_abc123**',
+      status: 'open',
+      createdAt: 1000,
+      updatedAt: 1000,
+      messages: [
+        {
+          id: 'm1',
+          authorId: 'u1',
+          authorEmail: 'alice@acme.com',
+          body: 'Please revoke ghp_abc123 right away',
+          mentions: [],
+          createdAt: 1000,
+        },
+        {
+          id: 'm2',
+          authorId: 'u2',
+          authorEmail: 'bob@acme.com',
+          body: 'Unrelated message',
+          mentions: [],
+          createdAt: 1001,
+        },
+      ],
+    })
+
+    expect(scrubYComments(doc, [])).toBe(false)
+    expect(scrubYComments(doc, ['not-present'])).toBe(false)
+    expect(scrubYComments(doc, ['ghp_abc123', '**ghp_abc123**'])).toBe(true)
+
+    const [thread] = readYComments(doc)
+    expect(thread?.quote).toBe('token=[protected fragment]')
+    expect(thread?.contextBefore).toBe('before [protected fragment] ')
+    expect(thread?.contextAfter).toBe(' after [protected fragment]')
+    expect(thread?.messages[0]?.body).toBe('Please revoke [protected fragment] right away')
+    expect(thread?.messages[1]?.body).toBe('Unrelated message')
+
+    // Idempotent once scrubbed.
+    expect(scrubYComments(doc, ['ghp_abc123'])).toBe(false)
+    doc.destroy()
   })
 })
 

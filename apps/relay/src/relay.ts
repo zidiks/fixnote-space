@@ -4,11 +4,20 @@ import {
   PING,
   PONG,
   parseScope,
+  RELAY_CLOSE,
   RELAY_PROTOCOL,
   type RemoteScope,
 } from '@fixnote/core/remote-mcp'
 import type { DemoDevice } from './demo'
-import { type DeviceInfo, type DeviceSocket, Hub, newDeviceInfo } from './hub'
+import {
+  type DeviceInfo,
+  type DeviceSocket,
+  Hub,
+  MCP_RATE_LIMIT,
+  MCP_RATE_WINDOW_MS,
+  newDeviceInfo,
+  RateLimiter,
+} from './hub'
 
 export interface RelayEnv {
   RELAY: DurableObjectNamespace<UserRelay>
@@ -35,6 +44,7 @@ const LAST_USED_EVERY_MS = 5 * 60_000
  */
 export class UserRelay extends DurableObject<RelayEnv> {
   private readonly wrapped = new WeakMap<WebSocket, DeviceSocket>()
+  private readonly limiter = new RateLimiter(MCP_RATE_LIMIT, MCP_RATE_WINDOW_MS)
   private readonly hub = new Hub(() => this.ctx.getWebSockets().map((ws) => this.wrap(ws)), {
     onScope: (scope) => this.setScope(scope),
   })
@@ -54,19 +64,36 @@ export class UserRelay extends DurableObject<RelayEnv> {
     if (!s) {
       s = {
         send: (text) => ws.send(text),
-        info: () => (ws.deserializeAttachment() as DeviceInfo | null) ?? newDeviceInfo(0),
+        info: () => (ws.deserializeAttachment() as DeviceInfo | null) ?? newDeviceInfo(0, 0),
         setInfo: (info) => ws.serializeAttachment(info),
+        close: (code, reason) => {
+          try {
+            ws.close(code, reason)
+          } catch {
+            // Already closed.
+          }
+        },
       }
       this.wrapped.set(ws, s)
     }
     return s
   }
 
-  /** A device connects (the Worker checked its session and plan). */
-  private acceptDevice(): Response {
+  /** A device connects (the Worker checked its session, plan, and token expiry). */
+  private acceptDevice(expiresAt: number): Response {
+    const now = Date.now()
     const { 0: client, 1: server } = new WebSocketPair()
+    if (!Number.isFinite(expiresAt) || expiresAt <= now) {
+      server.accept()
+      server.close(RELAY_CLOSE.unauthorized, 'token expired')
+      return new Response(null, {
+        status: 101,
+        webSocket: client,
+        headers: { 'Sec-WebSocket-Protocol': RELAY_PROTOCOL },
+      })
+    }
     this.ctx.acceptWebSocket(server)
-    server.serializeAttachment(newDeviceInfo(Date.now()))
+    server.serializeAttachment(newDeviceInfo(now, expiresAt))
     return new Response(null, {
       status: 101,
       webSocket: client,
@@ -75,7 +102,10 @@ export class UserRelay extends DurableObject<RelayEnv> {
   }
 
   override async fetch(request: Request): Promise<Response> {
-    if (request.headers.get('Upgrade')?.toLowerCase() === 'websocket') return this.acceptDevice()
+    if (request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
+      const exp = Number(new URL(request.url).searchParams.get('exp'))
+      return this.acceptDevice(exp)
+    }
     return new Response('Not found', { status: 404 })
   }
 
@@ -94,6 +124,11 @@ export class UserRelay extends DurableObject<RelayEnv> {
 
   override webSocketError(ws: WebSocket) {
     this.hub.onClose(this.wrap(ws))
+  }
+
+  /** Per-user rate limit for POST /mcp (sliding window in DO memory). */
+  allowRequest(): boolean {
+    return this.limiter.allow(Date.now())
   }
 
   /** Whether a client's token predates its revocation (then it must sign in again). */

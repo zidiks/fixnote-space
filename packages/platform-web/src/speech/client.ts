@@ -4,11 +4,14 @@ import {
   SPEECH_MODELS,
   type Transcriber,
 } from '@fixnote/core'
+import { createIdleTimer } from '../idle'
 import type { SpeechBody, SpeechResponse } from './protocol'
 
 type Result = Extract<SpeechResponse, { kind: 'result'; ok: true }>
 
 const SAMPLE_RATE = 16_000
+const IDLE_VISIBLE_MS = 8 * 60_000
+const IDLE_HIDDEN_MS = 60_000
 
 /** Decodes any recording the browser can play (webm/opus, ogg, mp3, wav) to 16 kHz mono. */
 export async function decodeAudio(audio: Blob): Promise<Float32Array> {
@@ -78,6 +81,13 @@ export function createSpeechTranscriber(): Transcriber {
   const loads = new Map<string, Promise<void>>()
   let model = storedModel() ?? defaultModel()
 
+  const idle = createIdleTimer({
+    visibleMs: IDLE_VISIBLE_MS,
+    hiddenMs: IDLE_HIDDEN_MS,
+    isLive: () => worker !== null,
+    onIdle: () => transcriber.unload?.(),
+  })
+
   const start = () => {
     if (worker) return worker
     worker = new Worker(new URL('./worker.ts', import.meta.url), {
@@ -88,6 +98,10 @@ export function createSpeechTranscriber(): Transcriber {
       const msg = e.data
       if (msg.kind === 'progress') {
         for (const l of listeners) l(msg.progress)
+        return
+      }
+      if (msg.kind === 'evicted') {
+        loads.delete(msg.model)
         return
       }
       const p = pending.get(msg.id)
@@ -102,6 +116,7 @@ export function createSpeechTranscriber(): Transcriber {
 
   /** Every open request fails and the next one starts a fresh worker. */
   const fail = (error: Error) => {
+    idle.cancel()
     for (const p of pending.values()) p.reject(error)
     pending.clear()
     worker?.terminate()
@@ -120,6 +135,7 @@ export function createSpeechTranscriber(): Transcriber {
   const expected = (prefer?: string) => read(LANGUAGE_KEY) ?? prefer ?? pageLanguage()
 
   const prepare = (id: string, onProgress?: ProgressListener) => {
+    idle.begin()
     let loading = loads.get(id)
     if (!loading) {
       const current = call({ op: 'init', model: id }).then(() => undefined)
@@ -134,7 +150,7 @@ export function createSpeechTranscriber(): Transcriber {
       const done = () => listeners.delete(onProgress)
       loading.then(done, done)
     }
-    return loading
+    return loading.finally(() => idle.end())
   }
 
   const transcriber: Transcriber = {
@@ -156,27 +172,32 @@ export function createSpeechTranscriber(): Transcriber {
       fail(new Error('The speech model was removed'))
     },
     async transcribe(audio, opts) {
-      const samples = await decodeAudio(audio)
-      const started = performance.now()
-      const res = await call(
-        {
-          op: 'transcribe',
-          whisper: model,
-          audio: samples,
-          ...(opts?.language ? { language: opts.language } : { prefer: expected(opts?.prefer) }),
-          ...(opts?.languages ? { languages: opts.languages } : {}),
-          ...(opts?.prompt ? { prompt: opts.prompt } : {}),
-        },
-        [samples.buffer],
-      )
-      const text = res.text ?? ''
-      const language = res.language ?? opts?.language ?? 'auto'
-      if (text && language !== 'auto') write(LANGUAGE_KEY, language)
-      return {
-        text,
-        language,
-        durationMs: Math.round(performance.now() - started),
-        ...(res.model ? { modelId: res.model } : {}),
+      idle.begin()
+      try {
+        const samples = audio instanceof Float32Array ? audio.slice() : await decodeAudio(audio)
+        const started = performance.now()
+        const res = await call(
+          {
+            op: 'transcribe',
+            whisper: model,
+            audio: samples,
+            ...(opts?.language ? { language: opts.language } : { prefer: expected(opts?.prefer) }),
+            ...(opts?.languages ? { languages: opts.languages } : {}),
+            ...(opts?.prompt ? { prompt: opts.prompt } : {}),
+          },
+          [samples.buffer],
+        )
+        const text = res.text ?? ''
+        const language = res.language ?? opts?.language ?? 'auto'
+        if (text && language !== 'auto') write(LANGUAGE_KEY, language)
+        return {
+          text,
+          language,
+          durationMs: Math.round(performance.now() - started),
+          ...(res.model ? { modelId: res.model } : {}),
+        }
+      } finally {
+        idle.end()
       }
     },
   }

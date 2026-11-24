@@ -46,8 +46,17 @@ type WhisperModel = {
     no_timestamps_token_id: number
   }
   _prepare_encoder_decoder_kwargs_for_generation(args: object): Promise<{ encoder_outputs: Tensor }>
-  (inputs: object): Promise<{ logits: Tensor }>
+  (inputs: object): Promise<{ logits: Tensor } & Record<string, unknown>>
   generate(args: object): Promise<Tensor>
+}
+
+function disposeOutputs(outputs: Record<string, unknown>, skip?: unknown): void {
+  for (const value of Object.values(outputs)) {
+    if (!value || value === skip || typeof value !== 'object') continue
+    if ('dispose' in value && typeof (value as { dispose?: unknown }).dispose === 'function') {
+      ;(value as { dispose: () => void }).dispose()
+    }
+  }
 }
 
 /**
@@ -98,42 +107,69 @@ export async function transcribe(
   const texts: string[] = []
   for (const piece of splitAtQuiet(audio, WINDOW_S)) {
     const { input_features } = (await asr.processor(piece)) as { input_features: Tensor }
-    const { encoder_outputs } = await model._prepare_encoder_decoder_kwargs_for_generation({
-      inputs_tensor: input_features,
-      model_inputs: { input_features },
-      model_input_name: 'input_features',
-      generation_config: config,
-    })
-    if (!language) {
-      const start = new Tensor(
-        'int64',
-        BigInt64Array.from([BigInt(config.decoder_start_token_id)]),
-        [1, 1],
-      )
-      const { logits } = await model({ input_features, encoder_outputs, decoder_input_ids: start })
-      const vocab = logits.dims.at(-1) ?? 0
-      const data = logits.data as Float32Array
-      const row = data.subarray(data.length - vocab)
-      const scores: Record<string, number> = {}
-      for (const code of candidates.length ? candidates : DEFAULT_LANGUAGES) {
-        const id = config.lang_to_id[`<|${code}|>`]
-        if (id !== undefined && row[id] !== undefined) scores[code] = row[id]
+    try {
+      const { encoder_outputs } = await model._prepare_encoder_decoder_kwargs_for_generation({
+        inputs_tensor: input_features,
+        model_inputs: { input_features },
+        model_input_name: 'input_features',
+        generation_config: config,
+      })
+      try {
+        if (!language) {
+          const start = new Tensor(
+            'int64',
+            BigInt64Array.from([BigInt(config.decoder_start_token_id)]),
+            [1, 1],
+          )
+          try {
+            const outputs = await model({
+              input_features,
+              encoder_outputs,
+              decoder_input_ids: start,
+            })
+            try {
+              const { logits } = outputs
+              const vocab = logits.dims.at(-1) ?? 0
+              const data = logits.data as Float32Array
+              const row = data.subarray(data.length - vocab)
+              const scores: Record<string, number> = {}
+              for (const code of candidates.length ? candidates : DEFAULT_LANGUAGES) {
+                const id = config.lang_to_id[`<|${code}|>`]
+                if (id !== undefined && row[id] !== undefined) scores[code] = row[id]
+              }
+              language = pickLanguage(scores, prefer) ?? 'en'
+              if (language === skip) return { text: '', language }
+            } finally {
+              disposeOutputs(outputs, encoder_outputs)
+            }
+          } finally {
+            start.dispose?.()
+          }
+        }
+        const before = [prompt, ...texts].filter(Boolean).join(' ')
+        const init = startTokens(asr, model, language, before)
+        const ids = await model.generate({
+          inputs: input_features,
+          encoder_outputs,
+          decoder_input_ids: [init],
+          max_new_tokens: Math.min(440, MAX_TOKENS - init.length),
+          no_repeat_ngram_size: NO_REPEAT,
+        })
+        try {
+          const generated = (ids.tolist() as bigint[][]).map((row) =>
+            row.slice(init.length).map(Number),
+          )
+          const [text] = asr.tokenizer.batch_decode(generated, { skip_special_tokens: true })
+          if (text?.trim()) texts.push(text.trim())
+        } finally {
+          ids.dispose?.()
+        }
+      } finally {
+        encoder_outputs.dispose?.()
       }
-      language = pickLanguage(scores, prefer) ?? 'en'
-      if (language === skip) return { text: '', language }
+    } finally {
+      input_features.dispose?.()
     }
-    const before = [prompt, ...texts].filter(Boolean).join(' ')
-    const init = startTokens(asr, model, language, before)
-    const ids = await model.generate({
-      inputs: input_features,
-      encoder_outputs,
-      decoder_input_ids: [init],
-      max_new_tokens: Math.min(440, MAX_TOKENS - init.length),
-      no_repeat_ngram_size: NO_REPEAT,
-    })
-    const generated = (ids.tolist() as bigint[][]).map((row) => row.slice(init.length).map(Number))
-    const [text] = asr.tokenizer.batch_decode(generated, { skip_special_tokens: true })
-    if (text?.trim()) texts.push(text.trim())
   }
   return { text: texts.join(' '), language: language ?? prefer ?? 'en' }
 }

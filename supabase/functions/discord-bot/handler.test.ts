@@ -14,8 +14,15 @@ const open = (sealed: string) =>
   )
 
 function setup() {
-  const codes = new Map([['good-code', 'user-1']])
+  const codes = new Map([
+    ['good-code', 'user-1'],
+    ['other-code', 'user-2'],
+  ])
   const links = new Map<string, string>([['d-1', 'user-1']])
+  const emails = new Map([
+    ['user-1', 'alice@example.com'],
+    ['user-2', 'bob@example.com'],
+  ])
   const items: { user: string; sealed: string }[] = []
   const replies: string[] = []
   const tasks: Promise<unknown>[] = []
@@ -28,6 +35,7 @@ function setup() {
     link: async (d, user) => void links.set(d, user),
     unlink: async (d) => links.delete(d),
     userFor: async (d) => links.get(d) ?? null,
+    userEmail: async (user) => emails.get(user) ?? null,
     publicKey: async () => PK,
     isPro: async (user) => user !== 'free-user',
     addItem: async (user, sealed) => void items.push({ user, sealed }),
@@ -50,11 +58,11 @@ function setup() {
         V,
       ),
   }
-  const send = (body: object, sig = 'good') =>
+  const send = (body: object, sig = 'good', ts = '1') =>
     handle(
       new Request('http://fn/discord-bot', {
         method: 'POST',
-        headers: { 'x-signature-ed25519': sig, 'x-signature-timestamp': '1' },
+        headers: { 'x-signature-ed25519': sig, 'x-signature-timestamp': ts },
         body: JSON.stringify(body),
       }),
       deps,
@@ -88,9 +96,12 @@ const saveMessage = (message: object, user = 'd-1') => ({
   },
 })
 
-Deno.test('refuses a bad signature and answers PING', async () => {
+Deno.test('refuses a bad signature, stale/missing timestamp, and answers PING', async () => {
   const { send } = setup()
   assertEquals((await send({ type: 1 }, 'bad')).status, 401)
+  assertEquals((await send({ type: 1 }, 'good', '')).status, 401)
+  assertEquals((await send({ type: 1 }, 'good', 'abc')).status, 401)
+  assertEquals((await send({ type: 1 }, 'good', '400')).status, 401)
   assertEquals(await (await send({ type: 1 })).json(), { type: 1 })
 })
 
@@ -169,4 +180,12 @@ Deno.test('connect: links the Discord user with the code from the app', async ()
     deps,
   )
   assertEquals(again.status, 400)
+  // Refuses silent overwrite when Discord user is already linked to another Fixnote account.
+  const conflict = await handle(
+    new Request('http://fn/discord-bot/oauth?code=dc&state=other-code'),
+    deps,
+  )
+  assertEquals(conflict.status, 409)
+  assertEquals((await conflict.text()).includes('al***@example.com'), true)
+  assertEquals(links.get('d-2'), 'user-1')
 })

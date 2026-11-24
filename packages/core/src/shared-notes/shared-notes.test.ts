@@ -1,17 +1,23 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
 import { Attachments, attachmentUrl } from '../attachments'
+import { addYCommentThread, readYComments } from '../comments'
 import {
   cryptoReady,
   deriveKeys,
   newNoteKey,
   newRecoverySecret,
+  openSealedBox,
+  openSharedState,
   publicKeyB64,
+  sealKeyForFolder,
   sealSharedState,
+  sealToPublicKey,
 } from '../crypto'
 import { prepareDatabase } from '../db/migrate'
 import { NotesRepo, ReadOnlyError } from '../notes/repo'
 import type { BlobStore, SqlDriver } from '../platform'
+import { protectedReference } from '../privacy/reference'
 import { createMemoryDriver } from '../testing/memory-driver'
 import { type DocProjector, PersonNotFoundError, SharedNotes } from './index'
 import { MemorySharedServer } from './memory-server'
@@ -818,5 +824,212 @@ describe('shared folders', () => {
     await ann.shared.sync()
     for (const d of [ann, bob])
       expect(await tree(d)).toEqual(['Trip', 'Trip/Food', 'Trip/Hotels', 'Trip/Museums'])
+  })
+
+  it('blocks revoked-collaborator / folder-editor hijack on server and in checkKey', async () => {
+    const annKeys = deriveKeys(newRecoverySecret())
+    const bobKeys = deriveKeys(newRecoverySecret())
+    server.users.set('ann', { email: 'ann@x.io', publicKey: publicKeyB64(annKeys) })
+    server.users.set('bob', { email: 'bob@x.io', publicKey: publicKeyB64(bobKeys) })
+
+    const makeDevice = async (userId: string, keys: ReturnType<typeof deriveKeys>) => {
+      const db = await createMemoryDriver()
+      await prepareDatabase(db)
+      let seq = 0
+      const repo = new NotesRepo(db, { newId: () => `${userId}-${++seq}` })
+      return {
+        db,
+        repo,
+        shared: new SharedNotes({
+          db,
+          repo,
+          keys,
+          remote: server.remoteFor(userId),
+          projector,
+          userId,
+          now: clock,
+        }),
+      }
+    }
+
+    const ann = await makeDevice('ann', annKeys)
+    const bob = await makeDevice('bob', bobKeys)
+
+    // Ann shares a secret standalone note with Bob, then revokes him.
+    const secret = await ann.repo.createNote({ content: 'Top secret standalone plan' })
+    const secretSharedId = await ann.shared.share(secret.id)
+    await ann.shared.invite(secretSharedId, 'bob@x.io', 'edit')
+    await bob.shared.accept(secretSharedId)
+    await ann.shared.removeMember(secretSharedId, 'bob')
+    await bob.shared.sync()
+
+    // Ann also shares a folder with Bob as an editor.
+    const folder = await ann.repo.createFolder('Collab')
+    const folderId = await ann.shared.shareFolder(folder.id)
+    await ann.shared.inviteToFolder(folderId, 'bob@x.io', 'edit')
+    const bobFolder = await bob.shared.acceptFolder(folderId)
+
+    const bobFolderMembership = (await server.remoteFor('bob').folderMemberships()).find(
+      (f) => f.folderId === folderId,
+    )
+    const folderKey = openSealedBox(bobKeys, bobFolderMembership?.wrappedKey as string)
+    const attackerNoteKey = newNoteKey()
+    const attackerFolderKey = sealKeyForFolder(folderKey, folderId, attackerNoteKey)
+
+    // 1. Server-side defense: Bob cannot hijack Ann's standalone note (folder === null) into Collab.
+    await expect(
+      server.remoteFor('bob').shareInFolder(folderId, secret.id, attackerFolderKey),
+    ).rejects.toThrow('not the owner')
+    const untouched = server.notes.get(secretSharedId)
+    expect(untouched?.folder).toBeNull()
+    expect(untouched?.version).toBe(1)
+
+    // Cross-folder hijack: Bob also cannot steal a note from another folder owned by Ann.
+    const otherFolder = await ann.repo.createFolder('PrivateShared')
+    const otherNote = await ann.repo.createNote({
+      content: 'Another folder note',
+      folderId: otherFolder.id,
+    })
+    await ann.shared.shareFolder(otherFolder.id)
+    await expect(
+      server.remoteFor('bob').shareInFolder(folderId, otherNote.id, attackerFolderKey),
+    ).rejects.toThrow('not the owner')
+
+    // Editor cannot restore Ann's tombstoned note in the shared folder, only their own.
+    const annInFolder = await ann.repo.createNote({ content: 'Ann note', folderId: folder.id })
+    await ann.shared.sync()
+    const annInFolderShared = (await ann.repo.getNote(annInFolder.id))?.sharedId as string
+    await server.remoteFor('bob').deleteFolderNote(annInFolderShared)
+    await expect(
+      server.remoteFor('bob').shareInFolder(folderId, annInFolder.id, attackerFolderKey),
+    ).rejects.toThrow('not the owner')
+
+    const bobOwnNote = await bob.repo.createNote({ content: 'Bob note', folderId: bobFolder })
+    await bob.shared.sync()
+    const bobOwnShared = (await bob.repo.getNote(bobOwnNote.id))?.sharedId as string
+    await server.remoteFor('bob').deleteFolderNote(bobOwnShared)
+    await expect(
+      server.remoteFor('bob').shareInFolder(folderId, bobOwnNote.id, attackerFolderKey),
+    ).resolves.toBe(bobOwnShared)
+
+    // 2. Client-side defense in SharedNotes.checkKey(): even if a rogue server swaps the note
+    // into a shared folder with an attacker key and resets state, Ann refuses the key swap.
+    const origDoc = await ann.shared.doc(secretSharedId)
+    const origKey = origDoc?.noteKey as string
+    const serverRow = server.notes.get(secretSharedId)
+    expect(serverRow).toBeDefined()
+    if (serverRow) {
+      serverRow.folder = folderId
+      serverRow.folderKey = attackerFolderKey
+      serverRow.members = new Map()
+      serverRow.state = null
+      serverRow.version = 0
+    }
+
+    const firstSync = await ann.shared.sync()
+    expect(firstSync.unreadable).toContain(secretSharedId)
+    expect((await ann.shared.doc(secretSharedId))?.noteKey).toBe(origKey)
+    expect((await ann.shared.doc(secretSharedId))?.folderSharedId).toBeNull()
+    expect(server.notes.get(secretSharedId)?.state).toBeNull()
+
+    // Even if the attacker also writes a version=1 state under their key, a second sync STILL
+    // refuses the folder+key swap because Ann's local folderSharedId was not overwritten.
+    if (serverRow) {
+      const dummy = new Y.Doc()
+      dummy.getText('t').insert(0, 'bait')
+      serverRow.state = sealSharedState(
+        attackerNoteKey,
+        secretSharedId,
+        Y.encodeStateAsUpdate(dummy),
+      )
+      serverRow.version = 1
+      dummy.destroy()
+    }
+    const secondSync = await ann.shared.sync()
+    expect(secondSync.unreadable).toContain(secretSharedId)
+    expect((await ann.shared.doc(secretSharedId))?.noteKey).toBe(origKey)
+    expect((await ann.shared.doc(secretSharedId))?.folderSharedId).toBeNull()
+    // Attacker cannot read Ann's secret from server state.
+    const openedByAttacker = openSharedState(
+      attackerNoteKey,
+      secretSharedId,
+      server.notes.get(secretSharedId)?.state as string,
+    )
+    expect(projector.toMarkdown(openedByAttacker)).not.toContain('Top secret')
+
+    // 3. Same-folder remote state reset (version === 0 && !state) with swapped key is also refused.
+    const another = await ann.repo.createNote({ content: 'Do not re-encrypt me' })
+    const anotherSharedId = await ann.shared.share(another.id)
+    const anotherOrigKey = (await ann.shared.doc(anotherSharedId))?.noteKey as string
+    const anotherRow = server.notes.get(anotherSharedId)
+    if (anotherRow) {
+      const swappedKey = newNoteKey()
+      anotherRow.members.set('ann', {
+        role: 'owner',
+        wrappedKey: sealToPublicKey(publicKeyB64(annKeys), swappedKey),
+        accepted: true,
+        invitedAt: clock(),
+      })
+      anotherRow.state = null
+      anotherRow.version = 0
+    }
+    const resetSync = await ann.shared.sync()
+    expect(resetSync.unreadable).toContain(anotherSharedId)
+    expect((await ann.shared.doc(anotherSharedId))?.noteKey).toBe(anotherOrigKey)
+    expect(server.notes.get(anotherSharedId)?.state).toBeNull()
+  })
+
+  it('scrubs protected values from Yjs comments when saving a protected fragment', async () => {
+    const ann = await (await account('ann', 'ann@x.io')).device()
+    const note = await ann.repo.createNote({ content: 'API key: sk-secret-12345 end' })
+    const sharedId = await ann.shared.share(note.id)
+    const doc = await ann.shared.doc(sharedId)
+    const y = new Y.Doc()
+    if (doc?.state) Y.applyUpdate(y, doc.state)
+    addYCommentThread(y, {
+      id: 't1',
+      quote: 'sk-secret-12345',
+      contextBefore: 'API key: ',
+      contextAfter: ' end',
+      status: 'open',
+      createdAt: 1000,
+      updatedAt: 1000,
+      messages: [
+        {
+          id: 'm1',
+          authorId: 'ann',
+          authorEmail: 'ann@x.io',
+          body: 'Rotate sk-secret-12345 soon',
+          mentions: [],
+          createdAt: 1000,
+        },
+      ],
+    })
+    const fragmentId = crypto.randomUUID()
+    const reference = protectedReference({ audience: 'members', fragmentId })
+    const nextMarkdown = `API key: ${reference} end`
+    y.transact(() => {
+      const t = y.getText('t')
+      t.delete(0, t.length)
+      t.insert(0, nextMarkdown)
+    })
+    await ann.shared.saveDoc(sharedId, Y.encodeStateAsUpdate(y), nextMarkdown, {
+      taken: true,
+      base: 'API key: sk-secret-12345 end',
+      protect: { fragmentId, reference, values: ['sk-secret-12345'] },
+    })
+    y.destroy()
+
+    const stored = await ann.shared.doc(sharedId)
+    expect(stored?.state).not.toBeNull()
+    const rawBytes = new TextDecoder().decode(stored?.state as Uint8Array)
+    expect(rawBytes).not.toContain('sk-secret-12345')
+
+    const reloaded = new Y.Doc()
+    Y.applyUpdate(reloaded, stored?.state as Uint8Array)
+    const threads = readYComments(reloaded)
+    reloaded.destroy()
+    expect(threads[0]?.quote).toBe('[protected fragment]')
+    expect(threads[0]?.messages[0]?.body).toBe('Rotate [protected fragment] soon')
   })
 })

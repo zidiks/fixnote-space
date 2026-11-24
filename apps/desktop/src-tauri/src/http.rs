@@ -50,10 +50,23 @@ fn client() -> Result<&'static reqwest::Client, String> {
         return Ok(c);
     }
     let c = reqwest::Client::builder()
-        .connect_timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(15))
+        .read_timeout(Duration::from_secs(120))
+        // Do not follow cross-host redirects automatically: prevents leaking API keys.
+        .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|e| e.to_string())?;
     Ok(CLIENT.get_or_init(|| c))
+}
+
+fn parse_method(method: &str) -> Result<reqwest::Method, String> {
+    if method.eq_ignore_ascii_case("GET") {
+        Ok(reqwest::Method::GET)
+    } else if method.eq_ignore_ascii_case("POST") {
+        Ok(reqwest::Method::POST)
+    } else {
+        Err("only GET and POST are allowed".into())
+    }
 }
 
 /// Starts a request and returns its id at once; events follow on `events`.
@@ -63,8 +76,7 @@ pub fn http_stream(request: HttpRequest, events: Channel<HttpEvent>) -> Result<u
     if !matches!(url.scheme(), "http" | "https") {
         return Err("only http and https".into());
     }
-    let method =
-        reqwest::Method::from_bytes(request.method.as_bytes()).map_err(|e| e.to_string())?;
+    let method = parse_method(&request.method)?;
     let mut builder = client()?.request(method, url);
     for (name, value) in &request.headers {
         builder = builder.header(name, value);
@@ -186,5 +198,44 @@ mod tests {
             String::from_utf8(body).unwrap(),
             "data: {\"a\":1}\n\ndata: [DONE]\n\n"
         );
+    }
+
+    #[test]
+    fn restricts_methods_to_get_and_post() {
+        assert_eq!(parse_method("GET").unwrap(), reqwest::Method::GET);
+        assert_eq!(parse_method("post").unwrap(), reqwest::Method::POST);
+        assert!(parse_method("PUT").is_err());
+        assert!(parse_method("DELETE").is_err());
+        assert!(parse_method("PATCH").is_err());
+    }
+
+    #[test]
+    fn does_not_follow_redirects() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        std::thread::spawn(move || {
+            let (mut sock, _) = listener.accept().unwrap();
+            let mut buf = [0u8; 1024];
+            let _ = sock.read(&mut buf);
+            sock.write_all(
+                b"HTTP/1.1 302 Found\r\nlocation: http://127.0.0.1:1/leak\r\ncontent-length: 0\r\n\r\n",
+            )
+            .unwrap();
+        });
+        let events = StdMutex::new(Vec::new());
+        let builder = client()
+            .unwrap()
+            .post(format!("http://127.0.0.1:{port}/v1/chat/completions"))
+            .header("x-api-key", "secret");
+        tauri::async_runtime::block_on(pump(builder, |e| {
+            events.lock().unwrap().push(e);
+            true
+        }))
+        .unwrap();
+        let events = events.into_inner().unwrap();
+        let HttpEvent::Head { status, .. } = &events[0] else {
+            panic!("expected head")
+        };
+        assert_eq!(*status, 302);
     }
 }

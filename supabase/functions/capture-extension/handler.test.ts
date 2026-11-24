@@ -26,11 +26,16 @@ function setup() {
     newToken: () => `token-${++n}-abcdefghijklmnopqrstuvwxyz`,
     newCode: () => 'K7QM',
   }
-  const call = (action: string, body: object = {}, token?: string) =>
+  const call = (
+    action: string,
+    body: object = {},
+    token?: string,
+    extraHeaders: Record<string, string> = {},
+  ) =>
     handle(
       new Request(`http://fn/capture-extension/${action}`, {
         method: 'POST',
-        headers: token ? { 'x-fixnote-token': token } : {},
+        headers: { ...(token ? { 'x-fixnote-token': token } : {}), ...extraHeaders },
         body: JSON.stringify(body),
       }),
       deps,
@@ -108,4 +113,33 @@ Deno.test('unpairing stops the token', async () => {
   assertEquals((await call('key', {}, token)).status, 200)
   await call('unpair', {}, token)
   assertEquals((await call('key', {}, token)).status, 401)
+})
+
+Deno.test('rate-limits /request by cf-connecting-ip and rightmost x-forwarded-for', async () => {
+  const { call } = setup()
+  // Spoofing the leftmost x-forwarded-for cannot bypass the per-IP rate limit.
+  for (let i = 0; i < 10; i++) {
+    const res = await call('request', {}, undefined, {
+      'x-forwarded-for': `10.0.0.${i}, 198.51.100.77`,
+    })
+    assertEquals(res.status, 200)
+  }
+  const blocked = await call('request', {}, undefined, {
+    'x-forwarded-for': '10.0.0.99, 198.51.100.77',
+  })
+  assertEquals(blocked.status, 429)
+
+  // cf-connecting-ip takes precedence over x-forwarded-for.
+  for (let i = 0; i < 10; i++) {
+    const res = await call('request', {}, undefined, {
+      'cf-connecting-ip': '203.0.113.42',
+      'x-forwarded-for': `1.2.3.${i}`,
+    })
+    assertEquals(res.status, 200)
+  }
+  const blockedCf = await call('request', {}, undefined, {
+    'cf-connecting-ip': '203.0.113.42',
+    'x-forwarded-for': '9.9.9.9',
+  })
+  assertEquals(blockedCf.status, 429)
 })

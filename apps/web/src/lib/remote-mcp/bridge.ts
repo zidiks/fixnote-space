@@ -18,6 +18,7 @@ import { useDb } from '../db'
 import { kvStore } from '../kv'
 import { usePlan } from '../plan'
 import { platform } from '../platform'
+import { invalidateNoteData } from '../queries'
 
 export const REMOTE_KEY = ['kv', MCP_REMOTE_KEY] as const
 export const REMOTE_LOG = ['remote-mcp', 'log'] as const
@@ -131,7 +132,7 @@ export function useRemoteBridge() {
           if (c.before && c.after && c.before.content !== c.after.content)
             openNote(c.noteId)?.aiChanged(c.after.content)
         }
-        void qc.invalidateQueries()
+        void invalidateNoteData(qc)
         notifyNotesChanged()
         requestSync()
       },

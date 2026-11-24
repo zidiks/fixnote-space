@@ -60,6 +60,24 @@ fn running() -> &'static Mutex<Option<Arc<AtomicBool>>> {
     RUNNING.get_or_init(|| Mutex::new(None))
 }
 
+fn clear_running(stopped: &Arc<AtomicBool>) {
+    stopped.store(true, Ordering::Relaxed);
+    if let Ok(mut current) = running().lock() {
+        if current.as_ref().is_some_and(|c| Arc::ptr_eq(c, stopped)) {
+            *current = None;
+        }
+    }
+}
+
+/// Ensures `running()` is always cleared when the capture thread exits (error, disconnect, or panic).
+struct RunningGuard(Arc<AtomicBool>);
+
+impl Drop for RunningGuard {
+    fn drop(&mut self) {
+        clear_running(&self.0);
+    }
+}
+
 fn start(send: impl Fn(SystemAudioEvent) + Send + 'static) -> Result<(), String> {
     if !imp::supported() {
         return Err("unsupported".into());
@@ -69,21 +87,22 @@ fn start(send: impl Fn(SystemAudioEvent) + Send + 'static) -> Result<(), String>
     *running().lock().map_err(|_| "lock")? = Some(stopped.clone());
     let (ready_tx, ready_rx) = mpsc::channel::<Result<(), String>>();
     let thread = stopped.clone();
-    std::thread::Builder::new()
+    if let Err(e) = std::thread::Builder::new()
         .name("system-audio".into())
-        .spawn(move || imp::run(send, thread, ready_tx))
-        .map_err(|e| e.to_string())?;
+        .spawn(move || {
+            let _guard = RunningGuard(thread.clone());
+            imp::run(send, thread, ready_tx);
+        })
+    {
+        clear_running(&stopped);
+        return Err(e.to_string());
+    }
     let started = ready_rx
         .recv_timeout(Duration::from_secs(10))
         .map_err(|_| "system audio did not start".to_string())
         .and_then(|r| r);
     if started.is_err() {
-        stopped.store(true, Ordering::Relaxed);
-        if let Ok(mut current) = running().lock() {
-            if current.as_ref().is_some_and(|c| Arc::ptr_eq(c, &stopped)) {
-                *current = None;
-            }
-        }
+        clear_running(&stopped);
     }
     started
 }
@@ -409,6 +428,7 @@ mod imp {
                 match reopen(&tx, &stopped) {
                     Some(open) => current = open,
                     None => {
+                        super::clear_running(&stopped);
                         pump.error(message);
                         return;
                     }
@@ -778,6 +798,7 @@ mod imp {
             match rx.recv_timeout(Duration::from_millis(100)) {
                 Ok(Msg::Audio(samples)) => pump.audio(samples),
                 Ok(Msg::Failed(message)) => {
+                    super::clear_running(&stopped);
                     pump.error(message);
                     break;
                 }
@@ -896,5 +917,28 @@ mod tests {
         assert_eq!(sent.borrow().len(), 1);
         pump.flush();
         assert_eq!(sent.borrow().len(), 1);
+    }
+
+    #[test]
+    fn running_guard_clears_only_its_own_session() {
+        let first = Arc::new(AtomicBool::new(false));
+        *running().lock().unwrap() = Some(first.clone());
+        assert!(recording());
+        {
+            let _guard = RunningGuard(first.clone());
+        }
+        assert!(first.load(Ordering::Relaxed));
+        assert!(!recording());
+
+        // A superseded session's guard must not clear a newer session.
+        let old = Arc::new(AtomicBool::new(false));
+        let newer = Arc::new(AtomicBool::new(false));
+        *running().lock().unwrap() = Some(newer.clone());
+        {
+            let _guard = RunningGuard(old.clone());
+        }
+        assert!(recording());
+        clear_running(&newer);
+        assert!(!recording());
     }
 }

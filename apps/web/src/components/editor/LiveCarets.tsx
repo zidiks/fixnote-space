@@ -26,10 +26,14 @@ export function LiveCarets({ editor, awareness }: { editor: Editor; awareness: A
   useEffect(() => {
     let frame = 0
     const measure = () => {
+      if (awareness.getStates().size <= 1) {
+        setCarets((prev) => (prev.length === 0 ? prev : []))
+        return
+      }
       const origin = box.current?.getBoundingClientRect()
       const ystate = ySyncPluginKey.getState(editor.state)
       if (!origin || editor.isDestroyed || !ystate?.binding || !ystate.binding.mapping.size) {
-        setCarets([])
+        setCarets((prev) => (prev.length === 0 ? prev : []))
         return
       }
       const next: Caret[] = []

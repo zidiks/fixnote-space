@@ -77,19 +77,37 @@ export class SileroVad {
     let state: Ort.Tensor = new ort.Tensor('float32', new Float32Array(2 * 128), [2, 1, 128])
     const sr = new ort.Tensor('int64', BigInt64Array.from([BigInt(RATE)]), [])
     const input = new Float32Array(CONTEXT + FRAME)
-    for (let i = 0; i < count; i++) {
-      // The context is the end of the previous frame (zeros before the first).
-      input.copyWithin(0, FRAME, FRAME + CONTEXT)
-      if (i === 0) input.fill(0, 0, CONTEXT)
-      input.fill(0, CONTEXT)
-      input.set(audio.subarray(i * FRAME, (i + 1) * FRAME), CONTEXT)
-      const result = await this.session.run({
-        input: new ort.Tensor('float32', input.slice(), [1, CONTEXT + FRAME]),
-        state,
-        sr,
-      })
-      out[i] = (result.output?.data as Float32Array | undefined)?.[0] ?? 0
-      state = result.stateN as Ort.Tensor
+    try {
+      for (let i = 0; i < count; i++) {
+        // The context is the end of the previous frame (zeros before the first).
+        input.copyWithin(0, FRAME, FRAME + CONTEXT)
+        if (i === 0) input.fill(0, 0, CONTEXT)
+        input.fill(0, CONTEXT)
+        input.set(audio.subarray(i * FRAME, (i + 1) * FRAME), CONTEXT)
+        const frameTensor = new ort.Tensor('float32', input.slice(), [1, CONTEXT + FRAME])
+        let result: Ort.InferenceSession.OnnxValueMapType | null = null
+        let prevState: Ort.Tensor | null = null
+        try {
+          result = await this.session.run({
+            input: frameTensor,
+            state,
+            sr,
+          })
+          const nextState = result.stateN as Ort.Tensor | undefined
+          if (nextState && nextState !== state) {
+            prevState = state
+            state = nextState
+          }
+          out[i] = (result.output?.data as Float32Array | undefined)?.[0] ?? 0
+        } finally {
+          frameTensor.dispose()
+          prevState?.dispose()
+          result?.output?.dispose()
+        }
+      }
+    } finally {
+      state.dispose()
+      sr.dispose()
     }
     return out
   }

@@ -114,6 +114,11 @@ function SharedContent({ note }: { note: SharedNote }) {
       ),
     [note],
   )
+  useEffect(() => {
+    return () => {
+      for (const f of files.values()) URL.revokeObjectURL(f.url)
+    }
+  }, [files])
 
   const editor = useEditor(
     {

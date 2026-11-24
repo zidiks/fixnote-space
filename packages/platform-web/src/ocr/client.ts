@@ -2,11 +2,14 @@ import { OCR_MODEL, type ProgressListener, type TextRecognizer } from '@fixnote/
 import { createWorker, OEM, PSM, type Worker } from 'tesseract.js'
 import workerUrl from 'tesseract.js/dist/worker.min.js?url'
 import coreUrl from 'tesseract.js-core/tesseract-core-simd-lstm.wasm.js?url'
+import { createIdleTimer } from '../idle'
 
 /** The languages the app speaks; one pass reads all three (and Latin/Cyrillic mixed). */
 const LANGS = ['eng', 'rus', 'spa'] as const
 /** Where the language data is kept (Settings → Advanced shows and removes it). */
 export const OCR_CACHE = 'fixnote-ocr'
+const IDLE_VISIBLE_MS = 45_000
+const IDLE_HIDDEN_MS = 15_000
 
 /**
  * tesseract.js reads language data from its own cache: idb-keyval's default store, under
@@ -18,14 +21,17 @@ const TESS_DB = 'keyval-store'
 const TESS_STORE = 'keyval'
 const tessKey = (lang: string) => `${OCR_CACHE}/${lang}.traineddata`
 
-function tessStore<T>(run: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+function tessStore<T>(
+  run: (store: IDBObjectStore) => IDBRequest<T>,
+  mode: IDBTransactionMode = 'readwrite',
+): Promise<T> {
   return new Promise((resolve, reject) => {
     const open = indexedDB.open(TESS_DB)
     open.onupgradeneeded = () => open.result.createObjectStore(TESS_STORE)
     open.onerror = () => reject(open.error)
     open.onsuccess = () => {
       const db = open.result
-      const req = run(db.transaction(TESS_STORE, 'readwrite').objectStore(TESS_STORE))
+      const req = run(db.transaction(TESS_STORE, mode).objectStore(TESS_STORE))
       req.onsuccess = () => {
         resolve(req.result)
         db.close()
@@ -79,8 +85,23 @@ export function createTesseractRecognizer(): TextRecognizer {
   let worker: Promise<Worker> | null = null
   const listeners = new Set<ProgressListener>()
 
+  const sleep = () => {
+    idle.cancel()
+    const w = worker
+    worker = null
+    void w?.then((x) => x.terminate()).catch(() => undefined)
+  }
+
+  const idle = createIdleTimer({
+    visibleMs: IDLE_VISIBLE_MS,
+    hiddenMs: IDLE_HIDDEN_MS,
+    isLive: () => worker !== null,
+    onIdle: sleep,
+  })
+
   const start = () => {
-    worker ??= (async () => {
+    if (worker) return worker
+    const created = (async () => {
       const loaded = new Map<string, number>()
       const report = () => {
         const done = [...loaded.values()].reduce((a, b) => a + b, 0)
@@ -89,11 +110,16 @@ export function createTesseractRecognizer(): TextRecognizer {
       }
       await Promise.all(
         LANGS.map(async (code) => {
+          const key = tessKey(code)
+          const existing = await tessStore((store) => store.get(key), 'readonly').catch(
+            () => undefined,
+          )
+          if (existing !== undefined) return
           const data = await languageData(code, (bytes) => {
             loaded.set(code, bytes)
             report()
           })
-          await tessStore((store) => store.put(data, tessKey(code)))
+          await tessStore((store) => store.put(data, key))
         }),
       )
       const w = await createWorker([...LANGS], OEM.LSTM_ONLY, {
@@ -110,31 +136,38 @@ export function createTesseractRecognizer(): TextRecognizer {
       for (const l of listeners) l(1)
       return w
     })()
-    worker.catch(() => {
-      worker = null
+    worker = created
+    created.catch(() => {
+      if (worker === created) worker = null
     })
-    return worker
+    return created
   }
 
   return {
     modelId: OCR_MODEL.id,
     async ready(onProgress) {
+      idle.begin()
       if (onProgress) listeners.add(onProgress)
       try {
         await start()
       } finally {
         if (onProgress) listeners.delete(onProgress)
+        idle.end()
       }
     },
     async recognize(image) {
-      const w = await start()
-      const { data } = await w.recognize(image)
-      return clean(data.text)
+      idle.begin()
+      try {
+        const w = await start()
+        const { data } = await w.recognize(image)
+        return clean(data.text)
+      } finally {
+        idle.end()
+      }
     },
+    sleep,
     unload() {
-      const w = worker
-      worker = null
-      void w?.then((x) => x.terminate()).catch(() => undefined)
+      sleep()
       // The files were removed: tesseract.js's copy goes too.
       for (const code of LANGS)
         void tessStore((store) => store.delete(tessKey(code))).catch(() => {})
