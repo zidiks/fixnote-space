@@ -441,7 +441,8 @@ function NoteSnippetView({
         data-active={active ? 'true' : undefined}
         className={cn(
           'relative flex w-full gap-3 rounded-lg px-4 py-3 text-left transition-colors data-[selected]:bg-brand/10',
-          !SLIDING_INDICATOR && 'hover:bg-accent aria-[current=page]:bg-accent',
+          !active && 'hover:bg-accent/70',
+          !SLIDING_INDICATOR && 'aria-[current=page]:bg-accent',
           itemClass,
         )}
       >

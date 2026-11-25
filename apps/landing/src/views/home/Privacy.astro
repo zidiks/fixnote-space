@@ -4,7 +4,6 @@ import arc7 from '../../assets/landing/arc-7.svg?url'
 import arc10 from '../../assets/landing/arc-10.svg?url'
 import arc11 from '../../assets/landing/arc-11.svg?url'
 import photo from '../../assets/landing/privacy-photo.jpg'
-import switchOff from '../../assets/landing/switch-off.svg?url'
 import ArrowLink from '../../components/ArrowLink.astro'
 import GlassCard from '../../components/GlassCard.astro'
 import { type Lang, t } from '../../i18n'
@@ -13,7 +12,8 @@ import { featurePath } from '../../lib/pages'
 /**
  * Privacy & control: the headline, the "only on this device" switch, three cards around a photo
  * and the thin orange arcs of the design (exported from Figma as they are). On wide screens
- * everything sits where the design puts it.
+ * everything sits where the design puts it; scrolling pins the stage briefly to flip the switch
+ * into its local-only active state and crossfade the copy (and reverses when scrolling back up).
  */
 interface Props {
   lang: Lang
@@ -23,58 +23,137 @@ const c = t(lang).landing.privacy
 ---
 
 <section id="privacy" class="lp privacy" aria-labelledby="privacy-title">
-  <div class="privacy-stage">
-    <img src={arc7} alt="" class="privacy-arc arc-7" width="67" height="289" aria-hidden="true" />
-    <img src={arc10} alt="" class="privacy-arc arc-10" width="148" height="226" aria-hidden="true" />
-    <img src={arc11} alt="" class="privacy-arc arc-11" width="1039" height="525" aria-hidden="true" />
-    <div class="privacy-head fx">
-      <p class="lp-eyebrow">{c.eyebrow}</p>
-      <h2 id="privacy-title" class="privacy-title">
-        <span class="orange">{c.title1}</span>
-        {' '}
-        <span>{c.title2}</span>
-        {' '}
-        <span>{c.title3}</span>
-      </h2>
-    </div>
-    <div class="privacy-switch fx">
-      <div class="switch-copy">
-        <p class="switch-title">{c.toggle.title}</p>
-        <p class="switch-text">{c.toggle.text}</p>
+  <div class="privacy-rail">
+    <div class="privacy-stage">
+      <img src={arc7} alt="" class="privacy-arc arc-7" width="67" height="289" aria-hidden="true" />
+      <img src={arc10} alt="" class="privacy-arc arc-10" width="148" height="226" aria-hidden="true" />
+      <img src={arc11} alt="" class="privacy-arc arc-11" width="1039" height="525" aria-hidden="true" />
+      <div class="privacy-head fx">
+        <p class="lp-eyebrow">{c.eyebrow}</p>
+        <h2 id="privacy-title" class="privacy-title">
+          <span class="orange">{c.title1}</span>
+          {' '}
+          <span>{c.title2}</span>
+          {' '}
+          <span>{c.title3}</span>
+        </h2>
       </div>
-      <img src={switchOff} alt="" class="switch-off" width="85" height="69" aria-hidden="true" />
-    </div>
-    <div class="privacy-provider switch-copy fx">
-      <p class="switch-title">{c.provider.title}</p>
-      <p class="switch-text">{c.provider.text}</p>
-    </div>
-    <GlassCard
-      size="lg"
-      class="privacy-local fx"
-      title={c.local.title}
-      text={c.local.text}
-      link={c.local.link}
-      href={featurePath(lang, 'offline')}
-    />
-    <GlassCard
-      size="lg"
-      class="privacy-terms fx"
-      title={c.terms.title}
-      text={c.terms.text}
-      link={c.terms.link}
-      href={featurePath(lang, 'ask-your-notes')}
-    />
-    <article class="privacy-synced fx">
-      <div class="privacy-pic">
-        <Image src={photo} alt="" widths={[496, 744, 992]} sizes="(min-width: 1069px) 496px, 100vw" />
-      </div>
-      <div class="privacy-copy">
-        <div class="glass-copy">
-          <h3 class="lp-card-title">{c.synced.title}</h3>
-          <p class="lp-card-text">{c.synced.text}</p>
+      <div class="privacy-switch fx">
+        <div class="switch-copy">
+          <p class="switch-title">{c.toggle.title}</p>
+          <p class="switch-text">
+            <span class="swap swap-small"
+              ><span class="privacy-off"><span class="sharp">{c.toggle.text}</span><span class="px" aria-hidden="true">{c.toggle.text}</span></span><span class="privacy-on"><span class="sharp">{c.toggle.activeText}</span><span class="px" aria-hidden="true">{c.toggle.activeText}</span></span></span
+            >
+          </p>
         </div>
-        <ArrowLink href={featurePath(lang, 'encryption')}>{c.synced.link}</ArrowLink>
+        <label class="switch">
+          <input type="checkbox" id="privacy-local-only" class="sr-only" />
+          <span class="sr-only">{c.toggle.title}</span>
+          <span class="switch-dot" aria-hidden="true"></span>
+          <span></span>
+        </label>
       </div>
-    </article>
+      <div class="privacy-provider switch-copy fx">
+        <p class="switch-title">
+          <span class="swap swap-small"
+            ><span class="privacy-off"><span class="sharp">{c.provider.title}</span><span class="px" aria-hidden="true">{c.provider.title}</span></span><span class="privacy-on"><span class="sharp">{c.provider.activeTitle}</span><span class="px" aria-hidden="true">{c.provider.activeTitle}</span></span></span
+          >
+        </p>
+        <p class="switch-text">
+          <span class="swap swap-small"
+            ><span class="privacy-off"><span class="sharp">{c.provider.text}</span><span class="px" aria-hidden="true">{c.provider.text}</span></span><span class="privacy-on"><span class="sharp">{c.provider.activeText}</span><span class="px" aria-hidden="true">{c.provider.activeText}</span></span></span
+          >
+        </p>
+      </div>
+      <GlassCard
+        size="lg"
+        class="privacy-local fx"
+        title={c.local.title}
+        text={c.local.text}
+        link={c.local.link}
+        href={featurePath(lang, 'offline')}
+      />
+      <GlassCard
+        size="lg"
+        class="privacy-terms fx"
+        title={c.terms.title}
+        text={c.terms.text}
+        link={c.terms.link}
+        href={featurePath(lang, 'ask-your-notes')}
+      />
+      <article class="privacy-synced fx">
+        <div class="privacy-pic">
+          <Image src={photo} alt="" widths={[496, 744, 992]} sizes="(min-width: 1069px) 496px, 100vw" />
+        </div>
+        <div class="privacy-copy">
+          <div class="glass-copy">
+            <h3 class="lp-card-title">{c.synced.title}</h3>
+            <p class="lp-card-text">{c.synced.text}</p>
+          </div>
+          <ArrowLink href={featurePath(lang, 'encryption')}>{c.synced.link}</ArrowLink>
+        </div>
+      </article>
+    </div>
   </div>
 </section>
+
+<script is:inline>
+  // Pin the privacy stage briefly as the page scrolls through it and flip the local-only switch
+  // once scroll crosses the midpoint (reversing on scroll back up). Matches the home.css media query.
+  ;(() => {
+    const sec = document.getElementById('privacy')
+    const rail = sec?.querySelector('.privacy-rail')
+    const stage = sec?.querySelector('.privacy-stage')
+    const input = document.getElementById('privacy-local-only')
+    if (!sec || !rail || !stage || !(input instanceof HTMLInputElement)) return
+    const live = matchMedia(
+      '(min-width: 1069px) and (min-height: 650px) and (prefers-reduced-motion: no-preference)',
+    )
+    let frame = 0
+    let zone = -1
+
+    const update = () => {
+      frame = 0
+      if (!live.matches) return
+      const hold = rail.offsetHeight - stage.offsetHeight
+      if (hold <= 0) return
+      const pinTop = Number.parseFloat(getComputedStyle(stage).top) || 0
+      const p = Math.min(1, Math.max(0, (pinTop - rail.getBoundingClientRect().top) / hold))
+      // Small hysteresis band prevents rapid flipping on trackpad micro-scrolls.
+      const next = zone === 1 ? (p < 0.35 ? 0 : 1) : p >= 0.45 ? 1 : 0
+      if (next !== zone) {
+        if (zone !== -1) sec.setAttribute('data-swapped', '')
+        zone = next
+        input.checked = next === 1
+      }
+    }
+
+    input.addEventListener('change', () => {
+      sec.setAttribute('data-swapped', '')
+      zone = input.checked ? 1 : 0
+    })
+
+    const wake = () => {
+      if (!frame && live.matches) frame = requestAnimationFrame(update)
+    }
+
+    const start = () => {
+      if (live.matches) {
+        sec.setAttribute('data-live', '')
+        zone = -1
+        update()
+      } else {
+        cancelAnimationFrame(frame)
+        frame = 0
+        sec.removeAttribute('data-live')
+        zone = -1
+      }
+    }
+
+    addEventListener('scroll', wake, { passive: true })
+    addEventListener('resize', wake, { passive: true })
+    live.addEventListener('change', start)
+    start()
+  })()
+</script>

@@ -652,25 +652,19 @@
 .privacy-title > span {
   display: block;
 }
-/* Only on this device: a frosted grey pill with the switch off, as drawn. */
+/* Only on this device: a frosted grey pill with the interactive switch. */
 .privacy-switch {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   min-height: calc(104 * var(--u));
-  padding: calc(24 * var(--u)) calc(104 * var(--u)) calc(24 * var(--u)) calc(32 * var(--u));
+  padding: 20px 20px 20px 28px;
   border-radius: calc(80 * var(--u));
   background: rgb(220 220 220 / 0.3);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-}
-.switch-off {
-  position: absolute;
-  top: calc(20.14 * var(--u));
-  left: calc(316.35 * var(--u));
-  width: calc(85 * var(--u));
-  height: calc(69 * var(--u));
-  max-width: none;
 }
 .switch-copy {
   display: flex;
@@ -776,14 +770,18 @@
   }
   .privacy-switch {
     top: calc(380 * var(--u));
-    left: calc(492.5 * var(--u));
-    width: calc(456 * var(--u));
-    height: calc(88 * var(--u));
+    left: 50%;
+    translate: -50% 0;
+    gap: calc(32 * var(--u));
+    min-width: calc(493 * var(--u));
+    height: calc(104 * var(--u));
+    padding: calc(32 * var(--u)) calc(20 * var(--u)) calc(32 * var(--u)) calc(40 * var(--u));
   }
   .privacy-provider {
     top: calc(525.694 * var(--u));
-    left: calc(603 * var(--u));
-    width: calc(224 * var(--u));
+    left: 50%;
+    translate: -50% 0;
+    width: max-content;
   }
   .privacy-local {
     top: calc(426 * var(--u));
@@ -801,6 +799,19 @@
   .privacy-pic {
     aspect-ratio: auto;
     height: calc(366 * var(--u));
+  }
+}
+@media (min-width: 1069px) and (min-height: 650px) and (prefers-reduced-motion: no-preference) {
+  .privacy[data-live] {
+    --pin-top: clamp(32px, calc(100vh - 640 * var(--u)), 116px);
+    --hold: clamp(360px, 50vh, 520px);
+  }
+  .privacy[data-live] .privacy-rail {
+    height: calc(1352 * var(--u) + var(--hold));
+  }
+  .privacy[data-live] .privacy-stage {
+    position: sticky;
+    top: var(--pin-top);
   }
 }
 
@@ -1123,11 +1134,17 @@
   user-select: none;
 }
 .per-year,
-.plans:has(#plans-yearly:checked) .per-month {
+.plans:has(#plans-yearly:checked) .per-month,
+.privacy-on,
+.privacy:has(#privacy-local-only:checked) .privacy-off {
   visibility: hidden;
 }
-.plans:has(#plans-yearly:checked) .per-year {
+.plans:has(#plans-yearly:checked) .per-year,
+.privacy:has(#privacy-local-only:checked) .privacy-on {
   visibility: visible;
+}
+.privacy-provider .swap {
+  justify-items: center;
 }
 @media (prefers-reduced-motion: no-preference) {
   /* Coarse to fine. */
@@ -1141,13 +1158,21 @@
   .plans[data-swapped] .swap .sharp {
     --soft: calc(3 * var(--u));
   }
-  .plans[data-swapped] .swap-small .sharp {
+  .plans[data-swapped] .swap-small .sharp,
+  .privacy[data-swapped] .swap-small .sharp {
     --soft: calc(1.5 * var(--u));
   }
   .plans[data-swapped] .swap-small .px {
     --px1: url(#px-4);
     --px2: url(#px-4);
     --px3: url(#px-3);
+    --px4: url(#px-3);
+    --px5: url(#px-3);
+  }
+  .privacy[data-swapped] .swap-small .px {
+    --px1: url(#px-6);
+    --px2: url(#px-4);
+    --px3: url(#px-4);
     --px4: url(#px-3);
     --px5: url(#px-3);
   }
@@ -1172,6 +1197,27 @@
   .plans[data-swapped]:not(:has(#plans-yearly:checked)) .per-year .sharp,
   .plans[data-swapped]:has(#plans-yearly:checked) .per-month .sharp {
     animation: px-sharp-out 0.45s linear both;
+  }
+  /* Privacy swap: snappier cadence in sync with the 0.35s switch glide. */
+  .privacy[data-swapped]:not(:has(#privacy-local-only:checked)) .privacy-off .px,
+  .privacy[data-swapped]:has(#privacy-local-only:checked) .privacy-on .px {
+    animation: px-dots-back 0.26s linear 0.1s reverse both;
+  }
+  .privacy[data-swapped]:not(:has(#privacy-local-only:checked)) .privacy-off .sharp,
+  .privacy[data-swapped]:has(#privacy-local-only:checked) .privacy-on .sharp {
+    animation: px-sharp-back 0.26s linear 0.1s reverse both;
+  }
+  .privacy[data-swapped]:not(:has(#privacy-local-only:checked)) .privacy-on,
+  .privacy[data-swapped]:has(#privacy-local-only:checked) .privacy-off {
+    animation: px-hold 0.26s linear both;
+  }
+  .privacy[data-swapped]:not(:has(#privacy-local-only:checked)) .privacy-on .px,
+  .privacy[data-swapped]:has(#privacy-local-only:checked) .privacy-off .px {
+    animation: px-dots-out 0.26s linear both;
+  }
+  .privacy[data-swapped]:not(:has(#privacy-local-only:checked)) .privacy-on .sharp,
+  .privacy[data-swapped]:has(#privacy-local-only:checked) .privacy-off .sharp {
+    animation: px-sharp-out 0.26s linear both;
   }
 }
 @keyframes px-dots-out {

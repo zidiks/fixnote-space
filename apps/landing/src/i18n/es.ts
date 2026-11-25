@@ -489,10 +489,13 @@ export const es: Dict = {
       toggle: {
         title: 'Solo en este dispositivo',
         text: 'La nube se activa por separado.',
+        activeText: 'Tus notas se quedan aquí. Sin sincronización ni uso compartido.',
       },
       provider: {
         title: 'Elige tu proveedor',
         text: 'Fixnote AI, tu propia clave u Ollama',
+        activeTitle: 'Ejecuta la IA en local',
+        activeText: 'Usa Ollama para mantener la IA en tu dispositivo.',
       },
       local: {
         title: 'Todo en local',

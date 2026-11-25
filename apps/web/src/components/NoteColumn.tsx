@@ -12,7 +12,7 @@ import { LinksBar } from './LinksBar'
 import { NoteSnippet } from './NoteCard'
 import { useGroupLabel, ViewMenu } from './NoteGrid'
 import { SelectionBar } from './SelectionBar'
-import { SlidingHoverIndicator, SlidingIndicator } from './SlidingIndicator'
+import { SlidingIndicator } from './SlidingIndicator'
 import { Snippet } from './Spotlight'
 import { VirtualList } from './VirtualList'
 
@@ -193,12 +193,6 @@ export function NoteColumn({
         )}
       >
         <div ref={listRef} className="relative">
-          <SlidingHoverIndicator
-            container={listRef}
-            itemSelector="[data-note-id]"
-            activeKey={activeId ?? null}
-            className="rounded-lg bg-accent/70"
-          />
           <SlidingIndicator
             container={listRef}
             activeKey={activeId ?? null}

@@ -497,10 +497,13 @@ export const en = {
       toggle: {
         title: 'Only on this device',
         text: 'Cloud service can be enabled separately.',
+        activeText: 'Your notes stay here. No cloud sync or sharing.',
       },
       provider: {
         title: 'Choose your provider',
         text: 'Fixnote AI, your own key, or Ollama',
+        activeTitle: 'Run AI locally',
+        activeText: 'Use Ollama to keep AI processing on your device.',
       },
       local: {
         title: 'Keep it local',
