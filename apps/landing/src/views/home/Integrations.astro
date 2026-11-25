@@ -1,14 +1,13 @@
 ---
-import { Image } from 'astro:assets'
 import chatgpt from '../../assets/landing/tools/tool-chatgpt.svg?url'
 import claude from '../../assets/landing/tools/tool-claude.svg?url'
 import gemini from '../../assets/landing/tools/tool-gemini.svg?url'
 import GlassCard from '../../components/GlassCard.astro'
 import { type Lang, t } from '../../i18n'
 import { featurePath } from '../../lib/pages'
-import { landingShot } from '../../lib/shots'
+import OnePromptAway from './OnePromptAway.astro'
 
-/** Integrations: the headline, the AI apps it works with, two cards and a note in the app. */
+/** Integrations: the headline, the AI apps it works with, two cards and the live Fixnote + Claude loop. */
 interface Props {
   lang: Lang
 }
@@ -42,17 +41,8 @@ const mcp = featurePath(lang, 'mcp')
         class="fx"
       />
     </div>
-    <div class="integ-shot fx">
-      <Image
-        src={landingShot('integrations', lang)}
-        alt={c.alt}
-        widths={[916, 1161, 1741, 2322]}
-        sizes="(min-width: 1069px) 1161px, 100vw"
-      />
-    </div>
-    <!-- An AI app asking Fixnote for the note on the left (Figma 577:58086). -->
-    <div class="integ-chat fx" aria-hidden="true">
-      <Image src={landingShot('integrations-chat', lang)} alt="" widths={[438, 876]} sizes="438px" loading="lazy" />
+    <div class="integ-scene fx" role="img" aria-label={c.alt}>
+      <OnePromptAway lang={lang} />
     </div>
   </div>
 </section>

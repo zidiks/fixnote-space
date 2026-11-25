@@ -114,6 +114,152 @@ export const es: Dict = {
     sub: 'Todo lo que necesitas para tus notas de cada día,\nsin complicaciones.',
   },
 
+  onePromptAway: {
+    sidebar: {
+      search: 'Buscar',
+      home: 'Inicio',
+      today: 'Hoy',
+      links: 'Enlaces',
+      tidy: 'Poner orden',
+      folders: 'Carpetas',
+      work: 'Trabajo',
+      projects: 'Proyectos',
+      meetings: 'Reuniones',
+      personal: 'Personal',
+      ideas: 'Ideas',
+      reading: 'Lectura',
+      design: 'Diseño',
+      dev: 'Desarrollo',
+    },
+    noteTitle: 'Oportunidad de mercado',
+    breadcrumb: { folder: 'Estudio de mercado', note: 'Panorama competitivo' },
+    edited: { before: 'Editado por Sofía · ahora', claude: 'Editado por Claude · ahora' },
+    note: [
+      {
+        kind: 'p' as const,
+        group: 'intro' as const,
+        pass: 0 as const,
+        text:
+          'El mercado está lleno de herramientas que graban, transcriben y resumen reuniones.\n' +
+          'Pero el reto real empieza después: convertir conversaciones en decisiones,\n' +
+          'responsables claros y avance real.',
+      },
+      {
+        kind: 'p' as const,
+        group: 'intro' as const,
+        pass: 0 as const,
+        text: 'La oportunidad está en ir más allá del resumen y ayudar a los equipos a pasar a la acción.',
+      },
+      { kind: 'h2' as const, group: 's1' as const, pass: 1 as const, text: 'Claves del mercado' },
+      {
+        kind: 'h3' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 1,
+        text: 'Los resúmenes ya son un estándar',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 1,
+        text:
+          'La mayoría compite en precisión de transcripción, resúmenes con IA e historial buscable.\n' +
+          'Son funciones útiles, pero cada vez menos diferenciales.',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 2,
+        text: 'El seguimiento sigue siendo el gran problema',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 2,
+        text:
+          'Los equipos salen de reuniones con responsabilidades difusas, tareas dispersas\n' +
+          'y decisiones difíciles de seguir.',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 3,
+        text: 'La confianza define la adopción',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 3,
+        text: 'El consentimiento de grabación, la privacidad y el control sobre lo compartido son decisivos, sobre todo en equipos grandes.',
+      },
+      {
+        kind: 'h2' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        text: 'Experimentos recomendados',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 1,
+        text: 'Resúmenes orientados a decisiones',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 1,
+        text: 'Probar resúmenes organizados por decisiones y próximos pasos, en lugar de notas cronológicas.',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 2,
+        text: 'Integraciones de flujo de trabajo',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 2,
+        text: 'Probar resúmenes organizados por decisiones y próximos pasos, en lugar de notas cronológicas.',
+      },
+    ],
+    draft: [
+      { kind: 'h2' as const, text: 'Claves del mercado' },
+      { kind: 'h3' as const, text: 'La transcripción es lo mínimo' },
+      {
+        kind: 'desc' as const,
+        text: 'Todos los competidores graban y transcriben reuniones; la precisión por sí sola ya no diferencia.',
+      },
+      { kind: 'h3' as const, text: 'Los usuarios piden próximos pasos' },
+      {
+        kind: 'desc' as const,
+        text: 'En las entrevistas pidieron acciones claras con mucha más frecuencia que mejores resúmenes.',
+      },
+    ],
+    chatTitle: 'Estudio de mercado',
+    share: 'Compartir',
+    placeholder: 'Pregunta a la app',
+    exchanges: [
+      {
+        prompt: 'Reescribe Claves del mercado usando mi estudio de herramientas de IA.',
+        reply: '¡Listo! Reescribí Claves del mercado en Oportunidad de mercado.',
+      },
+      {
+        prompt: 'Ahora añade experimentos de lanzamiento para probar.',
+        reply: 'Añadí dos experimentos: resúmenes por decisiones e integraciones de flujo.',
+      },
+    ],
+  },
+
   refineCard: {
     title: 'Viaje a Japón — Abril 2027',
     subtitle: 'Tokio · Hakone · Kioto · Osaka  ·  2–14 abr, 12 días',

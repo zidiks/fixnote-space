@@ -120,6 +120,153 @@ export const en = {
     sub: 'Everything you need for everyday notes,\nwithout the extra complexity.',
   },
 
+  /** The animated "Your notes, one prompt away." scene (OnePromptAway.astro, scripts/integrations). */
+  onePromptAway: {
+    sidebar: {
+      search: 'Search',
+      home: 'Home',
+      today: 'Today',
+      links: 'Links',
+      tidy: 'Tidy up',
+      folders: 'Folders',
+      work: 'Work',
+      projects: 'Projects',
+      meetings: 'Meetings',
+      personal: 'Personal',
+      ideas: 'Ideas',
+      reading: 'Reading',
+      design: 'Design',
+      dev: 'Development',
+    },
+    noteTitle: 'Market Opportunity',
+    breadcrumb: { folder: 'Market research', note: 'Competitive landscape' },
+    edited: { before: 'Edited by Sofia · just now', claude: 'Edited by Claude · just now' },
+    note: [
+      {
+        kind: 'p' as const,
+        group: 'intro' as const,
+        pass: 0 as const,
+        text:
+          'The market is crowded with tools that record, transcribe, and summarize meetings.\n' +
+          'But the real challenge begins afterward: turning conversations into decisions,\n' +
+          'clear ownership, and meaningful progress.',
+      },
+      {
+        kind: 'p' as const,
+        group: 'intro' as const,
+        pass: 0 as const,
+        text: 'The opportunity is to move beyond meeting summaries and help teams turn discussions into action.',
+      },
+      { kind: 'h2' as const, group: 's1' as const, pass: 1 as const, text: 'Key market insights' },
+      {
+        kind: 'h3' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 1,
+        text: 'Summaries are becoming a standard feature',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 1,
+        text:
+          'Most competitors focus on transcription accuracy, AI summaries, and searchable meeting history.\n' +
+          'These features are useful but increasingly difficult to differentiate.',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 2,
+        text: 'Follow-through remains a major pain point',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 2,
+        text:
+          'Teams often leave meetings with unclear responsibilities, scattered action items,\n' +
+          'and decisions that are difficult to track.',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 3,
+        text: 'Trust influences adoption',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's1' as const,
+        pass: 1 as const,
+        item: 3,
+        text: 'Recording consent, data privacy, and control over shared information remain important considerations, particularly for larger teams.',
+      },
+      {
+        kind: 'h2' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        text: 'Recommended launch experiments',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 1,
+        text: 'Decision-first summaries',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 1,
+        text: 'Test recaps organized around decisions and next steps, rather than chronological notes.',
+      },
+      {
+        kind: 'h3' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 2,
+        text: 'Workflow integrations',
+      },
+      {
+        kind: 'desc' as const,
+        group: 's2' as const,
+        pass: 2 as const,
+        item: 2,
+        text: 'Test recaps organized around decisions and next steps, rather than chronological notes.',
+      },
+    ],
+    draft: [
+      { kind: 'h2' as const, text: 'Key market insights' },
+      { kind: 'h3' as const, text: 'Transcription is table stakes' },
+      {
+        kind: 'desc' as const,
+        text: 'Every competitor records and transcribes meetings; accuracy alone no longer sets a product apart.',
+      },
+      { kind: 'h3' as const, text: 'Users ask for next steps' },
+      {
+        kind: 'desc' as const,
+        text: 'In interviews, people asked for clear action items more often than for better summaries.',
+      },
+    ],
+    chatTitle: 'Market research',
+    share: 'Share',
+    placeholder: 'Ask App',
+    exchanges: [
+      {
+        prompt: 'Rewrite Key market insights using my AI meeting tools research.',
+        reply: "Done! I've rewritten Key market insights in Market Opportunity.",
+      },
+      {
+        prompt: 'Now add launch experiments we could test next.',
+        reply: 'Added two launch experiments: decision-first summaries and workflow integrations.',
+      },
+    ],
+  },
+
   /** The animated "Refine with AI" card in the Experience collage (RefineCard.astro, scripts/refine). */
   refineCard: {
     title: 'Japan trip — April 2027',

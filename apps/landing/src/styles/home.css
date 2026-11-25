@@ -459,24 +459,6 @@
     left: calc(40 * var(--u));
     top: calc(392 * var(--u));
   }
-  .integ-shot {
-    position: absolute;
-    left: calc(232 * var(--u));
-    top: 0;
-    width: calc(1161 * var(--u));
-  }
-  .integ-chat {
-    display: block;
-    position: absolute;
-    z-index: 2;
-    left: calc(1170 * var(--u));
-    top: calc(233 * var(--u));
-    width: calc(438 * var(--u));
-  }
-  .integ-chat img {
-    width: 100%;
-    height: auto;
-  }
 }
 
 /* Search: the row of cards. */

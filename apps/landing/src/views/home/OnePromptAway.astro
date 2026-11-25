@@ -1,0 +1,462 @@
+---
+import ArrowLeft from '@lucide/astro/icons/arrow-left'
+import ArrowRight from '@lucide/astro/icons/arrow-right'
+import Bell from '@lucide/astro/icons/bell'
+import CalendarDays from '@lucide/astro/icons/calendar-days'
+import ChevronDown from '@lucide/astro/icons/chevron-down'
+import ChevronRight from '@lucide/astro/icons/chevron-right'
+import CloudCheck from '@lucide/astro/icons/cloud-check'
+import Folder from '@lucide/astro/icons/folder'
+import FolderInput from '@lucide/astro/icons/folder-input'
+import FolderPlus from '@lucide/astro/icons/folder-plus'
+import House from '@lucide/astro/icons/house'
+import Link2 from '@lucide/astro/icons/link-2'
+import MessageCircle from '@lucide/astro/icons/message-circle'
+import Mic from '@lucide/astro/icons/mic'
+import PanelLeftClose from '@lucide/astro/icons/panel-left-close'
+import PinOff from '@lucide/astro/icons/pin-off'
+import Search from '@lucide/astro/icons/search'
+import Settings from '@lucide/astro/icons/settings'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import SquarePen from '@lucide/astro/icons/square-pen'
+import Trash from '@lucide/astro/icons/trash'
+import WandSparkles from '@lucide/astro/icons/wand-sparkles'
+import cAdd from '../../assets/landing/claude/c-add.svg?url'
+import cRetry from '../../assets/landing/claude/c-arrow-clockwise.svg?url'
+import cArrowUp from '../../assets/landing/claude/c-arrow-up.svg?url'
+import cArtifacts from '../../assets/landing/claude/c-artifacts.svg?url'
+import cAvatar from '../../assets/landing/claude/c-avatar.svg?url'
+import cCaret from '../../assets/landing/claude/c-caret-down-small.svg?url'
+import cChatAdd from '../../assets/landing/claude/c-chat-add.svg?url'
+import cChats from '../../assets/landing/claude/c-chats.svg?url'
+import cCode from '../../assets/landing/claude/c-code.svg?url'
+import cCopy from '../../assets/landing/claude/c-copy.svg?url'
+import cProjects from '../../assets/landing/claude/c-projects.svg?url'
+import cSidebar from '../../assets/landing/claude/c-sidebar.svg?url'
+import cThumbsDown from '../../assets/landing/claude/c-thumbs-down.svg?url'
+import cThumbsUp from '../../assets/landing/claude/c-thumbs-up.svg?url'
+import cSpark from '../../assets/landing/claude/claude-spark.svg?url'
+import word from '../../assets/landing/header-word.svg?raw'
+import { type Lang, t } from '../../i18n'
+import { type NoteBlock, tokens } from '../../scripts/integrations/timeline'
+import '../../styles/one-prompt-away.css'
+
+/**
+ * Animated "Your notes, one prompt away." scene (scripts/integrations):
+ * Fixnote beside Claude. Claude rewrites "Key market insights" and appends
+ * "Recommended launch experiments" live inside the note before looping.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).onePromptAway
+const sb = c.sidebar
+const icon = { size: 16, 'stroke-width': 1.5 }
+const small = { size: 14, 'stroke-width': 1.5 }
+
+const nav = [
+  { Icon: House, label: sb.home, count: '17' },
+  { Icon: CalendarDays, label: sb.today },
+  { Icon: Link2, label: sb.links, count: '3' },
+  { Icon: WandSparkles, label: sb.tidy, count: '5' },
+]
+
+const folders = [
+  { label: sb.work, count: '3', sub: true },
+  { label: sb.projects, count: '1', level: 2 },
+  { label: sb.meetings, count: '2', level: 2 },
+  { label: sb.personal, count: '3' },
+  { label: sb.ideas, count: '2' },
+  { label: sb.reading, count: '1' },
+  { label: sb.links, count: '3', sub: true },
+  { label: sb.design, count: '1', level: 2 },
+  { label: sb.dev, count: '2', level: 2 },
+]
+
+type GroupedEntry =
+  | { type: 'single'; block: NoteBlock; index: number }
+  | { type: 'item'; blocks: { block: NoteBlock; index: number }[] }
+
+function groupBlocks(blocks: readonly NoteBlock[], group: NoteBlock['group']): GroupedEntry[] {
+  const out: GroupedEntry[] = []
+  const byItem = new Map<number, { block: NoteBlock; index: number }[]>()
+  blocks.forEach((block, index) => {
+    if (block.group !== group) return
+    if (block.item) {
+      let arr = byItem.get(block.item)
+      if (!arr) {
+        arr = []
+        byItem.set(block.item, arr)
+        out.push({ type: 'item', blocks: arr })
+      }
+      arr.push({ block, index })
+    } else {
+      out.push({ type: 'single', block, index })
+    }
+  })
+  return out
+}
+
+const note = c.note as readonly NoteBlock[]
+const draft = c.draft as readonly { kind: 'h2' | 'h3' | 'desc'; text: string }[]
+
+const introGroup = groupBlocks(note, 'intro')
+const s1Group = groupBlocks(note, 's1')
+const s2Group = groupBlocks(note, 's2')
+
+type DraftEntry =
+  | { type: 'single'; kind: 'h2' | 'h3' | 'desc'; text: string }
+  | { type: 'item'; blocks: { kind: 'h2' | 'h3' | 'desc'; text: string }[] }
+
+const draftEntries: DraftEntry[] = []
+for (const b of draft) {
+  if (b.kind === 'h3') {
+    draftEntries.push({ type: 'item', blocks: [b] })
+  } else if (b.kind === 'desc') {
+    const prev = draftEntries[draftEntries.length - 1]
+    if (prev && prev.type === 'item') prev.blocks.push(b)
+    else draftEntries.push({ type: 'single', ...b })
+  } else {
+    draftEntries.push({ type: 'single', ...b })
+  }
+}
+
+const noteClass: Record<NoteBlock['kind'], string> = {
+  p: 'opa-p',
+  h2: 'opa-h2',
+  h3: 'opa-h3',
+  desc: 'opa-desc',
+}
+
+const claudeNav = [cChatAdd, cChats, cProjects, cArtifacts, cCode]
+const claudeActions = [cThumbsUp, cThumbsDown, cCopy, cRetry]
+const payload = { note: c.note, exchanges: c.exchanges }
+---
+
+<div class="opa" data-one-prompt-away aria-hidden="true">
+  <aside class="opa-sidebar">
+    <div class="opa-side-head">
+      <span class="opa-logo" set:html={word} />
+      <span class="opa-icon-btn"><SquarePen {...icon} /></span>
+      <span class="opa-icon-btn"><PanelLeftClose {...icon} /></span>
+    </div>
+    <div class="opa-search-wrap">
+      <div class="opa-search">
+        <Search {...small} />
+        <span class="opa-search-text">{sb.search}</span>
+        <span class="opa-kbd">Ctrl+K</span>
+      </div>
+    </div>
+    <nav class="opa-nav">
+      {
+        nav.map(({ Icon, label, count }) => (
+          <div class="opa-nav-item">
+            <Icon {...icon} class="opa-nav-icon" />
+            <span class="opa-nav-label">{label}</span>
+            {count && <span class="opa-count">{count}</span>}
+          </div>
+        ))
+      }
+      <div class="opa-folders">
+        <div class="opa-section">
+          <span class="opa-overline">{sb.folders}</span>
+          <span class="opa-icon-btn-24"><FolderPlus {...small} /></span>
+        </div>
+        <div class="opa-gap2">
+          {
+            folders.slice(0, 3).map((f) => (
+              <div class:list={['opa-folder', f.level && 'opa-indent']}>
+                <span class="opa-folder-name">
+                  <Folder {...icon} class="opa-nav-icon" />
+                  <span class="opa-nav-label">{f.label}</span>
+                </span>
+                <span class="opa-folder-count">{f.count}</span>
+                {f.sub && (
+                  <span class="opa-expand">
+                    <ChevronRight {...small} />
+                  </span>
+                )}
+              </div>
+            ))
+          }
+        </div>
+        {
+          folders.slice(3).map((f) => (
+            <div class:list={['opa-folder', f.level && 'opa-indent']}>
+              <span class="opa-folder-name">
+                <Folder {...icon} class="opa-nav-icon" />
+                <span class="opa-nav-label">{f.label}</span>
+              </span>
+              <span class="opa-folder-count">{f.count}</span>
+              {f.sub && (
+                <span class="opa-expand">
+                  <ChevronRight {...small} />
+                </span>
+              )}
+            </div>
+          ))
+        }
+      </div>
+    </nav>
+    <div class="opa-side-foot">
+      <span class="opa-icon-btn"><CloudCheck {...small} /></span>
+      <span class="opa-icon-btn"><Settings {...icon} /></span>
+    </div>
+  </aside>
+
+  <section class="opa-main">
+    <div class="opa-titlebar">
+      <div class="opa-history">
+        <span class="opa-icon-btn"><ArrowLeft {...icon} /></span>
+        <span class="opa-icon-btn opa-op50"><ArrowRight {...icon} /></span>
+      </div>
+      <div class="opa-place">
+        <span class="opa-label13">{c.noteTitle}</span>
+        <ChevronDown {...small} class="opa-op60" />
+      </div>
+      <div class="opa-actions4">
+        <span class="opa-icon-btn"><Bell {...icon} /></span>
+        <span class="opa-icon-btn opa-secondary"><MessageCircle {...icon} /></span>
+      </div>
+    </div>
+
+    <div class="opa-note-head">
+      <div class="opa-crumbs">
+        <span class="opa-crumb-folder">
+          <Folder {...icon} />
+          <span class="opa-label13-muted">{c.breadcrumb.folder}</span>
+        </span>
+        <ChevronRight {...small} class="opa-op50" />
+        <span class="opa-crumb-note">{c.breadcrumb.note}</span>
+      </div>
+      <span class="opa-edited">
+        <span data-a="edited0">{c.edited.before}</span>
+        <span class="opa-edited-alt" data-a="edited1">{c.edited.claude}</span>
+      </span>
+      <div class="opa-actions2">
+        {[Mic, Sparkles, PinOff, FolderInput, Link2, Trash].map((Icon) => (
+          <span class="opa-icon-btn"><Icon {...icon} /></span>
+        ))}
+      </div>
+    </div>
+
+    <div class="opa-note-viewport">
+      <div class="opa-note-content" data-a="noteScroll">
+        <h3 class="opa-note-title">{c.noteTitle}</h3>
+        <div class="opa-note-body" data-a="noteBody">
+          <div class="opa-intro">
+            {
+              introGroup.map(
+                (entry) =>
+                  entry.type === 'single' && (
+                    <p class={noteClass[entry.block.kind]} data-a={`nb${entry.index}`}>
+                      {entry.block.text.split('\n').map((line, k) => (
+                        <>
+                          {k > 0 && <br />}
+                          {line}
+                        </>
+                      ))}
+                    </p>
+                  ),
+              )
+            }
+          </div>
+
+          <div class="opa-rewrite">
+            <div class="opa-section-group" data-a="fresh">
+              {
+                s1Group.map((entry) =>
+                  entry.type === 'item' ? (
+                    <div class="opa-item">
+                      {entry.blocks.map(({ block, index }) => {
+                        const ws = tokens(block.text)
+                        return (
+                          <p class={noteClass[block.kind]} data-a={`nb${index}`}>
+                            {ws.map((w, k) =>
+                              w === '\n' ? (
+                                <br />
+                              ) : (
+                                <>
+                                  {k > 0 && ws[k - 1] !== '\n' && ' '}
+                                  <span class="opa-w" data-a="nw">{w}</span>
+                                </>
+                              ),
+                            )}
+                          </p>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    (() => {
+                      const ws = tokens(entry.block.text)
+                      return (
+                        <h4 class={noteClass[entry.block.kind]} data-a={`nb${entry.index}`}>
+                          {ws.map((w, k) => (
+                            <>
+                              {k > 0 && ' '}
+                              <span class="opa-w" data-a="nw">{w}</span>
+                            </>
+                          ))}
+                        </h4>
+                      )
+                    })()
+                  ),
+                )
+              }
+            </div>
+
+            <div class="opa-draft" data-a="draft">
+              <div class="opa-sel-layer" data-a="selLayer"></div>
+              <div class="opa-section-group">
+                {
+                  draftEntries.map((entry) =>
+                    entry.type === 'item' ? (
+                      <div class="opa-item">
+                        {entry.blocks.map((b) => (
+                          <p class={noteClass[b.kind]} data-a="draftText">{b.text}</p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p class={noteClass[entry.kind]} data-a="draftText">{entry.text}</p>
+                    ),
+                  )
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="opa-section-group" data-a="more">
+            {
+              s2Group.map((entry) =>
+                entry.type === 'item' ? (
+                  <div class="opa-item">
+                    {entry.blocks.map(({ block, index }) => {
+                      const ws = tokens(block.text)
+                      return (
+                        <p class={noteClass[block.kind]} data-a={`nb${index}`}>
+                          {ws.map((w, k) =>
+                            w === '\n' ? (
+                              <br />
+                            ) : (
+                              <>
+                                {k > 0 && ws[k - 1] !== '\n' && ' '}
+                                <span class="opa-w" data-a="nw">{w}</span>
+                              </>
+                            ),
+                          )}
+                        </p>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  (() => {
+                    const ws = tokens(entry.block.text)
+                    return (
+                      <h4 class={noteClass[entry.block.kind]} data-a={`nb${entry.index}`}>
+                        {ws.map((w, k) => (
+                          <>
+                            {k > 0 && ' '}
+                            <span class="opa-w" data-a="nw">{w}</span>
+                          </>
+                        ))}
+                      </h4>
+                    )
+                  })()
+                ),
+              )
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="opa-claude" data-a="claude">
+    <div class="opa-c-side">
+      <div class="opa-c-items">
+        <span class="opa-c-top"><img class="opa-i20" src={cSidebar} alt="" draggable="false" /></span>
+        <div class="opa-c-buttons">
+          {
+            claudeNav.map((src) => (
+              <span class="opa-c-btn"><img class="opa-i20" src={src} alt="" draggable="false" /></span>
+            ))
+          }
+        </div>
+      </div>
+      <div class="opa-c-account"><img class="opa-i28" src={cAvatar} alt="" draggable="false" /></div>
+    </div>
+
+    <div class="opa-chat">
+      <div class="opa-chat-content" data-a="chatScroll">
+        {
+          c.exchanges.map((e, i) => {
+            const ws = tokens(e.reply)
+            return (
+              <div class="opa-exchange">
+                <div class="opa-bubble" data-a={`bubble${i}`}>
+                  <p class="opa-bubble-text">{e.prompt}</p>
+                </div>
+                <div class="opa-reply" data-a={`reply${i}`}>
+                  <p class="opa-reply-text" data-a={`replyText${i}`}>
+                    {ws.map((w, k) => (
+                      <>
+                        {k > 0 && ' '}
+                        <span class="opa-w" data-a={`rw${i}`}>{w}</span>
+                      </>
+                    ))}
+                  </p>
+                  <div class="opa-reply-actions" data-a={`actions${i}`}>
+                    {claudeActions.map((src) => (
+                      <span class="opa-reply-action">
+                        <img class="opa-i14" src={src} alt="" draggable="false" />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        }
+        <div class="opa-spark-row"></div>
+        {
+          c.exchanges.map((_, i) => (
+            <span class="opa-spark" data-a={`spark${i}`}>
+              <img class="opa-spark-img" data-a={`sparkImg${i}`} src={cSpark} alt="" draggable="false" />
+            </span>
+          ))
+        }
+      </div>
+
+      <div class="opa-chat-titlebar">
+        <div class="opa-chat-title">
+          <span>{c.chatTitle}</span>
+          <img class="opa-i20" src={cCaret} alt="" draggable="false" />
+        </div>
+        <span class="opa-share">{c.share}</span>
+      </div>
+    </div>
+
+    <div class="opa-input" data-a="input">
+      <span class="opa-input-add"><img class="opa-i20" src={cAdd} alt="" draggable="false" /></span>
+      <div class="opa-input-text">
+        <span class="opa-placeholder" data-a="placeholder">{c.placeholder}</span>
+        {
+          c.exchanges.map((e, i) => (
+            <p class="opa-prompt" data-a={`prompt${i}`}>
+              {Array.from(e.prompt).map((ch) => (
+                <span data-a={`ch${i}`}>{ch}</span>
+              ))}
+            </p>
+          ))
+        }
+        <span class="opa-caret" data-a="caret"></span>
+      </div>
+      <span class="opa-send" data-a="send"><img class="opa-i16" src={cArrowUp} alt="" draggable="false" /></span>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="one-prompt-away-copy" set:html={JSON.stringify(payload).replace(/</g, '\\u003c')} />
+<script>
+  import '../../scripts/integrations/main'
+</script>
