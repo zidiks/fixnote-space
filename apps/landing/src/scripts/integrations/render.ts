@@ -103,7 +103,13 @@ export function onePromptAwayRenderer(
     noteSteps: Step[]
   }
   let selLines: HTMLElement[] = []
-  let m: Measured = { caret: [[{ x: -1, y: 0 }]], inputSteps: [], chatSteps: [], sparkSteps: [], noteSteps: [] }
+  let m: Measured = {
+    caret: [[{ x: -1, y: 0 }]],
+    inputSteps: [],
+    chatSteps: [],
+    sparkSteps: [],
+    noteSteps: [],
+  }
 
   const measure = () => {
     for (const n of [el.chatScroll, el.noteScroll, el.claude]) n.style.transform = 'none'
@@ -152,7 +158,9 @@ export function onePromptAwayRenderer(
       let lastLine = -1
       const replyTimes = tl.replyWordTimes[i] ?? []
       x.words.forEach((w, j) => {
-        const line = Math.round((rel(w.getBoundingClientRect(), chatOrigin).top - reply.top) / LINE_REPLY)
+        const line = Math.round(
+          (rel(w.getBoundingClientRect(), chatOrigin).top - reply.top) / LINE_REPLY,
+        )
         if (line > lastLine) {
           const at = replyTimes[j] ?? rs[0]
           steps.push({ t: at, v: reply.top + (line + 1) * LINE_REPLY })
@@ -174,7 +182,9 @@ export function onePromptAwayRenderer(
     const noteOrigin = el.noteScroll.getBoundingClientRect()
     const noteSteps: Step[] = [{ t: NEG, v: 0 }]
     const firstChild = el.noteScroll.firstElementChild
-    const titleClear = firstChild ? rel(firstChild.getBoundingClientRect(), noteOrigin).bottom + 32 : 0
+    const titleClear = firstChild
+      ? rel(firstChild.getBoundingClientRect(), noteOrigin).bottom + 32
+      : 0
     el.blocks.forEach((b, i) => {
       const times = tl.noteWordTimes[i]
       if (!times?.length) return
@@ -201,7 +211,9 @@ export function onePromptAwayRenderer(
         const cur = lines.get(line)
         lines.set(
           line,
-          cur ? { l: Math.min(cur.l, q.left), r: Math.max(cur.r, q.right) } : { l: q.left, r: q.right },
+          cur
+            ? { l: Math.min(cur.l, q.left), r: Math.max(cur.r, q.right) }
+            : { l: q.left, r: q.right },
         )
       }
       for (const [line, { l, r }] of [...lines].sort((a, b) => a[0] - b[0])) {
@@ -305,9 +317,7 @@ export function onePromptAwayRenderer(
     })
     op(
       el.draft,
-      t < T.exit[0]
-        ? 1 - span(t, T.del, inout)
-        : span(t, [T.exit[0] + 0.15, T.exit[1]], inout),
+      t < T.exit[0] ? 1 - span(t, T.del, inout) : span(t, [T.exit[0] + 0.15, T.exit[1]], inout),
     )
     const ed = span(t, T.edited) * (1 - exit)
     op(el.edited[0], Math.max(0, 1 - 2 * ed))

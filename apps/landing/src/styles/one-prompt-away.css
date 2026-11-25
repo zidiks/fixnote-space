@@ -9,7 +9,6 @@
   aspect-ratio: 1380 / 857;
   width: 100%;
   container-type: inline-size;
-  contain: strict;
 }
 @media (min-width: 1069px) {
   .integ-scene {
@@ -38,7 +37,8 @@
   left: 0;
   width: 1380px;
   height: 857px;
-  overflow: hidden;
+  overflow-x: visible;
+  overflow-y: clip;
   color: var(--opa-fg);
   font-family: var(--font-sans);
   font-weight: 400;
@@ -56,7 +56,7 @@
 .opa::after {
   content: "";
   position: absolute;
-  inset: auto 0 0;
+  inset: auto -40px 0;
   z-index: 4;
   height: 120px;
   pointer-events: none;

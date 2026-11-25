@@ -207,8 +207,24 @@ export function createTimeline(copy: OnePromptCopy): OnePromptTimeline {
   const exit: [number, number] = [hold[1], hold[1] + 0.4]
 
   const ex: [ExchangeTiming, ExchangeTiming] = [
-    { type: type1, chars: char1, press: press1, send: send1, think: think1, reply: reply1, write: write1 },
-    { type: type2, chars: char2, press: press2, send: send2, think: think2, reply: reply2, write: write2 },
+    {
+      type: type1,
+      chars: char1,
+      press: press1,
+      send: send1,
+      think: think1,
+      reply: reply1,
+      write: write1,
+    },
+    {
+      type: type2,
+      chars: char2,
+      press: press2,
+      send: send2,
+      think: think2,
+      reply: reply2,
+      write: write2,
+    },
   ]
 
   const noteTokens = copy.note.map((b) => tokens(b.text))

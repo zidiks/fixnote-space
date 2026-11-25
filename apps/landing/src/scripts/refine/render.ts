@@ -1,4 +1,4 @@
-import { DURATION, type DiffPart, frameAt, glide, T } from './timeline'
+import { type DiffPart, DURATION, frameAt, glide, T } from './timeline'
 
 export interface RefineRenderer {
   duration: number
