@@ -11,7 +11,7 @@ import arc1 from '../../assets/landing/together-arc-1.png?url'
 import arc2 from '../../assets/landing/together-arc-2.png?url'
 import arc3 from '../../assets/landing/together-arc-3.png?url'
 import { type Lang, t } from '../../i18n'
-import { landingShot } from '../../lib/shots'
+import RefineCard from './RefineCard.astro'
 
 /**
  * The inside of one card of the intro (intro.css). `hero` is the square with an icon that floats
@@ -101,8 +101,8 @@ const arcs = [
     </div>
   ) : kind === 'refine' ? (
     <div class="card-refine">
-      <div class="card-shot">
-        <Image src={landingShot('refine', lang)} alt="" widths={[436, 872]} sizes="436px" loading="lazy" />
+      <div class="card-shot card-shot-live">
+        <RefineCard lang={lang} />
       </div>
       <div class="card-copy">
         <Title class="card-title">{c.title}</Title>

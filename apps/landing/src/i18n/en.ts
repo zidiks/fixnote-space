@@ -120,6 +120,41 @@ export const en = {
     sub: 'Everything you need for everyday notes,\nwithout the extra complexity.',
   },
 
+  /** The animated "Refine with AI" card in the Experience collage (RefineCard.astro, scripts/refine). */
+  refineCard: {
+    title: 'Japan trip — April 2027',
+    subtitle: 'Tokyo · Hakone · Kyoto · Osaka  ·  Apr 2–14, 12 days',
+    diff: [
+      { kind: 'same' as const, text: 'Cherry blossom season, so ' },
+      { kind: 'del' as const, text: 'everything books' },
+      { kind: 'ins' as const, text: 'hotels and trains book' },
+      { kind: 'same' as const, text: ' up ' },
+      { kind: 'del' as const, text: 'early' },
+      { kind: 'ins' as const, text: 'months ahead' },
+      { kind: 'same' as const, text: '.' },
+    ],
+    line2: 'Flights and the first Tokyo nights need to be locked in before December.',
+    before: 'Before we go',
+    tasks: [
+      { text: 'Book flights to Tokyo Haneda', done: true },
+      { text: 'Renew passports', done: true },
+      { text: 'Get a 14-day JR Pass', done: false, soft: true },
+      { text: 'Reserve teamLab Planets tickets for Apr 4', done: false, soft: true },
+      { text: 'Order eSIMs for everyone', done: false },
+    ],
+    menu: {
+      prompt: 'Ask AI to edit this text…',
+      items: ['Rewrite', 'Shorten', 'Reformat', 'Fix mistakes'],
+      more: ['New note from this', 'Delete'],
+    },
+    panel: {
+      accept: 'Accept',
+      discard: 'Discard',
+      tryAgain: 'Try again',
+      esc: 'Esc',
+    },
+  },
+
   /** The animated app under the hero (HeroApp.astro, scripts/hero): demo notes only. */
   heroApp: {
     people: { alex: 'Alex', sofia: 'Sofia', ben: 'Ben' },

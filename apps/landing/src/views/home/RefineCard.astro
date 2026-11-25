@@ -1,0 +1,161 @@
+---
+import ArrowUp from '@lucide/astro/icons/arrow-up'
+import Check from '@lucide/astro/icons/check'
+import CheckCheck from '@lucide/astro/icons/check-check'
+import CornerDownLeft from '@lucide/astro/icons/corner-down-left'
+import FilePlus from '@lucide/astro/icons/file-plus'
+import LayoutList from '@lucide/astro/icons/layout-list'
+import Scissors from '@lucide/astro/icons/scissors'
+import Sparkles from '@lucide/astro/icons/sparkles'
+import SpellCheck from '@lucide/astro/icons/spell-check'
+import Trash from '@lucide/astro/icons/trash'
+import WandSparkles from '@lucide/astro/icons/wand-sparkles'
+import { type Lang, t } from '../../i18n'
+import '../../styles/refine-card.css'
+
+/**
+ * Animated "Refine with AI" card for the Experience collage (scripts/refine):
+ * selects a line, opens the AI menu, clicks Rewrite, reveals the diff suggestion,
+ * accepts it, and morphs the note inline before looping smoothly.
+ */
+interface Props {
+  lang: Lang
+}
+const { lang } = Astro.props
+const c = t(lang).refineCard
+const original = c.diff
+  .filter((p) => p.kind !== 'ins')
+  .map((p) => p.text)
+  .join('')
+const icon = { size: 16, 'stroke-width': 1.5 }
+const menuIcons = [WandSparkles, Scissors, LayoutList, SpellCheck]
+let delIdx = 0
+let insIdx = 0
+---
+
+<div class="rf" data-refine-card aria-hidden="true">
+  <div class="rf-content" data-a="content">
+    <h3 class="rf-title">{c.title}</h3>
+    <p class="rf-subtitle">{c.subtitle}</p>
+
+    <div class="rf-intro">
+      <div class="rf-selection" data-a="selection"></div>
+      <p class="rf-body" data-a="line">
+        {
+          c.diff.map((p) =>
+            p.kind === 'same' ? (
+              <span>{p.text}</span>
+            ) : (
+              <span class="rf-morph" data-a={p.kind === 'del' ? `del${delIdx++}` : `ins${insIdx++}`}>
+                <span class="rf-morph-text">{p.text}</span>
+              </span>
+            ),
+          )
+        }
+      </p>
+      <p class="rf-body rf-orig" data-a="orig">{original}</p>
+      <p class="rf-body" data-a="dim1">{c.line2}</p>
+    </div>
+
+    <section class="rf-before" data-a="dim2">
+      <h4 class="rf-h2">{c.before}</h4>
+      <div>
+        {
+          c.tasks.map((task) => (
+            <div class="rf-task">
+              <span class={task.done ? 'rf-box-done' : task.soft ? 'rf-box-soft' : 'rf-box'}>
+                {task.done && <Check size={12} stroke-width={3} />}
+              </span>
+              <span class={task.done ? 'rf-task-done' : 'rf-task-text'}>{task.text}</span>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+
+  <div class="rf-menu" data-a="menu">
+    <div class="rf-prompt">
+      <Sparkles {...icon} class="rf-icon-brand" />
+      <span class="rf-prompt-text">{c.menu.prompt}</span>
+      <span class="rf-send"><ArrowUp size={14} stroke-width={1.75} /></span>
+    </div>
+    <div class="rf-divider"></div>
+    {
+      c.menu.items.map((label, k) => {
+        const Icon = menuIcons[k]!
+        return (
+          <div class="rf-item">
+            {k === 0 && <span class="rf-hover" data-a="hover" />}
+            <Icon {...icon} class="rf-icon" />
+            <span class="rf-item-label">{label}</span>
+          </div>
+        )
+      })
+    }
+    <div class="rf-divider"></div>
+    <div class="rf-item">
+      <FilePlus {...icon} class="rf-icon" />
+      <span class="rf-item-label">{c.menu.more[0]}</span>
+    </div>
+    <div class="rf-item">
+      <Trash {...icon} class="rf-icon-danger" />
+      <span class="rf-item-label rf-danger">{c.menu.more[1]}</span>
+    </div>
+  </div>
+
+  <div class="rf-panel" data-a="panel">
+    <p class="rf-diff">
+      {
+        c.diff.map((p, k) => {
+          const paired =
+            (p.kind === 'del' && c.diff[k + 1]?.kind === 'ins') ||
+            (p.kind === 'ins' && c.diff[k - 1]?.kind === 'del')
+          const cls =
+            p.kind === 'same'
+              ? 'rf-word'
+              : p.kind === 'ins'
+                ? /^\p{P}+$/u.test(p.text)
+                  ? 'rf-added rf-tight'
+                  : 'rf-added'
+                : paired
+                  ? 'rf-removed'
+                  : 'rf-deleted'
+          return (
+            <span class={cls} data-a={`chunk${k}`}>
+              {p.text}
+            </span>
+          )
+        })
+      }
+    </p>
+    <div class="rf-actions">
+      <span class="rf-button">{c.panel.tryAgain}</span>
+      <span class="rf-button">
+        {c.panel.discard}
+        <span class="rf-kbd">{c.panel.esc}</span>
+      </span>
+      <span class="rf-button rf-accept" data-a="accept">
+        <CheckCheck {...icon} />
+        <span>{c.panel.accept}</span>
+        <span class="rf-enter"><CornerDownLeft size={12} stroke-width={1.75} /></span>
+      </span>
+    </div>
+  </div>
+
+  <div class="rf-pointer" data-a="pointer">
+    <svg class="rf-arrow" data-a="arrow" width="14" height="19" viewBox="0 0 14 19" fill="none">
+      <path
+        d="M1.2 1.2v14.3l3.6-3.4 2.6 5.9 2.5-1.1-2.6-5.8h5z"
+        fill="#211f1c"
+        stroke="#fff"
+        stroke-width="1.4"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </div>
+</div>
+<script type="application/json" id="refine-card-diff" set:html={JSON.stringify(c.diff).replace(/</g, '\\u003c')} />
+<script>
+  import '../../scripts/refine/main'
+</script>

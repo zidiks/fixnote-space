@@ -114,6 +114,40 @@ export const es: Dict = {
     sub: 'Todo lo que necesitas para tus notas de cada día,\nsin complicaciones.',
   },
 
+  refineCard: {
+    title: 'Viaje a Japón — Abril 2027',
+    subtitle: 'Tokio · Hakone · Kioto · Osaka  ·  2–14 abr, 12 días',
+    diff: [
+      { kind: 'same' as const, text: 'Es temporada de cerezos, así que ' },
+      { kind: 'del' as const, text: 'todo se llena' },
+      { kind: 'ins' as const, text: 'hoteles y trenes se llenan' },
+      { kind: 'same' as const, text: ' ' },
+      { kind: 'del' as const, text: 'pronto' },
+      { kind: 'ins' as const, text: 'meses antes' },
+      { kind: 'same' as const, text: '.' },
+    ],
+    line2: 'Los vuelos y las primeras noches en Tokio hay que cerrarlos antes de diciembre.',
+    before: 'Antes de salir',
+    tasks: [
+      { text: 'Reservar vuelos a Tokio Haneda', done: true },
+      { text: 'Renovar pasaportes', done: true },
+      { text: 'Sacar el JR Pass de 14 días', done: false, soft: true },
+      { text: 'Entradas para teamLab Planets el 4 de abril', done: false, soft: true },
+      { text: 'Pedir eSIM para todos', done: false },
+    ],
+    menu: {
+      prompt: 'Pide a la IA editar este texto…',
+      items: ['Reescribir', 'Acortar', 'Reformatear', 'Corregir errores'],
+      more: ['Nueva nota desde aquí', 'Eliminar'],
+    },
+    panel: {
+      accept: 'Aceptar',
+      discard: 'Descartar',
+      tryAgain: 'Otra vez',
+      esc: 'Esc',
+    },
+  },
+
   heroApp: {
     people: { alex: 'Álex', sofia: 'Sofía', ben: 'Ben' },
     sidebar: {
