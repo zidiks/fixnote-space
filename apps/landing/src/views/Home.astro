@@ -3,7 +3,6 @@ import { type Lang, t } from '../i18n'
 import Base from '../layouts/Base.astro'
 import { app, faqPage, ogImagePath } from '../lib/schema'
 import '../styles/home.css'
-import HomeFooter from '../components/HomeFooter.astro'
 import Closing from './home/Closing.astro'
 import Faq from './home/Faq.astro'
 import Integrations from './home/Integrations.astro'
@@ -54,5 +53,4 @@ const jsonLd = [app(lang, d.meta.home.description, image), faqPage(d.landing.faq
   <Plans lang={lang} />
   <Faq lang={lang} />
   <Closing lang={lang} />
-  <HomeFooter slot="footer" lang={lang} />
 </Base>
