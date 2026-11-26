@@ -357,6 +357,7 @@
 
 /* Integrations. The three app marks are Figma's own exports: a 74 circle with a 6 rim outside. */
 .integ {
+  z-index: 1;
   overflow-x: clip;
 }
 .integ-lead {

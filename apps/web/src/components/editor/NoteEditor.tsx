@@ -100,6 +100,7 @@ import { ImageTextDialog } from './ImageTextDialog'
 import { LiveCarets } from './LiveCarets'
 import { LinkCards, retryLinkCards } from './link-cards'
 import { type LinkPaste, LinkPasteMenu, pastedUrl, pasteUrl } from './link-paste'
+import { MentionMenu } from './MentionMenu'
 import { PrivacyHighlight, PrivacyReview } from './PrivacyReview'
 import type { ScanRange } from './privacy-scan'
 import { ProtectedDisplay, type ProtectedTarget, protectedAt } from './protected-display'
@@ -587,6 +588,7 @@ export function NoteEditor({
       LinkCards.configure({
         load: (url) => links.current.load(url),
         open: (url) => links.current.open(url),
+        allowExternal: () => !useLlm.getState().localOnly,
       }),
       ...(live
         ? [
@@ -1210,6 +1212,7 @@ export function NoteEditor({
         onClosePopover={comments.closePopover}
         onSelectThread={comments.selectThread}
         onCreateThread={comments.createThread}
+        onCreateNoteThread={comments.createNoteThread}
         onCancelDraft={comments.cancelDraft}
         onReply={comments.reply}
         onSetStatus={comments.setStatus}
@@ -1217,6 +1220,13 @@ export function NoteEditor({
       />
       {editor && !readOnly ? (
         <SlashMenu editor={editor} onInsertImage={() => fileInput.current?.click()} />
+      ) : null}
+      {editor && !readOnly && live && comments.collaborators.length > 0 ? (
+        <MentionMenu
+          editor={editor}
+          collaborators={comments.collaborators}
+          currentUserId={comments.currentUser.id}
+        />
       ) : null}
       {editor && !readOnly ? (
         <PrivacyReview

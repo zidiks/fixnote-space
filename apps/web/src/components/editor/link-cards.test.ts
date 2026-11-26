@@ -279,4 +279,33 @@ describe('incremental link cards', () => {
     await Promise.resolve()
     expect(dispatch).not.toHaveBeenCalled()
   })
+
+  it('renders and refreshes compact inline mention chips', async () => {
+    const url = 'https://www.instagram.com/reels/DgMWPoARgoj/'
+    let finish: ((preview: LinkPreview | null) => void) | undefined
+    const mentionPara = paragraph.create(
+      null,
+      schema.text('instagram.com/reels/DgMWPoARgoj', [
+        link.create({ href: url, title: 'mention' }),
+      ]),
+    )
+    const h = setup(
+      doc(mentionPara),
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    expect(h.decorations().some((d) => d.spec.kind === 'mention-chip')).toBe(true)
+    expect(h.decorations().some((d) => d.spec.kind === 'mention-raw')).toBe(true)
+    finish?.({ url, kind: 'page', site: 'Instagram', title: 'ANDREW BOLOTIN on Instagram' })
+    await vi.waitFor(() =>
+      expect(
+        h
+          .decorations()
+          .some((d) => d.spec.kind === 'mention-chip' && d.spec.key?.includes(':full:')),
+      ).toBe(true),
+    )
+    h.destroy()
+  })
 })

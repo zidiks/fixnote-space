@@ -14,6 +14,7 @@ import {
 } from '@fixnote/core'
 import type { Editor } from '@tiptap/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useUi } from '../../app/store'
 import { sharedContext, useAccount } from '../../lib/account/account'
 import { useLlm } from '../../lib/assistant/llm'
 import type { LiveEditing } from '../../lib/collab/live'
@@ -87,8 +88,6 @@ export function useNoteComments({
     return { id: ctx?.userId ?? 'local', email: ctx?.email ?? accountEmail }
   }, [accountEmail, live])
 
-  const anyUiOpen = overviewOpen || activeThreadId !== null || draft !== null
-
   // Load & subscribe to comment threads.
   useEffect(() => {
     if (live) {
@@ -108,13 +107,12 @@ export function useNoteComments({
     }
   }, [live, note.id, repo])
 
-  // Load collaborators for @mention autocomplete on shared notes when any comment UI opens.
+  // Load collaborators for @mention autocomplete in shared notes (both editor and comments).
   useEffect(() => {
     if (!live || useLlm.getState().localOnly) {
       setCollaborators([])
       return
     }
-    if (!anyUiOpen) return
     const ctx = sharedContext()
     if (!ctx) return
     let cancelled = false
@@ -127,7 +125,7 @@ export function useNoteComments({
     return () => {
       cancelled = true
     }
-  }, [anyUiOpen, live])
+  }, [live])
 
   // Report open thread count to the note header.
   const openCount = useMemo(() => threads.filter((t) => t.status === 'open').length, [threads])
@@ -161,6 +159,8 @@ export function useNoteComments({
     }
 
     for (const thread of threads) {
+      // Note-level comments have no quote or anchor; they live in the sidebar and are never orphans.
+      if (!thread.quote && !thread.anchorFrom) continue
       const needsProjection = !(live && thread.anchorFrom && thread.anchorTo)
       const resolved = resolveThreadRange(
         editor,
@@ -257,12 +257,12 @@ export function useNoteComments({
       setDraft(null)
       const range = rangesRef.current.get(threadId)
       if (range && editor) {
-        setOverviewOpen(false)
         setActiveThreadId(threadId)
         scrollToComment(editor, range, threadId)
       } else {
-        // Orphaned thread (text deleted): keep it accessible inside the overview popover.
+        // Note-level or orphaned thread: keep it accessible inside the comments sidebar.
         setActiveThreadId(threadId)
+        useUi.getState().setChatOpen(false)
         setOverviewOpen(true)
       }
       if (note.sharedId && unreadThreadIds.has(threadId) && !useLlm.getState().localOnly) {
@@ -289,6 +289,7 @@ export function useNoteComments({
     setHoveredThreadId(null)
     const { from, to } = editor.state.selection
     if (from === to) {
+      useUi.getState().setChatOpen(false)
       setOverviewOpen(true)
       return
     }
@@ -307,9 +308,21 @@ export function useNoteComments({
     setDraft(null)
     setOverviewOpen((prev) => {
       const next = !prev
-      if (next) setActiveThreadId(null)
+      if (next) {
+        useUi.getState().setChatOpen(false)
+        setActiveThreadId(null)
+      }
       return next
     })
+  }, [])
+
+  const openOverview = useCallback(() => {
+    clearTimeout(hoverTimerRef.current)
+    setHoveredThreadId(null)
+    setDraft(null)
+    setActiveThreadId(null)
+    useUi.getState().setChatOpen(false)
+    setOverviewOpen(true)
   }, [])
 
   const closePopover = useCallback(() => {
@@ -387,6 +400,46 @@ export function useNoteComments({
     [currentUser.email, currentUser.id, draft, editor, live, note.id, readOnly, repo],
   )
 
+  const createNoteThread = useCallback(
+    async (body: string, mentions: CommentMention[]) => {
+      if (readOnly) return
+      const now = Date.now()
+      const thread: CommentThread = {
+        id: crypto.randomUUID(),
+        quote: '',
+        status: 'open',
+        createdAt: now,
+        updatedAt: now,
+        messages: [
+          {
+            id: crypto.randomUUID(),
+            authorId: currentUser.id,
+            authorEmail: currentUser.email,
+            body,
+            mentions,
+            createdAt: now,
+          },
+        ],
+      }
+      if (live && editor && !editor.isDestroyed) {
+        addYCommentThread(live.session.doc, thread)
+        setActiveThreadId(thread.id)
+        await live.persist(editor.getMarkdown(), { immediate: true })
+        const mentionIds = [...new Set(mentions.map((m) => m.userId))]
+        if (!useLlm.getState().localOnly) {
+          void sharedContext()
+            ?.shared.notifyComment(live.sharedId, thread.id, mentionIds, false)
+            .catch(() => undefined)
+        }
+        return
+      }
+      await repo.save(note.id, thread)
+      setThreads((prev) => [...prev, thread])
+      setActiveThreadId(thread.id)
+    },
+    [currentUser.email, currentUser.id, editor, live, note.id, readOnly, repo],
+  )
+
   const reply = useCallback(
     async (threadId: string, body: string, mentions: CommentMention[]) => {
       if (readOnly) return
@@ -448,28 +501,35 @@ export function useNoteComments({
       if (readOnly) return
       const existing = threads.find((th) => th.id === threadId)
       const deletingLast = existing ? existing.messages.length <= 1 : false
-      if (deletingLast && activeThreadId === threadId) setActiveThreadId(null)
+      if (deletingLast) {
+        rangesRef.current.delete(threadId)
+        if (activeThreadId === threadId) setActiveThreadId(null)
+        if (note.sharedId && !useLlm.getState().localOnly) {
+          void markCommentsRead(sharedContext()?.shared ?? null, note.sharedId, threadId)
+        }
+      }
       if (live && editor && !editor.isDestroyed) {
         deleteYCommentMessage(live.session.doc, threadId, messageId)
+        setThreads(readYComments(live.session.doc))
         await live.persist(editor.getMarkdown(), { immediate: true })
         return
       }
       if (!existing) return
       const remaining = existing.messages.filter((m) => m.id !== messageId)
       if (!remaining.length) {
-        await repo.remove(note.id, threadId)
         setThreads((prev) => prev.filter((th) => th.id !== threadId))
+        await repo.remove(note.id, threadId)
       } else {
         const updated: CommentThread = {
           ...existing,
           updatedAt: Date.now(),
           messages: remaining,
         }
-        await repo.save(note.id, updated)
         setThreads((prev) => prev.map((th) => (th.id === threadId ? updated : th)))
+        await repo.save(note.id, updated)
       }
     },
-    [activeThreadId, editor, live, note.id, readOnly, repo, threads],
+    [activeThreadId, editor, live, note.id, note.sharedId, readOnly, repo, threads],
   )
 
   // Sort threads by document position so navigation & overview follow the reading order.
@@ -497,11 +557,7 @@ export function useNoteComments({
     getThreadAnchorRect,
     getDraftAnchorRect,
     toggleOverview,
-    openOverview: () => {
-      setDraft(null)
-      setActiveThreadId(null)
-      setOverviewOpen(true)
-    },
+    openOverview,
     closeOverview,
     closePopover,
     selectThread,
@@ -509,6 +565,8 @@ export function useNoteComments({
     startDraft,
     cancelDraft: () => setDraft(null),
     createThread: (body: string, mentions: CommentMention[]) => void createThread(body, mentions),
+    createNoteThread: (body: string, mentions: CommentMention[]) =>
+      void createNoteThread(body, mentions),
     reply: (threadId: string, body: string, mentions: CommentMention[]) =>
       void reply(threadId, body, mentions),
     setStatus: (threadId: string, status: 'open' | 'resolved') => void setStatus(threadId, status),

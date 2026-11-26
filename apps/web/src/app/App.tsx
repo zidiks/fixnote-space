@@ -372,6 +372,7 @@ function AppShell() {
         </div>
       </div>
       {/* Full window height, beside the title bar: its buttons end next to the panel. */}
+      <div id="comments-panel-slot" className="contents" />
       {chatOpen && chatOverlay ? (
         <>
           <button

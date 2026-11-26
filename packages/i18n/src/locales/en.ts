@@ -336,8 +336,9 @@ const en = {
   },
   linkPaste: {
     title: 'Paste as',
+    mention: 'Mention',
     bookmark: 'Bookmark',
-    link: 'Link',
+    link: 'URL',
     text: 'Plain text',
   },
   menu: {
@@ -1318,6 +1319,8 @@ const en = {
     openTab: 'Open ({{count}})',
     resolvedTab: 'Resolved ({{count}})',
     placeholder: 'Add a comment…',
+    notePlaceholder: 'Comment on this note…',
+    noteComment: 'Note comment',
     replyPlaceholder: 'Write a reply…',
     mentionHint: '@ to mention',
     send: 'Comment',

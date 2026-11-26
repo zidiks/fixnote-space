@@ -338,6 +338,7 @@ const ru: LocaleResource = {
   },
   linkPaste: {
     title: 'Вставить как',
+    mention: 'Упоминание',
     bookmark: 'Закладка',
     link: 'Ссылка',
     text: 'Обычный текст',
@@ -1327,6 +1328,8 @@ const ru: LocaleResource = {
     openTab: 'Открытые ({{count}})',
     resolvedTab: 'Решённые ({{count}})',
     placeholder: 'Напишите комментарий…',
+    notePlaceholder: 'Комментарий ко всей заметке…',
+    noteComment: 'Комментарий к заметке',
     replyPlaceholder: 'Напишите ответ…',
     mentionHint: '@ чтобы упомянуть',
     send: 'Отправить',

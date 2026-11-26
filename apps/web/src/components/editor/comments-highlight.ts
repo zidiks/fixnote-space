@@ -5,7 +5,6 @@ import {
   findQuoteRange,
   redactProtectedReferences,
 } from '@fixnote/core'
-import { i18n } from '@fixnote/i18n'
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
@@ -55,8 +54,34 @@ export const commentsHighlightKey = new PluginKey<{
   decorations: DecorationSet
 }>('fixnoteComments')
 
+function rangesEqual(
+  a: readonly CommentHighlightRange[],
+  b: readonly CommentHighlightRange[],
+): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i]
+    const y = b[i]
+    if (
+      !x ||
+      !y ||
+      x.id !== y.id ||
+      x.from !== y.from ||
+      x.to !== y.to ||
+      x.active !== y.active ||
+      x.hovered !== y.hovered ||
+      x.unread !== y.unread
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
 export function setCommentHighlights(editor: Editor, ranges: CommentHighlightRange[]) {
   if (editor.isDestroyed) return
+  const current = commentsHighlightKey.getState(editor.state)
+  if (current && rangesEqual(current.ranges, ranges)) return
   editor.view.dispatch(editor.state.tr.setMeta(commentsHighlightKey, ranges))
 }
 
@@ -277,7 +302,6 @@ function threadIdFromTarget(target: EventTarget | null): string | null {
 function buildCommentDecorations(
   doc: Editor['state']['doc'],
   ranges: CommentHighlightRange[],
-  onSelect: (threadId: string) => void,
 ): DecorationSet {
   if (!ranges.length) return DecorationSet.empty
   const max = doc.content.size
@@ -297,64 +321,6 @@ function buildCommentDecorations(
         class: cls,
         'data-comment-thread': r.id,
       }),
-    )
-
-    // Minimal inline badge at the end of the highlighted passage: crisp cap-height circle
-    // with a clean comment icon (plus count when > 1), matching FixNote's subtle styling.
-    decos.push(
-      Decoration.widget(
-        r.to,
-        () => {
-          const pin = document.createElement('button')
-          pin.type = 'button'
-          pin.className = [
-            'fixnote-comment-pin',
-            r.active && 'is-active',
-            r.hovered && 'is-hovered',
-            r.unread && 'is-unread',
-          ]
-            .filter(Boolean)
-            .join(' ')
-          pin.dataset.commentThread = r.id
-          pin.contentEditable = 'false'
-          pin.tabIndex = -1
-          pin.setAttribute('aria-label', i18n.t('comments.title'))
-
-          const svgNS = 'http://www.w3.org/2000/svg'
-          const icon = document.createElementNS(svgNS, 'svg')
-          icon.setAttribute('viewBox', '0 0 16 16')
-          icon.setAttribute('fill', 'none')
-          icon.setAttribute('aria-hidden', 'true')
-          icon.setAttribute('class', 'fixnote-comment-pin-icon')
-          const path = document.createElementNS(svgNS, 'path')
-          path.setAttribute(
-            'd',
-            'M3.25 3.5h9.5A1.25 1.25 0 0 1 14 4.75v5.5a1.25 1.25 0 0 1-1.25 1.25H6.6L3.6 13.7a.35.35 0 0 1-.55-.28V11.5h-.3A1.25 1.25 0 0 1 1.5 10.25v-5.5A1.25 1.25 0 0 1 2.75 3.5h.5Z',
-          )
-          path.setAttribute('stroke', 'currentColor')
-          path.setAttribute('stroke-width', '1.4')
-          path.setAttribute('stroke-linejoin', 'round')
-          icon.appendChild(path)
-          pin.appendChild(icon)
-
-          const num = document.createElement('span')
-          num.className = 'fixnote-comment-pin-count'
-          num.textContent = String(r.count)
-          pin.appendChild(num)
-
-          pin.addEventListener('mousedown', (e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onSelect(r.id)
-          })
-          return pin
-        },
-        {
-          side: 1,
-          key: `cpin-${r.id}-${r.count}-${r.active ? 1 : 0}-${r.hovered ? 1 : 0}-${r.unread ? 1 : 0}`,
-          ignoreSelection: true,
-        },
-      ),
     )
   }
   return decos.length ? DecorationSet.create(doc, decos) : DecorationSet.empty
@@ -380,9 +346,10 @@ export const CommentsHighlight = Extension.create<{
           apply: (tr, prev) => {
             const next = tr.getMeta(commentsHighlightKey) as CommentHighlightRange[] | undefined
             if (next !== undefined) {
+              if (rangesEqual(prev.ranges, next)) return prev
               return {
                 ranges: next,
-                decorations: buildCommentDecorations(tr.doc, next, onSelect),
+                decorations: buildCommentDecorations(tr.doc, next),
               }
             }
             if (!tr.docChanged || !prev.ranges.length) return prev
@@ -392,9 +359,13 @@ export const CommentsHighlight = Extension.create<{
               const to = tr.mapping.map(r.to, -1)
               if (from < to) mapped.push({ ...r, from, to })
             }
+            // Map existing decorations incrementally so typing/undo never tears down untouched spans.
             return {
               ranges: mapped,
-              decorations: buildCommentDecorations(tr.doc, mapped, onSelect),
+              decorations:
+                mapped.length === prev.ranges.length
+                  ? prev.decorations.map(tr.mapping, tr.doc)
+                  : buildCommentDecorations(tr.doc, mapped),
             }
           },
         },

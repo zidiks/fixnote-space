@@ -338,8 +338,9 @@ const es: LocaleResource = {
   },
   linkPaste: {
     title: 'Pegar como',
+    mention: 'Mención',
     bookmark: 'Marcador',
-    link: 'Enlace',
+    link: 'URL',
     text: 'Texto sin formato',
   },
   menu: {
@@ -1331,6 +1332,8 @@ const es: LocaleResource = {
     openTab: 'Abiertos ({{count}})',
     resolvedTab: 'Resueltos ({{count}})',
     placeholder: 'Escribe un comentario…',
+    notePlaceholder: 'Comentar en esta nota…',
+    noteComment: 'Comentario de la nota',
     replyPlaceholder: 'Escribe una respuesta…',
     mentionHint: '@ para mencionar',
     send: 'Comentar',

@@ -4,11 +4,11 @@ import type { Editor } from '@tiptap/core'
 import type { Node as PmNode } from '@tiptap/pm/model'
 import { TextSelection, type Transaction } from '@tiptap/pm/state'
 import type { Step } from '@tiptap/pm/transform'
-import { Bookmark, Link2, Type } from 'lucide-react'
+import { Bookmark, Link2, Sparkles, Type } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-export type PasteMode = 'bookmark' | 'link' | 'text'
+export type PasteMode = 'mention' | 'bookmark' | 'link' | 'text'
 
 const URL_ONLY = /^https?:\/\/[^\s<>"]+$/i
 
@@ -16,6 +16,20 @@ const URL_ONLY = /^https?:\/\/[^\s<>"]+$/i
 export function pastedUrl(text: string): string | null {
   const url = text.trim()
   return URL_ONLY.test(url) ? url : null
+}
+
+/** Turns a long URL into a concise, readable label (strips scheme/www and truncates long paths). */
+export function shortUrlLabel(url: string, max = 44): string {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.replace(/^www\./, '')
+    const path = decodeURI(u.pathname).replace(/\/+$/, '')
+    const full = path && path !== '/' ? `${host}${path}` : host
+    if (full.length <= max) return full
+    return `${full.slice(0, max - 1)}…`
+  } catch {
+    return url.length <= max ? url : `${url.slice(0, max - 1)}…`
+  }
 }
 
 /** A bookmark needs a top-level paragraph: only those show a card. */
@@ -26,8 +40,9 @@ function canBookmark(doc: PmNode, at: number) {
 
 /**
  * Inserts `url` at `at` in the chosen form and puts the caret after it:
+ * - mention: compact inline chip (favicon + site + page title, loaded lazily)
  * - bookmark: the URL alone on its line, which shows a card; typing continues on the next line
- * - link: a link where the caret is, no card even when it is alone on its line
+ * - link: a shortened clickable link where the caret is, no card
  * - text: plain text, not a link
  */
 function insert(tr: Transaction, at: number, url: string, mode: PasteMode) {
@@ -38,13 +53,20 @@ function insert(tr: Transaction, at: number, url: string, mode: PasteMode) {
     tr.insertText(url, at)
     return at + url.length
   }
+  if (mode === 'mention') {
+    const label = shortUrlLabel(url)
+    const mentionMark = schema.marks.link?.create({ href: url, title: 'mention' }) ?? link
+    tr.insert(at, schema.text(label, [mentionMark]))
+    return at + label.length
+  }
   if (mode === 'link') {
-    tr.insert(at, schema.text(url, [link]))
+    const label = shortUrlLabel(url)
+    tr.insert(at, schema.text(label, [link]))
     const para = $at.parent
     if (para.type.name === 'paragraph' && para.content.size === 0) {
       tr.setNodeMarkup($at.before(), undefined, { ...para.attrs, plainLink: true })
     }
-    return at + url.length
+    return at + label.length
   }
   // Bookmark: split so the URL gets a line of its own, then continue on the line below.
   let start = at
@@ -85,12 +107,9 @@ export function pasteUrl(editor: Editor, url: string): LinkPaste {
   if (!tr.selection.empty) tr = tr.deleteSelection()
   const at = tr.selection.from
   const modes: PasteMode[] = canBookmark(tr.doc, at)
-    ? ['bookmark', 'link', 'text']
-    : ['link', 'text']
-  const $at = tr.doc.resolve(at)
-  // Bookmark on an empty line, like Anytype; inside text a link fits better.
-  const mode: PasteMode =
-    modes[0] === 'bookmark' && $at.parent.content.size === 0 ? 'bookmark' : 'link'
+    ? ['mention', 'bookmark', 'link', 'text']
+    : ['mention', 'link', 'text']
+  const mode: PasteMode = 'mention'
   const first = tr.steps.length
   const caret = insert(tr, at, url, mode)
   tr.setSelection(TextSelection.create(tr.doc, caret)).setMeta('linkPaste', true).scrollIntoView()
@@ -99,7 +118,7 @@ export function pasteUrl(editor: Editor, url: string): LinkPaste {
     .map((step, i) => step.invert(tr.docs[first + i] as PmNode))
     .reverse()
   view.dispatch(tr)
-  const coords = view.coordsAtPos(Math.min(at + url.length, view.state.doc.content.size))
+  const coords = view.coordsAtPos(Math.min(caret, view.state.doc.content.size))
   return { url, mode, modes, left: coords.left, top: coords.bottom, inverse, at }
 }
 
@@ -120,7 +139,7 @@ function switchMode(editor: Editor, paste: LinkPaste, mode: PasteMode): LinkPast
   return { ...paste, mode, inverse }
 }
 
-const ICONS = { bookmark: Bookmark, link: Link2, text: Type } as const
+const ICONS = { mention: Sparkles, bookmark: Bookmark, link: Link2, text: Type } as const
 
 /**
  * "Paste as" menu under a pasted URL: bookmark (a card), link or plain text. Arrow keys and Enter
@@ -180,7 +199,7 @@ export function LinkPasteMenu({
   }, [editor, paste, onChange, onClose])
 
   const left = Math.max(8, Math.min(paste.left, window.innerWidth - 216))
-  const top = Math.max(8, Math.min(paste.top + 6, window.innerHeight - 160))
+  const top = Math.max(8, Math.min(paste.top + 6, window.innerHeight - 196))
 
   return createPortal(
     <div

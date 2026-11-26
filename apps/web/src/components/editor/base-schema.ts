@@ -37,14 +37,15 @@ export function headlessNoteSchema(
         ? {
             openOnClick: true,
             autolink: false,
+            protocols: ['attachment', 'mention'],
             HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer nofollow' },
           }
         : {
             openOnClick: false,
             autolink: true,
             linkOnPaste: true,
-            // Files dropped into a note are links to attachment:<id>.
-            protocols: ['attachment'],
+            // Files dropped into a note are links to attachment:<id>; team @mentions use mention:<email>.
+            protocols: ['attachment', 'mention'],
             ...(opts.shouldAutoLink ? { shouldAutoLink: opts.shouldAutoLink } : {}),
           },
     }),

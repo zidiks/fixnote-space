@@ -19,7 +19,9 @@ import {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { docking, useUi } from '../../app/store'
 import { colorFor, initials, onColor } from '../../lib/collab/people'
+import { platform } from '../../lib/platform'
 import { formatRelative } from '../../lib/time'
 import { type AnchorRect, type CapturedAnchor, findScrollParent } from './comments-highlight'
 
@@ -472,6 +474,7 @@ function ThreadMessages({
   isShared,
   currentUserId,
   onDeleteMessage,
+  scrollable = true,
 }: {
   thread: CommentThread
   allEmails: string[]
@@ -479,10 +482,11 @@ function ThreadMessages({
   isShared: boolean
   currentUserId: string
   onDeleteMessage: (threadId: string, messageId: string) => void
+  scrollable?: boolean
 }) {
   const { t, i18n } = useTranslation()
   return (
-    <div className="max-h-[min(320px,46dvh)] overflow-y-auto px-3.5 py-3">
+    <div className={cn('px-3.5 py-3', scrollable && 'max-h-[min(320px,46dvh)] overflow-y-auto')}>
       {thread.messages.map((msg, idx) => {
         const isLast = idx === thread.messages.length - 1
         const display = msg.authorEmail
@@ -554,6 +558,7 @@ export interface CommentsLayerProps {
   onClosePopover: () => void
   onSelectThread: (threadId: string) => void
   onCreateThread: (body: string, mentions: CommentMention[]) => void
+  onCreateNoteThread: (body: string, mentions: CommentMention[]) => void
   onCancelDraft: () => void
   onReply: (threadId: string, body: string, mentions: CommentMention[]) => void
   onSetStatus: (threadId: string, status: 'open' | 'resolved') => void
@@ -579,6 +584,7 @@ export function CommentsLayer({
   onClosePopover,
   onSelectThread,
   onCreateThread,
+  onCreateNoteThread,
   onCancelDraft,
   onReply,
   onSetStatus,
@@ -586,11 +592,21 @@ export function CommentsLayer({
 }: CommentsLayerProps) {
   const { t, i18n } = useTranslation()
   const [tab, setTab] = useState<'open' | 'resolved'>('open')
-  const overviewRef = useRef<HTMLDivElement>(null)
+  const [replyingId, setReplyingId] = useState<string | null>(null)
+  const narrow = useUi((s) => s.narrow)
+  const width = useUi((s) => s.width)
+  const layout = useUi((s) => s.layout)
+  const listWidth = useUi((s) => s.listWidth)
+  const overlay = docking({ narrow, width, layout, listWidth, chatOpen: true }).chatOverlay
 
   const openThreads = useMemo(() => threads.filter((th) => th.status === 'open'), [threads])
   const resolvedThreads = useMemo(() => threads.filter((th) => th.status === 'resolved'), [threads])
   const visibleOverview = tab === 'open' ? openThreads : resolvedThreads
+
+  // If the resolved tab empties (e.g. last resolved thread deleted or reopened), return to Open.
+  useEffect(() => {
+    if (tab === 'resolved' && resolvedThreads.length === 0) setTab('open')
+  }, [resolvedThreads.length, tab])
 
   const allEmails = useMemo(() => {
     const set = new Set<string>()
@@ -620,28 +636,18 @@ export function CommentsLayer({
     return threads.find((th) => th.id === hoveredThreadId) ?? null
   }, [activeThreadId, draft, hoveredThreadId, overviewOpen, threads])
 
-  // Close overview popover on Escape or outside click.
+  // Close sidebar on Escape (only when no reply composer handles Escape itself).
   useEffect(() => {
     if (!overviewOpen) return
-    const onPointerDown = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null
-      if (!target || overviewRef.current?.contains(target)) return
-      if (target.closest('[data-comment-thread]')) return
-      onCloseOverview()
-    }
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCloseOverview()
     }
-    document.addEventListener('mousedown', onPointerDown)
     window.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown)
-      window.removeEventListener('keydown', onKeyDown)
-    }
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [onCloseOverview, overviewOpen])
 
   const showAnchoredThread = Boolean(
-    activeThread && !overviewOpen && !orphanThreadIds.has(activeThread.id),
+    activeThread && !overviewOpen && !orphanThreadIds.has(activeThread.id) && activeThread.quote,
   )
 
   return (
@@ -814,173 +820,225 @@ export function CommentsLayer({
         </AnchoredCard>
       ) : null}
 
-      {/* 4. All-comments overview popover (from header button, resolved & orphaned threads) */}
+      {/* 4. Right-side Comments sidebar (docked like ChatPanel, Figma 1236:72434 layout) */}
       {overviewOpen
-        ? createPortal(
-            <aside
-              ref={overviewRef}
-              aria-label={t('comments.title')}
-              className="fixed top-12 right-3 z-40 flex max-h-[min(560px,calc(100dvh-4rem))] w-[min(360px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border bg-popover text-popover-foreground shadow-float animate-in fade-in-0 duration-120 ease-out"
-            >
-              <div className="flex items-center gap-2 border-b px-3.5 py-2.5">
-                <MessageSquare className="size-4 shrink-0 text-muted-foreground" />
-                <span className="text-[13.5px] font-semibold">{t('comments.title')}</span>
+        ? (() => {
+            const slot = document.getElementById('comments-panel-slot') ?? document.body
+            const panel = (
+              <aside
+                aria-label={t('comments.title')}
+                className={cn(
+                  'mr-2 mb-2 ml-1.5 flex min-h-0 w-[340px] shrink-0 flex-col overflow-hidden rounded-xl border bg-card text-card-foreground',
+                  !platform.window && 'mt-2',
+                  overlay && 'shadow-float',
+                  'max-sm:m-0 max-sm:w-full max-sm:rounded-none max-sm:border-0',
+                )}
+              >
+                {/* Header */}
+                <header className="flex h-[52px] shrink-0 items-center justify-between border-b px-4">
+                  <h2 className="truncate text-[15px] font-semibold">{t('comments.title')}</h2>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={onCloseOverview}
+                    aria-label={t('window.close')}
+                  >
+                    <X />
+                  </Button>
+                </header>
+
+                {/* Filter chips row (never wraps or clips) */}
                 {resolvedThreads.length > 0 ? (
-                  <div className="ml-auto flex items-center rounded-lg bg-muted/60 p-0.5 text-xs">
+                  <div className="flex shrink-0 items-center gap-1.5 border-b px-4 py-2">
                     <button
                       type="button"
                       onClick={() => setTab('open')}
                       className={cn(
-                        'rounded-md px-2 py-0.5 font-medium transition-colors',
+                        'inline-flex h-[30px] items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium transition-colors',
                         tab === 'open'
-                          ? 'bg-background text-foreground shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground',
+                          ? 'border-border bg-background text-foreground shadow-2xs'
+                          : 'border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground',
                       )}
                     >
-                      {t('comments.openTab', { count: openThreads.length })}
+                      <span>{t('comments.openTab', { count: openThreads.length })}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setTab('resolved')}
                       className={cn(
-                        'rounded-md px-2 py-0.5 font-medium transition-colors',
+                        'inline-flex h-[30px] items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium transition-colors',
                         tab === 'resolved'
-                          ? 'bg-background text-foreground shadow-2xs'
-                          : 'text-muted-foreground hover:text-foreground',
+                          ? 'border-border bg-background text-foreground shadow-2xs'
+                          : 'border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground',
                       )}
                     >
-                      {t('comments.resolvedTab', { count: resolvedThreads.length })}
+                      <span>{t('comments.resolvedTab', { count: resolvedThreads.length })}</span>
                     </button>
                   </div>
                 ) : null}
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={onCloseOverview}
-                  aria-label={t('window.close')}
-                  className={resolvedThreads.length > 0 ? '' : 'ml-auto'}
-                >
-                  <X />
-                </Button>
-              </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto p-2.5">
-                {visibleOverview.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-1.5 px-4 py-10 text-center">
-                    <MessageSquare className="size-6 text-muted-foreground/40" />
-                    <p className="text-sm font-medium text-foreground/80">
-                      {tab === 'resolved' ? t('comments.emptyResolved') : t('comments.empty')}
-                    </p>
-                    {tab === 'open' && !readOnly ? (
-                      <p className="text-xs text-muted-foreground">{t('comments.emptyHint')}</p>
-                    ) : null}
-                  </div>
-                ) : null}
+                {/* Thread cards list */}
+                <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3">
+                  {visibleOverview.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-1.5 px-4 py-12 text-center">
+                      <MessageSquare className="size-6 text-muted-foreground/40" />
+                      <p className="text-sm font-medium text-foreground/80">
+                        {tab === 'resolved' ? t('comments.emptyResolved') : t('comments.empty')}
+                      </p>
+                      {tab === 'open' && !readOnly ? (
+                        <p className="text-xs text-muted-foreground">{t('comments.emptyHint')}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
 
-                {visibleOverview.map((thread) => {
-                  const isUnread = unreadThreadIds.has(thread.id)
-                  const isOrphan = orphanThreadIds.has(thread.id)
-                  const first = thread.messages[0]
-                  if (!first) return null
-                  const display = first.authorEmail
-                    ? emailDisplayName(first.authorEmail, allEmails)
-                    : t('comments.you')
-                  const bg = colorFor(first.authorId || 'local')
-                  const fg = onColor(bg)
-                  const extra = thread.messages.length - 1
-                  return (
-                    <div
-                      key={thread.id}
-                      className="rounded-xl border border-border bg-card p-3 transition-colors hover:border-brand/40"
-                    >
-                      <div className="flex items-start gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onSelectThread(thread.id)}
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <div className="mb-1.5 flex items-center gap-1.5">
-                            <span
-                              className="flex size-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold"
-                              style={{ background: bg, color: fg }}
+                  {visibleOverview.map((thread) => {
+                    const isUnread = unreadThreadIds.has(thread.id)
+                    const isOrphan = orphanThreadIds.has(thread.id)
+                    const isActive = activeThreadId === thread.id
+                    const isReplying = replyingId === thread.id
+                    const hasQuote = Boolean(thread.quote)
+                    return (
+                      <div
+                        key={thread.id}
+                        className={cn(
+                          'overflow-hidden rounded-xl border bg-background/70 transition-colors',
+                          isActive ? 'border-brand/50 bg-background' : 'border-border',
+                        )}
+                      >
+                        <div className="flex items-start gap-2 border-b border-border/60 px-3 py-2">
+                          {hasQuote ? (
+                            <button
+                              type="button"
+                              onClick={() => onSelectThread(thread.id)}
+                              className="min-w-0 flex-1 text-left"
                             >
-                              {initials(first.authorEmail || display)}
+                              <p className="line-clamp-2 border-l-2 border-brand/70 pl-2 text-xs text-muted-foreground transition-colors hover:text-foreground">
+                                {thread.quote}
+                                {isOrphan ? (
+                                  <span className="ml-1 italic opacity-75">
+                                    ({t('comments.fragmentDeleted')})
+                                  </span>
+                                ) : null}
+                              </p>
+                            </button>
+                          ) : (
+                            <span className="min-w-0 flex-1 py-0.5 text-[11.5px] font-medium text-muted-foreground">
+                              {t('comments.noteComment')}
                             </span>
-                            <span className="truncate text-xs font-semibold">{display}</span>
-                            <span className="shrink-0 text-[11px] text-muted-foreground">
-                              {formatRelative(first.createdAt, i18n.resolvedLanguage)}
-                            </span>
+                          )}
+                          <div className="flex shrink-0 items-center gap-1">
                             {isUnread ? (
                               <span
-                                className="ml-auto size-2 shrink-0 rounded-full bg-brand"
+                                className="size-2 shrink-0 rounded-full bg-brand"
                                 title={t('comments.unread')}
                               />
                             ) : null}
-                          </div>
-                          <p className="mb-1.5 line-clamp-1 border-l-2 border-brand/60 pl-2 text-[11.5px] text-muted-foreground">
-                            {thread.quote}
-                            {isOrphan ? (
-                              <span className="ml-1 italic opacity-75">
-                                ({t('comments.fragmentDeleted')})
-                              </span>
+                            {!readOnly ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onSetStatus(
+                                    thread.id,
+                                    thread.status === 'open' ? 'resolved' : 'open',
+                                  )
+                                }
+                                title={
+                                  thread.status === 'open'
+                                    ? t('comments.resolve')
+                                    : t('comments.reopen')
+                                }
+                                aria-label={
+                                  thread.status === 'open'
+                                    ? t('comments.resolve')
+                                    : t('comments.reopen')
+                                }
+                                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                              >
+                                {thread.status === 'open' ? (
+                                  <Check className="size-3.5" />
+                                ) : (
+                                  <RotateCcw className="size-3.5" />
+                                )}
+                              </button>
                             ) : null}
-                          </p>
-                          <CommentText
-                            msg={first}
-                            allEmails={allEmails}
-                            clamp={!(isOrphan && activeThreadId === thread.id)}
-                          />
-                          {extra > 0 && !(isOrphan && activeThreadId === thread.id) ? (
-                            <span className="mt-1 inline-block text-xs font-medium text-muted-foreground">
-                              {t('comments.moreReplies', { count: extra })}
-                            </span>
-                          ) : null}
-                        </button>
-                        {!readOnly ? (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onSetStatus(thread.id, thread.status === 'open' ? 'resolved' : 'open')
-                            }
-                            title={
-                              thread.status === 'open'
-                                ? t('comments.resolve')
-                                : t('comments.reopen')
-                            }
-                            aria-label={
-                              thread.status === 'open'
-                                ? t('comments.resolve')
-                                : t('comments.reopen')
-                            }
-                            className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                          >
-                            {thread.status === 'open' ? (
-                              <Check className="size-3.5" />
-                            ) : (
-                              <RotateCcw className="size-3.5" />
-                            )}
-                          </button>
+                          </div>
+                        </div>
+
+                        <ThreadMessages
+                          thread={thread}
+                          allEmails={allEmails}
+                          readOnly={readOnly}
+                          isShared={isShared}
+                          currentUserId={currentUser.id}
+                          onDeleteMessage={onDeleteMessage}
+                          scrollable={false}
+                        />
+
+                        {!readOnly && thread.status === 'open' ? (
+                          isReplying ? (
+                            <InlineComposer
+                              currentUser={currentUser}
+                              placeholder={t('comments.replyPlaceholder')}
+                              collaborators={mentionable}
+                              allEmails={allEmails}
+                              autoFocus
+                              onSubmit={(body, mentions) => {
+                                onReply(thread.id, body, mentions)
+                                setReplyingId(null)
+                              }}
+                              onCancel={() => setReplyingId(null)}
+                            />
+                          ) : (
+                            <div className="border-t border-border/60 px-3 py-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setReplyingId(thread.id)}
+                                className="w-full rounded-md py-1 text-left text-xs text-muted-foreground transition-colors hover:text-foreground"
+                              >
+                                {t('comments.replyPlaceholder')}
+                              </button>
+                            </div>
+                          )
                         ) : null}
                       </div>
-                      {isOrphan && activeThreadId === thread.id && thread.messages.length > 1 ? (
-                        <div className="mt-2.5 border-t pt-2.5">
-                          <ThreadMessages
-                            thread={{ ...thread, messages: thread.messages.slice(1) }}
-                            allEmails={allEmails}
-                            readOnly={readOnly}
-                            isShared={isShared}
-                            currentUserId={currentUser.id}
-                            onDeleteMessage={onDeleteMessage}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  )
-                })}
-              </div>
-            </aside>,
-            document.body,
-          )
+                    )
+                  })}
+                </div>
+
+                {/* Bottom composer for general note-level comments */}
+                {!readOnly ? (
+                  <InlineComposer
+                    currentUser={currentUser}
+                    placeholder={t('comments.notePlaceholder')}
+                    collaborators={mentionable}
+                    allEmails={allEmails}
+                    onSubmit={(body, mentions) => {
+                      setTab('open')
+                      onCreateNoteThread(body, mentions)
+                    }}
+                  />
+                ) : null}
+              </aside>
+            )
+            return createPortal(
+              overlay ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label={t('window.close')}
+                    className="fixed inset-0 z-30 bg-scrim"
+                    onClick={onCloseOverview}
+                  />
+                  <div className="fixed inset-y-0 right-0 z-40 flex max-w-full max-sm:left-0">
+                    {panel}
+                  </div>
+                </>
+              ) : (
+                panel
+              ),
+              slot,
+            )
+          })()
         : null}
     </>
   )
