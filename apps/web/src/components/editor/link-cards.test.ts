@@ -280,32 +280,24 @@ describe('incremental link cards', () => {
     expect(dispatch).not.toHaveBeenCalled()
   })
 
-  it('renders and refreshes compact inline mention chips', async () => {
-    const url = 'https://www.instagram.com/reels/DgMWPoARgoj/'
-    let finish: ((preview: LinkPreview | null) => void) | undefined
-    const mentionPara = paragraph.create(
-      null,
-      schema.text('instagram.com/reels/DgMWPoARgoj', [
-        link.create({ href: url, title: 'mention' }),
-      ]),
-    )
-    const h = setup(
-      doc(mentionPara),
-      () =>
-        new Promise((resolve) => {
-          finish = resolve
-        }),
-    )
-    expect(h.decorations().some((d) => d.spec.kind === 'mention-chip')).toBe(true)
-    expect(h.decorations().some((d) => d.spec.kind === 'mention-raw')).toBe(true)
-    finish?.({ url, kind: 'page', site: 'Instagram', title: 'ANDREW BOLOTIN on Instagram' })
-    await vi.waitFor(() =>
-      expect(
-        h
-          .decorations()
-          .some((d) => d.spec.kind === 'mention-chip' && d.spec.key?.includes(':full:')),
-      ).toBe(true),
-    )
-    h.destroy()
+  it('round-trips linkMention atomic inline nodes in Markdown and supports typing/deleting', () => {
+    const e = schemaEditor()
+    const md =
+      'Check [instagram.com/reels/DgMWPoARgoj](https://www.instagram.com/reels/DgMWPoARgoj/ "mention") here'
+    e.commands.setContent(md, { contentType: 'markdown' })
+    let foundPos = -1
+    e.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'linkMention') {
+        foundPos = pos
+        expect(node.attrs.href).toBe('https://www.instagram.com/reels/DgMWPoARgoj/')
+        expect(node.attrs.label).toBe('instagram.com/reels/DgMWPoARgoj')
+      }
+    })
+    expect(foundPos).toBeGreaterThan(0)
+    expect(e.getMarkdown().trim()).toBe(md)
+    // Deleting the single atomic node removes the entire mention cleanly.
+    e.view.dispatch(e.state.tr.delete(foundPos, foundPos + 1))
+    expect(e.getMarkdown().trim()).toBe('Check  here')
+    e.destroy()
   })
 })

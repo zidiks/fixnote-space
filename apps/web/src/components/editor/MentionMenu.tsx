@@ -41,11 +41,11 @@ function matchMention(editor: Editor): MentionMatch | null {
 export function MentionMenu({
   editor,
   collaborators,
-  currentUserId,
+  currentUser,
 }: {
   editor: Editor
   collaborators: SharedMember[]
-  currentUserId: string
+  currentUser: { id: string; email: string }
 }) {
   const { t } = useTranslation()
   const [match, setMatch] = useState<MentionMatch | null>(null)
@@ -54,17 +54,32 @@ export function MentionMenu({
   const dismissedAt = useRef<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const allEmails = useMemo(
-    () => collaborators.map((c) => c.email).filter(Boolean),
-    [collaborators],
-  )
+  const members = useMemo(() => {
+    const list: { userId: string; email: string }[] = collaborators.map((c) => ({
+      userId: c.userId,
+      email: c.email,
+    }))
+    if (
+      currentUser.email &&
+      !list.some(
+        (m) =>
+          m.userId === currentUser.id || m.email.toLowerCase() === currentUser.email.toLowerCase(),
+      )
+    ) {
+      list.unshift({ userId: currentUser.id, email: currentUser.email })
+    }
+    return list
+  }, [collaborators, currentUser.email, currentUser.id])
+
+  const allEmails = useMemo(() => members.map((c) => c.email).filter(Boolean), [members])
 
   const mentionable = useMemo(
     () =>
-      collaborators
-        .filter((c) => c.userId !== currentUserId)
-        .map((member) => ({ member, display: emailDisplayName(member.email, allEmails) })),
-    [allEmails, collaborators, currentUserId],
+      members.map((member) => ({
+        member,
+        display: emailDisplayName(member.email, allEmails),
+      })),
+    [allEmails, members],
   )
 
   const items = useMemo(() => {
@@ -81,7 +96,11 @@ export function MentionMenu({
   const open = Boolean(match && items.length)
 
   const insert = useCallback(
-    (range: { from: number; to: number }, member: SharedMember, display: string) => {
+    (
+      range: { from: number; to: number },
+      member: { userId: string; email: string },
+      display: string,
+    ) => {
       const { schema } = editor.state
       const link = schema.marks.link?.create({ href: `mention:${member.email}` })
       const nodes = link

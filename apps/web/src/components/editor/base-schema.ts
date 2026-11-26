@@ -1,3 +1,4 @@
+import type { LinkPreview } from '@fixnote/core'
 import type { AnyExtension } from '@tiptap/core'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
@@ -6,6 +7,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { AttachmentImage } from './attachment-image'
 import { Callout } from './callout'
 import { NoteDetails, NoteDetailsContent, NoteDetailsSummary } from './details'
+import { LinkMention } from './link-mention'
 import { ImageAwareParagraph } from './paragraph'
 
 export interface NoteSchemaOptions {
@@ -13,6 +15,8 @@ export interface NoteSchemaOptions {
   resolveImage?: (id: string) => Promise<{ url: string; mime: string } | null>
   releaseImage?: (id: string) => void
   allowExternalImages?: () => boolean
+  loadLinkPreview?: (url: string) => Promise<LinkPreview | null>
+  openLink?: (url: string) => void
   /** Undo comes from Yjs when the note is edited live. */
   live?: boolean
   /** A note only shown (a shared link's page): links open in a new tab. */
@@ -65,6 +69,11 @@ export function headlessNoteSchema(
     AttachmentImage.configure({
       ...(opts.resolveImage ? { resolve: opts.resolveImage } : {}),
       ...(opts.releaseImage ? { release: opts.releaseImage } : {}),
+      ...(opts.allowExternalImages ? { allowExternal: opts.allowExternalImages } : {}),
+    }),
+    LinkMention.configure({
+      ...(opts.loadLinkPreview ? { load: opts.loadLinkPreview } : {}),
+      ...(opts.openLink ? { open: opts.openLink } : {}),
       ...(opts.allowExternalImages ? { allowExternal: opts.allowExternalImages } : {}),
     }),
   ]

@@ -338,7 +338,7 @@ const ru: LocaleResource = {
   },
   linkPaste: {
     title: 'Вставить как',
-    mention: 'Упоминание',
+    mention: 'Компактная ссылка',
     bookmark: 'Закладка',
     link: 'Ссылка',
     text: 'Обычный текст',

@@ -7,8 +7,6 @@ import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view'
 export interface LinkCardsOptions {
   load: (url: string) => Promise<LinkPreview | null>
   open: (url: string) => void
-  /** Whether external favicons may be loaded (false in local-only mode). */
-  allowExternal?: () => boolean
 }
 
 const key = new PluginKey<DecorationSet>('linkCards')
@@ -44,133 +42,6 @@ function linkParagraphs(
     return false
   })
   return out
-}
-
-/** Links pasted as compact inline "Mention" chips (`[label](url "mention")`). */
-function mentionLinks(
-  doc: PmNode,
-  from = 0,
-  to = doc.content.size,
-): { from: number; to: number; url: string; fallbackText: string }[] {
-  const out: { from: number; to: number; url: string; fallbackText: string }[] = []
-  doc.nodesBetween(from, to, (node, offset) => {
-    if (!node.isText || !node.text) return
-    const mark = node.marks.find(
-      (m) =>
-        m.type.name === 'link' && m.attrs.title === 'mention' && typeof m.attrs.href === 'string',
-    )
-    const url = mark?.attrs.href as string | undefined
-    if (url && /^https?:\/\//i.test(url)) {
-      out.push({ from: offset, to: offset + node.nodeSize, url, fallbackText: node.text })
-    }
-  })
-  return out
-}
-
-const KNOWN_SITES: Record<string, string> = {
-  'instagram.com': 'Instagram',
-  'github.com': 'GitHub',
-  'youtube.com': 'YouTube',
-  'youtu.be': 'YouTube',
-  'figma.com': 'Figma',
-  'x.com': 'X',
-  'twitter.com': 'X',
-  'notion.so': 'Notion',
-  'notion.site': 'Notion',
-  'linkedin.com': 'LinkedIn',
-  'reddit.com': 'Reddit',
-  'medium.com': 'Medium',
-  'docs.google.com': 'Google Docs',
-  'drive.google.com': 'Google Drive',
-  'linear.app': 'Linear',
-  'slack.com': 'Slack',
-  't.me': 'Telegram',
-  'discord.com': 'Discord',
-  'wikipedia.org': 'Wikipedia',
-}
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '')
-  } catch {
-    return ''
-  }
-}
-
-function siteLabel(url: string, previewSite?: string): string {
-  if (previewSite && !previewSite.includes('.')) return previewSite
-  const h = hostOf(url).toLowerCase()
-  if (KNOWN_SITES[h]) return KNOWN_SITES[h]
-  for (const [domain, name] of Object.entries(KNOWN_SITES)) {
-    if (h.endsWith(`.${domain}`)) return name
-  }
-  return previewSite || h || url
-}
-
-function renderMention(
-  url: string,
-  fallbackText: string,
-  preview: LinkPreview | null | 'loading',
-  open: (url: string) => void,
-  allowExternal: boolean,
-): HTMLElement {
-  const chip = el('span', 'fixnote-link-mention')
-  chip.contentEditable = 'false'
-  chip.setAttribute('role', 'link')
-  chip.tabIndex = 0
-  chip.title = url
-  const go = (e: Event) => {
-    e.preventDefault()
-    e.stopPropagation()
-    open(url)
-  }
-  chip.addEventListener('mousedown', (e) => e.preventDefault())
-  chip.addEventListener('click', go)
-  chip.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') go(e)
-  })
-
-  const host = hostOf(url)
-  const makeGlobe = () => {
-    const svgNS = 'http://www.w3.org/2000/svg'
-    const svg = document.createElementNS(svgNS, 'svg')
-    svg.setAttribute('viewBox', '0 0 16 16')
-    svg.setAttribute('fill', 'none')
-    svg.setAttribute('aria-hidden', 'true')
-    svg.setAttribute('class', 'fixnote-link-mention-globe')
-    const p = document.createElementNS(svgNS, 'path')
-    p.setAttribute(
-      'd',
-      'M8 1.75a6.25 6.25 0 1 0 0 12.5 6.25 6.25 0 0 0 0-12.5ZM2.2 8h11.6M8 1.75c1.65 1.7 2.55 3.9 2.55 6.25S9.65 12.55 8 14.25C6.35 12.55 5.45 10.35 5.45 8S6.35 3.45 8 1.75Z',
-    )
-    p.setAttribute('stroke', 'currentColor')
-    p.setAttribute('stroke-width', '1.25')
-    svg.appendChild(p)
-    return svg
-  }
-
-  if (allowExternal && host) {
-    const img = document.createElement('img')
-    img.className = 'fixnote-link-mention-icon'
-    img.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`
-    img.alt = ''
-    img.loading = 'lazy'
-    img.referrerPolicy = 'no-referrer'
-    img.addEventListener('error', () => img.replaceWith(makeGlobe()))
-    chip.append(img)
-  } else {
-    chip.append(makeGlobe())
-  }
-
-  const full = preview && preview !== 'loading' && preview.kind !== 'none' ? preview : null
-  const site = siteLabel(url, full?.site)
-  const title = full?.title?.trim() || (fallbackText !== site ? fallbackText : '')
-
-  if (site) chip.append(el('span', 'fixnote-link-mention-site', site))
-  if (title && title.toLowerCase() !== site.toLowerCase()) {
-    chip.append(el('span', 'fixnote-link-mention-title', title))
-  }
-  return chip
 }
 
 /** Changed step ranges in final-document coordinates, expanded to whole top-level blocks.
@@ -281,11 +152,7 @@ function renderCard(
  * Link cards in the editor (paste-to-card): a URL alone on its line shows the page's title,
  * description and image below it, like in a messenger. Previews load lazily and are cached.
  */
-export function linkCardsPlugin({
-  load,
-  open,
-  allowExternal,
-}: LinkCardsOptions): Plugin<DecorationSet> {
+export function linkCardsPlugin({ load, open }: LinkCardsOptions): Plugin<DecorationSet> {
   const previews = new Map<string, LinkPreview | null | 'loading'>()
   const revisions = new Map<string, number>()
   let view: EditorView | null = null
@@ -304,7 +171,6 @@ export function linkCardsPlugin({
 
   // A bookmark always shows a card: the page's preview when it loads, else the site and address
   // (pages that give nothing, the web app before signing in). Its URL line becomes a caption.
-  // A mention link shows a compact inline chip (favicon + site + page title).
   const build = (doc: PmNode, rangeFrom = 0, rangeTo = doc.content.size) => {
     const decorations: Decoration[] = []
     for (const { from, pos, url } of linkParagraphs(doc, rangeFrom, rangeTo)) {
@@ -330,45 +196,15 @@ export function linkCardsPlugin({
         }),
       )
     }
-    const ext = allowExternal ? allowExternal() : true
-    for (const { from, to, url, fallbackText } of mentionLinks(doc, rangeFrom, rangeTo)) {
-      const loaded = previews.get(url)
-      if (loaded === undefined) request(url)
-      const state =
-        loaded === undefined || loaded === 'loading'
-          ? 'loading'
-          : loaded && loaded.kind !== 'none'
-            ? 'full'
-            : 'bare'
-      decorations.push(
-        Decoration.inline(
-          from,
-          to,
-          { class: 'fixnote-link-mention-raw' },
-          { bookmarkUrl: url, kind: 'mention-raw' },
-        ),
-        Decoration.widget(from, () => renderMention(url, fallbackText, loaded ?? null, open, ext), {
-          key: `m:${url}:${state}:${revisions.get(url) ?? 0}`,
-          bookmarkUrl: url,
-          kind: 'mention-chip',
-          side: -1,
-          ignoreSelection: true,
-        }),
-      )
-    }
     return decorations
   }
 
   const refresh = (doc: PmNode, old: DecorationSet, urls: Set<string>) => {
     const removed = old.find(undefined, undefined, (spec) => urls.has(spec.bookmarkUrl))
     if (!removed.length) return old
-    const spans: { from: number; to: number }[] = []
-    for (const d of removed) {
-      if (d.spec.kind === 'caption' || d.spec.kind === 'mention-raw') {
-        spans.push({ from: d.from, to: d.to })
-      }
-    }
-    const added = spans.flatMap((s) => build(doc, s.from, s.to))
+    const added = removed
+      .filter((d) => d.spec.kind === 'caption')
+      .flatMap((d) => build(doc, d.from, d.to))
     return old.remove(removed).add(doc, added)
   }
 
@@ -395,9 +231,7 @@ export function linkCardsPlugin({
               ...next
                 .find(from, to)
                 .filter((d) =>
-                  d.spec.kind === 'caption' ||
-                  d.spec.kind === 'mention-raw' ||
-                  d.spec.kind === 'mention-chip'
+                  d.spec.kind === 'caption'
                     ? d.from >= from && d.from < to
                     : (d.from > from || from === 0) && d.from <= to,
                 ),

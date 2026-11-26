@@ -21,7 +21,6 @@ import {
 import { createPortal } from 'react-dom'
 import { docking, useUi } from '../../app/store'
 import { colorFor, initials, onColor } from '../../lib/collab/people'
-import { platform } from '../../lib/platform'
 import { formatRelative } from '../../lib/time'
 import { type AnchorRect, type CapturedAnchor, findScrollParent } from './comments-highlight'
 
@@ -828,8 +827,7 @@ export function CommentsLayer({
               <aside
                 aria-label={t('comments.title')}
                 className={cn(
-                  'mr-2 mb-2 ml-1.5 flex min-h-0 w-[340px] shrink-0 flex-col overflow-hidden rounded-xl border bg-card text-card-foreground',
-                  !platform.window && 'mt-2',
+                  'mt-1 mr-2 mb-2 ml-1.5 flex min-h-0 w-[340px] shrink-0 flex-col overflow-hidden rounded-xl border bg-card text-card-foreground',
                   overlay && 'shadow-float',
                   'max-sm:m-0 max-sm:w-full max-sm:rounded-none max-sm:border-0',
                 )}

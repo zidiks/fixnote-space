@@ -55,13 +55,20 @@ function insert(tr: Transaction, at: number, url: string, mode: PasteMode) {
   }
   if (mode === 'mention') {
     const label = shortUrlLabel(url)
-    const mentionMark = schema.marks.link?.create({ href: url, title: 'mention' }) ?? link
-    tr.insert(at, schema.text(label, [mentionMark]))
+    const mentionNode = schema.nodes.linkMention?.create({ href: url, label })
+    if (mentionNode) {
+      tr.insert(at, mentionNode)
+      tr.setStoredMarks([])
+      return at + mentionNode.nodeSize
+    }
+    tr.insert(at, schema.text(label, [link]))
+    tr.setStoredMarks([])
     return at + label.length
   }
   if (mode === 'link') {
     const label = shortUrlLabel(url)
     tr.insert(at, schema.text(label, [link]))
+    tr.setStoredMarks([])
     const para = $at.parent
     if (para.type.name === 'paragraph' && para.content.size === 0) {
       tr.setNodeMarkup($at.before(), undefined, { ...para.attrs, plainLink: true })

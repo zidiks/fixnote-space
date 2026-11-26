@@ -559,6 +559,8 @@ export function NoteEditor({
         resolveImage: (id) => acquireAttachmentUrl(images.current, id),
         releaseImage: (id) => releaseAttachmentUrl(id),
         allowExternalImages: () => !useLlm.getState().localOnly,
+        loadLinkPreview: (url) => links.current.load(url),
+        openLink: (url) => links.current.open(url),
       }),
       Placeholder.configure({ placeholder: t('note.placeholder') }),
       AiRangeExtension,
@@ -588,7 +590,6 @@ export function NoteEditor({
       LinkCards.configure({
         load: (url) => links.current.load(url),
         open: (url) => links.current.open(url),
-        allowExternal: () => !useLlm.getState().localOnly,
       }),
       ...(live
         ? [
@@ -665,10 +666,12 @@ export function NoteEditor({
         if (!href) return false
         const fileId = attachmentIdFromUrl(href)
         if (fileId) {
+          event.preventDefault()
           void saveAttachment(images.current, fileId, anchor?.textContent?.trim() || 'file')
           return true
         }
         if (!/^https?:\/\//i.test(href)) return false
+        event.preventDefault()
         links.current.open(href)
         return true
       },
@@ -1221,11 +1224,11 @@ export function NoteEditor({
       {editor && !readOnly ? (
         <SlashMenu editor={editor} onInsertImage={() => fileInput.current?.click()} />
       ) : null}
-      {editor && !readOnly && live && comments.collaborators.length > 0 ? (
+      {editor && !readOnly && live ? (
         <MentionMenu
           editor={editor}
           collaborators={comments.collaborators}
-          currentUserId={comments.currentUser.id}
+          currentUser={comments.currentUser}
         />
       ) : null}
       {editor && !readOnly ? (
