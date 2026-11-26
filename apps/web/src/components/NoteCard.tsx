@@ -37,7 +37,6 @@ import { useDb } from '../lib/db'
 import { useDeleteWithUndo, useFolders, useMoveNote, useSetPinned } from '../lib/queries'
 import { useNotePress } from '../lib/selection'
 import { formatCardDate } from '../lib/time'
-import { SLIDING_INDICATOR } from './SlidingIndicator'
 
 const LOCAL_IMG_SRC = /^(data:image\/|blob:)/i
 
@@ -440,9 +439,7 @@ function NoteSnippetView({
         aria-current={active ? 'page' : undefined}
         data-active={active ? 'true' : undefined}
         className={cn(
-          'relative flex w-full gap-3 rounded-lg px-4 py-3 text-left transition-colors data-[selected]:bg-brand/10',
-          !active && 'hover:bg-accent/70',
-          !SLIDING_INDICATOR && 'aria-[current=page]:bg-accent',
+          'relative flex w-full gap-3 rounded-lg px-4 py-3 text-left transition-[background-color,transform] duration-75 ease-out hover:bg-accent/60 active:scale-[0.992] aria-[current=page]:bg-accent data-[selected]:bg-brand/10 motion-reduce:transition-none motion-reduce:active:scale-100',
           itemClass,
         )}
       >

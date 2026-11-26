@@ -789,7 +789,7 @@
 @media (min-width: 1069px) and (min-height: 650px) and (prefers-reduced-motion: no-preference) {
   .privacy[data-live] {
     --pin-top: clamp(32px, calc(100vh - 640 * var(--u)), 116px);
-    --hold: clamp(360px, 50vh, 520px);
+    --hold: clamp(420px, 58vh, 620px);
   }
   .privacy[data-live] .privacy-rail {
     height: calc(1352 * var(--u) + var(--hold));

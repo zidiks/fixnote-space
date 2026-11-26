@@ -12,7 +12,6 @@ import { LinksBar } from './LinksBar'
 import { NoteSnippet } from './NoteCard'
 import { useGroupLabel, ViewMenu } from './NoteGrid'
 import { SelectionBar } from './SelectionBar'
-import { SlidingIndicator } from './SlidingIndicator'
 import { Snippet } from './Spotlight'
 import { VirtualList } from './VirtualList'
 
@@ -41,7 +40,6 @@ export function NoteColumn({
   const width = useUi((s) => s.listWidth)
   const columnRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
   const [listScrolled, setListScrolled] = useState(false)
   const folders = useFolders().data
   const counts = useCounts().data
@@ -192,13 +190,7 @@ export function NoteColumn({
           listScrolled && 'fx-scroll-fade-top',
         )}
       >
-        <div ref={listRef} className="relative">
-          <SlidingIndicator
-            container={listRef}
-            activeKey={activeId ?? null}
-            observeMutations
-            className="rounded-lg bg-accent"
-          />
+        <div className="relative">
           {query ? (
             <SearchResults
               query={query}

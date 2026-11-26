@@ -285,7 +285,7 @@ export function SidebarFolders() {
             data-folder-id={f.id}
             {...dropTarget(f, kids, open)}
             className={cn(
-              'group flex items-center rounded-sm pr-1 text-[13px] text-sidebar-foreground hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent',
+              'group flex items-center rounded-sm pr-1 text-[13px] text-sidebar-foreground transition-[background-color,transform] duration-75 ease-out hover:bg-sidebar-accent/70 active:scale-[0.992] data-[state=open]:bg-sidebar-accent motion-reduce:transition-none motion-reduce:active:scale-100',
               active && 'bg-sidebar-accent font-medium text-foreground',
               dropOn === f.id && 'bg-brand/10 text-foreground ring-2 ring-brand/40 ring-inset',
             )}
