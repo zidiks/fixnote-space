@@ -1,0 +1,17 @@
+# Fixnote
+
+> End-to-end encrypted AI note-taking app for Windows, macOS, and the web. Local-first, offline-capable, with built-in AI assistant, on-device voice dictation, bot-free call summaries, OCR/PDF search, and MCP servers for AI agents.
+
+## Pricing
+- Free ($0, no account required): unlimited local notes, offline search, voice dictation, OCR, local MCP server (Claude Desktop, Cursor, Codex), import/export.
+- Pro ($7/month or $60/year): end-to-end encrypted sync, Fixnote AI, shared notes and folders, remote MCP server for ChatGPT and claude.ai (https://mcp.fixnote.space/mcp), Telegram/Discord/browser capture, 20 GB encrypted storage.
+
+## Key pages
+- Home: https://fixnote.space/
+- Features: https://fixnote.space/features/
+- MCP server (Local & Remote): https://fixnote.space/features/mcp/
+- Security & Encryption: https://fixnote.space/security/
+- Pricing: https://fixnote.space/#pricing
+- Download (Windows, macOS, Web): https://fixnote.space/download/
+- Blog: https://fixnote.space/blog/
+- X (Twitter): https://x.com/fixnotespace

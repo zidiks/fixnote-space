@@ -4,50 +4,50 @@ export const es: Dict = {
   meta: {
     siteName: 'Fixnote',
     home: {
-      title: 'App de notas con IA y cifrado de extremo a extremo | Fixnote',
+      title: 'Notas cifradas y memoria privada para IA con MCP | Fixnote',
       description:
-        'App de notas con IA para Windows, macOS y navegador, con cifrado de extremo a extremo. Escribe o dicta y el asistente responde citando tus notas.',
+        'Notas con cifrado de extremo a extremo, búsqueda local, voz sin internet y MCP. Dale memoria real a cualquier IA con claves que solo tú tienes. Gratis y sin registro.',
     },
     features: {
-      title: 'Funciones de Fixnote: IA, notas de voz y reuniones',
+      title: 'Funciones: notas cifradas, búsqueda local y MCP | Fixnote',
       description:
-        'Asistente de IA para tus notas, notas de voz sin internet, resumen de reuniones sin bot, texto de imágenes, bot de Telegram, notas compartidas y cifrado.',
+        'Notas con cifrado de extremo a extremo, búsqueda semántica local, OCR de PDF e imágenes, dictado sin internet, resúmenes de llamadas y MCP para agentes de IA.',
     },
     security: {
-      title: 'Seguridad de Fixnote: cómo se protegen tus notas',
+      title: 'Seguridad: notas cifradas de extremo a extremo | Fixnote',
       description:
-        'Cómo Fixnote cifra las notas en tu dispositivo, qué guarda el servidor, qué ve el asistente y cómo trabajar totalmente sin conexión.',
+        'Cómo Fixnote cifra tus notas en el dispositivo (XChaCha20-Poly1305), cómo MCP local y remoto protegen tus claves y cómo trabajar totalmente sin conexión.',
     },
     privacy: {
-      title: 'Política de privacidad de Fixnote',
+      title: 'Política de privacidad | Fixnote',
       description: 'Qué datos tiene Fixnote, para qué los necesita y cómo borrarlos.',
     },
     download: {
-      title: 'Descargar Fixnote: app de notas para Windows y Mac',
+      title: 'Descargar notas cifradas para Windows, Mac y Web | Fixnote',
       description:
-        'Fixnote para Windows y macOS (Apple Silicon e Intel) y una versión web que funciona en el navegador. Gratis y sin cuenta.',
+        'Descarga Fixnote para Windows y macOS (Apple Silicon e Intel) o abre la versión web. Notas cifradas de extremo a extremo con MCP local. Gratis y sin cuenta.',
     },
     blog: {
-      title: 'Blog de Fixnote: tomar notas, IA y privacidad',
+      title: 'Blog de notas, IA y privacidad | Fixnote',
       description:
         'Cómo tomar notas que luego encuentras, cómo funciona el cifrado de extremo a extremo y cómo un asistente te ayuda a recordar.',
     },
     releaseNotes: {
-      title: 'Novedades de Fixnote: historial de versiones',
+      title: 'Novedades e historial de versiones | Fixnote',
       description:
         'Todas las versiones de Fixnote en orden: qué se añadió y qué se corrigió en las apps de Windows y macOS y en la versión web.',
     },
     setup: {
-      title: 'Cómo instalar Fixnote en Windows y Mac',
+      title: 'Cómo instalar en Windows y macOS | Fixnote',
       description:
         'Cómo descargar e instalar Fixnote, qué hacer con el aviso de macOS y de SmartScreen la primera vez y cómo activar Pro.',
     },
     windows: {
-      title: 'App de notas para PC con Windows 10 y 11, gratis | Fixnote',
+      title: 'App de notas para Windows 10 y 11, gratis | Fixnote',
       description:
         'App de notas para Windows 10 y 11: resúmenes de llamadas sin bot, dictado sin internet, atajos desde cualquier ventana y cifrado. Gratis y sin cuenta.',
     },
-    notFound: { title: 'Página no encontrada · Fixnote', description: 'Esta página no existe.' },
+    notFound: { title: 'Página no encontrada | Fixnote', description: 'Esta página no existe.' },
   },
 
   nav: {
@@ -88,9 +88,9 @@ export const es: Dict = {
   },
 
   intro: {
-    line1: 'Guárdalo a tu manera.',
-    line2: 'Encuéntralo cuando importa.',
-    lead: 'Una app de notas sencilla para ideas, planes\ny todo lo que vale la pena guardar.',
+    line1: 'Notas privadas para ti',
+    line2: 'y tus agentes de IA.',
+    lead: 'Cifrado de extremo a extremo en tu dispositivo.\nBusca en local y dale a cualquier IA memoria duradera por MCP.',
     download: 'Descargar',
     tryBrowser: 'Probar en el navegador',
     free: 'Gratis',
@@ -109,9 +109,9 @@ export const es: Dict = {
     },
     moveIn: { title: 'Trae tus notas', text: 'Importa desde Bear, Notion, Obsidian y más.' },
     eyebrow: 'Experiencia',
-    title1: 'Notas sencillas.',
-    title2: 'Más posibilidades.',
-    sub: 'Todo lo que necesitas para tus notas de cada día,\nsin complicaciones.',
+    title1: 'Notas locales primero.',
+    title2: 'Cifradas por defecto.',
+    sub: 'Notas rápidas sin conexión que se sincronizan cifradas\ny están listas como contexto privado para tu IA.',
   },
 
   onePromptAway: {
@@ -424,7 +424,11 @@ export const es: Dict = {
       items: [
         {
           q: '¿Fixnote es realmente gratis?',
-          a: 'Sí. Todo lo que funciona en tu dispositivo es gratis, sin límite de tiempo y sin cuenta. Pro añade sincronización cifrada, colaboración y funciones en la nube.',
+          a: 'Sí. Todo lo que funciona en tu dispositivo es gratis, sin límite de tiempo y sin cuenta — incluidas tus notas, la búsqueda, el dictado sin conexión y el servidor MCP local para Claude Desktop, Cursor y Codex. Pro añade sincronización cifrada, colaboración, Fixnote AI y MCP remoto para ChatGPT y claude.ai.',
+        },
+        {
+          q: '¿Necesito Pro para conectar mis notas por MCP?',
+          a: 'El servidor MCP local (Claude Desktop, Cursor, Codex y otros clientes de escritorio) es gratis y funciona en tu ordenador sin cuenta. El MCP remoto (ChatGPT, claude.ai y apps de IA en la web a través de mcp.fixnote.space) forma parte de Pro.',
         },
         {
           q: '¿Puedo usar Fixnote sin internet?',
@@ -479,9 +483,9 @@ export const es: Dict = {
       alt: 'Ordenar en Fixnote: carpetas, títulos y duplicados sugeridos, cada uno con Aceptar',
     },
     integrations: {
-      eyebrow: 'Integraciones',
+      eyebrow: 'MCP y memoria para IA',
       title: 'Tus notas, a un prompt.',
-      lead: 'Conecta Fixnote con ChatGPT, Claude, Cursor y Codex. Busca, crea\ny actualiza notas desde las herramientas que ya usas.',
+      lead: 'Conecta Fixnote como memoria privada para ChatGPT, Claude, Cursor y Codex por MCP.\nBusca, crea y actualiza notas desde las herramientas de IA que ya usas.',
       tools: 'Herramientas compatibles',
       mcp: {
         title: 'Funciona con MCP',
@@ -493,12 +497,12 @@ export const es: Dict = {
         text: 'Elige qué notas pueden ver las herramientas conectadas y qué pueden hacer.',
         link: 'Cómo funcionan los permisos',
       },
-      alt: 'Una nota en la app de escritorio de Fixnote',
+      alt: 'Notas cifradas de Fixnote conectadas a Claude, Cursor y ChatGPT por MCP',
     },
     recall: {
       title1: 'Recuerda la idea.',
       title2: 'No las palabras exactas.',
-      lead: 'Busca por significado, en varios idiomas e incluso en el texto de las imágenes.\nSin palabras exactas.',
+      lead: 'Busca por significado, en varios idiomas y dentro de imágenes, PDF y documentos.\nSin palabras exactas.',
       meaning: {
         title: 'Búsqueda por significado',
         text: 'Encuentra notas sin recordar las palabras exactas.',
@@ -510,8 +514,8 @@ export const es: Dict = {
         link: 'Descubre la búsqueda multilingüe',
       },
       images: {
-        title: 'Texto en imágenes',
-        text: 'Encuentra notas por las palabras de capturas y fotos.',
+        title: 'Texto en imágenes y PDF',
+        text: 'Encuentra notas por palabras dentro de capturas, PDF de varias páginas, Word y hojas de cálculo.',
         link: 'Descubre la búsqueda en imágenes',
       },
       keys: {
@@ -1074,7 +1078,7 @@ export const es: Dict = {
 
   notes: [
     'La búsqueda funciona en tu dispositivo. Con Fixnote AI, la pregunta y los fragmentos encontrados pasan por nuestro servidor hasta el proveedor del modelo y no se guardan. Con tu propia clave, las peticiones van directamente al servicio que elegiste; con Ollama se quedan en tu ordenador.',
-    'Free funciona sin cuenta y sin límite de tiempo. La cuenta hace falta para Pro: sincronización, Fixnote AI, notas compartidas, enlaces, el bot de Telegram y archivos en el servidor.',
+    'Free funciona sin cuenta y sin límite de tiempo, incluido el servidor MCP local en tu ordenador. La cuenta hace falta para Pro: sincronización cifrada, Fixnote AI, notas compartidas, enlaces, MCP remoto (ChatGPT, claude.ai), el bot de Telegram y archivos en el servidor.',
     'El resumen de llamadas está en la app para Windows y para macOS 14.2 o posterior. El audio no se guarda.',
     'La prueba de Pro se activa en la app después de iniciar sesión. Sin tarjeta; al terminar la semana, la cuenta vuelve a Free si no te suscribes.',
   ],
@@ -1161,6 +1165,10 @@ export const es: Dict = {
       {
         title: 'Qué ve el asistente',
         text: 'La búsqueda en tus notas ocurre en tu dispositivo. Al modelo de lenguaje le llegan tu pregunta y las notas que el asistente encontró o abrió para responder. Elige Fixnote AI, tu propia clave (OpenAI, OpenRouter, Groq, DeepSeek) u Ollama en la app de escritorio, y entonces nada sale a internet.',
+      },
+      {
+        title: 'MCP para agentes de IA',
+        text: 'El servidor MCP local para Claude Desktop, Cursor y Codex funciona en tu ordenador y nunca toca nuestros servidores. El MCP remoto (mcp.fixnote.space para ChatGPT y claude.ai) no tiene claves ni guarda el contenido: solo envía las peticiones a un dispositivo abierto con Fixnote, donde el descifrado y el alcance de carpetas ocurren en local.',
       },
       {
         title: 'Voz y Telegram',
@@ -1416,7 +1424,7 @@ export const es: Dict = {
       },
       {
         q: '¿Fixnote para Windows es gratis?',
-        a: 'Sí. Todo lo que funciona en tu ordenador es gratis y sin límite de tiempo: notas, búsqueda, dictado, resúmenes de llamadas con tu propia clave u Ollama, MCP, importación y exportación. Pro, por 7 $ al mes, añade sincronización, Fixnote AI, notas compartidas y el bot de Telegram.',
+        a: 'Sí. Todo lo que funciona en tu ordenador es gratis y sin límite de tiempo: notas, búsqueda, dictado, resúmenes de llamadas con tu propia clave u Ollama, MCP local (Claude Desktop, Cursor, Codex), importación y exportación. Pro, por 7 $ al mes, añade sincronización cifrada, Fixnote AI, notas compartidas, MCP remoto (ChatGPT, claude.ai) y el bot de Telegram.',
       },
       {
         q: '¿Fixnote funciona en Windows 10?',

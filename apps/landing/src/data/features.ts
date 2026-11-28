@@ -67,7 +67,7 @@ export const FEATURES = {
     from: '#636366',
     to: '#3a3a3c',
     media: 'settings-ai',
-    plan: 'free',
+    plan: 'both',
   },
   'voice-notes': {
     group: 'capture',

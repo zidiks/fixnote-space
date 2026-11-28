@@ -65,10 +65,34 @@ export const app = (lang: Lang, description: string, image: string) => ({
   installUrl: 'https://app.fixnote.space/',
   image,
   inLanguage: [...LANGS],
+  ...(SAME_AS.length ? { sameAs: SAME_AS } : {}),
   publisher: { '@id': ORG_ID },
   offers: [
     { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD' },
-    { '@type': 'Offer', name: 'Pro', price: '7', priceCurrency: 'USD' },
+    {
+      '@type': 'Offer',
+      name: 'Pro (Monthly)',
+      price: '7',
+      priceCurrency: 'USD',
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: '7',
+        priceCurrency: 'USD',
+        unitCode: 'MON',
+      },
+    },
+    {
+      '@type': 'Offer',
+      name: 'Pro (Yearly)',
+      price: '60',
+      priceCurrency: 'USD',
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: '60',
+        priceCurrency: 'USD',
+        unitCode: 'ANN',
+      },
+    },
   ],
 })
 
