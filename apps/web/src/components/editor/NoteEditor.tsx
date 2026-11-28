@@ -560,6 +560,21 @@ export function NoteEditor({
   const anyFileInput = useRef<HTMLInputElement>(null)
   const editorHostRef = useRef<HTMLDivElement>(null)
   const [dropLineY, setDropLineY] = useState<number | null>(null)
+  const hasDropLine = dropLineY !== null
+  // DropLayer intercepts `drop` on window in the capture phase and stops propagation, so clear
+  // the external drop indicator from window capture listeners as well as dragend/blur.
+  useEffect(() => {
+    if (!hasDropLine) return
+    const clear = () => setDropLineY(null)
+    window.addEventListener('drop', clear, true)
+    window.addEventListener('dragend', clear, true)
+    window.addEventListener('blur', clear)
+    return () => {
+      window.removeEventListener('drop', clear, true)
+      window.removeEventListener('dragend', clear, true)
+      window.removeEventListener('blur', clear)
+    }
+  }, [hasDropLine])
   const callbacks = useRef({ onSave, onStateChange, onLeave, onRepeat })
   callbacks.current = { onSave, onStateChange, onLeave, onRepeat }
   /** The task right-clicked in a daily note, and the one whose repeat is being edited. */
@@ -980,6 +995,7 @@ export function NoteEditor({
       toggleComments: () => toggleCommentsRef.current(),
       attachFiles: () => anyFileInput.current?.click(),
       insertDropped: (markdown, at) => {
+        setDropLineY(null)
         const e = editorRef.current
         if (!e || e.isDestroyed || !markdown.trim()) return
         if (readOnlyRef.current) {
@@ -1269,7 +1285,7 @@ export function NoteEditor({
             editor={editor}
             readOnly={readOnly}
             onAskAi={() => ai.open('selection')}
-            onComment={comments.startDraft}
+            onComment={() => setTimeout(comments.startDraft, 0)}
             onInsertImage={() => fileInput.current?.click()}
             onInsertFile={() => anyFileInput.current?.click()}
             onProtect={() => {

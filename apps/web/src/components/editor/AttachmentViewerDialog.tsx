@@ -51,33 +51,6 @@ interface SpreadsheetData {
 const MAX_RENDERED_ROWS = 1500
 const MAX_RENDERED_COLS = 60
 
-function sanitizeDocxHtml(rawHtml: string): string {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(rawHtml, 'text/html')
-  for (const el of doc.querySelectorAll('script, style, iframe, object, embed, form')) {
-    el.remove()
-  }
-  for (const el of doc.querySelectorAll('*')) {
-    for (const attr of [...el.attributes]) {
-      const name = attr.name.toLowerCase()
-      const val = attr.value.trim().toLowerCase()
-      if (name.startsWith('on')) {
-        el.removeAttribute(attr.name)
-      } else if (
-        (name === 'href' || name === 'src') &&
-        (val.startsWith('javascript:') || val.startsWith('data:text/html'))
-      ) {
-        el.removeAttribute(attr.name)
-      }
-    }
-    if (el.tagName === 'A') {
-      el.setAttribute('target', '_blank')
-      el.setAttribute('rel', 'noopener noreferrer nofollow')
-    }
-  }
-  return doc.body.innerHTML
-}
-
 function PdfPageCanvas({
   doc,
   pageNumber,
@@ -560,25 +533,51 @@ function SpreadsheetViewer({ blob }: { blob: Blob }) {
 
 function DocxViewer({ blob }: { blob: Blob }) {
   const { t } = useTranslation()
-  const [html, setHtml] = useState<string | null>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const styleRef = useRef<HTMLDivElement>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
     let alive = true
-    setHtml(null)
+    setLoading(true)
     setError(null)
+    const bodyEl = bodyRef.current
+    const styleEl = styleRef.current
+    if (!bodyEl || !styleEl) return
+    bodyEl.innerHTML = ''
+    styleEl.innerHTML = ''
+
     void (async () => {
       try {
-        const mammoth = await import('mammoth')
-        const arrayBuffer = await blob.arrayBuffer()
-        const res = await mammoth.convertToHtml({ arrayBuffer })
-        if (alive) setHtml(sanitizeDocxHtml(res.value))
+        const { renderAsync } = await import('docx-preview')
+        if (!alive) return
+        await renderAsync(blob, bodyEl, styleEl, {
+          className: 'fixnote-docx',
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+          ignoreLastRenderedPageBreak: true,
+          experimental: true,
+          trimXmlDeclaration: true,
+          useBase64URL: true,
+        })
+        if (alive) setLoading(false)
       } catch (err) {
-        if (alive) setError(err instanceof Error ? err.message : String(err))
+        if (alive) {
+          setError(err instanceof Error ? err.message : String(err))
+          setLoading(false)
+        }
       }
     })()
+
     return () => {
       alive = false
+      bodyEl.innerHTML = ''
+      styleEl.innerHTML = ''
     }
   }, [blob])
 
@@ -589,22 +588,54 @@ function DocxViewer({ blob }: { blob: Blob }) {
       </p>
     )
   }
-  if (html === null) {
-    return (
-      <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Spinner />
-        {t('viewer.loading')}
-      </div>
-    )
-  }
 
   return (
-    <div className="flex-1 overflow-auto bg-muted/30 p-4 sm:p-8" data-selectable>
-      <div
-        className="fixnote-docx-preview mx-auto max-w-3xl rounded-xl border bg-background p-6 shadow-sm sm:p-10"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMParser in sanitizeDocxHtml
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex items-center justify-center gap-1 border-b bg-muted/30 px-4 py-2 text-xs">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="size-7 p-0"
+          disabled={zoom <= 0.5}
+          onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.15).toFixed(2)))}
+          aria-label={t('viewer.zoomOut')}
+        >
+          <ZoomOut className="size-3.5" />
+        </Button>
+        <button
+          type="button"
+          onClick={() => setZoom(1)}
+          className="min-w-12 rounded px-1.5 py-0.5 text-center tabular-nums text-muted-foreground hover:bg-accent hover:text-foreground"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="size-7 p-0"
+          disabled={zoom >= 2}
+          onClick={() => setZoom((z) => Math.min(2, +(z + 0.15).toFixed(2)))}
+          aria-label={t('viewer.zoomIn')}
+        >
+          <ZoomIn className="size-3.5" />
+        </Button>
+      </div>
+      <div className="relative flex-1 overflow-auto p-4 sm:p-6" data-selectable>
+        {loading ? (
+          <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Spinner />
+            {t('viewer.loading')}
+          </div>
+        ) : null}
+        <div ref={styleRef} />
+        <div
+          ref={bodyRef}
+          className="fixnote-docx-host"
+          style={{
+            zoom,
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -926,7 +957,10 @@ export function AttachmentViewerDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="top-[5vh] flex h-[88dvh] max-h-[90dvh] w-[calc(100%-2rem)] max-w-5xl flex-col overflow-hidden p-0">
+      <DialogContent
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="top-[5vh] flex h-[88dvh] max-h-[90dvh] w-[calc(100%-2rem)] max-w-5xl flex-col overflow-hidden p-0"
+      >
         <div className="flex items-center gap-2.5 border-b px-4 py-3">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
             <KindIcon kind={kind} />

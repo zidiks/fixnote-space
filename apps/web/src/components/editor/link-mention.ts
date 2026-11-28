@@ -11,9 +11,14 @@ export interface LinkMentionOptions {
 const KNOWN_SITES: Record<string, string> = {
   'instagram.com': 'Instagram',
   'github.com': 'GitHub',
+  'gitlab.com': 'GitLab',
+  'bitbucket.org': 'Bitbucket',
   'youtube.com': 'YouTube',
   'youtu.be': 'YouTube',
   'figma.com': 'Figma',
+  'dribbble.com': 'Dribbble',
+  'behance.net': 'Behance',
+  'pinterest.com': 'Pinterest',
   'x.com': 'X',
   'twitter.com': 'X',
   'notion.so': 'Notion',
@@ -21,13 +26,36 @@ const KNOWN_SITES: Record<string, string> = {
   'linkedin.com': 'LinkedIn',
   'reddit.com': 'Reddit',
   'medium.com': 'Medium',
+  'substack.com': 'Substack',
+  'dev.to': 'DEV',
+  'stackoverflow.com': 'Stack Overflow',
+  'npmjs.com': 'npm',
+  'huggingface.co': 'Hugging Face',
+  'openai.com': 'OpenAI',
+  'anthropic.com': 'Anthropic',
+  'claude.ai': 'Claude',
+  'chatgpt.com': 'ChatGPT',
+  'vercel.com': 'Vercel',
+  'cloudflare.com': 'Cloudflare',
+  'supabase.com': 'Supabase',
+  'producthunt.com': 'Product Hunt',
+  'news.ycombinator.com': 'Hacker News',
+  'habr.com': 'Habr',
+  'vc.ru': 'vc.ru',
   'docs.google.com': 'Google Docs',
   'drive.google.com': 'Google Drive',
+  'sheets.google.com': 'Google Sheets',
+  'slides.google.com': 'Google Slides',
   'linear.app': 'Linear',
   'slack.com': 'Slack',
   't.me': 'Telegram',
   'discord.com': 'Discord',
   'wikipedia.org': 'Wikipedia',
+  'miro.com': 'Miro',
+  'loom.com': 'Loom',
+  'spotify.com': 'Spotify',
+  'vimeo.com': 'Vimeo',
+  'codepen.io': 'CodePen',
 }
 
 function hostOf(url: string): string {
@@ -48,14 +76,47 @@ export function mentionSiteLabel(url: string, previewSite?: string): string {
   return previewSite || h || url
 }
 
+function humanizeSlug(raw: string): string {
+  const cleaned = raw
+    .replace(/\.[a-z0-9]{2,5}$/i, '')
+    // Strip leading numeric ID prefixes like `123456-cool-design`
+    .replace(/^\d{4,}[-_]+/, '')
+    .replace(/[-_+]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!cleaned) return ''
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+}
+
 /** Extracts a concise human-readable fallback title from the URL path when no page title is available. */
 export function mentionFallbackTitle(url: string, site: string, fallbackLabel?: string): string {
   try {
     const u = new URL(url)
-    const path = decodeURI(u.pathname).replace(/^\/+|\/+$/g, '')
-    if (path) {
-      const compact = path.length > 48 ? `${path.slice(0, 47)}…` : path
-      if (compact.toLowerCase() !== site.toLowerCase()) return compact
+    const segments = decodeURI(u.pathname)
+      .split('/')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const searchQuery =
+      u.searchParams.get('q') || u.searchParams.get('query') || u.searchParams.get('search')
+
+    if (segments.length) {
+      const first = segments[0]?.toLowerCase() ?? ''
+      if ((first === 'search' || first === 's') && (segments[1] || searchQuery)) {
+        const term = humanizeSlug(segments[1] || searchQuery || '')
+        if (term) return term.length > 52 ? `${term.slice(0, 51)}…` : term
+      }
+      // Prefer the last non-numeric slug segment (e.g. `/shots/12345-interactive-ui` -> `Interactive ui`).
+      const candidate =
+        [...segments].reverse().find((s) => !/^\d+$/.test(s) && s.length > 1) ?? segments.at(-1)
+      if (candidate) {
+        const nice = humanizeSlug(candidate)
+        if (nice && nice.toLowerCase() !== site.toLowerCase()) {
+          return nice.length > 52 ? `${nice.slice(0, 51)}…` : nice
+        }
+      }
+    } else if (searchQuery) {
+      const nice = humanizeSlug(searchQuery)
+      if (nice) return nice.length > 52 ? `${nice.slice(0, 51)}…` : nice
     }
     const host = u.hostname.replace(/^www\./, '')
     if (host && host.toLowerCase() !== site.toLowerCase()) return host

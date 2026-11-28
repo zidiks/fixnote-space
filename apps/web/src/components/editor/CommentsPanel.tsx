@@ -280,9 +280,21 @@ function InlineComposer({
       .slice(0, 6)
   }, [allEmails, collaborators, mentionTrigger])
 
-  // Focus after the anchored popover has been positioned, without scroll-jumping the editor.
+  // Focus after the anchored popover is visible and any closing menu (e.g. Radix ContextMenu)
+  // has finished restoring focus to the editor, without scroll-jumping.
   useEffect(() => {
-    if (autoFocus) ref.current?.focus({ preventScroll: true })
+    if (!autoFocus) return
+    const focusNow = () => {
+      const el = ref.current
+      if (el && document.activeElement !== el) el.focus({ preventScroll: true })
+    }
+    focusNow()
+    const raf = requestAnimationFrame(focusNow)
+    const timer = setTimeout(focusNow, 60)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+    }
   }, [autoFocus])
 
   // Auto-grow textarea height smoothly up to 4 lines without jumping layout.

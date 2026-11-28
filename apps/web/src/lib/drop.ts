@@ -1,5 +1,6 @@
 import type { Attachments } from '@fixnote/core'
 import { i18n } from '@fixnote/i18n'
+import { attachmentKind } from './attachment-kind'
 import { FileTooLargeError, ImageTooLargeError, storeFile, storeImage } from './attachments'
 
 /** Where a drop goes while a note is open: the note's editor. */
@@ -41,11 +42,17 @@ export async function droppedMarkdown(
 ): Promise<{ markdown: string; failed: string[] }> {
   const blocks: string[] = []
   const failed: string[] = []
-  const files = [...data.files]
+  let files = [...data.files]
+  if (!files.length && data.items?.length) {
+    files = [...data.items]
+      .filter((item) => item.kind === 'file')
+      .map((item) => item.getAsFile())
+      .filter((f): f is File => f !== null)
+  }
   if (files.length) {
     for (const file of files) {
       try {
-        if (file.type.startsWith('image/'))
+        if (file.type.startsWith('image/') || attachmentKind(file.name, file.type) === 'image')
           blocks.push(`![](${await storeImage(attachments, file)})`)
         else if (TEXT_FILE.test(file.name) && file.size <= MAX_TEXT_FILE) {
           const text = (await file.text()).trim()

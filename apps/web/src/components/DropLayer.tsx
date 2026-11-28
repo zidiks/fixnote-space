@@ -40,6 +40,12 @@ export function DropLayer() {
       internal.current = false
       reset()
     }
+    const onPointerDown = () => {
+      if (internal.current) {
+        internal.current = false
+        reset()
+      }
+    }
     const onEnter = (e: DragEvent) => {
       if (internal.current || !isExternalDrag(e.dataTransfer)) return
       depth.current += 1
@@ -59,7 +65,13 @@ export function DropLayer() {
     }
     const onDrop = (e: DragEvent) => {
       const data = e.dataTransfer
-      if (internal.current || !data || !isExternalDrag(data)) return
+      if (internal.current) {
+        // ProseMirror removes the dragged DOM node on internal drop, so `dragend` may never fire.
+        internal.current = false
+        reset()
+        return
+      }
+      if (!data || !isExternalDrag(data)) return
       reset()
       // Text dropped onto a text field (the chat input) lands there as usual.
       if (isTextField(e.target) && !data.types.includes('Files')) return
@@ -86,6 +98,8 @@ export function DropLayer() {
     }
     document.addEventListener('dragstart', onDragStart)
     document.addEventListener('dragend', onDragEnd)
+    window.addEventListener('pointerdown', onPointerDown, true)
+    window.addEventListener('blur', onDragEnd)
     window.addEventListener('dragenter', onEnter, true)
     window.addEventListener('dragleave', onLeave, true)
     window.addEventListener('dragover', onOver, true)
@@ -93,6 +107,8 @@ export function DropLayer() {
     return () => {
       document.removeEventListener('dragstart', onDragStart)
       document.removeEventListener('dragend', onDragEnd)
+      window.removeEventListener('pointerdown', onPointerDown, true)
+      window.removeEventListener('blur', onDragEnd)
       window.removeEventListener('dragenter', onEnter, true)
       window.removeEventListener('dragleave', onLeave, true)
       window.removeEventListener('dragover', onOver, true)
