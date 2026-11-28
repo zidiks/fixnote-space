@@ -8,6 +8,8 @@ export interface AttachmentImageOptions {
   release?: (id: string) => void
   /** Whether external `http(s):` image URLs may be fetched (false in local-only mode). */
   allowExternal?: () => boolean
+  /** Clicking an attached image opens the in-app lightbox viewer. */
+  onOpen?: (file: { id: string; name: string }) => void
 }
 
 const SAFE_SRC = /^(https?:|data:image\/|blob:)/i
@@ -19,6 +21,7 @@ const LOCAL_SRC = /^(data:image\/|blob:)/i
  * from Telegram, shows a player. Plain web images load as they are unless local-only mode is on.
  */
 export const AttachmentImage = Image.extend<ImageOptions & AttachmentImageOptions>({
+  draggable: true,
   // attachment: is not a URL the browser can load: in HTML (clipboard, drag) it travels as
   // data-attachment-src, so nothing tries to fetch it.
   addAttributes() {
@@ -40,10 +43,11 @@ export const AttachmentImage = Image.extend<ImageOptions & AttachmentImageOption
       resolve: async () => null,
       release: undefined,
       allowExternal: () => true,
+      onOpen: undefined,
     }
   },
   addNodeView() {
-    const { resolve, release, allowExternal } = this.options
+    const { resolve, release, allowExternal, onOpen } = this.options
     return ({ node }) => {
       // A stable wrapper (ProseMirror keeps this element); the image or player goes inside.
       const dom = document.createElement('div')
@@ -59,6 +63,14 @@ export const AttachmentImage = Image.extend<ImageOptions & AttachmentImageOption
       let destroyed = false
       if (id) {
         img.dataset.state = 'loading'
+        if (onOpen) {
+          img.style.cursor = 'zoom-in'
+          img.addEventListener('click', (e) => {
+            if (e.altKey || e.button !== 0) return
+            e.preventDefault()
+            onOpen({ id, name: img.alt || 'image.png' })
+          })
+        }
         void resolve(id).then((file) => {
           if (destroyed) return
           if (!file) {

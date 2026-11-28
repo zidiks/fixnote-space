@@ -4,9 +4,26 @@ import type { SqlDriver } from '../platform'
 /** Images too small to hold text worth reading (icons, stickers). */
 const MIN_BYTES = 8 * 1024
 
+/** Document and spreadsheet MIME types whose text is extracted and indexed for search. */
+const INDEXABLE_MIMES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/vnd.oasis.opendocument.spreadsheet',
+  'application/json',
+  'application/xml',
+  'application/rtf',
+  'application/csv',
+  'application/octet-stream',
+] as const
+
+const INDEXABLE_PLACEHOLDERS = INDEXABLE_MIMES.map(() => '?').join(', ')
+
 /**
- * Text read from images on this device (OCR). It is found by search together with the notes the
- * images are in; each device reads its own copies, nothing of it is synced.
+ * Text read from images (OCR) and document attachments (PDFs, Word, spreadsheets, text) on this
+ * device. It is found by search together with the notes the attachments are in; each device reads
+ * its own copies, nothing of it is synced.
  */
 export class ImageTexts {
   constructor(
@@ -14,7 +31,7 @@ export class ImageTexts {
     private readonly now: () => number = Date.now,
   ) {}
 
-  /** The text of an image: '' when it has none, null when it was not read yet. */
+  /** The text of an attachment: '' when it has none, null when it was not read yet. */
   async get(attachmentId: string): Promise<string | null> {
     const [row] = await this.db.query<{ text: string }>(
       'SELECT text FROM image_text WHERE attachment_id = ?',
@@ -31,16 +48,20 @@ export class ImageTexts {
     )
   }
 
-  /** Images on this device, in notes, not read yet: newest first. */
+  /** Images and indexable documents on this device, in notes, not read yet: newest first. */
   async pending(limit = 20): Promise<string[]> {
     const rows = await this.db.query<{ id: string }>(
       `SELECT a.id FROM attachments a
-        WHERE a.mime LIKE 'image/%' AND a.mime <> 'image/svg+xml' AND a.size >= ?
+        WHERE (
+            (a.mime LIKE 'image/%' AND a.mime <> 'image/svg+xml' AND a.size >= ?)
+            OR a.mime LIKE 'text/%'
+            OR a.mime IN (${INDEXABLE_PLACEHOLDERS})
+          )
           AND NOT EXISTS (SELECT 1 FROM image_text t WHERE t.attachment_id = a.id)
           AND EXISTS (SELECT 1 FROM notes n
                        WHERE n.deleted_at IS NULL AND instr(n.content, 'attachment:' || a.id) > 0)
         ORDER BY a.created_at DESC LIMIT ?`,
-      [MIN_BYTES, limit],
+      [MIN_BYTES, ...INDEXABLE_MIMES, limit],
     )
     return rows.map((r) => r.id)
   }

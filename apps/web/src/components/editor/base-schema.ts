@@ -4,6 +4,7 @@ import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
+import { AttachmentFile } from './attachment-file'
 import { AttachmentImage } from './attachment-image'
 import { Callout } from './callout'
 import { NoteDetails, NoteDetailsContent, NoteDetailsSummary } from './details'
@@ -15,6 +16,8 @@ export interface NoteSchemaOptions {
   resolveImage?: (id: string) => Promise<{ url: string; mime: string } | null>
   releaseImage?: (id: string) => void
   allowExternalImages?: () => boolean
+  openAttachment?: (file: { id: string; name: string; size?: string }) => void
+  downloadAttachment?: (file: { id: string; name: string }) => void
   loadLinkPreview?: (url: string) => Promise<LinkPreview | null>
   openLink?: (url: string) => void
   /** Undo comes from Yjs when the note is edited live. */
@@ -70,6 +73,11 @@ export function headlessNoteSchema(
       ...(opts.resolveImage ? { resolve: opts.resolveImage } : {}),
       ...(opts.releaseImage ? { release: opts.releaseImage } : {}),
       ...(opts.allowExternalImages ? { allowExternal: opts.allowExternalImages } : {}),
+      ...(opts.openAttachment ? { onOpen: opts.openAttachment } : {}),
+    }),
+    AttachmentFile.configure({
+      ...(opts.openAttachment ? { onOpen: opts.openAttachment } : {}),
+      ...(opts.downloadAttachment ? { onDownload: opts.downloadAttachment } : {}),
     }),
     LinkMention.configure({
       ...(opts.loadLinkPreview ? { load: opts.loadLinkPreview } : {}),

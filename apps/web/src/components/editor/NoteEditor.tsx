@@ -33,6 +33,8 @@ import {
   Clipboard,
   Code,
   Copy,
+  Download,
+  Eye,
   Heading1,
   Heading2,
   ImagePlus,
@@ -40,6 +42,7 @@ import {
   List,
   ListChecks,
   MessageSquarePlus,
+  Paperclip,
   Repeat,
   ScanText,
   Scissors,
@@ -57,11 +60,14 @@ import { useAccount } from '../../lib/account/account'
 import { providerLabel, refreshAfterProtection, stop } from '../../lib/assistant/assistant'
 import { useLlm } from '../../lib/assistant/llm'
 import { registerOpenNote } from '../../lib/assistant/open-notes'
+import { attachmentKind, isTextIndexable } from '../../lib/attachment-kind'
 import {
   acquireAttachmentUrl,
+  FileTooLargeError,
   ImageTooLargeError,
   releaseAttachmentUrl,
   saveAttachment,
+  storeFileCard,
   storeImage,
 } from '../../lib/attachments'
 import { LIVE_FIELD, type LiveEditing } from '../../lib/collab/live'
@@ -81,6 +87,8 @@ import { type AiEditHandle, AiEditLayer, useAiEdit } from './AiEdit'
 export interface NoteEditorHandle {
   openAi: AiEditHandle['open']
   toggleComments(): void
+  /** Opens the native file picker to attach any file (PDF, Word, Excel, image, etc.). */
+  attachFiles(): void
   /** Dictated text: at the cursor while typing, otherwise as a new paragraph at the end. */
   insertText(text: string): void
   /**
@@ -90,6 +98,7 @@ export interface NoteEditorHandle {
   insertDropped(markdown: string, at: { x: number; y: number } | null): void
 }
 
+import { AttachmentViewerDialog, type AttachmentViewerTarget } from './AttachmentViewerDialog'
 import { AiRangeExtension, rangeMarkdown } from './ai-range'
 import { AiTyping, aiTypingKey, changedRange, revealRange } from './ai-typing'
 import { CommentsLayer } from './CommentsPanel'
@@ -114,13 +123,13 @@ import { useNoteComments } from './use-comments'
 
 export type SaveState = 'idle' | 'saving' | 'saved'
 
-/** Images in a paste or drop. Some webviews list a pasted image only under `items`. */
-function imageFiles(data: DataTransfer | null): File[] {
+/** Files in a paste or drop (images, PDFs, Word, Excel, etc.). Some webviews list them only under `items`. */
+function clipboardFiles(data: DataTransfer | null): File[] {
   if (!data) return []
-  const files = [...data.files].filter((f) => f.type.startsWith('image/'))
+  const files = [...data.files]
   if (files.length) return files
   return [...data.items]
-    .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+    .filter((item) => item.kind === 'file')
     .map((item) => item.getAsFile())
     .filter((f): f is File => f !== null)
 }
@@ -157,7 +166,10 @@ function EditorMenu({
   onAskAi,
   onComment,
   onInsertImage,
+  onInsertFile,
   onRepeat,
+  onPreview,
+  onDownload,
   onRemove,
   onImageText,
   onProtect,
@@ -170,14 +182,19 @@ function EditorMenu({
   onAskAi: () => void
   onComment: () => void
   onInsertImage: () => void
+  onInsertFile: () => void
   onProtect: () => void
   /** Set when the menu was opened on a protected fragment. */
   onUnprotect?: () => void
   /** Set when the menu was opened on a task of a daily note. */
   onRepeat?: () => void
+  /** Set when the menu was opened on an attachment: opens the in-app viewer. */
+  onPreview?: () => void
+  /** Set when the menu was opened on a file attachment: downloads it. */
+  onDownload?: () => void
   /** Set when the menu was opened on an attached file or an image. */
   onRemove?: { label: string; run: () => void }
-  /** Set when the menu was opened on an image: shows the text in it. */
+  /** Set when the menu was opened on an image or indexable document: shows the extracted text. */
   onImageText?: () => void
 }) {
   const { t } = useTranslation()
@@ -248,6 +265,7 @@ function EditorMenu({
     },
     { icon: Clipboard, label: t('menu.paste'), hint: combo('V'), run: () => void paste() },
     { icon: ImagePlus, label: t('menu.insertImage'), hint: '', run: onInsertImage },
+    { icon: Paperclip, label: t('menu.insertFile'), hint: '', run: onInsertFile },
     {
       icon: TextSelect,
       label: t('menu.selectAll'),
@@ -321,9 +339,20 @@ function EditorMenu({
       items.unshift({ icon: Repeat, label: t('repeat.menu'), hint: '', run: onRepeat }, 'sep')
     if (onRemove) items.unshift({ icon: Trash2, hint: '', ...onRemove }, 'sep')
   }
-  // Reading the text changes nothing: offered in notes shared to view too.
+  // Previewing, downloading and reading text change nothing: offered in view-only notes too.
+  const attachmentActions: typeof items = []
+  if (onPreview)
+    attachmentActions.push({ icon: Eye, label: t('viewer.open'), hint: '', run: onPreview })
   if (onImageText)
-    items.unshift({ icon: ScanText, label: t('ocr.menu'), hint: '', run: onImageText }, 'sep')
+    attachmentActions.push({ icon: ScanText, label: t('ocr.menu'), hint: '', run: onImageText })
+  if (onDownload)
+    attachmentActions.push({
+      icon: Download,
+      label: t('viewer.download'),
+      hint: '',
+      run: onDownload,
+    })
+  if (attachmentActions.length) items.unshift(...attachmentActions, 'sep')
 
   return (
     <ContextMenuContent className="min-w-64 whitespace-nowrap">
@@ -374,24 +403,63 @@ interface AttachmentRange {
   kind: 'file' | 'image'
   from: number
   to: number
+  id: string | null
+  name: string
+  size: string
 }
 
-/** The attached file chip or image under a right-click, as the document range it takes. */
+/** The attached file card, inline chip, or image under a right-click, as the document range it takes. */
 function attachmentAt(editor: Editor, target: EventTarget | null): AttachmentRange | null {
   if (!(target instanceof Element)) return null
   const { view, state } = editor
+  const card = target.closest('[data-attachment-file]')
+  if (card) {
+    const pos = view.posAtDOM(card, 0)
+    for (const at of [pos, pos - 1]) {
+      const node = at >= 0 ? state.doc.nodeAt(at) : null
+      if (node?.type.name === 'attachmentFile') {
+        return {
+          kind: 'file',
+          from: at,
+          to: at + node.nodeSize,
+          id: typeof node.attrs.id === 'string' && node.attrs.id ? node.attrs.id : null,
+          name: typeof node.attrs.name === 'string' ? node.attrs.name : 'file',
+          size: typeof node.attrs.size === 'string' ? node.attrs.size : '',
+        }
+      }
+    }
+  }
   const chip = target.closest('a[href^="attachment:"]')
   const link = state.schema.marks.link
   if (chip && link) {
     const range = getMarkRange(state.doc.resolve(view.posAtDOM(chip, 0)), link)
-    return range ? { kind: 'file', ...range } : null
+    const href = chip.getAttribute('href') ?? ''
+    return range
+      ? {
+          kind: 'file',
+          ...range,
+          id: attachmentIdFromUrl(href),
+          name: chip.textContent?.trim() || 'file',
+          size: chip.getAttribute('title') ?? '',
+        }
+      : null
   }
   const img = target.closest('img')
   if (!img) return null
   const pos = view.posAtDOM(img, 0)
   for (const at of [pos, pos - 1]) {
     const node = at >= 0 ? state.doc.nodeAt(at) : null
-    if (node?.type.name === 'image') return { kind: 'image', from: at, to: at + node.nodeSize }
+    if (node?.type.name === 'image') {
+      const src = typeof node.attrs.src === 'string' ? node.attrs.src : ''
+      return {
+        kind: 'image',
+        from: at,
+        to: at + node.nodeSize,
+        id: attachmentIdFromUrl(src),
+        name: (typeof node.attrs.alt === 'string' && node.attrs.alt) || 'image.png',
+        size: '',
+      }
+    }
   }
   return null
 }
@@ -489,6 +557,9 @@ export function NoteEditor({
     setLinkPaste(next)
   }, [])
   const fileInput = useRef<HTMLInputElement>(null)
+  const anyFileInput = useRef<HTMLInputElement>(null)
+  const editorHostRef = useRef<HTMLDivElement>(null)
+  const [dropLineY, setDropLineY] = useState<number | null>(null)
   const callbacks = useRef({ onSave, onStateChange, onLeave, onRepeat })
   callbacks.current = { onSave, onStateChange, onLeave, onRepeat }
   /** The task right-clicked in a daily note, and the one whose repeat is being edited. */
@@ -498,8 +569,10 @@ export function NoteEditor({
   const [menuAttachment, setMenuAttachment] = useState<AttachmentRange | null>(null)
   /** The protected fragment right-clicked (to restore it as ordinary text). */
   const [menuProtected, setMenuProtected] = useState<ProtectedTarget | null>(null)
-  /** The image whose text is shown (its attachment id). */
+  /** The image or document whose extracted text is shown (its attachment id). */
   const [imageText, setImageText] = useState<string | null>(null)
+  /** The attachment currently open in the in-app viewer. */
+  const [viewerTarget, setViewerTarget] = useState<AttachmentViewerTarget | null>(null)
   const [repeatTask, setRepeatTask] = useState<(TaskTarget & { rule: Recurrence | null }) | null>(
     null,
   )
@@ -559,6 +632,8 @@ export function NoteEditor({
         resolveImage: (id) => acquireAttachmentUrl(images.current, id),
         releaseImage: (id) => releaseAttachmentUrl(id),
         allowExternalImages: () => !useLlm.getState().localOnly,
+        openAttachment: (file) => setViewerTarget(file),
+        downloadAttachment: (file) => void saveAttachment(images.current, file.id, file.name),
         loadLinkPreview: (url) => links.current.load(url),
         openLink: (url) => links.current.open(url),
       }),
@@ -656,7 +731,7 @@ export function NoteEditor({
         spellcheck: 'true',
         'aria-label': note.title || t('common.untitled'),
       },
-      // A click opens a link in the browser (an attached file: saves it); Alt/Option+click places
+      // A click opens a link in the browser (an attached file: opens the in-app viewer); Alt/Option+click places
       // the caret in the link to edit it.
       handleClick: (_view, _pos, event) => {
         if (event.altKey || event.button !== 0) return false
@@ -667,7 +742,11 @@ export function NoteEditor({
         const fileId = attachmentIdFromUrl(href)
         if (fileId) {
           event.preventDefault()
-          void saveAttachment(images.current, fileId, anchor?.textContent?.trim() || 'file')
+          setViewerTarget({
+            id: fileId,
+            name: anchor?.textContent?.trim() || 'file',
+            size: anchor?.getAttribute('title') || undefined,
+          })
           return true
         }
         if (!/^https?:\/\//i.test(href)) return false
@@ -677,9 +756,9 @@ export function NoteEditor({
       },
       // A long unformatted paste (a dump from a chat or a dictation): offer to tidy it up.
       handlePaste: (_view, event) => {
-        const files = imageFiles(event.clipboardData)
+        const files = clipboardFiles(event.clipboardData)
         if (files.length) {
-          void insertImages(files)
+          void insertFiles(files)
           return true
         }
         const text = event.clipboardData?.getData('text/plain') ?? ''
@@ -817,22 +896,39 @@ export function NoteEditor({
   }
   protectRef.current = protect
 
-  const insertImages = async (files: File[], at?: number) => {
+  const insertFiles = async (files: File[], at?: number) => {
     for (const file of files) {
       try {
-        const src = await storeImage(images.current, file)
         const e = editorRef.current
         if (!e || e.isDestroyed) return
-        // An empty paragraph after it, so text typed next goes below the image.
-        const node = [{ type: 'image', attrs: { src, alt: '' } }, { type: 'paragraph' }]
-        if (at === undefined) e.chain().focus().insertContent(node).run()
-        else e.chain().focus().insertContentAt(at, node).run()
+        if (file.type.startsWith('image/')) {
+          const src = await storeImage(images.current, file)
+          if (e.isDestroyed) return
+          const node = [{ type: 'image', attrs: { src, alt: '' } }, { type: 'paragraph' }]
+          if (at === undefined) e.chain().focus().insertContent(node).run()
+          else e.chain().focus().insertContentAt(at, node).run()
+        } else {
+          const card = await storeFileCard(images.current, file)
+          if (e.isDestroyed) return
+          const node = [
+            { type: 'attachmentFile', attrs: { id: card.id, name: card.name, size: card.size } },
+            { type: 'paragraph' },
+          ]
+          if (at === undefined) e.chain().focus().insertContent(node).run()
+          else e.chain().focus().insertContentAt(at, node).run()
+        }
       } catch (err) {
-        toast.error(
-          err instanceof ImageTooLargeError
-            ? t('note.imageTooLarge')
-            : t('note.imageFailed', { message: err instanceof Error ? err.message : String(err) }),
-        )
+        if (err instanceof FileTooLargeError) {
+          toast.error(t('drop.tooLarge', { name: file.name }))
+        } else {
+          toast.error(
+            err instanceof ImageTooLargeError
+              ? t('note.imageTooLarge')
+              : t('note.imageFailed', {
+                  message: err instanceof Error ? err.message : String(err),
+                }),
+          )
+        }
       }
     }
   }
@@ -882,6 +978,7 @@ export function NoteEditor({
     () => ({
       openAi: (target, action) => openAi.current(target, action),
       toggleComments: () => toggleCommentsRef.current(),
+      attachFiles: () => anyFileInput.current?.click(),
       insertDropped: (markdown, at) => {
         const e = editorRef.current
         if (!e || e.isDestroyed || !markdown.trim()) return
@@ -1104,6 +1201,7 @@ export function NoteEditor({
     // mousedown and synchronously, so a key pressed right after the click is not lost.
     // biome-ignore lint/a11y/noStaticElementInteractions: pointer convenience; the editor itself stays keyboard accessible
     <div
+      ref={editorHostRef}
       className="relative min-h-[50vh] cursor-text pb-24"
       onMouseDown={(e) => {
         if (e.target !== e.currentTarget || !editor) return
@@ -1111,7 +1209,50 @@ export function NoteEditor({
         editor.commands.setTextSelection(editor.state.doc.content.size)
         editor.view.focus()
       }}
+      onDragOver={(e) => {
+        if (
+          readOnly ||
+          !editor ||
+          editor.isDestroyed ||
+          !e.dataTransfer?.types.includes('Files') ||
+          editor.view.dragging
+        ) {
+          return
+        }
+        const host = editorHostRef.current
+        if (!host) return
+        const hit = editor.view.posAtCoords({ left: e.clientX, top: e.clientY })
+        if (!hit) {
+          setDropLineY(null)
+          return
+        }
+        const $pos = editor.state.doc.resolve(hit.pos)
+        const afterPos = $pos.depth > 0 ? $pos.after(1) : hit.pos
+        const domNode = editor.view.nodeDOM(
+          $pos.depth > 0 ? $pos.before(1) : Math.max(0, afterPos - 1),
+        )
+        const hostRect = host.getBoundingClientRect()
+        if (domNode instanceof HTMLElement) {
+          const r = domNode.getBoundingClientRect()
+          setDropLineY(r.bottom - hostRect.top + 4)
+        } else {
+          const coords = editor.view.coordsAtPos(Math.min(afterPos, editor.state.doc.content.size))
+          setDropLineY(coords.bottom - hostRect.top + 4)
+        }
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+        setDropLineY(null)
+      }}
+      onDrop={() => setDropLineY(null)}
     >
+      {dropLineY !== null ? (
+        <div
+          aria-hidden="true"
+          style={{ top: dropLineY }}
+          className="fixnote-external-drop-line pointer-events-none absolute inset-x-0 z-20"
+        />
+      ) : null}
       <ContextMenu onOpenChange={setMenuOpen}>
         <ContextMenuTrigger
           asChild
@@ -1130,11 +1271,34 @@ export function NoteEditor({
             onAskAi={() => ai.open('selection')}
             onComment={comments.startDraft}
             onInsertImage={() => fileInput.current?.click()}
+            onInsertFile={() => anyFileInput.current?.click()}
             onProtect={() => {
               const { from, to } = editor.state.selection
               setManualPrivacy({ from, to })
             }}
             onUnprotect={menuProtected ? () => void unprotect(menuProtected) : undefined}
+            onPreview={
+              menuAttachment?.id
+                ? () => {
+                    const target = {
+                      id: menuAttachment.id as string,
+                      name: menuAttachment.name,
+                      size: menuAttachment.size || undefined,
+                    }
+                    setTimeout(() => setViewerTarget(target), 0)
+                  }
+                : undefined
+            }
+            onDownload={
+              menuAttachment?.id && menuAttachment.kind === 'file'
+                ? () =>
+                    void saveAttachment(
+                      images.current,
+                      menuAttachment.id as string,
+                      menuAttachment.name,
+                    )
+                : undefined
+            }
             onRemove={
               menuAttachment
                 ? {
@@ -1151,11 +1315,12 @@ export function NoteEditor({
                 : undefined
             }
             onImageText={
-              menuAttachment?.kind === 'image' && platform.ocr
+              menuAttachment?.id &&
+              (menuAttachment.kind === 'image'
+                ? Boolean(platform.ocr)
+                : isTextIndexable(attachmentKind(menuAttachment.name)))
                 ? () => {
-                    const src = editor.state.doc.nodeAt(menuAttachment.from)?.attrs.src
-                    const id = typeof src === 'string' ? attachmentIdFromUrl(src) : null
-                    // After the menu has closed, so the dialog gets focus.
+                    const id = menuAttachment.id
                     if (id) setTimeout(() => setImageText(id), 0)
                   }
                 : undefined
@@ -1174,6 +1339,9 @@ export function NoteEditor({
       </ContextMenu>
       {editor && live ? <LiveCarets editor={editor} awareness={live.session.awareness} /> : null}
       {imageText ? <ImageTextDialog id={imageText} onClose={() => setImageText(null)} /> : null}
+      {viewerTarget ? (
+        <AttachmentViewerDialog target={viewerTarget} onClose={() => setViewerTarget(null)} />
+      ) : null}
       {editor && repeatTask && note.dailyDate ? (
         <RepeatDialog
           date={note.dailyDate}
@@ -1222,7 +1390,11 @@ export function NoteEditor({
         onDeleteMessage={comments.deleteMessage}
       />
       {editor && !readOnly ? (
-        <SlashMenu editor={editor} onInsertImage={() => fileInput.current?.click()} />
+        <SlashMenu
+          editor={editor}
+          onInsertImage={() => fileInput.current?.click()}
+          onInsertFile={() => anyFileInput.current?.click()}
+        />
       ) : null}
       {editor && !readOnly && live ? (
         <MentionMenu
@@ -1259,7 +1431,18 @@ export function NoteEditor({
             f.type.startsWith('image/'),
           )
           e.currentTarget.value = ''
-          if (files.length) void insertImages(files)
+          if (files.length) void insertFiles(files)
+        }}
+      />
+      <input
+        ref={anyFileInput}
+        type="file"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = [...(e.currentTarget.files ?? [])]
+          e.currentTarget.value = ''
+          if (files.length) void insertFiles(files)
         }}
       />
     </div>

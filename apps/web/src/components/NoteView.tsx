@@ -24,6 +24,7 @@ import {
   Link2,
   MessageSquare,
   Mic,
+  Paperclip,
   Pin,
   PinOff,
   Sparkles,
@@ -170,6 +171,20 @@ export function NoteView({ id }: { id: string }) {
           {/* View only: nothing that would change the note. */}
           {n.readOnly ? null : (
             <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => editor.current?.attachFiles()}
+                    aria-label={t('menu.insertFile')}
+                  >
+                    <Paperclip />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('menu.insertFile')}</TooltipContent>
+              </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

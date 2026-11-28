@@ -7,11 +7,12 @@ import {
 } from '@fixnote/core'
 import { attachmentSource } from './account/account'
 import { useLlm } from './assistant/llm'
+import { extractAttachmentText } from './attachment-text'
 import { platform } from './platform'
 
-/** A pause between images, so reading them never makes the app feel busy. */
-const GAP_MS = 1500
-/** Retry images that weren't locally downloaded or failed after 30 minutes. */
+/** A pause between attachments, so reading them never makes the app feel busy. */
+const GAP_MS = 1200
+/** Retry attachments that weren't locally downloaded or failed after 30 minutes. */
 const SKIP_TTL_MS = 30 * 60_000
 const MAX_SKIPPED = 512
 
@@ -27,7 +28,7 @@ let activeRecognizer: TextRecognizer | null = null
 let running: Promise<void> | null = null
 let startTimer: ReturnType<typeof setTimeout> | undefined
 let visibilityWired = false
-/** Images that could not be read recently (not on this device yet, broken): retried after TTL. */
+/** Attachments that could not be read recently (not on this device yet, broken): retried after TTL. */
 const skipped = new Map<string, number>()
 
 function isSkipped(id: string): boolean {
@@ -55,45 +56,92 @@ async function canRunOcrWithoutNetwork(): Promise<boolean> {
   return false
 }
 
-/** Reads the text of an image, now (the dialog), storing it for search. */
-export async function readImageText(id: string, onProgress?: (p: number) => void): Promise<string> {
+async function lazyOcr(
+  onProgress?: (p: number) => void,
+): Promise<((image: Blob) => Promise<string>) | undefined> {
+  if (!platform.ocr) return undefined
+  if (!(await canRunOcrWithoutNetwork())) return undefined
+  let ready: Promise<TextRecognizer> | null = null
+  const getRecognizer = () => {
+    if (!ready) {
+      ready = (async () => {
+        const recognizer = await platform.ocr?.()
+        if (!recognizer) throw new Error('Text recognition is not available here')
+        activeRecognizer = recognizer
+        await recognizer.ready(onProgress)
+        return recognizer
+      })()
+    }
+    return ready
+  }
+  return async (image: Blob) => {
+    const recognizer = await getRecognizer()
+    return recognizer.recognize(image)
+  }
+}
+
+/** Reads the text of an attachment (image OCR, multi-page PDF + OCR, DOCX, XLSX, text), storing it for search. */
+export async function readImageText(
+  id: string,
+  onProgress?: (p: number) => void,
+  opts: { name?: string; force?: boolean } = {},
+): Promise<string> {
   const d = deps
-  if (!d || !platform.ocr) throw new Error('Text recognition is not available here')
+  if (!d) throw new Error('Text extraction is not available here')
   const texts = new ImageTexts(d.db)
-  const known = await texts.get(id)
-  if (known !== null) return known
-  if (!(await canRunOcrWithoutNetwork())) {
-    throw new Error('OCR language data is not downloaded in local-only mode')
+  if (!opts.force) {
+    const known = await texts.get(id)
+    if (known !== null) return known
   }
   const blob = await d.attachments.load(id, attachmentSource())
-  if (!blob) throw new Error('The image is not on this device yet')
+  if (!blob) throw new Error('The file is not on this device yet')
+  const isImage = blob.type.startsWith('image/')
+  if (isImage && !platform.ocr) throw new Error('Text recognition is not available here')
+  if (isImage && !(await canRunOcrWithoutNetwork())) {
+    throw new Error('OCR language data is not downloaded in local-only mode')
+  }
   skipped.delete(id)
-  const recognizer = await platform.ocr()
-  activeRecognizer = recognizer
-  await recognizer.ready(onProgress)
-  const text = await recognizer.recognize(blob)
+  const ocr = await lazyOcr(onProgress)
+  const { text } = await extractAttachmentText(blob, {
+    name: opts.name,
+    mime: blob.type,
+    ocr,
+    maxOcrPages: 40,
+    onProgress,
+  })
   await texts.set(id, text)
   d.onRead()
   return text
 }
 
-async function readPending(recognizer: TextRecognizer, d: Deps) {
+async function readPending(d: Deps) {
   const texts = new ImageTexts(d.db)
+  const ocr = await lazyOcr()
   for (;;) {
     if (document.hidden) return
     const id = (await texts.pending(20)).find((x) => !isSkipped(x))
     if (!id) return
     try {
-      // Only what is on this device: reading never downloads the images of other devices.
+      // Only what is on this device: reading never downloads files of other devices.
       const blob = await d.attachments.load(id)
       if (!blob) {
         markSkipped(id)
         continue
       }
       if (document.hidden) return
-      await recognizer.ready()
+      const isImage = blob.type.startsWith('image/')
+      if (isImage && !ocr) {
+        markSkipped(id)
+        continue
+      }
+      const { text } = await extractAttachmentText(blob, {
+        mime: blob.type,
+        ocr,
+        maxOcrPages: 25,
+        shouldAbort: () => document.hidden,
+      })
       if (document.hidden) return
-      await texts.set(id, await recognizer.recognize(blob))
+      await texts.set(id, text)
       d.onRead()
     } catch {
       markSkipped(id)
@@ -102,18 +150,14 @@ async function readPending(recognizer: TextRecognizer, d: Deps) {
   }
 }
 
-/** Reads images waiting for it, one at a time, when the window is in use. */
+/** Reads attachments waiting for indexing/OCR, one at a time, when the window is in use. */
 export function readImagesSoon() {
   const d = deps
-  const ocr = platform.ocr
-  if (!d || !ocr || running || document.hidden) return
+  if (!d || running || document.hidden) return
   running = (async () => {
     try {
-      if (!(await canRunOcrWithoutNetwork())) return
       if (!(await new ImageTexts(d.db).pending(20)).some((x) => !isSkipped(x))) return
-      const recognizer = await ocr()
-      activeRecognizer = recognizer
-      await readPending(recognizer, d)
+      await readPending(d)
     } catch {
       // The data could not be downloaded (offline): the next event tries again.
     } finally {
@@ -122,11 +166,11 @@ export function readImagesSoon() {
   })()
 }
 
-/** Event-driven background OCR: once after start, when images are added/synced, and on request. */
+/** Event-driven background indexing & OCR: once after start, when files are added/synced, and on request. */
 export function initOcr(d: Deps) {
   deps = d
   clearTimeout(startTimer)
-  startTimer = setTimeout(readImagesSoon, 10_000)
+  startTimer = setTimeout(readImagesSoon, 8_000)
   if (!visibilityWired && typeof document !== 'undefined') {
     visibilityWired = true
     document.addEventListener('visibilitychange', () => {

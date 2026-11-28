@@ -54,6 +54,41 @@ describe('ImageTexts', () => {
     expect(fragments.find((f) => f.noteId === pictured.id)?.text).toContain('marketing 40%')
   })
 
+  it('queues PDFs, Word docs, spreadsheets, and text files for deep search indexing', async () => {
+    await image('contract-pdf', 120_000, 'application/pdf')
+    await image(
+      'report-docx',
+      45_000,
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    )
+    await image(
+      'budget-xlsx',
+      30_000,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    await image('notes-csv', 512, 'text/csv')
+    await image('clip-mp3', 90_000, 'audio/mpeg')
+    const note = await repo.createNote({
+      content: [
+        '# Docs',
+        '[contract.pdf](attachment:contract-pdf "120 KB")',
+        '[report.docx](attachment:report-docx "45 KB")',
+        '[budget.xlsx](attachment:budget-xlsx "30 KB")',
+        '[notes.csv](attachment:notes-csv "512 B")',
+        '[clip.mp3](attachment:clip-mp3 "90 KB")',
+      ].join('\n\n'),
+    })
+    const pending = await texts.pending(20)
+    expect(pending).toHaveLength(4)
+    expect(new Set(pending)).toEqual(
+      new Set(['contract-pdf', 'report-docx', 'budget-xlsx', 'notes-csv']),
+    )
+    await texts.set('contract-pdf', '[Page 1]\nCover\n\n[Page 2]\nIndemnification clause 42')
+    const hits = await repo.search('indemnification')
+    expect(hits.map((h) => h.note.id)).toEqual([note.id])
+    expect(hits[0]?.snippet).toContain('Indemnification')
+  })
+
   it('is forgotten with the notes when the device is unbound', async () => {
     await image('board')
     await repo.createNote({ content: '![](attachment:board)' })

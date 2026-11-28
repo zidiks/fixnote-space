@@ -251,8 +251,8 @@ export class NoteTools {
           ? `- ${kind}, ${info.mime}, ${fileSize(info.size)} (id: ${id})`
           : `- ${kind} (id: ${id}), not on this computer yet`,
       )
-      // Text read from the image on this device (OCR), when there is some.
-      const read = named?.image ? await new ImageTexts(this.db).get(id) : null
+      // Text read from the attachment on this device (OCR or document extraction), when there is some.
+      const read = await new ImageTexts(this.db).get(id)
       if (read) lines.push(`  text in it: ${read.replace(/\s*\n\s*/g, ' / ').slice(0, 600)}`)
     }
     return lines.join('\n')

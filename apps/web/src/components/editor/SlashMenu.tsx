@@ -13,6 +13,7 @@ import {
   ListOrdered,
   MessageSquareQuote,
   Minus,
+  Paperclip,
   StickyNote,
   Table2,
 } from 'lucide-react'
@@ -64,9 +65,11 @@ function matchSlash(editor: Editor): SlashMatch | null {
 export function SlashMenu({
   editor,
   onInsertImage,
+  onInsertFile,
 }: {
   editor: Editor
   onInsertImage: () => void
+  onInsertFile: () => void
 }) {
   const { t } = useTranslation()
   const [match, setMatch] = useState<SlashMatch | null>(null)
@@ -76,6 +79,8 @@ export function SlashMenu({
   const menuRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef(onInsertImage)
   imageRef.current = onInsertImage
+  const fileRef = useRef(onInsertFile)
+  fileRef.current = onInsertFile
 
   const allItems = useMemo<SlashItem[]>(
     () => [
@@ -197,6 +202,17 @@ export function SlashMenu({
         run: (e, r) => {
           e.chain().focus().deleteRange(r).run()
           imageRef.current()
+        },
+      },
+      {
+        id: 'file',
+        icon: Paperclip,
+        label: t('slash.file'),
+        keywords:
+          'file attachment pdf doc docx word excel csv table файл вложение документ таблица пдф ворд archivo adjunto',
+        run: (e, r) => {
+          e.chain().focus().deleteRange(r).run()
+          fileRef.current()
         },
       },
     ],

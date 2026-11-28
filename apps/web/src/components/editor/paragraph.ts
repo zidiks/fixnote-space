@@ -1,3 +1,4 @@
+import { attachmentIdFromUrl } from '@fixnote/core'
 import type { JSONContent, MarkdownToken } from '@tiptap/core'
 import Paragraph from '@tiptap/extension-paragraph'
 
@@ -45,6 +46,25 @@ export const ImageAwareParagraph = Paragraph.extend({
       helpers.createNode('paragraph', undefined, helpers.parseInline(run))
     if (ANGLE_URL.test((token.raw ?? '').trim())) {
       return helpers.createNode('paragraph', { plainLink: true }, helpers.parseInline(tokens))
+    }
+    // A standalone file attachment link `[report.pdf](attachment:<id> "1.2 MB")` becomes a
+    // draggable block card (`attachmentFile`) while inline attachment links in prose stay links.
+    const meaningful = tokens.filter((t) => t.type !== 'text' || (t.text ?? t.raw ?? '').trim())
+    if (meaningful.length === 1 && meaningful[0]?.type === 'link') {
+      const linkToken = meaningful[0] as MarkdownToken & {
+        href?: string
+        title?: string | null
+        text?: string
+      }
+      const id = typeof linkToken.href === 'string' ? attachmentIdFromUrl(linkToken.href) : null
+      if (id) {
+        const rawName = (linkToken.text ?? 'file').replace(/\\([[\]\\])/g, '$1')
+        return helpers.createNode('attachmentFile', {
+          id,
+          name: rawName || 'file',
+          size: typeof linkToken.title === 'string' ? linkToken.title : '',
+        })
+      }
     }
     if (!tokens.some((t) => t.type === 'image')) {
       const only = tokens[0]

@@ -174,6 +174,7 @@
 }
 /* Not the note's text: cards and name tags inside the editor keep the interface face. */
 .fixnote-link-card,
+.fixnote-file-card,
 .live-caret__label {
   font-family: var(--font-sans);
   font-feature-settings: var(--ui-features);
@@ -896,6 +897,226 @@
 }
 .fixnote-editor a[href^="attachment:"]:hover {
   background: var(--color-accent);
+}
+
+/* Draggable block card for attached files (PDF, Word, Excel, CSV, etc.). */
+.fixnote-editor .fixnote-file-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: 30rem;
+  margin: 0.45rem 0;
+  padding: 0.55rem 0.7rem 0.55rem 0.45rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-card);
+  color: var(--color-foreground);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 140ms var(--ease-apple),
+    background-color 140ms var(--ease-apple),
+    box-shadow 140ms var(--ease-apple);
+}
+.fixnote-editor .fixnote-file-card:hover {
+  border-color: color-mix(in oklch, var(--color-foreground) 22%, transparent);
+  box-shadow: 0 2px 8px color-mix(in oklch, var(--color-foreground) 7%, transparent);
+}
+.fixnote-editor .fixnote-file-card.ProseMirror-selectednode {
+  outline: 2px solid color-mix(in oklch, var(--color-brand) 65%, transparent);
+  outline-offset: 1px;
+}
+.fixnote-editor .fixnote-file-card-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  color: var(--color-muted-foreground);
+  opacity: 0.45;
+  cursor: grab;
+  transition: opacity 120ms var(--ease-apple);
+}
+.fixnote-editor .fixnote-file-card:hover .fixnote-file-card-grip,
+.fixnote-editor .fixnote-file-card.ProseMirror-selectednode .fixnote-file-card-grip {
+  opacity: 0.9;
+}
+.fixnote-editor .fixnote-file-card-grip:active {
+  cursor: grabbing;
+}
+.fixnote-editor .fixnote-file-card-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  height: 2.2rem;
+  padding: 0 0.4rem;
+  flex-shrink: 0;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: var(--color-muted);
+  color: var(--color-muted-foreground);
+}
+.fixnote-editor .fixnote-file-card-badge[data-kind="pdf"] {
+  background: color-mix(in oklch, oklch(0.63 0.22 25) 14%, transparent);
+  color: oklch(0.54 0.2 25);
+}
+.dark .fixnote-editor .fixnote-file-card-badge[data-kind="pdf"] {
+  color: oklch(0.76 0.16 25);
+}
+.fixnote-editor .fixnote-file-card-badge[data-kind="docx"] {
+  background: color-mix(in oklch, oklch(0.6 0.19 255) 14%, transparent);
+  color: oklch(0.5 0.18 255);
+}
+.dark .fixnote-editor .fixnote-file-card-badge[data-kind="docx"] {
+  color: oklch(0.75 0.14 255);
+}
+.fixnote-editor .fixnote-file-card-badge[data-kind="spreadsheet"] {
+  background: color-mix(in oklch, oklch(0.62 0.17 155) 14%, transparent);
+  color: oklch(0.47 0.15 155);
+}
+.dark .fixnote-editor .fixnote-file-card-badge[data-kind="spreadsheet"] {
+  color: oklch(0.74 0.14 155);
+}
+.fixnote-editor .fixnote-file-card-badge[data-kind="image"] {
+  background: color-mix(in oklch, oklch(0.72 0.17 75) 16%, transparent);
+  color: oklch(0.52 0.15 75);
+}
+.dark .fixnote-editor .fixnote-file-card-badge[data-kind="image"] {
+  color: oklch(0.8 0.13 75);
+}
+.fixnote-editor .fixnote-file-card-info {
+  min-width: 0;
+  flex: 1;
+  line-height: 1.3;
+}
+.fixnote-editor .fixnote-file-card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.fixnote-editor .fixnote-file-card-meta {
+  font-size: 0.74rem;
+  color: var(--color-muted-foreground);
+  margin-top: 0.1rem;
+}
+.fixnote-editor .fixnote-file-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 120ms var(--ease-apple);
+}
+.fixnote-editor .fixnote-file-card:hover .fixnote-file-card-actions,
+.fixnote-editor .fixnote-file-card:focus-within .fixnote-file-card-actions,
+.fixnote-editor .fixnote-file-card.ProseMirror-selectednode .fixnote-file-card-actions {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .fixnote-editor .fixnote-file-card-actions,
+  .fixnote-editor .fixnote-file-card-grip {
+    opacity: 0.85;
+  }
+}
+.fixnote-editor .fixnote-file-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+}
+.fixnote-editor .fixnote-file-card-btn:hover {
+  background: var(--color-accent);
+  color: var(--color-foreground);
+}
+.fixnote-editor .fixnote-file-card-btn.is-danger:hover {
+  background: color-mix(in oklch, var(--color-destructive) 12%, transparent);
+  color: var(--color-destructive);
+}
+
+/* Drop insertion indicators (internal ProseMirror node drags + external OS file drops). */
+.ProseMirror-dropcursor {
+  /* biome-ignore lint/complexity/noImportantStyles: overrides ProseMirror's inline dropcursor style */
+  background-color: var(--color-brand) !important;
+  /* biome-ignore lint/complexity/noImportantStyles: overrides ProseMirror's inline dropcursor style */
+  height: 2px !important;
+  border-radius: 999px;
+}
+.fixnote-external-drop-line {
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-brand);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-brand) 22%, transparent);
+}
+
+/* Word (.docx) document preview typography inside AttachmentViewerDialog. */
+.fixnote-docx-preview {
+  font-size: 0.94rem;
+  line-height: 1.65;
+  color: var(--color-foreground);
+}
+.fixnote-docx-preview h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+.fixnote-docx-preview h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+}
+.fixnote-docx-preview h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1rem 0 0.4rem;
+}
+.fixnote-docx-preview p {
+  margin: 0.5rem 0;
+}
+.fixnote-docx-preview ul,
+.fixnote-docx-preview ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+.fixnote-docx-preview ul {
+  list-style: disc;
+}
+.fixnote-docx-preview ol {
+  list-style: decimal;
+}
+.fixnote-docx-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+.fixnote-docx-preview th,
+.fixnote-docx-preview td {
+  border: 1px solid var(--color-border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.fixnote-docx-preview th {
+  background: var(--color-muted);
+  font-weight: 600;
+}
+.fixnote-docx-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
 }
 
 /* A repeating task: the rule reads as a small label; raw text only while the caret is in the line. */

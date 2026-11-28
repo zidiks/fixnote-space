@@ -169,8 +169,26 @@ export async function storeFile(attachments: Attachments, file: File): Promise<s
   if (file.size > MAX_ATTACHMENT_BYTES) throw new FileTooLargeError(file.name)
   const info = await attachments.add(file, file.type || 'application/octet-stream')
   const name = file.name.replace(/[[\]\\]/g, '\\$&') || 'file'
+  readImagesSoon()
   // The size rides along as the link title, so every device shows it without the file.
   return `[${name}](${attachmentUrl(info.id)} "${fileSize(file.size)}")`
+}
+
+/** Stores a file and returns its structured metadata for direct editor insertion. */
+export async function storeFileCard(
+  attachments: Attachments,
+  file: File,
+): Promise<{ id: string; name: string; size: string; mime: string }> {
+  if (file.size > MAX_ATTACHMENT_BYTES) throw new FileTooLargeError(file.name)
+  const mime = file.type || 'application/octet-stream'
+  const info = await attachments.add(file, mime)
+  readImagesSoon()
+  return {
+    id: info.id,
+    name: file.name || 'file',
+    size: fileSize(file.size),
+    mime,
+  }
 }
 
 /** "340 KB", "1.2 MB" in the UI language. */
